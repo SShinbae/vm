@@ -1,98 +1,322 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
+import React, { useState, useEffect, useCallback } from 'react';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  ScrollView,
+  StyleSheet,
+  RefreshControl,
+  ActivityIndicator,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { router } from 'expo-router';
+import { useAuth } from '@/lib/contexts/AuthContext';
+import { VehicleService } from '@/lib/services/vehicleService';
+import { Vehicle } from '@/types';
+import { Colors } from '@/constants/theme';
+import { useColorScheme } from '@/hooks/use-color-scheme';
+import { IconSymbol } from '@/components/ui/icon-symbol';
 
-import { HelloWave } from '@/components/hello-wave';
-import ParallaxScrollView from '@/components/parallax-scroll-view';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { Link } from 'expo-router';
+export default function DashboardScreen() {
+  const { user } = useAuth();
+  const [vehicles, setVehicles] = useState<Vehicle[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const colorScheme = useColorScheme();
+  const colors = Colors[colorScheme ?? 'light'];
 
-export default function HomeScreen() {
+  const fetchData = useCallback(async () => {
+    const { data, error } = await VehicleService.getVehicles();
+    if (!error && data) {
+      setVehicles(data);
+    }
+    setLoading(false);
+  }, []);
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await fetchData();
+    setRefreshing(false);
+  }, [fetchData]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  const QuickActionCard = ({ title, icon, onPress, color }: any) => (
+    <TouchableOpacity style={[styles.quickActionCard, { borderColor: color + '30' }]} onPress={onPress}>
+      <View style={[styles.quickActionIcon, { backgroundColor: color + '20' }]}>
+        <IconSymbol name={icon} size={24} color={color} />
+      </View>
+      <Text style={styles.quickActionTitle}>{title}</Text>
+    </TouchableOpacity>
+  );
+
+  const VehicleCard = ({ vehicle }: { vehicle: Vehicle }) => (
+    <TouchableOpacity
+      style={styles.vehicleCard}
+      onPress={() => router.push(`/vehicles/${vehicle.id}` as any)}
+    >
+      <View style={styles.vehicleHeader}>
+        <View style={styles.vehicleIcon}>
+          <IconSymbol name="car.fill" size={20} color="white" />
+        </View>
+        <View style={styles.vehicleInfo}>
+          <Text style={styles.vehicleName}>
+            {vehicle.year} {vehicle.make} {vehicle.model}
+          </Text>
+          <Text style={styles.vehiclePlate}>{vehicle.license_plate}</Text>
+        </View>
+        <IconSymbol name="chevron.right" size={16} color={colors.icon} />
+      </View>
+    </TouchableOpacity>
+  );
+
+  const styles = StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    header: {
+      paddingHorizontal: 20,
+      paddingVertical: 16,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.icon + '20',
+    },
+    greeting: {
+      fontSize: 32,
+      fontWeight: 'bold',
+      color: colors.text,
+      marginBottom: 4,
+    },
+    subtitle: {
+      fontSize: 16,
+      color: colors.icon,
+    },
+    content: {
+      flex: 1,
+    },
+    scrollContent: {
+      padding: 20,
+    },
+    section: {
+      marginBottom: 24,
+    },
+    sectionTitle: {
+      fontSize: 20,
+      fontWeight: '600',
+      color: colors.text,
+      marginBottom: 16,
+    },
+    quickActions: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: 12,
+    },
+    quickActionCard: {
+      flex: 1,
+      minWidth: '45%',
+      backgroundColor: colors.background,
+      borderRadius: 12,
+      padding: 16,
+      borderWidth: 1,
+      alignItems: 'center',
+      gap: 12,
+    },
+    quickActionIcon: {
+      width: 48,
+      height: 48,
+      borderRadius: 24,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    quickActionTitle: {
+      fontSize: 14,
+      fontWeight: '500',
+      color: colors.text,
+      textAlign: 'center',
+    },
+    vehicleCard: {
+      backgroundColor: colors.background,
+      borderRadius: 12,
+      padding: 16,
+      marginBottom: 12,
+      borderWidth: 1,
+      borderColor: colors.icon + '20',
+    },
+    vehicleHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    vehicleIcon: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      backgroundColor: colors.tint,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginRight: 12,
+    },
+    vehicleInfo: {
+      flex: 1,
+    },
+    vehicleName: {
+      fontSize: 16,
+      fontWeight: '600',
+      color: colors.text,
+      marginBottom: 2,
+    },
+    vehiclePlate: {
+      fontSize: 14,
+      color: colors.icon,
+    },
+    emptyState: {
+      alignItems: 'center',
+      paddingVertical: 32,
+    },
+    emptyIcon: {
+      width: 64,
+      height: 64,
+      borderRadius: 32,
+      backgroundColor: colors.icon + '20',
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginBottom: 16,
+    },
+    emptyTitle: {
+      fontSize: 18,
+      fontWeight: '600',
+      color: colors.text,
+      marginBottom: 8,
+    },
+    emptyDescription: {
+      fontSize: 14,
+      color: colors.icon,
+      textAlign: 'center',
+      lineHeight: 20,
+      marginBottom: 20,
+    },
+    emptyButton: {
+      backgroundColor: colors.tint,
+      paddingHorizontal: 24,
+      paddingVertical: 12,
+      borderRadius: 8,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+    },
+    emptyButtonText: {
+      color: 'white',
+      fontSize: 14,
+      fontWeight: '600',
+    },
+    viewAllButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingVertical: 12,
+    },
+    viewAllText: {
+      fontSize: 16,
+      color: colors.tint,
+      fontWeight: '500',
+    },
+    loadingContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+  });
+
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={colors.tint} />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12',
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <Link href="/modal">
-          <Link.Trigger>
-            <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-          </Link.Trigger>
-          <Link.Preview />
-          <Link.Menu>
-            <Link.MenuAction title="Action" icon="cube" onPress={() => alert('Action pressed')} />
-            <Link.MenuAction
-              title="Share"
-              icon="square.and.arrow.up"
-              onPress={() => alert('Share pressed')}
-            />
-            <Link.Menu title="More" icon="ellipsis">
-              <Link.MenuAction
-                title="Delete"
-                icon="trash"
-                destructive
-                onPress={() => alert('Delete pressed')}
-              />
-            </Link.Menu>
-          </Link.Menu>
-        </Link>
+    <SafeAreaView style={styles.container}>
+      <View style={styles.header}>
+        <Text style={styles.greeting}>
+          Welcome{user?.profile?.full_name ? `, ${user.profile.full_name.split(' ')[0]}` : ''}!
+        </Text>
+        <Text style={styles.subtitle}>Manage your vehicles and track your data</Text>
+      </View>
 
-        <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+      <ScrollView
+        style={styles.content}
+        contentContainerStyle={styles.scrollContent}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Quick Actions</Text>
+          <View style={styles.quickActions}>
+            <QuickActionCard
+              title="Add Vehicle"
+              icon="plus"
+              color={colors.tint}
+              onPress={() => router.push('/vehicles/add' as any)}
+            />
+            <QuickActionCard
+              title="Log Mileage"
+              icon="speedometer"
+              color="#2196F3"
+              onPress={() => router.push('/logs/mileage/add' as any)}
+            />
+            <QuickActionCard
+              title="Log Fuel"
+              icon="fuelpump"
+              color="#4CAF50"
+              onPress={() => router.push('/logs/fuel/add' as any)}
+            />
+            <QuickActionCard
+              title="Log Service"
+              icon="wrench"
+              color="#FF9800"
+              onPress={() => router.push('/logs/service/add' as any)}
+            />
+          </View>
+        </View>
+
+        <View style={styles.section}>
+          <View style={styles.viewAllButton}>
+            <Text style={styles.sectionTitle}>My Vehicles</Text>
+            {vehicles.length > 0 && (
+              <TouchableOpacity onPress={() => router.push('/vehicles')}>
+                <Text style={styles.viewAllText}>View All</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+
+          {vehicles.length === 0 ? (
+            <View style={styles.emptyState}>
+              <View style={styles.emptyIcon}>
+                <IconSymbol name="car" size={24} color={colors.icon} />
+              </View>
+              <Text style={styles.emptyTitle}>No vehicles yet</Text>
+              <Text style={styles.emptyDescription}>
+                Add your first vehicle to start tracking mileage, fuel, and maintenance
+              </Text>
+              <TouchableOpacity
+                style={styles.emptyButton}
+                onPress={() => router.push('/vehicles/add' as any)}
+              >
+                <IconSymbol name="plus" size={16} color="white" />
+                <Text style={styles.emptyButtonText}>Add Vehicle</Text>
+              </TouchableOpacity>
+            </View>
+          ) : (
+            vehicles.slice(0, 3).map(vehicle => (
+              <VehicleCard key={vehicle.id} vehicle={vehicle} />
+            ))
+          )}
+        </View>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
-  },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
-  },
-});
