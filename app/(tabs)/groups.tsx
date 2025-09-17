@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
 import {
   View,
   Text,
@@ -15,8 +16,12 @@ import { GroupService, GroupInvitationService } from '@/lib/services/groupServic
 import { GroupWithMembers, GroupInvitationWithDetails } from '@/types';
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import { useResponsiveLayout } from '@/hooks/use-responsive-layout';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAuth } from '@/lib/contexts/AuthContext';
+import { formatDate } from '@/lib/utils/dateUtils';
+import { WebLayout } from '@/components/layout/WebLayout';
+import { ResponsiveGrid } from '@/components/layout/ResponsiveGrid';
 
 type TabType = 'groups' | 'invitations';
 
@@ -29,6 +34,7 @@ export default function GroupsScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
+  const layout = useResponsiveLayout();
 
   const fetchData = useCallback(async () => {
     const [groupsResult, invitationsResult] = await Promise.all([
@@ -103,12 +109,12 @@ export default function GroupsScreen() {
   };
 
   const handleAcceptInvitation = async (invitation: GroupInvitationWithDetails) => {
-    const { error } = await GroupInvitationService.acceptInvitation(invitation.id);
+    const { data, error } = await GroupInvitationService.acceptInvitation(invitation.id);
     if (error) {
       Alert.alert('Error', error);
     } else {
       await fetchData();
-      Alert.alert('Success', `You have joined "${invitation.groups?.name}"`);
+      Alert.alert('Success', `You have joined "${data?.groupName || invitation.groups?.name || 'the group'}"`);
     }
   };
 
@@ -135,9 +141,11 @@ export default function GroupsScreen() {
     );
   };
 
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+  useFocusEffect(
+    useCallback(() => {
+      fetchData();
+    }, [fetchData])
+  );
 
   const TabButton = ({ type, label, count }: { type: TabType; label: string; count?: number }) => (
     <TouchableOpacity
@@ -228,10 +236,10 @@ export default function GroupsScreen() {
             Invitation to join "{invitation.groups?.name}"
           </Text>
           <Text style={styles.invitationSubtitle}>
-            Invited by {invitation.invited_by_profile?.full_name || invitation.invited_by_profile?.email}
+            Invited by {invitation.profiles?.full_name || invitation.profiles?.email || 'Unknown'}
           </Text>
           <Text style={styles.invitationDate}>
-            {new Date(invitation.created_at).toLocaleDateString()}
+            {formatDate(invitation.created_at)}
           </Text>
         </View>
       </View>

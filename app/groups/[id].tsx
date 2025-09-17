@@ -19,6 +19,7 @@ import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAuth } from '@/lib/contexts/AuthContext';
 import { SkeletonHeader, SkeletonStats, SkeletonList } from '@/components/ui/Skeleton';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { formatDateWithPrefix } from '@/lib/utils/dateUtils';
 
 type TabType = 'members' | 'invitations';
 
@@ -109,6 +110,35 @@ export default function GroupDetailScreen() {
     );
   };
 
+  const handleLeaveGroup = async () => {
+    if (!group) return;
+
+    Alert.alert(
+      'Leave Group',
+      `Are you sure you want to leave "${group.name}"? You will no longer have access to shared vehicles and group information.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Leave Group',
+          style: 'destructive',
+          onPress: async () => {
+            const { error } = await GroupService.leaveGroup(group.id);
+            if (error) {
+              Alert.alert('Error', error);
+            } else {
+              Alert.alert('Success', 'You have left the group', [
+                {
+                  text: 'OK',
+                  onPress: () => router.back(),
+                },
+              ]);
+            }
+          },
+        },
+      ]
+    );
+  };
+
   useEffect(() => {
     fetchGroupData();
   }, [fetchGroupData]);
@@ -163,7 +193,7 @@ export default function GroupDetailScreen() {
             </View>
             <Text style={styles.memberEmail}>{member.profiles?.email}</Text>
             <Text style={styles.joinedDate}>
-              Joined {new Date(member.joined_at).toLocaleDateString()}
+              {formatDateWithPrefix(member.joined_at, 'Joined')}
             </Text>
           </View>
           {!isOwner && !isCurrentUser && group?.owner_id === user?.id && (
@@ -191,10 +221,10 @@ export default function GroupDetailScreen() {
             Status: {invitation.status.charAt(0).toUpperCase() + invitation.status.slice(1)}
           </Text>
           <Text style={styles.invitationDate}>
-            Sent {new Date(invitation.created_at).toLocaleDateString()}
+            {formatDateWithPrefix(invitation.created_at, 'Sent')}
           </Text>
         </View>
-        {invitation.status === 'pending' && group?.owner_id === user?.id && (
+        {group?.owner_id === user?.id && (
           <TouchableOpacity
             style={styles.cancelButton}
             onPress={() => handleCancelInvitation(invitation.id, invitation.email)}
@@ -246,6 +276,14 @@ export default function GroupDetailScreen() {
       color: 'white',
       fontSize: 12,
       fontWeight: '600',
+    },
+    leaveButton: {
+      backgroundColor: 'transparent',
+      borderWidth: 1,
+      borderColor: '#ff4444',
+    },
+    leaveButtonText: {
+      color: '#ff4444',
     },
     groupInfo: {
       padding: 20,
@@ -500,7 +538,7 @@ export default function GroupDetailScreen() {
         <Text style={styles.title} numberOfLines={1}>
           {group.name}
         </Text>
-        {isOwner && (
+        {isOwner ? (
           <View style={styles.headerButtons}>
             <TouchableOpacity
               style={styles.headerButton}
@@ -508,6 +546,16 @@ export default function GroupDetailScreen() {
             >
               <IconSymbol name="plus" size={12} color="white" />
               <Text style={styles.headerButtonText}>Invite</Text>
+            </TouchableOpacity>
+          </View>
+        ) : (
+          <View style={styles.headerButtons}>
+            <TouchableOpacity
+              style={[styles.headerButton, styles.leaveButton]}
+              onPress={handleLeaveGroup}
+            >
+              <IconSymbol name="minus" size={12} color="#ff4444" />
+              <Text style={[styles.headerButtonText, styles.leaveButtonText]}>Leave</Text>
             </TouchableOpacity>
           </View>
         )}
@@ -522,7 +570,7 @@ export default function GroupDetailScreen() {
               <Text style={styles.statLabel}>Members</Text>
             </View>
             <View style={styles.stat}>
-              <Text style={styles.statValue}>{invitations.filter(i => i.status === 'pending').length}</Text>
+              <Text style={styles.statValue}>{invitations.length}</Text>
               <Text style={styles.statLabel}>Pending</Text>
             </View>
           </View>

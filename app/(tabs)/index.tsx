@@ -15,7 +15,10 @@ import { VehicleService } from '@/lib/services/vehicleService';
 import { Vehicle } from '@/types';
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import { useResponsiveLayout } from '@/hooks/use-responsive-layout';
 import { IconSymbol } from '@/components/ui/icon-symbol';
+import { WebLayout } from '@/components/layout/WebLayout';
+import { ResponsiveGrid } from '@/components/layout/ResponsiveGrid';
 
 export default function DashboardScreen() {
   const { user } = useAuth();
@@ -24,6 +27,7 @@ export default function DashboardScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
+  const layout = useResponsiveLayout();
 
   const fetchData = useCallback(async () => {
     const { data, error } = await VehicleService.getVehicles();
@@ -97,7 +101,7 @@ export default function DashboardScreen() {
       flex: 1,
     },
     scrollContent: {
-      padding: 20,
+      paddingVertical: 20,
     },
     section: {
       marginBottom: 24,
@@ -108,14 +112,7 @@ export default function DashboardScreen() {
       color: colors.text,
       marginBottom: 16,
     },
-    quickActions: {
-      flexDirection: 'row',
-      flexWrap: 'wrap',
-      gap: 12,
-    },
     quickActionCard: {
-      flex: 1,
-      minWidth: '45%',
       backgroundColor: colors.background,
       borderRadius: 12,
       padding: 16,
@@ -238,85 +235,105 @@ export default function DashboardScreen() {
     );
   }
 
+  const quickActions = [
+    {
+      title: "Add Vehicle",
+      icon: "plus",
+      color: colors.tint,
+      onPress: () => router.push('/vehicles/add' as any)
+    },
+    {
+      title: "Log Mileage",
+      icon: "speedometer",
+      color: "#2196F3",
+      onPress: () => router.push('/logs/mileage/add' as any)
+    },
+    {
+      title: "Log Fuel",
+      icon: "fuelpump",
+      color: "#4CAF50",
+      onPress: () => router.push('/logs/fuel/add' as any)
+    },
+    {
+      title: "Log Service",
+      icon: "wrench",
+      color: "#FF9800",
+      onPress: () => router.push('/logs/service/add' as any)
+    }
+  ];
+
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.greeting}>
-          Welcome{user?.profile?.full_name ? `, ${user.profile.full_name.split(' ')[0]}` : ''}!
-        </Text>
-        <Text style={styles.subtitle}>Manage your vehicles and track your data</Text>
-      </View>
-
-      <ScrollView
-        style={styles.content}
-        contentContainerStyle={styles.scrollContent}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-        showsVerticalScrollIndicator={false}
-      >
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Quick Actions</Text>
-          <View style={styles.quickActions}>
-            <QuickActionCard
-              title="Add Vehicle"
-              icon="plus"
-              color={colors.tint}
-              onPress={() => router.push('/vehicles/add' as any)}
-            />
-            <QuickActionCard
-              title="Log Mileage"
-              icon="speedometer"
-              color="#2196F3"
-              onPress={() => router.push('/logs/mileage/add' as any)}
-            />
-            <QuickActionCard
-              title="Log Fuel"
-              icon="fuelpump"
-              color="#4CAF50"
-              onPress={() => router.push('/logs/fuel/add' as any)}
-            />
-            <QuickActionCard
-              title="Log Service"
-              icon="wrench"
-              color="#FF9800"
-              onPress={() => router.push('/logs/service/add' as any)}
-            />
-          </View>
+      <WebLayout>
+        <View style={styles.header}>
+          <Text style={styles.greeting}>
+            Welcome{user?.profile?.full_name ? `, ${user.profile.full_name.split(' ')[0]}` : ''}!
+          </Text>
+          <Text style={styles.subtitle}>Manage your vehicles and track your data</Text>
         </View>
 
-        <View style={styles.section}>
-          <View style={styles.viewAllButton}>
-            <Text style={styles.sectionTitle}>My Vehicles</Text>
-            {vehicles.length > 0 && (
-              <TouchableOpacity onPress={() => router.push('/vehicles')}>
-                <Text style={styles.viewAllText}>View All</Text>
-              </TouchableOpacity>
+        <ScrollView
+          style={styles.content}
+          contentContainerStyle={styles.scrollContent}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+          showsVerticalScrollIndicator={false}
+        >
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Quick Actions</Text>
+            <ResponsiveGrid minItemWidth={200} spacing={12}>
+              {quickActions.map((action, index) => (
+                <QuickActionCard
+                  key={index}
+                  title={action.title}
+                  icon={action.icon}
+                  color={action.color}
+                  onPress={action.onPress}
+                />
+              ))}
+            </ResponsiveGrid>
+          </View>
+
+          <View style={styles.section}>
+            <View style={styles.viewAllButton}>
+              <Text style={styles.sectionTitle}>My Vehicles</Text>
+              {vehicles.length > 0 && (
+                <TouchableOpacity onPress={() => router.push('/vehicles')}>
+                  <Text style={styles.viewAllText}>View All</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+
+            {vehicles.length === 0 ? (
+              <View style={styles.emptyState}>
+                <View style={styles.emptyIcon}>
+                  <IconSymbol name="car" size={24} color={colors.icon} />
+                </View>
+                <Text style={styles.emptyTitle}>No vehicles yet</Text>
+                <Text style={styles.emptyDescription}>
+                  Add your first vehicle to start tracking mileage, fuel, and maintenance
+                </Text>
+                <TouchableOpacity
+                  style={styles.emptyButton}
+                  onPress={() => router.push('/vehicles/add' as any)}
+                >
+                  <IconSymbol name="plus" size={16} color="white" />
+                  <Text style={styles.emptyButtonText}>Add Vehicle</Text>
+                </TouchableOpacity>
+              </View>
+            ) : layout.isDesktop ? (
+              <ResponsiveGrid minItemWidth={300} spacing={16}>
+                {vehicles.slice(0, 3).map(vehicle => (
+                  <VehicleCard key={vehicle.id} vehicle={vehicle} />
+                ))}
+              </ResponsiveGrid>
+            ) : (
+              vehicles.slice(0, 3).map(vehicle => (
+                <VehicleCard key={vehicle.id} vehicle={vehicle} />
+              ))
             )}
           </View>
-
-          {vehicles.length === 0 ? (
-            <View style={styles.emptyState}>
-              <View style={styles.emptyIcon}>
-                <IconSymbol name="car" size={24} color={colors.icon} />
-              </View>
-              <Text style={styles.emptyTitle}>No vehicles yet</Text>
-              <Text style={styles.emptyDescription}>
-                Add your first vehicle to start tracking mileage, fuel, and maintenance
-              </Text>
-              <TouchableOpacity
-                style={styles.emptyButton}
-                onPress={() => router.push('/vehicles/add' as any)}
-              >
-                <IconSymbol name="plus" size={16} color="white" />
-                <Text style={styles.emptyButtonText}>Add Vehicle</Text>
-              </TouchableOpacity>
-            </View>
-          ) : (
-            vehicles.slice(0, 3).map(vehicle => (
-              <VehicleCard key={vehicle.id} vehicle={vehicle} />
-            ))
-          )}
-        </View>
-      </ScrollView>
+        </ScrollView>
+      </WebLayout>
     </SafeAreaView>
   );
 }

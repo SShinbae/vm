@@ -15,12 +15,19 @@ import {
 export class MileageLogService {
   static async getMileageLogs(vehicleId?: string): Promise<ApiResponse<MileageLog[]>> {
     try {
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+
+      if (userError || !user) {
+        return { data: null, error: 'User not authenticated', loading: false };
+      }
+
       let query = supabase
         .from('mileage_logs')
         .select(`
           *,
-          vehicles(make, model, year, license_plate)
+          vehicles!inner(make, model, year, license_plate, user_id)
         `)
+        .eq('vehicles.user_id', user.id)
         .order('date', { ascending: false });
 
       if (vehicleId) {
@@ -137,12 +144,19 @@ export class MileageLogService {
 export class FuelLogService {
   static async getFuelLogs(vehicleId?: string): Promise<ApiResponse<FuelLog[]>> {
     try {
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+
+      if (userError || !user) {
+        return { data: null, error: 'User not authenticated', loading: false };
+      }
+
       let query = supabase
         .from('fuel_logs')
         .select(`
           *,
-          vehicles(make, model, year, license_plate)
+          vehicles!inner(make, model, year, license_plate, user_id)
         `)
+        .eq('vehicles.user_id', user.id)
         .order('date', { ascending: false });
 
       if (vehicleId) {
@@ -248,12 +262,19 @@ export class FuelLogService {
 export class ServiceLogService {
   static async getServiceLogs(vehicleId?: string): Promise<ApiResponse<ServiceLog[]>> {
     try {
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+
+      if (userError || !user) {
+        return { data: null, error: 'User not authenticated', loading: false };
+      }
+
       let query = supabase
         .from('service_logs')
         .select(`
           *,
-          vehicles(make, model, year, license_plate)
+          vehicles!inner(make, model, year, license_plate, user_id)
         `)
+        .eq('vehicles.user_id', user.id)
         .order('date', { ascending: false });
 
       if (vehicleId) {

@@ -1,18 +1,32 @@
-import Animated from 'react-native-worklets';
+import Animated, { useSharedValue, useAnimatedStyle, withRepeat, withTiming, withSequence } from 'react-native-reanimated';
+import { useEffect } from 'react';
 
 export function HelloWave() {
+  const rotateAnimation = useSharedValue(0);
+
+  useEffect(() => {
+    rotateAnimation.value = withRepeat(
+      withSequence(
+        withTiming(25, { duration: 150 }),
+        withTiming(-25, { duration: 150 }),
+        withTiming(25, { duration: 150 }),
+        withTiming(0, { duration: 150 })
+      ),
+      1
+    );
+  }, []);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ rotate: `${rotateAnimation.value}deg` }],
+  }));
+
   return (
     <Animated.Text
-      style={{
+      style={[{
         fontSize: 28,
         lineHeight: 32,
         marginTop: -6,
-        animationName: {
-          '50%': { transform: [{ rotate: '25deg' }] },
-        },
-        animationIterationCount: 4,
-        animationDuration: '300ms',
-      }}>
+      }, animatedStyle]}>
       👋
     </Animated.Text>
   );

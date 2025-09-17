@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
 import {
   View,
   Text,
@@ -16,6 +17,7 @@ import { MileageLog, FuelLog, ServiceLog } from '@/types';
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { IconSymbol } from '@/components/ui/icon-symbol';
+import { formatDate } from '@/lib/utils/dateUtils';
 
 type LogType = 'mileage' | 'fuel' | 'service';
 
@@ -84,9 +86,11 @@ export default function LogsScreen() {
     );
   };
 
-  useEffect(() => {
-    fetchAllLogs();
-  }, [fetchAllLogs]);
+  useFocusEffect(
+    useCallback(() => {
+      fetchAllLogs();
+    }, [fetchAllLogs])
+  );
 
   const TabButton = ({ type, label, icon }: { type: LogType; label: string; icon: string }) => (
     <TouchableOpacity
@@ -125,14 +129,14 @@ export default function LogsScreen() {
         case 'fuel':
           return {
             title: `${log.liters_filled} L`,
-            subtitle: `${log.cost ? `$${log.cost}` : ''} • ${log.odometer_reading?.toLocaleString()} km`,
+            subtitle: `${log.cost ? `RM${log.cost}` : ''} • ${log.odometer_reading?.toLocaleString()} km`,
             icon: 'fuelpump',
             color: '#4CAF50',
           };
         case 'service':
           return {
             title: log.service_type?.replace('_', ' ').toUpperCase(),
-            subtitle: `${log.description} • ${log.cost ? `$${log.cost}` : ''}`,
+            subtitle: `${log.description} • ${log.cost ? `RM${log.cost}` : ''}`,
             icon: 'wrench',
             color: '#FF9800',
           };
@@ -153,7 +157,7 @@ export default function LogsScreen() {
             <Text style={styles.logTitle}>{details.title}</Text>
             <Text style={styles.logSubtitle}>{details.subtitle}</Text>
             <Text style={styles.logDate}>
-              {new Date(log.date).toLocaleDateString()} • {(log as any).vehicles?.make} {(log as any).vehicles?.model}
+              {formatDate(log.date)} • {(log as any).vehicles?.make} {(log as any).vehicles?.model}
             </Text>
           </View>
           <TouchableOpacity
