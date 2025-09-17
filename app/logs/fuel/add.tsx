@@ -1,24 +1,24 @@
-import React, { useState, useEffect } from 'react';
-import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  ScrollView,
-  KeyboardAvoidingView,
-  Platform,
-  StyleSheet,
-  Alert,
-  ActivityIndicator,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { router, useLocalSearchParams } from 'expo-router';
+import { IconSymbol } from '@/components/ui/icon-symbol';
+import { Colors } from '@/constants/theme';
+import { useColorScheme } from '@/hooks/use-color-scheme';
 import { FuelLogService } from '@/lib/services/loggingService';
 import { VehicleService } from '@/lib/services/vehicleService';
 import { FuelLogFormData, Vehicle } from '@/types';
-import { Colors } from '@/constants/theme';
-import { useColorScheme } from '@/hooks/use-color-scheme';
-import { IconSymbol } from '@/components/ui/icon-symbol';
+import { router, useLocalSearchParams } from 'expo-router';
+import React, { useEffect, useState } from 'react';
+import {
+  ActivityIndicator,
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function AddFuelLogScreen() {
   const { vehicleId } = useLocalSearchParams<{ vehicleId?: string }>();
@@ -428,11 +428,11 @@ export default function AddFuelLogScreen() {
                 style={styles.input}
                 value={formData.date}
                 onChangeText={(text) => setFormData(prev => ({ ...prev, date: text }))}
-                placeholder="2024-01-01"
+                placeholder="01/01/2024"
                 placeholderTextColor={colors.icon}
               />
               <Text style={styles.helpText}>
-                Date format: YYYY-MM-DD
+                Date format: DD/MM/YYYY
               </Text>
             </View>
 

@@ -40,6 +40,15 @@ export interface VehicleWithLogs extends Vehicle {
   service_logs?: ServiceLog[];
 }
 
+export interface VehicleWithGroupInfo extends Vehicle {
+  is_group_vehicle?: boolean;
+  owner_profile?: {
+    id: string;
+    full_name: string | null;
+    email: string;
+  } | null;
+}
+
 export interface GroupWithMembers extends Group {
   group_members?: (GroupMember & { profiles: Profile })[];
   member_count?: number;
@@ -47,6 +56,7 @@ export interface GroupWithMembers extends Group {
 
 export interface GroupInvitationWithDetails extends GroupInvitation {
   groups?: Group;
+  profiles?: Profile;
   invited_by_profile?: Profile;
 }
 
@@ -57,6 +67,7 @@ export interface VehicleFormData {
   year: number;
   license_plate: string;
   vin?: string;
+  shared_with_groups?: boolean;
 }
 
 export interface MileageLogFormData {

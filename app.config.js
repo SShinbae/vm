@@ -26,6 +26,10 @@ export default {
     web: {
       output: 'static',
       favicon: './assets/images/favicon.png',
+      bundler: 'metro',
+      name: 'Vehicle Management System',
+      description: 'Comprehensive vehicle management and maintenance tracking system',
+      lang: 'en',
     },
     plugins: [
       'expo-router',

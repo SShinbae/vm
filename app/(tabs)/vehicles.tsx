@@ -1,36 +1,50 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import { VehicleService } from '@/lib/services/vehicleService';
+import { useFocusEffect } from '@react-navigation/native';
+import { router } from 'expo-router';
+import { useCallback, useState } from 'react';
 import {
-  View,
-  Text,
-  TouchableOpacity,
+  ActivityIndicator,
+  Alert,
+  RefreshControl,
   ScrollView,
   StyleSheet,
-  Alert,
-  ActivityIndicator,
-  RefreshControl,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { router } from 'expo-router';
-import { VehicleService } from '@/lib/services/vehicleService';
-import { Vehicle } from '@/types';
+
+import { ResponsiveGrid } from '@/components/layout/ResponsiveGrid';
+import { WebLayout } from '@/components/layout/WebLayout';
+import { IconSymbol } from '@/components/ui/icon-symbol';
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
-import { IconSymbol } from '@/components/ui/icon-symbol';
+import { useResponsiveLayout } from '@/hooks/use-responsive-layout';
+import { formatDateWithPrefix } from '@/lib/utils/dateUtils';
+import { VehicleWithGroupInfo } from '@/types';
 
 export default function VehiclesScreen() {
-  const [vehicles, setVehicles] = useState<Vehicle[]>([]);
+  const [ownVehicles, setOwnVehicles] = useState<VehicleWithGroupInfo[]>([]);
+  const [sharedVehicles, setSharedVehicles] = useState<VehicleWithGroupInfo[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
+  const layout = useResponsiveLayout();
 
   const fetchVehicles = useCallback(async () => {
-    const { data, error } = await VehicleService.getVehicles();
+    const { data, error } = await VehicleService.getVehiclesSeparated();
 
     if (error) {
       Alert.alert('Error', 'Failed to load vehicles');
+      console.error('Failed to fetch vehicles:', error);
     } else if (data) {
-      setVehicles(data);
+      setOwnVehicles(data.ownVehicles);
+      setSharedVehicles(data.sharedVehicles);
+      console.log('🚗 Vehicles loaded:', {
+        ownCount: data.ownVehicles.length,
+        sharedCount: data.sharedVehicles.length
+      });
     }
 
     setLoading(false);
@@ -42,7 +56,7 @@ export default function VehiclesScreen() {
     setRefreshing(false);
   }, [fetchVehicles]);
 
-  const handleDeleteVehicle = (vehicle: Vehicle) => {
+  const handleDeleteVehicle = (vehicle: VehicleWithGroupInfo) => {
     Alert.alert(
       'Delete Vehicle',
       `Are you sure you want to delete ${vehicle.year} ${vehicle.make} ${vehicle.model}? This action cannot be undone.`,
@@ -56,7 +70,7 @@ export default function VehiclesScreen() {
             if (error) {
               Alert.alert('Error', 'Failed to delete vehicle');
             } else {
-              setVehicles(prev => prev.filter(v => v.id !== vehicle.id));
+              setOwnVehicles(prev => prev.filter(v => v.id !== vehicle.id));
               Alert.alert('Success', 'Vehicle deleted successfully');
             }
           },
@@ -65,31 +79,52 @@ export default function VehiclesScreen() {
     );
   };
 
-  useEffect(() => {
-    fetchVehicles();
-  }, [fetchVehicles]);
+  useFocusEffect(
+    useCallback(() => {
+      fetchVehicles();
+    }, [fetchVehicles])
+  );
 
-  const VehicleCard = ({ vehicle }: { vehicle: Vehicle }) => (
+  const VehicleCard = ({ vehicle }: { vehicle: VehicleWithGroupInfo }) => (
     <TouchableOpacity
       style={styles.vehicleCard}
       onPress={() => router.push(`/vehicles/${vehicle.id}` as any)}
     >
       <View style={styles.vehicleHeader}>
-        <View style={styles.vehicleIcon}>
-          <IconSymbol name="car.fill" size={24} color="white" />
+        <View style={[styles.vehicleIcon, vehicle.is_group_vehicle && styles.groupVehicleIcon]}>
+          <IconSymbol name={vehicle.is_group_vehicle ? "person.3.fill" : "car.fill"} size={24} color="white" />
         </View>
         <View style={styles.vehicleInfo}>
-          <Text style={styles.vehicleName}>
-            {vehicle.year} {vehicle.make} {vehicle.model}
-          </Text>
+          <View style={styles.vehicleNameRow}>
+            <Text style={styles.vehicleName}>
+              {vehicle.year} {vehicle.make} {vehicle.model}
+            </Text>
+            {!vehicle.is_group_vehicle && vehicle.shared_with_groups && (
+              <View style={styles.sharedBadge}>
+                <IconSymbol name="person.3.fill" size={12} color="white" />
+              </View>
+            )}
+          </View>
           <Text style={styles.vehiclePlate}>{vehicle.license_plate}</Text>
+          {vehicle.is_group_vehicle && vehicle.owner_profile && (
+            <Text style={styles.ownerInfo}>
+              Owned by {vehicle.owner_profile.full_name || vehicle.owner_profile.email}
+            </Text>
+          )}
+          {!vehicle.is_group_vehicle && vehicle.shared_with_groups && (
+            <Text style={styles.sharingStatus}>
+              Shared with groups
+            </Text>
+          )}
         </View>
-        <TouchableOpacity
-          style={styles.deleteButton}
-          onPress={() => handleDeleteVehicle(vehicle)}
-        >
-          <IconSymbol name="trash" size={18} color="#ff4444" />
-        </TouchableOpacity>
+        {!vehicle.is_group_vehicle && (
+          <TouchableOpacity
+            style={styles.deleteButton}
+            onPress={() => handleDeleteVehicle(vehicle)}
+          >
+            <IconSymbol name="trash" size={18} color="#ff4444" />
+          </TouchableOpacity>
+        )}
       </View>
 
       {vehicle.vin && (
@@ -100,7 +135,7 @@ export default function VehiclesScreen() {
 
       <View style={styles.vehicleFooter}>
         <Text style={styles.addedDate}>
-          Added {new Date(vehicle.created_at).toLocaleDateString()}
+          {formatDateWithPrefix(vehicle.created_at, 'Added')}
         </Text>
         <IconSymbol name="chevron.right" size={16} color={colors.icon} />
       </View>
@@ -214,16 +249,107 @@ export default function VehiclesScreen() {
     vehicleInfo: {
       flex: 1,
     },
+    vehicleNameRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+      marginBottom: 4,
+    },
     vehicleName: {
       fontSize: 18,
       fontWeight: '600',
       color: colors.text,
-      marginBottom: 4,
+      flex: 1,
+    },
+    sharedBadge: {
+      backgroundColor: '#4CAF50',
+      borderRadius: 10,
+      width: 20,
+      height: 20,
+      alignItems: 'center',
+      justifyContent: 'center',
     },
     vehiclePlate: {
       fontSize: 14,
       color: colors.icon,
       fontWeight: '500',
+    },
+    groupVehicleIcon: {
+      backgroundColor: '#4CAF50', // Green color for group vehicles
+    },
+    ownerInfo: {
+      fontSize: 12,
+      color: '#4CAF50',
+      fontStyle: 'italic',
+      marginTop: 2,
+    },
+    sharingStatus: {
+      fontSize: 12,
+      color: '#4CAF50',
+      fontWeight: '500',
+      marginTop: 2,
+    },
+    sectionHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingHorizontal: 20,
+      paddingVertical: 16,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.icon + '10',
+    },
+    sectionTitle: {
+      fontSize: 20,
+      fontWeight: '600',
+      color: colors.text,
+    },
+    sectionSubtitle: {
+      fontSize: 14,
+      color: colors.icon,
+      marginTop: 2,
+    },
+    sectionCount: {
+      backgroundColor: colors.tint,
+      borderRadius: 12,
+      paddingHorizontal: 8,
+      paddingVertical: 4,
+      minWidth: 24,
+      alignItems: 'center',
+    },
+    sectionCountText: {
+      fontSize: 12,
+      fontWeight: '600',
+      color: 'white',
+    },
+    sectionContent: {
+      padding: 20,
+    },
+    emptySection: {
+      paddingVertical: 40,
+      paddingHorizontal: 20,
+      alignItems: 'center',
+    },
+    emptySectionIcon: {
+      width: 60,
+      height: 60,
+      borderRadius: 30,
+      backgroundColor: colors.icon + '20',
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginBottom: 16,
+    },
+    emptySectionTitle: {
+      fontSize: 16,
+      fontWeight: '600',
+      color: colors.text,
+      marginBottom: 8,
+      textAlign: 'center',
+    },
+    emptySectionDescription: {
+      fontSize: 14,
+      color: colors.icon,
+      textAlign: 'center',
+      lineHeight: 20,
     },
     deleteButton: {
       padding: 8,
@@ -271,48 +397,100 @@ export default function VehiclesScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Vehicles</Text>
-        <TouchableOpacity
-          style={styles.addButton}
-          onPress={() => router.push('/vehicles/add' as any)}
-        >
-          <IconSymbol name="plus" size={16} color="white" />
-          <Text style={styles.addButtonText}>Add</Text>
-        </TouchableOpacity>
-      </View>
-
-      {vehicles.length === 0 ? (
-        <View style={styles.emptyContainer}>
-          <View style={styles.emptyIcon}>
-            <IconSymbol name="car" size={32} color={colors.icon} />
-          </View>
-          <Text style={styles.emptyTitle}>No vehicles yet</Text>
-          <Text style={styles.emptyDescription}>
-            Add your first vehicle to start tracking mileage, fuel consumption, and maintenance.
-          </Text>
+      <WebLayout>
+        <View style={styles.header}>
+          <Text style={styles.title}>Vehicles</Text>
           <TouchableOpacity
-            style={styles.emptyButton}
+            style={styles.addButton}
             onPress={() => router.push('/vehicles/add' as any)}
           >
             <IconSymbol name="plus" size={16} color="white" />
-            <Text style={styles.addButtonText}>Add Vehicle</Text>
+            <Text style={styles.addButtonText}>Add</Text>
           </TouchableOpacity>
         </View>
-      ) : (
+
         <ScrollView
           style={styles.content}
-          contentContainerStyle={styles.vehiclesList}
           refreshControl={
             <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
           }
           showsVerticalScrollIndicator={false}
         >
-          {vehicles.map(vehicle => (
-            <VehicleCard key={vehicle.id} vehicle={vehicle} />
-          ))}
+          {/* My Vehicles Section */}
+          <View style={styles.sectionHeader}>
+            <View>
+              <Text style={styles.sectionTitle}>My Vehicles</Text>
+              <Text style={styles.sectionSubtitle}>Vehicles you own</Text>
+            </View>
+            <View style={styles.sectionCount}>
+              <Text style={styles.sectionCountText}>{ownVehicles.length}</Text>
+            </View>
+          </View>
+
+          {ownVehicles.length === 0 ? (
+            <View style={styles.emptySection}>
+              <View style={styles.emptySectionIcon}>
+                <IconSymbol name="car" size={24} color={colors.icon} />
+              </View>
+              <Text style={styles.emptySectionTitle}>No vehicles yet</Text>
+              <Text style={styles.emptySectionDescription}>
+                Add your first vehicle to start tracking mileage, fuel consumption, and maintenance.
+              </Text>
+            </View>
+          ) : (
+            <View style={styles.sectionContent}>
+              {layout.isDesktop ? (
+                <ResponsiveGrid minItemWidth={350} spacing={16}>
+                  {ownVehicles.map(vehicle => (
+                    <VehicleCard key={vehicle.id} vehicle={vehicle} />
+                  ))}
+                </ResponsiveGrid>
+              ) : (
+                ownVehicles.map(vehicle => (
+                  <VehicleCard key={vehicle.id} vehicle={vehicle} />
+                ))
+              )}
+            </View>
+          )}
+
+          {/* Shared Vehicles Section */}
+          <View style={styles.sectionHeader}>
+            <View>
+              <Text style={styles.sectionTitle}>Shared Vehicles</Text>
+              <Text style={styles.sectionSubtitle}>Vehicles shared by group members</Text>
+            </View>
+            <View style={styles.sectionCount}>
+              <Text style={styles.sectionCountText}>{sharedVehicles.length}</Text>
+            </View>
+          </View>
+
+          {sharedVehicles.length === 0 ? (
+            <View style={styles.emptySection}>
+              <View style={styles.emptySectionIcon}>
+                <IconSymbol name="person.3.fill" size={24} color={colors.icon} />
+              </View>
+              <Text style={styles.emptySectionTitle}>No shared vehicles</Text>
+              <Text style={styles.emptySectionDescription}>
+                Join a group and ask members to share their vehicles with you, or ask group owners to enable vehicle sharing.
+              </Text>
+            </View>
+          ) : (
+            <View style={styles.sectionContent}>
+              {layout.isDesktop ? (
+                <ResponsiveGrid minItemWidth={350} spacing={16}>
+                  {sharedVehicles.map(vehicle => (
+                    <VehicleCard key={vehicle.id} vehicle={vehicle} />
+                  ))}
+                </ResponsiveGrid>
+              ) : (
+                sharedVehicles.map(vehicle => (
+                  <VehicleCard key={vehicle.id} vehicle={vehicle} />
+                ))
+              )}
+            </View>
+          )}
         </ScrollView>
-      )}
+      </WebLayout>
     </SafeAreaView>
   );
 }

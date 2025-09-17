@@ -8,6 +8,7 @@ import {
   Alert,
   ActivityIndicator,
   RefreshControl,
+  Switch,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -16,6 +17,7 @@ import { VehicleWithLogs } from '@/types';
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { IconSymbol } from '@/components/ui/icon-symbol';
+import { formatDate, formatDateWithPrefix } from '@/lib/utils/dateUtils';
 
 export default function VehicleDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -75,6 +77,24 @@ export default function VehicleDetailScreen() {
     );
   };
 
+  const handleToggleSharing = async (shared: boolean) => {
+    if (!vehicle) return;
+
+    const { data, error } = await VehicleService.toggleVehicleSharing(vehicle.id, shared);
+
+    if (error) {
+      Alert.alert('Error', 'Failed to update sharing settings');
+    } else if (data) {
+      setVehicle(prev => prev ? { ...prev, shared_with_groups: shared } : null);
+      Alert.alert(
+        'Success',
+        shared
+          ? 'Vehicle is now shared with your groups'
+          : 'Vehicle is no longer shared with groups'
+      );
+    }
+  };
+
   useEffect(() => {
     fetchVehicleData();
   }, [fetchVehicleData]);
@@ -112,7 +132,7 @@ export default function VehicleDetailScreen() {
                 {log.odometer_reading?.toLocaleString()} km
               </Text>
               <Text style={styles.logDate}>
-                {new Date(log.date || log.created_at).toLocaleDateString()}
+                {formatDate(log.date || log.created_at)}
               </Text>
             </View>
           </View>
@@ -225,6 +245,42 @@ export default function VehicleDetailScreen() {
     detailValue: {
       fontSize: 14,
       color: colors.text,
+    },
+    sharingCard: {
+      backgroundColor: colors.background,
+      borderRadius: 12,
+      padding: 16,
+      marginBottom: 20,
+      borderWidth: 1,
+      borderColor: colors.icon + '20',
+    },
+    sharingHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    sharingIcon: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      backgroundColor: colors.tint + '20',
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginRight: 12,
+    },
+    sharingInfo: {
+      flex: 1,
+      marginRight: 16,
+    },
+    sharingTitle: {
+      fontSize: 16,
+      fontWeight: '600',
+      color: colors.text,
+      marginBottom: 4,
+    },
+    sharingDescription: {
+      fontSize: 14,
+      color: colors.icon,
+      lineHeight: 20,
     },
     statsGrid: {
       flexDirection: 'row',
@@ -430,9 +486,32 @@ export default function VehicleDetailScreen() {
               <IconSymbol name="calendar" size={14} color={colors.icon} />
               <Text style={styles.detailLabel}>Added:</Text>
               <Text style={styles.detailValue}>
-                {new Date(vehicle.created_at).toLocaleDateString()}
+                {formatDateWithPrefix(vehicle.created_at, 'Added')}
               </Text>
             </View>
+          </View>
+        </View>
+
+        <View style={styles.sharingCard}>
+          <View style={styles.sharingHeader}>
+            <View style={styles.sharingIcon}>
+              <IconSymbol name="person.3.fill" size={20} color={colors.tint} />
+            </View>
+            <View style={styles.sharingInfo}>
+              <Text style={styles.sharingTitle}>Share with Groups</Text>
+              <Text style={styles.sharingDescription}>
+                Allow members of your groups to view this vehicle and its logs
+              </Text>
+            </View>
+            <Switch
+              value={vehicle.shared_with_groups || false}
+              onValueChange={handleToggleSharing}
+              trackColor={{
+                false: colors.icon + '30',
+                true: colors.tint + '50'
+              }}
+              thumbColor={vehicle.shared_with_groups ? colors.tint : colors.background}
+            />
           </View>
         </View>
 
