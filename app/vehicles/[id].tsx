@@ -22,9 +22,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 export default function VehicleDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const [vehicle, setVehicle] = useState<VehicleWithDetails | null>(null);
-  const [stats, setStats] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [sharingLoading, setSharingLoading] = useState(false);
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
 
@@ -41,10 +41,6 @@ export default function VehicleDetailScreen() {
         router.back();
       } else if (vehicleResult.data) {
         setVehicle(vehicleResult.data);
-
-        // Get enhanced stats
-        const statsData = await VehicleServiceV2.getVehicleStats(id);
-        setStats(statsData);
       } else {
         Alert.alert('Error', 'Vehicle not found');
         router.back();
@@ -89,43 +85,67 @@ export default function VehicleDetailScreen() {
   };
 
   const handleToggleSharing = async (shared: boolean) => {
-    if (!vehicle) return;
+    if (!vehicle || sharingLoading) return;
 
     if (shared) {
-      // When turning on sharing, explain the new system
+      // When turning on sharing, get user's groups and share with all
       Alert.alert(
         'Vehicle Sharing',
         'In the new selective sharing system, you can choose specific groups to share with. For now, this will share with all your groups.',
         [
           { text: 'Cancel', style: 'cancel' },
-          { 
-            text: 'Share with All Groups', 
+          {
+            text: 'Share with All Groups',
             onPress: async () => {
-              // TODO: Get user's groups and share with all
-              // For now, just update the UI
-              setVehicle(prev => prev ? { 
-                ...prev, 
-                sharing_info: {
-                  is_shared: true,
-                  shared_with_groups: ['all'],
-                  total_shares: 1
+              setSharingLoading(true);
+              try {
+                // Get user's groups
+                const { data: groups, error: groupsError } = await VehicleServiceV2.getUserGroups();
+
+                if (groupsError || !groups || groups.length === 0) {
+                  Alert.alert('Error', 'No groups found. You need to be a member of at least one group to share vehicles.');
+                  return;
                 }
-              } : null);
-              Alert.alert('Success', 'Vehicle shared with your groups');
+
+                // Share with all groups
+                const groupIds = groups.map(group => group.id);
+                const { error: shareError } = await VehicleServiceV2.shareVehicleWithGroups(vehicle.id, groupIds);
+
+                if (shareError) {
+                  Alert.alert('Error', 'Failed to share vehicle: ' + shareError);
+                } else {
+                  // Update local state with actual data
+                  setVehicle(prev => prev ? {
+                    ...prev,
+                    sharing_info: {
+                      is_shared: true,
+                      shared_with_groups: groups.map(g => g.name),
+                      total_shares: groups.length
+                    }
+                  } : null);
+                  Alert.alert('Success', `Vehicle shared with ${groups.length} group(s)`);
+                }
+              } catch (error) {
+                console.error('Error sharing vehicle:', error);
+                Alert.alert('Error', 'Failed to share vehicle');
+              } finally {
+                setSharingLoading(false);
+              }
             }
           }
         ]
       );
     } else {
       // When turning off sharing, remove all shares
+      setSharingLoading(true);
       try {
         const { error } = await VehicleServiceV2.shareVehicleWithGroups(vehicle.id, []);
-        
+
         if (error) {
           Alert.alert('Error', 'Failed to stop sharing');
         } else {
-          setVehicle(prev => prev ? { 
-            ...prev, 
+          setVehicle(prev => prev ? {
+            ...prev,
             sharing_info: {
               is_shared: false,
               shared_with_groups: [],
@@ -136,6 +156,8 @@ export default function VehicleDetailScreen() {
         }
       } catch {
         Alert.alert('Error', 'Failed to update sharing settings');
+      } finally {
+        setSharingLoading(false);
       }
     }
   };
@@ -151,7 +173,7 @@ export default function VehicleDetailScreen() {
         // Only refresh if we already have vehicle data loaded
         fetchVehicleData();
       }
-    }, [fetchVehicleData, vehicle?.id])
+    }, [fetchVehicleData, vehicle])
   );
 
   const StatCard = ({ title, value, subtitle, icon }: any) => (
@@ -542,6 +564,7 @@ export default function VehicleDetailScreen() {
             <Switch
               value={vehicle.sharing_info?.is_shared || false}
               onValueChange={handleToggleSharing}
+              disabled={sharingLoading}
               trackColor={{
                 false: colors.icon + '30',
                 true: colors.tint + '50'
@@ -566,19 +589,19 @@ export default function VehicleDetailScreen() {
           />
           <StatCard
             title="Fuel Records"
-            value={vehicle.fuel_logs?.length || 0}
+            value="N/A"
             subtitle={vehicle.logs?.latest_fuel ? `Latest: ${formatDate(vehicle.logs.latest_fuel.date)}` : 'No records'}
             icon="fuelpump"
           />
           <StatCard
             title="Service Records"
-            value={vehicle.service_logs?.length || 0}
+            value="N/A"
             subtitle={vehicle.logs?.latest_service ? `Latest: ${formatDate(vehicle.logs.latest_service.date)}` : 'No records'}
             icon="wrench"
           />
           <StatCard
             title="Mileage Records"
-            value={vehicle.mileage_logs?.length || 0}
+            value="N/A"
             subtitle={vehicle.logs?.latest_mileage ? `Latest: ${formatDate(vehicle.logs.latest_mileage.date)}` : 'No records'}
             icon="chart.line.uptrend.xyaxis"
           />
@@ -586,21 +609,21 @@ export default function VehicleDetailScreen() {
 
         <LogSection
           title="Recent Mileage"
-          logs={vehicle.mileage_logs?.slice(0, 3) || []}
+          logs={[]}
           icon="speedometer"
           onAddPress={() => router.push(`/logs/mileage/add?vehicleId=${vehicle.id}` as any)}
         />
 
         <LogSection
           title="Recent Fuel"
-          logs={vehicle.fuel_logs?.slice(0, 3) || []}
+          logs={[]}
           icon="fuelpump"
           onAddPress={() => router.push(`/logs/fuel/add?vehicleId=${vehicle.id}` as any)}
         />
 
         <LogSection
           title="Recent Service"
-          logs={vehicle.service_logs?.slice(0, 3) || []}
+          logs={[]}
           icon="wrench"
           onAddPress={() => router.push(`/logs/service/add?vehicleId=${vehicle.id}` as any)}
         />
