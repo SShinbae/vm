@@ -12,7 +12,8 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { GroupService, GroupInvitationService } from '@/lib/services/groupService';
-import { GroupWithMembers, GroupInvitationWithDetails } from '@/types';
+import { VehicleService } from '@/lib/services/vehicleService';
+import { GroupWithMembers, GroupInvitationWithDetails, VehicleWithGroupInfo } from '@/types';
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { IconSymbol } from '@/components/ui/icon-symbol';
@@ -21,7 +22,7 @@ import { SkeletonHeader, SkeletonStats, SkeletonList } from '@/components/ui/Ske
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { formatDateWithPrefix } from '@/lib/utils/dateUtils';
 
-type TabType = 'members' | 'invitations';
+type TabType = 'members' | 'invitations' | 'vehicles';
 
 export default function GroupDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -29,6 +30,7 @@ export default function GroupDetailScreen() {
   const [activeTab, setActiveTab] = useState<TabType>('members');
   const [group, setGroup] = useState<GroupWithMembers | null>(null);
   const [invitations, setInvitations] = useState<GroupInvitationWithDetails[]>([]);
+  const [sharedVehicles, setSharedVehicles] = useState<VehicleWithGroupInfo[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const colorScheme = useColorScheme();
@@ -37,9 +39,10 @@ export default function GroupDetailScreen() {
   const fetchGroupData = useCallback(async () => {
     if (!id) return;
 
-    const [groupResult, invitationsResult] = await Promise.all([
+    const [groupResult, invitationsResult, vehiclesResult] = await Promise.all([
       GroupService.getGroupById(id),
       GroupInvitationService.getInvitations(id),
+      VehicleService.getVehiclesSeparated(),
     ]);
 
     if (groupResult.error) {
@@ -51,6 +54,10 @@ export default function GroupDetailScreen() {
 
     if (invitationsResult.data) {
       setInvitations(invitationsResult.data);
+    }
+
+    if (vehiclesResult.data) {
+      setSharedVehicles(vehiclesResult.data.sharedVehicles || []);
     }
 
     setLoading(false);
@@ -142,6 +149,33 @@ export default function GroupDetailScreen() {
   useEffect(() => {
     fetchGroupData();
   }, [fetchGroupData]);
+
+  const VehicleCard = ({ vehicle }: { vehicle: VehicleWithGroupInfo }) => (
+    <TouchableOpacity
+      style={styles.vehicleCard}
+      onPress={() => router.push(`/vehicles/${vehicle.id}` as any)}
+    >
+      <View style={styles.vehicleHeader}>
+        <View style={styles.vehicleIcon}>
+          <IconSymbol name="car.fill" size={20} color="white" />
+        </View>
+        <View style={styles.vehicleInfo}>
+          <Text style={styles.vehicleName}>
+            {vehicle.year} {vehicle.make} {vehicle.model}
+          </Text>
+          <Text style={styles.vehiclePlate}>{vehicle.license_plate}</Text>
+          {vehicle.owner_profile && (
+            <Text style={styles.vehicleOwner}>
+              Owned by {vehicle.owner_profile.full_name || vehicle.owner_profile.email}
+            </Text>
+          )}
+        </View>
+        <View style={styles.vehicleActions}>
+          <IconSymbol name="chevron.right" size={16} color={colors.icon} />
+        </View>
+      </View>
+    </TouchableOpacity>
+  );
 
   const TabButton = ({ type, label, count }: { type: TabType; label: string; count?: number }) => (
     <TouchableOpacity
@@ -457,6 +491,54 @@ export default function GroupDetailScreen() {
     cancelButton: {
       padding: 8,
     },
+    vehicleCard: {
+      backgroundColor: colors.background,
+      borderRadius: 12,
+      padding: 16,
+      marginBottom: 12,
+      borderWidth: 1,
+      borderColor: colors.icon + '20',
+      elevation: 2,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.1,
+      shadowRadius: 4,
+    },
+    vehicleHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    vehicleIcon: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      backgroundColor: colors.tint,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginRight: 12,
+    },
+    vehicleInfo: {
+      flex: 1,
+    },
+    vehicleName: {
+      fontSize: 16,
+      fontWeight: '600',
+      color: colors.text,
+      marginBottom: 4,
+    },
+    vehiclePlate: {
+      fontSize: 14,
+      color: colors.icon,
+      marginBottom: 4,
+    },
+    vehicleOwner: {
+      fontSize: 12,
+      color: colors.tint,
+      fontStyle: 'italic',
+    },
+    vehicleActions: {
+      padding: 8,
+    },
     emptyContainer: {
       flex: 1,
       justifyContent: 'center',
@@ -579,6 +661,7 @@ export default function GroupDetailScreen() {
 
       <View style={styles.tabs}>
         <TabButton type="members" label="Members" count={group.member_count} />
+        <TabButton type="vehicles" label="Shared Vehicles" count={sharedVehicles.length} />
         {isOwner && (
           <TabButton type="invitations" label="Invitations" count={invitations.length} />
         )}
@@ -595,6 +678,29 @@ export default function GroupDetailScreen() {
             <MemberCard key={member.id} member={member} />
           ))}
         </ScrollView>
+      ) : activeTab === 'vehicles' ? (
+        sharedVehicles.length === 0 ? (
+          <View style={styles.emptyContainer}>
+            <View style={styles.emptyIcon}>
+              <IconSymbol name="car" size={24} color={colors.icon} />
+            </View>
+            <Text style={styles.emptyTitle}>No shared vehicles</Text>
+            <Text style={styles.emptyDescription}>
+              Group members can share their vehicles here. Enable sharing in your vehicle settings to share with this group.
+            </Text>
+          </View>
+        ) : (
+          <ScrollView
+            style={styles.content}
+            contentContainerStyle={styles.scrollContent}
+            refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+            showsVerticalScrollIndicator={false}
+          >
+            {sharedVehicles.map((vehicle) => (
+              <VehicleCard key={vehicle.id} vehicle={vehicle} />
+            ))}
+          </ScrollView>
+        )
       ) : (
         invitations.length === 0 ? (
           <View style={styles.emptyContainer}>

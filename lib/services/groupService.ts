@@ -1,16 +1,12 @@
 import { supabase } from '../../services/supabaseClient';
 import {
-  Group,
-  GroupInsert,
-  GroupUpdate,
-  GroupMember,
-  GroupMemberInsert,
-  GroupInvitation,
-  GroupInvitationInsert,
-  GroupInvitationUpdate,
-  GroupWithMembers,
-  GroupInvitationWithDetails,
-  ApiResponse,
+    ApiResponse,
+    Group,
+    GroupInsert,
+    GroupInvitation,
+    GroupInvitationWithDetails,
+    GroupUpdate,
+    GroupWithMembers
 } from '../../types';
 
 export class GroupService {
@@ -491,55 +487,80 @@ export class GroupInvitationService {
       const userEmail = userProfile?.email || user.email;
       console.log('Fetching user invitations for email:', userEmail?.toLowerCase());
 
-      // First get invitations
-      const { data: invitations, error } = await supabase
-        .from('group_invitations')
-        .select('*')
-        .eq('email', userEmail?.toLowerCase())
-        .eq('status', 'pending')
-        .gt('expires_at', new Date().toISOString())
-        .order('created_at', { ascending: false });
+      // Use the database function to get invitations with full details
+      const { data: invitationData, error } = await supabase.rpc(
+        'get_user_invitations_with_details',
+        { user_email: userEmail?.toLowerCase() }
+      );
 
       if (error) {
         console.error('Error fetching user invitations:', error);
         return { data: null, error: error.message, loading: false };
       }
 
-      if (!invitations || invitations.length === 0) {
+      if (!invitationData || invitationData.length === 0) {
         return { data: [], error: null, loading: false };
       }
 
-      // Get group and profile data separately
-      const groupIds = invitations.map(inv => inv.group_id);
-      const profileIds = invitations.map(inv => inv.invited_by);
+      // Filter for pending and non-expired invitations
+      const validInvitations = invitationData.filter(inv => 
+        inv.status === 'pending' && new Date(inv.expires_at) > new Date()
+      );
 
-      const [groupsData, profilesData] = await Promise.all([
-        supabase.from('groups').select('id, name, description').in('id', groupIds),
-        supabase.from('profiles').select('id, full_name, email').in('id', profileIds)
-      ]);
-
-      // Combine the data
-      const data = invitations.map(invitation => ({
-        ...invitation,
-        groups: groupsData.data?.find(g => g.id === invitation.group_id) || null,
-        profiles: profilesData.data?.find(p => p.id === invitation.invited_by) || null
+      // Transform to match the expected GroupInvitationWithDetails format
+      const transformedData: GroupInvitationWithDetails[] = validInvitations.map(inv => ({
+        id: inv.invitation_id,
+        group_id: inv.group_id,
+        email: userEmail?.toLowerCase() || '',
+        invited_by: inv.invited_by_id,
+        status: inv.status,
+        created_at: inv.created_at,
+        expires_at: inv.expires_at,
+        groups: {
+          id: inv.group_id,
+          name: inv.group_name,
+          description: inv.group_description,
+          owner_id: inv.invited_by_id, // This might not be accurate, but it's needed for the type
+          created_at: inv.created_at,
+          updated_at: inv.created_at
+        },
+        profiles: {
+          id: inv.invited_by_id,
+          email: inv.invited_by_email,
+          full_name: inv.invited_by_name,
+          avatar_url: null,
+          phone: null,
+          bio: null,
+          created_at: inv.created_at,
+          updated_at: inv.created_at
+        },
+        invited_by_profile: {
+          id: inv.invited_by_id,
+          email: inv.invited_by_email,
+          full_name: inv.invited_by_name,
+          avatar_url: null,
+          phone: null,
+          bio: null,
+          created_at: inv.created_at,
+          updated_at: inv.created_at
+        }
       }));
 
       console.log('User invitations query result:', {
-        invitationsCount: data.length,
-        groupsFound: groupsData.data?.length || 0,
-        profilesFound: profilesData.data?.length || 0,
+        invitationsCount: transformedData.length,
+        groupsFound: transformedData.length,
+        profilesFound: transformedData.length,
         userEmail: userEmail?.toLowerCase(),
-        sampleData: data[0] || null
+        sampleData: transformedData[0] || null
       });
 
-      console.log('Fetched invitations:', data?.map(inv => ({
+      console.log('Fetched invitations:', transformedData?.map(inv => ({
         id: inv.id,
         groupName: inv.groups?.name,
         invitedBy: inv.profiles?.full_name || inv.profiles?.email
       })));
 
-      return { data: data || [], error: null, loading: false };
+      return { data: transformedData, error: null, loading: false };
     } catch (error) {
       console.error('Unexpected error fetching user invitations:', error);
       return { data: null, error: 'Failed to fetch invitations', loading: false };

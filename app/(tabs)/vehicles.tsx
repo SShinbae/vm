@@ -1,4 +1,5 @@
-import { VehicleService } from '@/lib/services/vehicleService';
+// import { VehicleService } from '@/lib/services/vehicleService';
+// import { VehicleServiceV2 } from '@/lib/services/vehicleServiceV2';
 import { useFocusEffect } from '@react-navigation/native';
 import { router } from 'expo-router';
 import { useCallback, useState } from 'react';
@@ -13,6 +14,7 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { VehicleServiceV2 } from '../../lib/services/vehicleServiceV2';
 
 import { ResponsiveGrid } from '@/components/layout/ResponsiveGrid';
 import { WebLayout } from '@/components/layout/WebLayout';
@@ -21,11 +23,11 @@ import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useResponsiveLayout } from '@/hooks/use-responsive-layout';
 import { formatDateWithPrefix } from '@/lib/utils/dateUtils';
-import { VehicleWithGroupInfo } from '@/types';
+import { VehicleWithDetails } from '@/types/database-v2';
 
 export default function VehiclesScreen() {
-  const [ownVehicles, setOwnVehicles] = useState<VehicleWithGroupInfo[]>([]);
-  const [sharedVehicles, setSharedVehicles] = useState<VehicleWithGroupInfo[]>([]);
+  const [ownVehicles, setOwnVehicles] = useState<VehicleWithDetails[]>([]);
+  const [sharedVehicles, setSharedVehicles] = useState<VehicleWithDetails[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const colorScheme = useColorScheme();
@@ -33,7 +35,7 @@ export default function VehiclesScreen() {
   const layout = useResponsiveLayout();
 
   const fetchVehicles = useCallback(async () => {
-    const { data, error } = await VehicleService.getVehiclesSeparated();
+    const { data, error } = await VehicleServiceV2.getVehiclesSeparated();
 
     if (error) {
       Alert.alert('Error', 'Failed to load vehicles');
@@ -56,7 +58,7 @@ export default function VehiclesScreen() {
     setRefreshing(false);
   }, [fetchVehicles]);
 
-  const handleDeleteVehicle = (vehicle: VehicleWithGroupInfo) => {
+  const handleDeleteVehicle = (vehicle: VehicleWithDetails) => {
     Alert.alert(
       'Delete Vehicle',
       `Are you sure you want to delete ${vehicle.year} ${vehicle.make} ${vehicle.model}? This action cannot be undone.`,
@@ -66,7 +68,7 @@ export default function VehiclesScreen() {
           text: 'Delete',
           style: 'destructive',
           onPress: async () => {
-            const { error } = await VehicleService.deleteVehicle(vehicle.id);
+            const { error } = await VehicleServiceV2.deleteVehicle(vehicle.id);
             if (error) {
               Alert.alert('Error', 'Failed to delete vehicle');
             } else {
@@ -85,39 +87,39 @@ export default function VehiclesScreen() {
     }, [fetchVehicles])
   );
 
-  const VehicleCard = ({ vehicle }: { vehicle: VehicleWithGroupInfo }) => (
+  const VehicleCard = ({ vehicle }: { vehicle: VehicleWithDetails }) => (
     <TouchableOpacity
       style={styles.vehicleCard}
       onPress={() => router.push(`/vehicles/${vehicle.id}` as any)}
     >
       <View style={styles.vehicleHeader}>
-        <View style={[styles.vehicleIcon, vehicle.is_group_vehicle && styles.groupVehicleIcon]}>
-          <IconSymbol name={vehicle.is_group_vehicle ? "person.3.fill" : "car.fill"} size={24} color="white" />
+        <View style={[styles.vehicleIcon, !vehicle.is_own_vehicle && styles.groupVehicleIcon]}>
+          <IconSymbol name={!vehicle.is_own_vehicle ? "person.3.fill" : "car.fill"} size={24} color="white" />
         </View>
         <View style={styles.vehicleInfo}>
           <View style={styles.vehicleNameRow}>
             <Text style={styles.vehicleName}>
               {vehicle.year} {vehicle.make} {vehicle.model}
             </Text>
-            {!vehicle.is_group_vehicle && vehicle.shared_with_groups && (
+            {vehicle.is_own_vehicle && vehicle.shared_groups && vehicle.shared_groups.length > 0 && (
               <View style={styles.sharedBadge}>
                 <IconSymbol name="person.3.fill" size={12} color="white" />
               </View>
             )}
           </View>
           <Text style={styles.vehiclePlate}>{vehicle.license_plate}</Text>
-          {vehicle.is_group_vehicle && vehicle.owner_profile && (
+          {!vehicle.is_own_vehicle && vehicle.owner_profile && (
             <Text style={styles.ownerInfo}>
               Owned by {vehicle.owner_profile.full_name || vehicle.owner_profile.email}
             </Text>
           )}
-          {!vehicle.is_group_vehicle && vehicle.shared_with_groups && (
+          {vehicle.is_own_vehicle && vehicle.shared_groups && vehicle.shared_groups.length > 0 && (
             <Text style={styles.sharingStatus}>
-              Shared with groups
+              Shared with {vehicle.shared_groups.length} group{vehicle.shared_groups.length > 1 ? 's' : ''}
             </Text>
           )}
         </View>
-        {!vehicle.is_group_vehicle && (
+        {vehicle.is_own_vehicle && (
           <TouchableOpacity
             style={styles.deleteButton}
             onPress={() => handleDeleteVehicle(vehicle)}
@@ -135,7 +137,7 @@ export default function VehiclesScreen() {
 
       <View style={styles.vehicleFooter}>
         <Text style={styles.addedDate}>
-          {formatDateWithPrefix(vehicle.created_at, 'Added')}
+          {vehicle.created_at ? formatDateWithPrefix(vehicle.created_at, 'Added') : 'Added recently'}
         </Text>
         <IconSymbol name="chevron.right" size={16} color={colors.icon} />
       </View>

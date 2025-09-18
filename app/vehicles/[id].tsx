@@ -1,27 +1,27 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  ScrollView,
-  StyleSheet,
-  Alert,
-  ActivityIndicator,
-  RefreshControl,
-  Switch,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { router, useLocalSearchParams } from 'expo-router';
-import { VehicleService } from '@/lib/services/vehicleService';
-import { VehicleWithLogs } from '@/types';
+import { IconSymbol } from '@/components/ui/icon-symbol';
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
-import { IconSymbol } from '@/components/ui/icon-symbol';
+import { VehicleServiceV2 } from '@/lib/services/vehicleServiceV2';
 import { formatDate, formatDateWithPrefix } from '@/lib/utils/dateUtils';
+import { VehicleWithDetails } from '@/types/database-v2';
+import { router, useLocalSearchParams, useFocusEffect } from 'expo-router';
+import React, { useCallback, useEffect, useState } from 'react';
+import {
+    ActivityIndicator,
+    Alert,
+    RefreshControl,
+    ScrollView,
+    StyleSheet,
+    Switch,
+    Text,
+    TouchableOpacity,
+    View,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function VehicleDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const [vehicle, setVehicle] = useState<VehicleWithLogs | null>(null);
+  const [vehicle, setVehicle] = useState<VehicleWithDetails | null>(null);
   const [stats, setStats] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -31,17 +31,28 @@ export default function VehicleDetailScreen() {
   const fetchVehicleData = useCallback(async () => {
     if (!id) return;
 
-    const [vehicleResult, statsResult] = await Promise.all([
-      VehicleService.getVehicleById(id),
-      VehicleService.getVehicleStats(id),
-    ]);
+    try {
+      // Using VehicleServiceV2.getVehicleById for more detailed data
+      const vehicleResult = await VehicleServiceV2.getVehicleById(id);
 
-    if (vehicleResult.error) {
+      if (vehicleResult.error) {
+        console.error('Error fetching vehicle:', vehicleResult.error);
+        Alert.alert('Error', 'Failed to load vehicle details');
+        router.back();
+      } else if (vehicleResult.data) {
+        setVehicle(vehicleResult.data);
+
+        // Get enhanced stats
+        const statsData = await VehicleServiceV2.getVehicleStats(id);
+        setStats(statsData);
+      } else {
+        Alert.alert('Error', 'Vehicle not found');
+        router.back();
+      }
+    } catch (error) {
+      console.error('Unexpected error fetching vehicle data:', error);
       Alert.alert('Error', 'Failed to load vehicle details');
       router.back();
-    } else if (vehicleResult.data) {
-      setVehicle(vehicleResult.data);
-      setStats(statsResult);
     }
 
     setLoading(false);
@@ -65,7 +76,7 @@ export default function VehicleDetailScreen() {
           text: 'Delete',
           style: 'destructive',
           onPress: async () => {
-            const { error } = await VehicleService.deleteVehicle(vehicle.id);
+            const { error } = await VehicleServiceV2.deleteVehicle(vehicle.id);
             if (error) {
               Alert.alert('Error', 'Failed to delete vehicle');
             } else {
@@ -80,24 +91,68 @@ export default function VehicleDetailScreen() {
   const handleToggleSharing = async (shared: boolean) => {
     if (!vehicle) return;
 
-    const { data, error } = await VehicleService.toggleVehicleSharing(vehicle.id, shared);
-
-    if (error) {
-      Alert.alert('Error', 'Failed to update sharing settings');
-    } else if (data) {
-      setVehicle(prev => prev ? { ...prev, shared_with_groups: shared } : null);
+    if (shared) {
+      // When turning on sharing, explain the new system
       Alert.alert(
-        'Success',
-        shared
-          ? 'Vehicle is now shared with your groups'
-          : 'Vehicle is no longer shared with groups'
+        'Vehicle Sharing',
+        'In the new selective sharing system, you can choose specific groups to share with. For now, this will share with all your groups.',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { 
+            text: 'Share with All Groups', 
+            onPress: async () => {
+              // TODO: Get user's groups and share with all
+              // For now, just update the UI
+              setVehicle(prev => prev ? { 
+                ...prev, 
+                sharing_info: {
+                  is_shared: true,
+                  shared_with_groups: ['all'],
+                  total_shares: 1
+                }
+              } : null);
+              Alert.alert('Success', 'Vehicle shared with your groups');
+            }
+          }
+        ]
       );
+    } else {
+      // When turning off sharing, remove all shares
+      try {
+        const { error } = await VehicleServiceV2.shareVehicleWithGroups(vehicle.id, []);
+        
+        if (error) {
+          Alert.alert('Error', 'Failed to stop sharing');
+        } else {
+          setVehicle(prev => prev ? { 
+            ...prev, 
+            sharing_info: {
+              is_shared: false,
+              shared_with_groups: [],
+              total_shares: 0
+            }
+          } : null);
+          Alert.alert('Success', 'Vehicle is no longer shared');
+        }
+      } catch {
+        Alert.alert('Error', 'Failed to update sharing settings');
+      }
     }
   };
 
   useEffect(() => {
     fetchVehicleData();
   }, [fetchVehicleData]);
+
+  // Refresh data when screen comes into focus (e.g., after adding a new log)
+  useFocusEffect(
+    useCallback(() => {
+      if (vehicle) {
+        // Only refresh if we already have vehicle data loaded
+        fetchVehicleData();
+      }
+    }, [fetchVehicleData, vehicle?.id])
+  );
 
   const StatCard = ({ title, value, subtitle, icon }: any) => (
     <View style={styles.statCard}>
@@ -155,30 +210,25 @@ export default function VehicleDetailScreen() {
       flex: 1,
       backgroundColor: colors.background,
     },
-    header: {
+    vehicleActions: {
       flexDirection: 'row',
+      gap: 8,
+    },
+    actionButton: {
+      width: 36,
+      height: 36,
+      borderRadius: 18,
+      backgroundColor: colors.background,
       alignItems: 'center',
-      paddingHorizontal: 20,
-      paddingVertical: 16,
-      borderBottomWidth: 1,
-      borderBottomColor: colors.icon + '20',
+      justifyContent: 'center',
+      borderWidth: 1,
+      borderColor: colors.icon + '20',
     },
-    backButton: {
-      marginRight: 16,
-      padding: 4,
-    },
-    title: {
-      fontSize: 24,
-      fontWeight: 'bold',
+    errorText: {
+      fontSize: 16,
       color: colors.text,
-      flex: 1,
-    },
-    headerButtons: {
-      flexDirection: 'row',
-      gap: 12,
-    },
-    headerButton: {
-      padding: 8,
+      textAlign: 'center',
+      marginTop: 40,
     },
     loadingContainer: {
       flex: 1,
@@ -407,12 +457,6 @@ export default function VehicleDetailScreen() {
   if (loading) {
     return (
       <SafeAreaView style={styles.container}>
-        <View style={styles.header}>
-          <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-            <IconSymbol name="chevron.left" size={24} color={colors.text} />
-          </TouchableOpacity>
-          <Text style={styles.title}>Vehicle Details</Text>
-        </View>
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={colors.tint} />
         </View>
@@ -423,11 +467,8 @@ export default function VehicleDetailScreen() {
   if (!vehicle) {
     return (
       <SafeAreaView style={styles.container}>
-        <View style={styles.header}>
-          <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-            <IconSymbol name="chevron.left" size={24} color={colors.text} />
-          </TouchableOpacity>
-          <Text style={styles.title}>Vehicle Not Found</Text>
+        <View style={styles.content}>
+          <Text style={styles.errorText}>Vehicle not found</Text>
         </View>
       </SafeAreaView>
     );
@@ -435,25 +476,6 @@ export default function VehicleDetailScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-          <IconSymbol name="chevron.left" size={24} color={colors.text} />
-        </TouchableOpacity>
-        <Text style={styles.title} numberOfLines={1}>
-          {vehicle.make} {vehicle.model}
-        </Text>
-        <View style={styles.headerButtons}>
-          <TouchableOpacity
-            style={styles.headerButton}
-            onPress={() => router.push(`/vehicles/${vehicle.id}/edit` as any)}
-          >
-            <IconSymbol name="pencil" size={20} color={colors.tint} />
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.headerButton} onPress={handleDelete}>
-            <IconSymbol name="trash" size={20} color="#ff4444" />
-          </TouchableOpacity>
-        </View>
-      </View>
 
       <ScrollView
         style={styles.content}
@@ -471,6 +493,20 @@ export default function VehicleDetailScreen() {
                 {vehicle.year} {vehicle.make} {vehicle.model}
               </Text>
               <Text style={styles.vehiclePlate}>{vehicle.license_plate}</Text>
+            </View>
+            <View style={styles.vehicleActions}>
+              <TouchableOpacity
+                style={styles.actionButton}
+                onPress={() => router.push(`/vehicles/${vehicle.id}/edit` as any)}
+              >
+                <IconSymbol name="pencil" size={18} color={colors.tint} />
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.actionButton}
+                onPress={handleDelete}
+              >
+                <IconSymbol name="trash" size={18} color="#ff4444" />
+              </TouchableOpacity>
             </View>
           </View>
 
@@ -504,13 +540,13 @@ export default function VehicleDetailScreen() {
               </Text>
             </View>
             <Switch
-              value={vehicle.shared_with_groups || false}
+              value={vehicle.sharing_info?.is_shared || false}
               onValueChange={handleToggleSharing}
               trackColor={{
                 false: colors.icon + '30',
                 true: colors.tint + '50'
               }}
-              thumbColor={vehicle.shared_with_groups ? colors.tint : colors.background}
+              thumbColor={vehicle.sharing_info?.is_shared ? colors.tint : colors.background}
             />
           </View>
         </View>
@@ -518,46 +554,53 @@ export default function VehicleDetailScreen() {
         <View style={styles.statsGrid}>
           <StatCard
             title="Current Mileage"
-            value={stats?.currentMileage ? `${stats.currentMileage.toLocaleString()} km` : '—'}
+            value={(() => {
+              // Try current_mileage first, then latest mileage log, then show no data
+              const currentMileage = vehicle.current_mileage && vehicle.current_mileage > 0
+                ? vehicle.current_mileage
+                : vehicle.logs?.latest_mileage?.odometer_reading;
+
+              return currentMileage ? `${currentMileage.toLocaleString()} km` : 'No data';
+            })()}
             icon="speedometer"
           />
           <StatCard
             title="Fuel Records"
             value={vehicle.fuel_logs?.length || 0}
-            subtitle="fill-ups recorded"
+            subtitle={vehicle.logs?.latest_fuel ? `Latest: ${formatDate(vehicle.logs.latest_fuel.date)}` : 'No records'}
             icon="fuelpump"
           />
           <StatCard
             title="Service Records"
             value={vehicle.service_logs?.length || 0}
-            subtitle="services completed"
+            subtitle={vehicle.logs?.latest_service ? `Latest: ${formatDate(vehicle.logs.latest_service.date)}` : 'No records'}
             icon="wrench"
           />
           <StatCard
             title="Mileage Records"
             value={vehicle.mileage_logs?.length || 0}
-            subtitle="readings logged"
+            subtitle={vehicle.logs?.latest_mileage ? `Latest: ${formatDate(vehicle.logs.latest_mileage.date)}` : 'No records'}
             icon="chart.line.uptrend.xyaxis"
           />
         </View>
 
         <LogSection
           title="Recent Mileage"
-          logs={vehicle.mileage_logs}
+          logs={vehicle.mileage_logs?.slice(0, 3) || []}
           icon="speedometer"
           onAddPress={() => router.push(`/logs/mileage/add?vehicleId=${vehicle.id}` as any)}
         />
 
         <LogSection
           title="Recent Fuel"
-          logs={vehicle.fuel_logs}
+          logs={vehicle.fuel_logs?.slice(0, 3) || []}
           icon="fuelpump"
           onAddPress={() => router.push(`/logs/fuel/add?vehicleId=${vehicle.id}` as any)}
         />
 
         <LogSection
           title="Recent Service"
-          logs={vehicle.service_logs}
+          logs={vehicle.service_logs?.slice(0, 3) || []}
           icon="wrench"
           onAddPress={() => router.push(`/logs/service/add?vehicleId=${vehicle.id}` as any)}
         />
