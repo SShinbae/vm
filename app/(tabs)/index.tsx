@@ -112,6 +112,12 @@ export default function DashboardScreen() {
       color: colors.text,
       marginBottom: 16,
     },
+    quickActionsGrid: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      justifyContent: 'space-between',
+      gap: 12,
+    },
     quickActionCard: {
       backgroundColor: colors.background,
       borderRadius: 12,
@@ -119,6 +125,7 @@ export default function DashboardScreen() {
       borderWidth: 1,
       alignItems: 'center',
       gap: 12,
+      width: '48%',
     },
     quickActionIcon: {
       width: 48,
@@ -280,7 +287,7 @@ export default function DashboardScreen() {
         >
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Quick Actions</Text>
-            <ResponsiveGrid minItemWidth={200} spacing={12}>
+            <View style={styles.quickActionsGrid}>
               {quickActions.map((action, index) => (
                 <QuickActionCard
                   key={index}
@@ -290,7 +297,7 @@ export default function DashboardScreen() {
                   onPress={action.onPress}
                 />
               ))}
-            </ResponsiveGrid>
+            </View>
           </View>
 
           <View style={styles.section}>
