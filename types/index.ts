@@ -41,12 +41,24 @@ export interface VehicleWithLogs extends Vehicle {
 }
 
 export interface VehicleWithGroupInfo extends Vehicle {
+  
   is_group_vehicle?: boolean;
   owner_profile?: {
     id: string;
     full_name: string | null;
     email: string;
   } | null;
+  // New sharing properties for V2 system
+  shared_groups?: {
+    id: string;
+    name: string;
+    description?: string;
+  }[];
+  sharing_info?: {
+    is_shared: boolean;
+    shared_groups: string[];
+    total_shares: number;
+  };
 }
 
 export interface GroupWithMembers extends Group {
@@ -67,7 +79,6 @@ export interface VehicleFormData {
   year: number;
   license_plate: string;
   vin?: string;
-  shared_with_groups?: boolean;
 }
 
 export interface MileageLogFormData {

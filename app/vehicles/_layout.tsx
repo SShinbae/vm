@@ -1,6 +1,6 @@
-import { Stack } from 'expo-router';
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import { Stack } from 'expo-router';
 
 export default function VehiclesLayout() {
   const colorScheme = useColorScheme();
@@ -19,7 +19,13 @@ export default function VehiclesLayout() {
       }}
     >
       <Stack.Screen name="add" />
-      <Stack.Screen name="[id]" />
+      <Stack.Screen
+        name="[id]"
+        options={{
+          headerShown: false,
+
+        }}
+      />
       <Stack.Screen name="[id]/edit" />
     </Stack>
   );

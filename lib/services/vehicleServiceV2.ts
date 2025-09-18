@@ -1,0 +1,748 @@
+import { supabase } from '../../services/supabaseClient';
+import {
+  ApiResponse,
+  Group,
+  Vehicle,
+  VehicleInsert,
+  VehicleSharingConfig,
+  VehicleUpdate,
+  VehicleWithDetails
+} from '../../types/database-v2';
+
+export class VehicleServiceV2 {
+
+  /**
+   * Get vehicles with enhanced sharing information using the database function
+   */
+  static async getVehiclesWithSharing(): Promise<ApiResponse<VehicleWithDetails[]>> {
+    try {
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+
+      if (userError || !user) {
+        return { data: null, error: 'User not authenticated', loading: false };
+      }
+
+      console.log('🔍 Fetching vehicles with sharing info for user:', user.id);
+
+      // Use the database function for optimized query
+      const { data: vehicleData, error: vehicleError } = await supabase.rpc(
+        'get_user_vehicles_with_sharing',
+        { user_uuid: user.id }
+      );
+
+      if (vehicleError) {
+        console.error('❌ Error fetching vehicles:', vehicleError);
+        return { data: null, error: vehicleError.message, loading: false };
+      }
+
+      console.log('✅ Raw vehicle data received:', vehicleData?.length || 0);
+
+      // Enhance the data with additional information
+      const enhancedVehicles: VehicleWithDetails[] = await Promise.all(
+        (vehicleData || []).map(async (vehicle) => {
+          // Get vehicle images
+          const { data: images } = await supabase
+            .from('vehicle_images')
+            .select('*')
+            .eq('vehicle_id', vehicle.vehicle_id)
+            .order('image_type', { ascending: true })
+            .order('display_order', { ascending: true });
+
+          // Get sharing groups for owned vehicles
+          let sharedGroups: any[] = [];
+          if (vehicle.is_own_vehicle) {
+            const { data: shares } = await supabase
+              .from('vehicle_group_shares')
+              .select(`
+                group_id,
+                shared_at,
+                groups!inner(id, name, description)
+              `)
+              .eq('vehicle_id', vehicle.vehicle_id);
+
+            sharedGroups = shares?.map(share => share.groups) || [];
+          }
+
+          // Get latest logs for stats
+          const [mileageResult, fuelResult, serviceResult] = await Promise.all([
+            supabase
+              .from('mileage_logs')
+              .select('*')
+              .eq('vehicle_id', vehicle.vehicle_id)
+              .order('date', { ascending: false })
+              .limit(1),
+            supabase
+              .from('fuel_logs')
+              .select('*')
+              .eq('vehicle_id', vehicle.vehicle_id)
+              .order('date', { ascending: false })
+              .limit(1),
+            supabase
+              .from('service_logs')
+              .select('*')
+              .eq('vehicle_id', vehicle.vehicle_id)
+              .order('date', { ascending: false })
+              .limit(1),
+          ]);
+
+          // Calculate current mileage: use database field or fall back to latest mileage log
+          const currentMileage = vehicle.current_mileage && vehicle.current_mileage > 0
+            ? vehicle.current_mileage
+            : mileageResult.data?.[0]?.odometer_reading || 0;
+
+          return {
+            id: vehicle.vehicle_id,
+            user_id: vehicle.is_own_vehicle ? user.id : 'shared',
+            make: vehicle.make,
+            model: vehicle.model,
+            year: vehicle.year,
+            license_plate: vehicle.license_plate,
+            vin: vehicle.vin,
+            main_image_url: vehicle.main_image_url,
+            color: vehicle.color,
+            current_mileage: currentMileage,
+            created_at: vehicle.created_at,
+            updated_at: vehicle.updated_at,
+            is_own_vehicle: vehicle.is_own_vehicle,
+            owner_profile: vehicle.is_own_vehicle ? null : {
+              id: 'owner-id',
+              email: vehicle.owner_email,
+              full_name: vehicle.owner_name,
+              avatar_url: null,
+              phone: null,
+              bio: null,
+              created_at: '',
+              updated_at: '',
+            },
+            images: images || [],
+            shared_groups: sharedGroups,
+            sharing_info: {
+              is_shared: vehicle.shared_groups?.length > 0,
+              shared_with_groups: vehicle.shared_groups || [],
+              total_shares: vehicle.shared_groups?.length || 0,
+            },
+            logs: {
+              latest_mileage: mileageResult.data?.[0] || undefined,
+              latest_fuel: fuelResult.data?.[0] || undefined,
+              latest_service: serviceResult.data?.[0] || undefined,
+            },
+          };
+        })
+      );
+
+      console.log('🎉 Enhanced vehicles processed:', enhancedVehicles.length);
+      return { data: enhancedVehicles, error: null, loading: false };
+
+    } catch (error) {
+      console.error('💥 Unexpected error fetching vehicles:', error);
+      return { data: null, error: 'Failed to fetch vehicles', loading: false };
+    }
+  }
+
+  /**
+   * Get vehicles separated by ownership type
+   */
+  static async getVehiclesSeparated(): Promise<ApiResponse<{
+    ownVehicles: VehicleWithDetails[];
+    sharedVehicles: VehicleWithDetails[];
+  }>> {
+    try {
+      const response = await this.getVehiclesWithSharing();
+
+      if (response.error || !response.data) {
+        return {
+          data: null,
+          error: response.error,
+          loading: false
+        };
+      }
+
+      const ownVehicles = response.data.filter(v => v.is_own_vehicle);
+      const sharedVehicles = response.data.filter(v => !v.is_own_vehicle);
+
+      console.log('📊 Vehicles separated:', {
+        ownCount: ownVehicles.length,
+        sharedCount: sharedVehicles.length
+      });
+
+      return {
+        data: { ownVehicles, sharedVehicles },
+        error: null,
+        loading: false
+      };
+    } catch (error) {
+      console.error('💥 Error separating vehicles:', error);
+      return {
+        data: null,
+        error: 'Failed to separate vehicles',
+        loading: false
+      };
+    }
+  }
+
+  /**
+   * Share vehicle with specific groups
+   */
+  static async shareVehicleWithGroups(
+    vehicleId: string,
+    groupIds: string[]
+  ): Promise<ApiResponse<boolean>> {
+    try {
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+
+      if (userError || !user) {
+        return { data: null, error: 'User not authenticated', loading: false };
+      }
+
+      console.log('🔄 Sharing vehicle with groups:', { vehicleId, groupIds });
+
+      // Use the database function for atomic operation
+      const { data, error } = await supabase.rpc('share_vehicle_with_groups', {
+        vehicle_uuid: vehicleId,
+        group_uuids: groupIds
+      });
+
+      if (error) {
+        console.error('❌ Error sharing vehicle:', error);
+        return { data: null, error: error.message, loading: false };
+      }
+
+      console.log('✅ Vehicle shared successfully with', groupIds.length, 'groups');
+      return { data: true, error: null, loading: false };
+
+    } catch (error) {
+      console.error('💥 Unexpected error sharing vehicle:', error);
+      return { data: null, error: 'Failed to share vehicle', loading: false };
+    }
+  }
+
+  /**
+   * Get vehicle sharing configuration
+   */
+  static async getVehicleSharingConfig(vehicleId: string): Promise<ApiResponse<VehicleSharingConfig>> {
+    try {
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+
+      if (userError || !user) {
+        return { data: null, error: 'User not authenticated', loading: false };
+      }
+
+      // Verify user owns the vehicle
+      const { data: vehicle, error: vehicleError } = await supabase
+        .from('vehicles')
+        .select('user_id')
+        .eq('id', vehicleId)
+        .single();
+
+      if (vehicleError || !vehicle) {
+        return { data: null, error: 'Vehicle not found', loading: false };
+      }
+
+      if (vehicle.user_id !== user.id) {
+        return { data: null, error: 'You can only view sharing config for your own vehicles', loading: false };
+      }
+
+      // Get current shares with group info
+      const { data: shares, error: sharesError } = await supabase
+        .from('vehicle_group_shares')
+        .select(`
+          group_id,
+          shared_at,
+          groups!inner(id, name, description)
+        `)
+        .eq('vehicle_id', vehicleId);
+
+      if (sharesError) {
+        console.error('Error fetching sharing config:', sharesError);
+        return { data: null, error: sharesError.message, loading: false };
+      }
+
+      // Get member counts for each shared group separately
+      const sharedGroupsWithCounts = await Promise.all(
+        (shares || []).map(async (share) => {
+          // Get member count for this group using a simpler count query
+          const { data: members, error: countError } = await supabase
+            .from('group_members')
+            .select('id')
+            .eq('group_id', share.group_id);
+
+          if (countError) {
+            console.error('Error getting member count:', countError);
+          }
+
+          return {
+            group_id: share.group_id,
+            group_name: share.groups.name,
+            member_count: members?.length || 0,
+            shared_at: share.shared_at,
+          };
+        })
+      );
+
+      const config: VehicleSharingConfig = {
+        vehicle_id: vehicleId,
+        shared_groups: sharedGroupsWithCounts,
+        is_sharing_enabled: sharedGroupsWithCounts.length > 0,
+        total_shares: sharedGroupsWithCounts.length,
+      };
+
+      return { data: config, error: null, loading: false };
+
+    } catch (error) {
+      console.error('Unexpected error fetching sharing config:', error);
+      return { data: null, error: 'Failed to fetch sharing configuration', loading: false };
+    }
+  }
+
+  /**
+   * Remove vehicle sharing (stop sharing with all groups)
+   */
+  static async removeVehicleSharing(vehicleId: string): Promise<ApiResponse<boolean>> {
+    try {
+      return await this.shareVehicleWithGroups(vehicleId, []);
+    } catch (error) {
+      console.error('Unexpected error removing vehicle sharing:', error);
+      return { data: null, error: 'Failed to remove vehicle sharing', loading: false };
+    }
+  }
+
+  /**
+   * Create vehicle with enhanced data
+   */
+  static async createVehicle(
+    vehicleData: Omit<VehicleInsert, 'user_id'>,
+    sharedGroupIds?: string[]
+  ): Promise<ApiResponse<Vehicle>> {
+    try {
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+
+      if (userError || !user) {
+        return { data: null, error: 'User not authenticated', loading: false };
+      }
+
+      // Check for duplicate license plate
+      const { data: existing } = await supabase
+        .from('vehicles')
+        .select('id')
+        .eq('license_plate', vehicleData.license_plate)
+        .eq('user_id', user.id);
+
+      if (existing && existing.length > 0) {
+        return { data: null, error: 'A vehicle with this license plate already exists', loading: false };
+      }
+
+      // Create vehicle
+      const { data: vehicle, error: vehicleError } = await supabase
+        .from('vehicles')
+        .insert({
+          ...vehicleData,
+          user_id: user.id,
+        })
+        .select()
+        .single();
+
+      if (vehicleError) {
+        console.error('Error creating vehicle:', vehicleError);
+        return { data: null, error: vehicleError.message, loading: false };
+      }
+
+      // Share with groups if specified
+      if (sharedGroupIds && sharedGroupIds.length > 0) {
+        const shareResult = await this.shareVehicleWithGroups(vehicle.id, sharedGroupIds);
+        if (shareResult.error) {
+          console.error('Error sharing new vehicle:', shareResult.error);
+          // Don't fail the creation, just log the sharing error
+        }
+      }
+
+      console.log('✅ Vehicle created successfully:', vehicle.id);
+      return { data: vehicle, error: null, loading: false };
+
+    } catch (error) {
+      console.error('Unexpected error creating vehicle:', error);
+      return { data: null, error: 'Failed to create vehicle', loading: false };
+    }
+  }
+
+  /**
+   * Update vehicle with sharing options
+   */
+  static async updateVehicle(
+    id: string,
+    updates: VehicleUpdate,
+    sharedGroupIds?: string[]
+  ): Promise<ApiResponse<Vehicle>> {
+    try {
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+
+      if (userError || !user) {
+        return { data: null, error: 'User not authenticated', loading: false };
+      }
+
+      // Check for duplicate license plate if updating
+      if (updates.license_plate) {
+        const { data: existing } = await supabase
+          .from('vehicles')
+          .select('id')
+          .eq('license_plate', updates.license_plate)
+          .eq('user_id', user.id)
+          .neq('id', id);
+
+        if (existing && existing.length > 0) {
+          return { data: null, error: 'A vehicle with this license plate already exists', loading: false };
+        }
+      }
+
+      // Update vehicle
+      const { data: vehicle, error: vehicleError } = await supabase
+        .from('vehicles')
+        .update({
+          ...updates,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (vehicleError) {
+        console.error('Error updating vehicle:', vehicleError);
+        return { data: null, error: vehicleError.message, loading: false };
+      }
+
+      // Update sharing if specified
+      if (sharedGroupIds !== undefined) {
+        const shareResult = await this.shareVehicleWithGroups(id, sharedGroupIds);
+        if (shareResult.error) {
+          console.error('Error updating vehicle sharing:', shareResult.error);
+          // Don't fail the update, just log the sharing error
+        }
+      }
+
+      console.log('✅ Vehicle updated successfully:', id);
+      return { data: vehicle, error: null, loading: false };
+
+    } catch (error) {
+      console.error('Unexpected error updating vehicle:', error);
+      return { data: null, error: 'Failed to update vehicle', loading: false };
+    }
+  }
+
+  /**
+   * Delete vehicle (and all associated data)
+   */
+  static async deleteVehicle(id: string): Promise<ApiResponse<boolean>> {
+    try {
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+
+      if (userError || !user) {
+        return { data: null, error: 'User not authenticated', loading: false };
+      }
+
+      // Verify ownership
+      const { data: vehicle, error: vehicleError } = await supabase
+        .from('vehicles')
+        .select('user_id')
+        .eq('id', id)
+        .single();
+
+      if (vehicleError || !vehicle) {
+        return { data: null, error: 'Vehicle not found', loading: false };
+      }
+
+      if (vehicle.user_id !== user.id) {
+        return { data: null, error: 'You can only delete your own vehicles', loading: false };
+      }
+
+      // Delete vehicle (cascading will handle related data)
+      const { error: deleteError } = await supabase
+        .from('vehicles')
+        .delete()
+        .eq('id', id);
+
+      if (deleteError) {
+        console.error('Error deleting vehicle:', deleteError);
+        return { data: null, error: deleteError.message, loading: false };
+      }
+
+      console.log('✅ Vehicle deleted successfully:', id);
+      return { data: true, error: null, loading: false };
+
+    } catch (error) {
+      console.error('Unexpected error deleting vehicle:', error);
+      return { data: null, error: 'Failed to delete vehicle', loading: false };
+    }
+  }
+
+  /**
+   * Get vehicle by ID with full details
+   */
+  static async getVehicleById(id: string): Promise<ApiResponse<VehicleWithDetails>> {
+    try {
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+
+      if (userError || !user) {
+        return { data: null, error: 'User not authenticated', loading: false };
+      }
+
+      // Get vehicle with logs
+      const { data: vehicle, error: vehicleError } = await supabase
+        .from('vehicles')
+        .select(`
+          *,
+          mileage_logs(*, created_at),
+          fuel_logs(*, created_at),
+          service_logs(*, created_at)
+        `)
+        .eq('id', id)
+        .single();
+
+      if (vehicleError) {
+        console.error('Error fetching vehicle:', vehicleError);
+        return { data: null, error: vehicleError.message, loading: false };
+      }
+
+      // Check if user can access this vehicle
+      const canAccess = vehicle.user_id === user.id || await this.canUserAccessVehicle(id, user.id);
+
+      if (!canAccess) {
+        return { data: null, error: 'Vehicle not found or access denied', loading: false };
+      }
+
+      // Get additional data
+      const [imagesResult, sharingResult, ownerResult] = await Promise.all([
+        supabase
+          .from('vehicle_images')
+          .select('*')
+          .eq('vehicle_id', id)
+          .order('image_type', { ascending: true })
+          .order('display_order', { ascending: true }),
+        vehicle.user_id === user.id
+          ? this.getVehicleSharingConfig(id)
+          : Promise.resolve({ data: null, error: null, loading: false }),
+        vehicle.user_id !== user.id
+          ? supabase
+              .from('profiles')
+              .select('id, email, full_name, avatar_url')
+              .eq('id', vehicle.user_id)
+              .single()
+          : Promise.resolve({ data: null, error: null }),
+      ]);
+
+      const enhancedVehicle: VehicleWithDetails = {
+        ...vehicle,
+        is_own_vehicle: vehicle.user_id === user.id,
+        owner_profile: ownerResult.data || null,
+        images: imagesResult.data || [],
+        shared_groups: sharingResult.data?.shared_groups.map(sg => ({
+          id: sg.group_id,
+          name: sg.group_name,
+          description: null,
+          owner_id: '',
+          created_at: '',
+          updated_at: '',
+        })) || [],
+        sharing_info: sharingResult.data ? {
+          is_shared: sharingResult.data.is_sharing_enabled,
+          shared_with_groups: sharingResult.data.shared_groups.map(sg => sg.group_name),
+          total_shares: sharingResult.data.total_shares,
+        } : undefined,
+        logs: {
+          latest_mileage: vehicle.mileage_logs?.[0] || undefined,
+          latest_fuel: vehicle.fuel_logs?.[0] || undefined,
+          latest_service: vehicle.service_logs?.[0] || undefined,
+        },
+      };
+
+      return { data: enhancedVehicle, error: null, loading: false };
+
+    } catch (error) {
+      console.error('Unexpected error fetching vehicle:', error);
+      return { data: null, error: 'Failed to fetch vehicle', loading: false };
+    }
+  }
+
+  /**
+   * Check if user can access a vehicle (through sharing)
+   */
+  private static async canUserAccessVehicle(vehicleId: string, userId: string): Promise<boolean> {
+    try {
+      // Check if vehicle is shared with any groups the user is a member of
+      const { data: shares, error } = await supabase
+        .from('vehicle_group_shares')
+        .select('group_id')
+        .eq('vehicle_id', vehicleId);
+
+      if (error || !shares || shares.length === 0) {
+        return false;
+      }
+
+      const sharedGroupIds = shares.map(share => share.group_id);
+
+      // Check if user is a member of any of these groups
+      const { data: memberships, error: membershipError } = await supabase
+        .from('group_members')
+        .select('group_id')
+        .eq('user_id', userId)
+        .in('group_id', sharedGroupIds);
+
+      return !membershipError && memberships && memberships.length > 0;
+
+    } catch (error) {
+      console.error('Error checking vehicle access:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Get vehicle statistics
+   */
+  static async getVehicleStats(vehicleId: string) {
+    try {
+      // This method remains largely the same but could be enhanced with sharing awareness
+
+      // Get latest mileage
+      const { data: latestMileage } = await supabase
+        .from('mileage_logs')
+        .select('odometer_reading')
+        .eq('vehicle_id', vehicleId)
+        .order('date', { ascending: false })
+        .limit(1);
+
+      // Get fuel efficiency (last 5 fuel-ups)
+      const { data: fuelLogs } = await supabase
+        .from('fuel_logs')
+        .select('liters_filled, odometer_reading')
+        .eq('vehicle_id', vehicleId)
+        .order('date', { ascending: false })
+        .limit(5);
+
+      // Get next service due
+      const { data: nextService } = await supabase
+        .from('service_logs')
+        .select('next_service_due, service_type')
+        .eq('vehicle_id', vehicleId)
+        .not('next_service_due', 'is', null)
+        .order('next_service_due', { ascending: true })
+        .limit(1);
+
+      return {
+        currentMileage: latestMileage?.[0]?.odometer_reading || 0,
+        fuelLogs: fuelLogs || [],
+        nextService: nextService?.[0] || null,
+      };
+    } catch (error) {
+      console.error('Error fetching vehicle stats:', error);
+      return {
+        currentMileage: 0,
+        fuelLogs: [],
+        nextService: null,
+      };
+    }
+  }
+
+  /**
+   * Update vehicle's current mileage based on latest mileage log
+   */
+  static async updateVehicleCurrentMileage(vehicleId: string): Promise<ApiResponse<boolean>> {
+    try {
+      // Get the latest mileage log
+      const { data: latestMileage, error: mileageError } = await supabase
+        .from('mileage_logs')
+        .select('odometer_reading')
+        .eq('vehicle_id', vehicleId)
+        .order('date', { ascending: false })
+        .limit(1);
+
+      if (mileageError) {
+        console.error('Error fetching latest mileage:', mileageError);
+        return { data: null, error: mileageError.message, loading: false };
+      }
+
+      if (latestMileage && latestMileage.length > 0) {
+        const newMileage = latestMileage[0].odometer_reading;
+
+        // Update the vehicle's current_mileage
+        const { error: updateError } = await supabase
+          .from('vehicles')
+          .update({ current_mileage: newMileage })
+          .eq('id', vehicleId);
+
+        if (updateError) {
+          console.error('Error updating current mileage:', updateError);
+          return { data: null, error: updateError.message, loading: false };
+        }
+
+        console.log(`✅ Updated vehicle ${vehicleId} current_mileage to ${newMileage}`);
+        return { data: true, error: null, loading: false };
+      }
+
+      return { data: true, error: null, loading: false };
+    } catch (error) {
+      console.error('Unexpected error updating current mileage:', error);
+      return { data: null, error: 'Failed to update current mileage', loading: false };
+    }
+  }
+
+  /**
+   * Get user's groups for sharing vehicles
+   */
+  static async getUserGroups(): Promise<ApiResponse<Group[]>> {
+    try {
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+
+      if (userError || !user) {
+        return { data: null, error: 'User not authenticated', loading: false };
+      }
+
+      // Get groups owned by user
+      const { data: ownedGroups, error: ownedError } = await supabase
+        .from('groups')
+        .select('*')
+        .eq('owner_id', user.id);
+
+      if (ownedError) {
+        console.error('Error fetching owned groups:', ownedError);
+        return { data: null, error: ownedError.message, loading: false };
+      }
+
+      // Get groups where user is a member
+      const { data: memberGroups, error: memberError } = await supabase
+        .from('group_members')
+        .select(`
+          groups (
+            id,
+            name,
+            description,
+            owner_id,
+            created_at,
+            updated_at
+          )
+        `)
+        .eq('user_id', user.id);
+
+      if (memberError) {
+        console.error('Error fetching member groups:', memberError);
+        return { data: ownedGroups || [], error: null, loading: false };
+      }
+
+      // Combine owned and member groups, avoiding duplicates
+      const memberGroupData = (memberGroups || [])
+        .map(item => item.groups)
+        .filter(group => group !== null);
+
+      const allGroups = [...(ownedGroups || [])];
+      
+      // Add member groups that aren't already in owned groups
+      memberGroupData.forEach(group => {
+        if (!allGroups.find(g => g.id === group.id)) {
+          allGroups.push(group);
+        }
+      });
+
+      return { data: allGroups, error: null, loading: false };
+    } catch (error) {
+      console.error('Unexpected error fetching user groups:', error);
+      return { data: null, error: 'Failed to fetch groups', loading: false };
+    }
+  }
+}

@@ -7,7 +7,6 @@ import {
   KeyboardAvoidingView,
   Platform,
   StyleSheet,
-  Switch,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
@@ -28,7 +27,6 @@ export default function AddVehicleScreen() {
     year: new Date().getFullYear(),
     license_plate: '',
     vin: '',
-    shared_with_groups: false,
   });
   const [loading, setLoading] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
@@ -68,7 +66,6 @@ export default function AddVehicleScreen() {
       year: formData.year,
       license_plate: formData.license_plate.trim().toUpperCase(),
       vin: formData.vin?.trim() || undefined,
-      shared_with_groups: formData.shared_with_groups,
     };
 
     const { data, error } = await VehicleService.createVehicle(vehicleData);
@@ -199,6 +196,40 @@ export default function AddVehicleScreen() {
       color: colors.icon,
       lineHeight: 20,
     },
+    sharingNote: {
+      fontSize: 12,
+      color: colors.tint,
+      marginTop: 6,
+      fontStyle: 'italic',
+    },
+    sharingHelpCard: {
+      backgroundColor: colors.tint + '10',
+      borderRadius: 8,
+      padding: 12,
+      marginTop: 16,
+      flexDirection: 'row',
+      alignItems: 'flex-start',
+      borderWidth: 1,
+      borderColor: colors.tint + '20',
+    },
+    sharingHelpIcon: {
+      marginRight: 8,
+      marginTop: 2,
+    },
+    sharingHelpContent: {
+      flex: 1,
+    },
+    sharingHelpTitle: {
+      fontSize: 14,
+      fontWeight: '600',
+      color: colors.text,
+      marginBottom: 6,
+    },
+    sharingHelpText: {
+      fontSize: 13,
+      color: colors.text,
+      lineHeight: 18,
+    },
   });
 
   return (
@@ -313,29 +344,6 @@ export default function AddVehicleScreen() {
                   helperText="Vehicle Identification Number (17 characters)"
                   leftIcon="barcode"
                 />
-
-                <View style={styles.sharingSection}>
-                  <Text style={styles.sectionTitle}>Sharing Settings</Text>
-                  <View style={styles.sharingToggle}>
-                    <View style={styles.sharingInfo}>
-                      <Text style={styles.sharingTitle}>Share with Groups</Text>
-                      <Text style={styles.sharingDescription}>
-                        Allow members of your groups to view this vehicle and its logs
-                      </Text>
-                    </View>
-                    <Switch
-                      value={formData.shared_with_groups}
-                      onValueChange={(value) =>
-                        setFormData(prev => ({ ...prev, shared_with_groups: value }))
-                      }
-                      trackColor={{
-                        false: colors.icon + '30',
-                        true: colors.tint + '50'
-                      }}
-                      thumbColor={formData.shared_with_groups ? colors.tint : colors.background}
-                    />
-                  </View>
-                </View>
               </View>
             </CardContent>
           </Card>

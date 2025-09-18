@@ -43,6 +43,18 @@ const MAPPING = {
   'checkmark.circle.fill': 'check-circle',
   'xmark.circle.fill': 'cancel',
   'info.circle.fill': 'info',
+
+  // Vehicle Detail Icons
+  'speedometer': 'speed',
+  'fuelpump.fill': 'local-gas-station',
+  'wrench.and.screwdriver.fill': 'build',
+  'list.bullet.clipboard.fill': 'assignment',
+
+  // Additional common icons
+  'pencil': 'edit',
+  'fuelpump': 'local-gas-station',
+  'wrench': 'build',
+  'chart.line.uptrend.xyaxis': 'trending-up',
 } as IconMapping;
 
 /**

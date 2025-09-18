@@ -19,7 +19,7 @@ export class VehicleService {
 
       console.log('🔍 Starting vehicle fetch for user:', user.id);
 
-      // Step 1: Get user's own vehicles (always works with basic RLS)
+      // Step 1: Get user's own vehicles
       const { data: ownVehicles, error: ownError } = await supabase
         .from('vehicles')
         .select('*')
@@ -33,199 +33,42 @@ export class VehicleService {
 
       console.log('✅ Own vehicles found:', ownVehicles?.length || 0);
 
-      // Step 2: Get user's group memberships
-      const { data: groupMemberships } = await supabase
-        .from('group_members')
-        .select('group_id')
-        .eq('user_id', user.id);
+      // Step 2: Get shared vehicles using the new v2 selective sharing system
+      const { data: sharedVehicles, error: sharedError } = await supabase
+        .from('vehicles')
+        .select(`
+          *,
+          profiles!vehicles_user_id_fkey(id, full_name, email)
+        `)
+        .neq('user_id', user.id);
 
-      console.log('👥 User is member of groups:', groupMemberships?.length || 0);
-
-      let groupVehicles: any[] = [];
-
-      if (groupMemberships && groupMemberships.length > 0) {
-        const groupIds = groupMemberships.map(gm => gm.group_id);
-
-        // Get all other members of these groups
-        const { data: allGroupMembers } = await supabase
-          .from('group_members')
-          .select('user_id')
-          .in('group_id', groupIds)
-          .neq('user_id', user.id);
-
-        console.log('👥 Other group members found:', allGroupMembers?.length || 0);
-
-        if (allGroupMembers && allGroupMembers.length > 0) {
-          const memberUserIds = [...new Set(allGroupMembers.map(gm => gm.user_id))];
-
-          // Also get group owners' user IDs (owners can share vehicles with members)
-          const { data: groupOwners } = await supabase
-            .from('groups')
-            .select('owner_id')
-            .in('id', groupIds);
-
-          const ownerUserIds = groupOwners ? [...new Set(groupOwners.map(g => g.owner_id))] : [];
-
-          // Combine members and owners, but exclude current user
-          const allPotentialShareholders = [...new Set([...memberUserIds, ...ownerUserIds])]
-            .filter(id => id !== user.id);
-
-          console.log('🔍 Debug: Group member user IDs:', memberUserIds);
-          console.log('🔍 Debug: Group owner user IDs:', ownerUserIds);
-          console.log('🔍 Debug: All potential shareholders:', allPotentialShareholders);
-
-          // PRIVACY-FIRST: Only get vehicles explicitly marked as shared
-          // NO FALLBACKS that could expose private vehicles
-          try {
-            const { data: sharedVehicles, error: sharedError } = await supabase
-              .from('vehicles')
-              .select('*')
-              .in('user_id', allPotentialShareholders)
-              .eq('shared_with_groups', true)
-              .order('created_at', { ascending: false });
-
-            console.log('🔍 Debug: Shared vehicles query result:', {
-              error: sharedError,
-              vehicleCount: sharedVehicles?.length || 0,
-              vehicles: sharedVehicles?.map(v => ({
-                id: v.id,
-                make: v.make,
-                model: v.model,
-                owner: v.user_id,
-                shared: v.shared_with_groups
-              }))
-            });
-
-            if (!sharedError && sharedVehicles) {
-              groupVehicles = sharedVehicles;
-              console.log('✅ Found shared vehicles from group members:', groupVehicles.length);
-
-              if (groupVehicles.length === 0) {
-                console.log('ℹ️ No shared vehicles found. Possible reasons:');
-                console.log('   1. No vehicles marked as shared_with_groups = true');
-                console.log('   2. Vehicle owners need to enable sharing');
-                console.log('   3. All vehicles are private (shared_with_groups = false)');
-              }
-            } else if (sharedError) {
-              console.log('⚠️ Error fetching shared vehicles:', sharedError);
-              console.log('🔍 Full error details:', {
-                message: sharedError.message,
-                code: sharedError.code,
-                details: sharedError.details,
-                hint: sharedError.hint
-              });
-
-              // Check if error is due to missing column
-              if (sharedError.message.includes('shared_with_groups') || sharedError.code === '42703') {
-                console.log('🔒 shared_with_groups column missing - sharing feature unavailable');
-                console.log('🔒 PRIVACY PROTECTED: Not showing any group vehicles until database is fixed');
-                console.log('💡 SOLUTION: Run fix-vehicle-sharing-complete.sql in Supabase');
-              } else {
-                console.log('🔒 Unknown database error - maintaining privacy');
-              }
-              // NO FALLBACK - maintain privacy
-              groupVehicles = [];
-            } else {
-              console.log('ℹ️ No shared vehicles found (this is normal if no vehicles are shared)');
-              console.log('💡 TIP: Vehicle owners can enable sharing in vehicle settings');
-              groupVehicles = [];
-            }
-          } catch (error: any) {
-            console.log('⚠️ Error accessing vehicle sharing:', error.message);
-            console.log('🔍 Full catch error:', error);
-
-            // Check if it's a column missing error
-            if (error.message?.includes('shared_with_groups') || error.code === '42703') {
-              console.log('🔒 shared_with_groups column missing - sharing feature unavailable');
-              console.log('🔒 PRIVACY PROTECTED: Not showing any group vehicles until database is fixed');
-              console.log('💡 SOLUTION: Run fix-vehicle-sharing-complete.sql in Supabase');
-            } else {
-              console.log('🔒 Unknown error in vehicle sharing - maintaining privacy');
-            }
-            // CRITICAL: NO FALLBACK that exposes private vehicles
-            groupVehicles = [];
-          }
-        } else {
-          console.log('ℹ️ No group members found');
-
-          // Still check for group owners even if no other members
-          const { data: groupOwners } = await supabase
-            .from('groups')
-            .select('owner_id')
-            .in('id', groupIds);
-
-          const ownerUserIds = groupOwners ? [...new Set(groupOwners.map(g => g.owner_id))] : [];
-          const potentialOwnerShareholders = ownerUserIds.filter(id => id !== user.id);
-
-          console.log('🔍 Debug: Group owner user IDs (when no members):', ownerUserIds);
-
-          if (potentialOwnerShareholders.length > 0) {
-            try {
-              const { data: ownerSharedVehicles, error: ownerSharedError } = await supabase
-                .from('vehicles')
-                .select('*')
-                .in('user_id', potentialOwnerShareholders)
-                .eq('shared_with_groups', true)
-                .order('created_at', { ascending: false });
-
-              if (!ownerSharedError && ownerSharedVehicles) {
-                groupVehicles = ownerSharedVehicles;
-                console.log('✅ Found shared vehicles from group owners:', groupVehicles.length);
-              } else {
-                console.log('ℹ️ No shared vehicles from group owners');
-                groupVehicles = [];
-              }
-            } catch (error) {
-              console.log('⚠️ Error fetching owner shared vehicles:', error);
-              groupVehicles = [];
-            }
-          } else {
-            console.log('ℹ️ No group owners to check for shared vehicles');
-          }
-        }
+      if (sharedError) {
+        console.log('⚠️ Could not fetch shared vehicles (this is normal if v2 schema not fully set up):', sharedError.message);
       }
 
-      // Step 3: Get owner profiles for group vehicles
-      let ownerProfiles: any[] = [];
-      if (groupVehicles.length > 0) {
-        const ownerIds = [...new Set(groupVehicles.map(v => v.user_id))];
-        const { data: profiles } = await supabase
-          .from('profiles')
-          .select('id, full_name, email')
-          .in('id', ownerIds);
-        ownerProfiles = profiles || [];
-        console.log('👤 Owner profiles fetched:', ownerProfiles.length);
-      }
+      console.log('✅ Shared vehicles found:', sharedVehicles?.length || 0);
 
-      // Step 4: Mark vehicles with proper metadata
+      // Step 3: Mark vehicles with proper metadata
       const ownVehiclesMarked: VehicleWithGroupInfo[] = (ownVehicles || []).map(vehicle => ({
         ...vehicle,
         is_group_vehicle: false,
         owner_profile: null
       }));
 
-      const groupVehiclesMarked: VehicleWithGroupInfo[] = groupVehicles.map(vehicle => ({
+      const sharedVehiclesMarked: VehicleWithGroupInfo[] = (sharedVehicles || []).map(vehicle => ({
         ...vehicle,
         is_group_vehicle: true,
-        owner_profile: ownerProfiles.find(p => p.id === vehicle.user_id) || null
+        owner_profile: vehicle.profiles
       }));
 
       console.log('🎉 Vehicle fetch completed:', {
         userId: user.id,
-        userEmail: (ownVehicles?.[0] ? 'found' : 'not found'),
         ownVehicles: ownVehiclesMarked.length,
-        sharedVehicles: groupVehiclesMarked.length,
-        totalGroups: groupMemberships?.length || 0,
-        sharedOwnVehicles: ownVehiclesMarked.filter(v => v.shared_with_groups).length,
-        detailedBreakdown: {
-          ownVehicleIds: ownVehiclesMarked.map(v => v.id),
-          sharedVehicleIds: groupVehiclesMarked.map(v => v.id),
-          sharedVehicleOwners: groupVehiclesMarked.map(v => v.owner_profile?.email || 'unknown')
-        }
+        sharedVehicles: sharedVehiclesMarked.length,
       });
 
-      // Return vehicles separately marked for easier UI handling
-      const result = [...ownVehiclesMarked, ...groupVehiclesMarked];
+      // Return vehicles sorted by creation date
+      const result = [...ownVehiclesMarked, ...sharedVehiclesMarked];
       result.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
       return { data: result, error: null, loading: false };
@@ -235,7 +78,6 @@ export class VehicleService {
     }
   }
 
-  // New method to get vehicles separated by type for cleaner UI
   static async getVehiclesSeparated(): Promise<ApiResponse<{
     ownVehicles: VehicleWithGroupInfo[];
     sharedVehicles: VehicleWithGroupInfo[];
@@ -318,13 +160,16 @@ export class VehicleService {
         return { data: null, error: 'A vehicle with this license plate already exists', loading: false };
       }
 
+      const vehicleData: any = {
+        ...vehicle,
+        user_id: user.id,
+      };
+
+      console.log('🔄 Creating vehicle:', vehicleData);
+
       const { data, error } = await supabase
         .from('vehicles')
-        .insert({
-          ...vehicle,
-          user_id: user.id,
-          shared_with_groups: vehicle.shared_with_groups ?? false,
-        })
+        .insert(vehicleData)
         .select()
         .single();
 
@@ -333,6 +178,7 @@ export class VehicleService {
         return { data: null, error: error.message, loading: false };
       }
 
+      console.log('✅ Vehicle created successfully:', data.id);
       return { data, error: null, loading: false };
     } catch (error) {
       console.error('Unexpected error creating vehicle:', error);
@@ -445,7 +291,9 @@ export class VehicleService {
     }
   }
 
-  static async toggleVehicleSharing(vehicleId: string, shared: boolean): Promise<ApiResponse<Vehicle>> {
+  // New v2 methods for selective sharing
+
+  static async shareVehicleWithGroups(vehicleId: string, groupIds: string[]): Promise<ApiResponse<boolean>> {
     try {
       const { data: { user }, error: userError } = await supabase.auth.getUser();
 
@@ -453,41 +301,66 @@ export class VehicleService {
         return { data: null, error: 'User not authenticated', loading: false };
       }
 
-      // Verify the user owns this vehicle
+      // Verify user owns the vehicle
       const { data: vehicle, error: vehicleError } = await supabase
         .from('vehicles')
         .select('user_id')
         .eq('id', vehicleId)
         .single();
 
-      if (vehicleError) {
-        console.error('Error fetching vehicle:', vehicleError);
-        return { data: null, error: 'Vehicle not found', loading: false };
+      if (vehicleError || vehicle.user_id !== user.id) {
+        return { data: null, error: 'You can only share your own vehicles', loading: false };
       }
 
-      if (vehicle.user_id !== user.id) {
-        return { data: null, error: 'You can only modify your own vehicles', loading: false };
+      // Remove existing shares
+      await supabase
+        .from('vehicle_group_shares')
+        .delete()
+        .eq('vehicle_id', vehicleId);
+
+      // Add new shares
+      if (groupIds.length > 0) {
+        const shares = groupIds.map(groupId => ({
+          vehicle_id: vehicleId,
+          group_id: groupId,
+          shared_by: user.id
+        }));
+
+        const { error: shareError } = await supabase
+          .from('vehicle_group_shares')
+          .insert(shares);
+
+        if (shareError) {
+          console.error('Error sharing vehicle:', shareError);
+          return { data: null, error: shareError.message, loading: false };
+        }
       }
 
+      console.log(`✅ Vehicle ${vehicleId} shared with ${groupIds.length} groups`);
+      return { data: true, error: null, loading: false };
+    } catch (error) {
+      console.error('Unexpected error sharing vehicle:', error);
+      return { data: null, error: 'Failed to share vehicle', loading: false };
+    }
+  }
+
+  static async getVehicleSharedGroups(vehicleId: string): Promise<ApiResponse<string[]>> {
+    try {
       const { data, error } = await supabase
-        .from('vehicles')
-        .update({
-          shared_with_groups: shared,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', vehicleId)
-        .select()
-        .single();
+        .from('vehicle_group_shares')
+        .select('group_id')
+        .eq('vehicle_id', vehicleId);
 
       if (error) {
-        console.error('Error updating vehicle sharing:', error);
+        console.error('Error fetching vehicle shares:', error);
         return { data: null, error: error.message, loading: false };
       }
 
-      return { data, error: null, loading: false };
+      const groupIds = (data || []).map(share => share.group_id);
+      return { data: groupIds, error: null, loading: false };
     } catch (error) {
-      console.error('Unexpected error toggling vehicle sharing:', error);
-      return { data: null, error: 'Failed to update vehicle sharing', loading: false };
+      console.error('Unexpected error fetching vehicle shares:', error);
+      return { data: null, error: 'Failed to fetch vehicle shares', loading: false };
     }
   }
 }

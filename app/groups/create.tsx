@@ -182,6 +182,20 @@ export default function CreateGroupScreen() {
       fontSize: 14,
       color: colors.text,
       lineHeight: 20,
+      marginBottom: 12,
+    },
+    featureList: {
+      gap: 8,
+    },
+    featureItem: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+    },
+    featureText: {
+      fontSize: 13,
+      color: colors.text,
+      flex: 1,
     },
   });
 
@@ -272,8 +286,21 @@ export default function CreateGroupScreen() {
             <Text style={styles.infoText}>
               Groups allow you to share vehicle information with family members or friends.
               As the group owner, you can invite members and manage group settings.
-              Members can view shared vehicle data and contribute their own information.
             </Text>
+            <View style={styles.featureList}>
+              <View style={styles.featureItem}>
+                <IconSymbol name="checkmark.circle.fill" size={16} color="#4CAF50" />
+                <Text style={styles.featureText}>Share vehicle maintenance logs</Text>
+              </View>
+              <View style={styles.featureItem}>
+                <IconSymbol name="checkmark.circle.fill" size={16} color="#4CAF50" />
+                <Text style={styles.featureText}>View group members' shared vehicles</Text>
+              </View>
+              <View style={styles.featureItem}>
+                <IconSymbol name="checkmark.circle.fill" size={16} color="#4CAF50" />
+                <Text style={styles.featureText}>Privacy-first: only shared vehicles are visible</Text>
+              </View>
+            </View>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>

@@ -1,9 +1,18 @@
 -- Enable Row Level Security
 ALTER DEFAULT PRIVILEGES REVOKE EXECUTE ON FUNCTIONS FROM PUBLIC;
 
--- Create custom types
-CREATE TYPE invitation_status AS ENUM ('pending', 'accepted', 'declined', 'expired');
-CREATE TYPE service_type AS ENUM ('oil_change', 'tire_rotation', 'brake_service', 'general_maintenance', 'repair', 'inspection', 'other');
+-- Create custom types (only if they don't exist)
+DO $$ BEGIN
+    CREATE TYPE invitation_status AS ENUM ('pending', 'accepted', 'declined', 'expired');
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
+
+DO $$ BEGIN
+    CREATE TYPE service_type AS ENUM ('oil_change', 'tire_rotation', 'brake_service', 'general_maintenance', 'repair', 'inspection', 'other');
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
 
 -- Profiles table (extends Supabase auth.users)
 CREATE TABLE profiles (
