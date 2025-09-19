@@ -110,7 +110,7 @@ export default function VehiclesScreen() {
           <Text style={styles.vehiclePlate}>{vehicle.license_plate}</Text>
           {!vehicle.is_own_vehicle && vehicle.owner_profile && (
             <Text style={styles.ownerInfo}>
-              Owned by {vehicle.owner_profile.full_name || vehicle.owner_profile.email}
+              Shared by {vehicle.owner_profile.full_name || vehicle.owner_profile.email}
             </Text>
           )}
           {vehicle.is_own_vehicle && vehicle.shared_groups && vehicle.shared_groups.length > 0 && (
@@ -401,7 +401,8 @@ export default function VehiclesScreen() {
     <SafeAreaView style={styles.container}>
       <WebLayout>
         <View style={styles.header}>
-          <Text style={styles.title}>Vehicles</Text>
+          <Text style={styles.title}>My Vehicles</Text> 
+          <Text style={styles.sectionSubtitle}>Vehicles you own</Text>
           <TouchableOpacity
             style={styles.addButton}
             onPress={() => router.push('/vehicles/add' as any)}
@@ -419,15 +420,14 @@ export default function VehiclesScreen() {
           showsVerticalScrollIndicator={false}
         >
           {/* My Vehicles Section */}
-          <View style={styles.sectionHeader}>
+          {/* <View style={styles.sectionHeader}>
             <View>
               <Text style={styles.sectionTitle}>My Vehicles</Text>
-              <Text style={styles.sectionSubtitle}>Vehicles you own</Text>
             </View>
             <View style={styles.sectionCount}>
               <Text style={styles.sectionCountText}>{ownVehicles.length}</Text>
             </View>
-          </View>
+          </View> */}
 
           {ownVehicles.length === 0 ? (
             <View style={styles.emptySection}>
@@ -473,7 +473,7 @@ export default function VehiclesScreen() {
               </View>
               <Text style={styles.emptySectionTitle}>No shared vehicles</Text>
               <Text style={styles.emptySectionDescription}>
-                Join a group and ask members to share their vehicles with you, or ask group owners to enable vehicle sharing.
+                Join a group where members share their vehicles for collaborative management and tracking.
               </Text>
             </View>
           ) : (

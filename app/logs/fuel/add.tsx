@@ -2,8 +2,9 @@ import { IconSymbol } from '@/components/ui/icon-symbol';
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { FuelLogService } from '@/lib/services/loggingService';
-import { VehicleService } from '@/lib/services/vehicleService';
-import { FuelLogFormData, Vehicle } from '@/types';
+import { VehicleServiceV2 } from '@/lib/services/vehicleServiceV2';
+import { FuelLogFormData } from '@/types';
+import { VehicleWithDetails } from '@/types/database-v2';
 import { router, useLocalSearchParams } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
@@ -22,7 +23,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function AddFuelLogScreen() {
   const { vehicleId } = useLocalSearchParams<{ vehicleId?: string }>();
-  const [vehicles, setVehicles] = useState<Vehicle[]>([]);
+  const [vehicles, setVehicles] = useState<VehicleWithDetails[]>([]);
   const [formData, setFormData] = useState<FuelLogFormData>({
     vehicle_id: vehicleId || '',
     liters_filled: 0,
@@ -38,11 +39,13 @@ export default function AddFuelLogScreen() {
 
   useEffect(() => {
     const fetchVehicles = async () => {
-      const { data, error } = await VehicleService.getVehicles();
+      const { data, error } = await VehicleServiceV2.getVehiclesSeparated();
       if (!error && data) {
-        setVehicles(data);
-        if (!vehicleId && data.length > 0) {
-          setFormData(prev => ({ ...prev, vehicle_id: data[0].id }));
+        // Combine both owned and shared vehicles for the dropdown
+        const allVehicles = [...data.ownVehicles, ...data.sharedVehicles];
+        setVehicles(allVehicles);
+        if (!vehicleId && allVehicles.length > 0) {
+          setFormData(prev => ({ ...prev, vehicle_id: allVehicles[0].id }));
         }
       }
       setVehiclesLoading(false);

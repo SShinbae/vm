@@ -108,7 +108,7 @@ export const Input = forwardRef<TextInput, InputProps>(({
         baseStyle.push({
           backgroundColor: colors.background,
           borderWidth: 1,
-          borderColor: isFocused ? colors.tint : colors.icon + '30',
+          borderColor: isFocused ? colors.tint : colors.icon + '40',
         });
     }
 

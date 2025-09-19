@@ -14,11 +14,15 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { ServiceLogService } from '@/lib/services/loggingService';
-import { VehicleService } from '@/lib/services/vehicleService';
-import { ServiceLogFormData, Vehicle, ServiceType } from '@/types';
+import { VehicleServiceV2 } from '@/lib/services/vehicleServiceV2';
+import { OCRService, ReceiptProcessingResult } from '@/lib/services/ocrService';
+import { ServiceLogFormData, ServiceType, OCRExtractedData } from '@/types';
+import { VehicleWithDetails } from '@/types/database-v2';
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { IconSymbol } from '@/components/ui/icon-symbol';
+import { ReceiptCapture, OCRResultDisplay } from '@/components/ui/ReceiptCapture';
+import { ReceiptViewer } from '@/components/ui/ReceiptViewer';
 
 const SERVICE_TYPES: { value: ServiceType; label: string; icon: string }[] = [
   { value: 'oil_change', label: 'Oil Change', icon: 'drop' },
@@ -32,7 +36,7 @@ const SERVICE_TYPES: { value: ServiceType; label: string; icon: string }[] = [
 
 export default function AddServiceLogScreen() {
   const { vehicleId } = useLocalSearchParams<{ vehicleId?: string }>();
-  const [vehicles, setVehicles] = useState<Vehicle[]>([]);
+  const [vehicles, setVehicles] = useState<VehicleWithDetails[]>([]);
   const [formData, setFormData] = useState<ServiceLogFormData>({
     vehicle_id: vehicleId || '',
     service_type: 'general_maintenance',
@@ -41,19 +45,27 @@ export default function AddServiceLogScreen() {
     date: new Date().toISOString().split('T')[0],
     odometer_reading: 0,
     next_service_due: '',
+    receipt_image_url: '',
+    ocr_extracted_data: undefined,
+    auto_filled: false,
   });
   const [loading, setLoading] = useState(false);
   const [vehiclesLoading, setVehiclesLoading] = useState(true);
+  const [ocrResult, setOcrResult] = useState<ReceiptProcessingResult | null>(null);
+  const [showOcrResult, setShowOcrResult] = useState(false);
+  const [capturedImageUri, setCapturedImageUri] = useState<string | null>(null);
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
 
   useEffect(() => {
     const fetchVehicles = async () => {
-      const { data, error } = await VehicleService.getVehicles();
+      const { data, error } = await VehicleServiceV2.getVehiclesSeparated();
       if (!error && data) {
-        setVehicles(data);
-        if (!vehicleId && data.length > 0) {
-          setFormData(prev => ({ ...prev, vehicle_id: data[0].id }));
+        // Combine both owned and shared vehicles for the dropdown
+        const allVehicles = [...data.ownVehicles, ...data.sharedVehicles];
+        setVehicles(allVehicles);
+        if (!vehicleId && allVehicles.length > 0) {
+          setFormData(prev => ({ ...prev, vehicle_id: allVehicles[0].id }));
         }
       }
       setVehiclesLoading(false);
@@ -91,6 +103,9 @@ export default function AddServiceLogScreen() {
       date: formData.date,
       odometer_reading: formData.odometer_reading,
       next_service_due: formData.next_service_due?.trim() || undefined,
+      receipt_image_url: formData.receipt_image_url || undefined,
+      ocr_extracted_data: formData.ocr_extracted_data || undefined,
+      auto_filled: formData.auto_filled || undefined,
     };
 
     const { data, error } = await ServiceLogService.createServiceLog(logData);
@@ -115,6 +130,146 @@ export default function AddServiceLogScreen() {
       formData.odometer_reading > 0 &&
       formData.date
     );
+  };
+
+  const handleReceiptProcessed = async (result: ReceiptProcessingResult) => {
+    if (result.success && result.data) {
+      setOcrResult(result);
+      setShowOcrResult(true);
+      if (result.imageUri) {
+        setCapturedImageUri(result.imageUri);
+      }
+    } else {
+      Alert.alert('OCR Error', result.error || 'Failed to process receipt');
+    }
+  };
+
+  const handlePictureOnly = async (result: ReceiptProcessingResult) => {
+    if (result.success && result.uploadedImageUrl) {
+      // Set the receipt image URL directly without OCR data
+      setFormData(prev => ({
+        ...prev,
+        receipt_image_url: result.uploadedImageUrl || '',
+        auto_filled: false,
+      }));
+
+      // Set the captured image URI for immediate preview
+      if (result.imageUri) {
+        setCapturedImageUri(result.imageUri);
+      }
+
+      Alert.alert(
+        'Picture Saved',
+        'The picture has been saved with your service record. You can review it below.',
+        [{ text: 'OK' }]
+      );
+    } else {
+      Alert.alert('Upload Error', result.error || 'Failed to save picture');
+    }
+  };
+
+  const handleAcceptOcrData = async () => {
+    if (!ocrResult?.data) {
+      Alert.alert('Error', 'No OCR data available to apply');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const { extracted_fields } = ocrResult.data;
+
+      // Upload receipt image to storage
+      let receiptImageUrl = '';
+      if (ocrResult.imageUri) {
+        try {
+          const uploadResult = await OCRService.uploadReceiptImage(
+            ocrResult.imageUri,
+            `receipt_${Date.now()}.jpg`
+          );
+
+          if (uploadResult.error) {
+            console.warn('Failed to upload receipt image:', uploadResult.error);
+            Alert.alert(
+              'Upload Warning',
+              'The receipt image could not be saved, but the extracted data will still be applied. Continue?',
+              [
+                { text: 'Cancel', style: 'cancel', onPress: () => setLoading(false) },
+                { text: 'Continue', onPress: () => { /* Continue with OCR data application */ } }
+              ]
+            );
+            return;
+          }
+
+          if (uploadResult.data) {
+            receiptImageUrl = uploadResult.data;
+          }
+        } catch (error) {
+          console.warn('Failed to upload receipt image:', error);
+          // Continue without image URL - OCR data is still valuable
+        }
+      }
+
+    // Map OCR service type to our enum values
+    const mapServiceType = (ocrType: string): ServiceType => {
+      const typeMap: Record<string, ServiceType> = {
+        'oil_change': 'oil_change',
+        'tire_rotation': 'tire_rotation',
+        'brake_service': 'brake_service',
+        'general_maintenance': 'general_maintenance',
+        'repair': 'repair',
+        'inspection': 'inspection'
+      };
+      return typeMap[ocrType] || 'general_maintenance';
+    };
+
+    // Update form with OCR extracted data
+    setFormData(prev => ({
+      ...prev,
+      service_type: extracted_fields.service_type
+        ? mapServiceType(extracted_fields.service_type)
+        : prev.service_type,
+      description: extracted_fields.description || prev.description,
+      cost: extracted_fields.cost || prev.cost,
+      date: extracted_fields.date
+        ? new Date(extracted_fields.date).toISOString().split('T')[0]
+        : prev.date,
+      odometer_reading: extracted_fields.odometer_reading || prev.odometer_reading,
+      receipt_image_url: receiptImageUrl,
+      ocr_extracted_data: ocrResult.data,
+      auto_filled: true,
+    }));
+
+      setShowOcrResult(false);
+      Alert.alert(
+        'Data Applied',
+        'Service details have been automatically filled from your receipt. Please review and adjust if needed.'
+      );
+    } catch (error) {
+      console.error('Error applying OCR data:', error);
+      Alert.alert(
+        'Error',
+        'Failed to apply the extracted data. You can still enter the information manually.'
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRejectOcrData = () => {
+    setOcrResult(null);
+    setShowOcrResult(false);
+  };
+
+  const handleDeletePicture = () => {
+    setCapturedImageUri(null);
+    setFormData(prev => ({
+      ...prev,
+      receipt_image_url: '',
+      ocr_extracted_data: undefined,
+      auto_filled: false
+    }));
+    setOcrResult(null);
+    setShowOcrResult(false);
   };
 
   const VehicleSelector = () => {
@@ -433,6 +588,36 @@ export default function AddServiceLogScreen() {
       justifyContent: 'center',
       alignItems: 'center',
     },
+    autoFillIndicator: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: '#4CAF50' + '15',
+      paddingHorizontal: 12,
+      paddingVertical: 8,
+      borderRadius: 8,
+      gap: 8,
+      marginBottom: 16,
+    },
+    autoFillText: {
+      fontSize: 14,
+      color: '#4CAF50',
+      fontWeight: '500',
+    },
+    pictureIndicator: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: colors.tint + '15',
+      paddingHorizontal: 12,
+      paddingVertical: 8,
+      borderRadius: 8,
+      gap: 8,
+      marginBottom: 16,
+    },
+    pictureText: {
+      fontSize: 14,
+      color: colors.tint,
+      fontWeight: '500',
+    },
   });
 
   if (vehiclesLoading) {
@@ -516,7 +701,53 @@ export default function AddServiceLogScreen() {
           <View style={styles.formCard}>
             <VehicleSelector />
 
+            <View style={styles.inputContainer}>
+              <Text style={styles.label}>Receipt/Picture</Text>
+              <ReceiptCapture
+                onReceiptProcessed={handleReceiptProcessed}
+                onPictureOnly={handlePictureOnly}
+                disabled={loading}
+              />
+            </View>
+
+            {capturedImageUri && (
+              <View style={styles.inputContainer}>
+                <ReceiptViewer
+                  receiptImageUrl={capturedImageUri}
+                  ocrData={formData.ocr_extracted_data}
+                  showOcrData={!!formData.ocr_extracted_data}
+                  onDelete={handleDeletePicture}
+                />
+              </View>
+            )}
+
+            {showOcrResult && ocrResult?.data && (
+              <OCRResultDisplay
+                ocrData={ocrResult.data}
+                onAccept={handleAcceptOcrData}
+                onReject={handleRejectOcrData}
+              />
+            )}
+
             <ServiceTypeSelector />
+
+            {formData.auto_filled && (
+              <View style={styles.autoFillIndicator}>
+                <IconSymbol name="checkmark.circle.fill" size={16} color="#4CAF50" />
+                <Text style={styles.autoFillText}>
+                  Data auto-filled from receipt
+                </Text>
+              </View>
+            )}
+
+            {formData.receipt_image_url && !formData.auto_filled && (
+              <View style={styles.pictureIndicator}>
+                <IconSymbol name="photo.fill" size={16} color={colors.tint} />
+                <Text style={styles.pictureText}>
+                  Picture attached to service record
+                </Text>
+              </View>
+            )}
 
             <View style={styles.inputContainer}>
               <Text style={styles.label}>

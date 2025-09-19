@@ -4,6 +4,7 @@ import { useColorScheme } from '@/hooks/use-color-scheme';
 import { VehicleServiceV2 } from '@/lib/services/vehicleServiceV2';
 import { formatDate, formatDateWithPrefix } from '@/lib/utils/dateUtils';
 import { VehicleWithDetails } from '@/types/database-v2';
+import { ReceiptViewer, ServiceReceiptIndicator } from '@/components/ui/ReceiptViewer';
 import { router, useLocalSearchParams, useFocusEffect } from 'expo-router';
 import React, { useCallback, useEffect, useState } from 'react';
 import {
@@ -189,48 +190,92 @@ export default function VehicleDetailScreen() {
     </View>
   );
 
-  const LogSection = ({ title, logs, icon, onAddPress, showAddButton = true, isReadOnly = false }: any) => (
-    <View style={styles.logSection}>
-      <View style={styles.logHeader}>
-        <Text style={styles.logTitle}>
-          {title}
-          {isReadOnly && <Text style={styles.readOnlyIndicator}> (Shared)</Text>}
-        </Text>
-        {showAddButton && (
-          <TouchableOpacity style={styles.addLogButton} onPress={onAddPress}>
-            <IconSymbol name="plus" size={16} color={colors.tint} />
+  const LogSection = ({ title, logs, icon, onAddPress, showAddButton = true, isReadOnly = false }: any) => {
+    const isServiceSection = title.toLowerCase().includes('service');
+
+    const getLogText = (log: any) => {
+      if (isServiceSection) {
+        return log.service_type?.replace('_', ' ').toUpperCase() || 'Service';
+      }
+      return `${log.odometer_reading?.toLocaleString()} km`;
+    };
+
+    const getLogSubtext = (log: any) => {
+      if (isServiceSection) {
+        return `${log.description}${log.cost ? ` • RM${log.cost}` : ''}`;
+      }
+      return formatDate(log.date || log.created_at);
+    };
+
+    const handleLogPress = (log: any) => {
+      if (isServiceSection) {
+        router.push(`/logs/service/${log.id}` as any);
+      }
+    };
+
+    return (
+      <View style={styles.logSection}>
+        <View style={styles.logHeader}>
+          <Text style={styles.logTitle}>
+            {title}
+          </Text>
+          {showAddButton && (
+            <TouchableOpacity style={styles.addLogButton} onPress={onAddPress}>
+              <IconSymbol name="plus" size={16} color={colors.tint} />
+            </TouchableOpacity>
+          )}
+        </View>
+
+        {logs && logs.length > 0 ? (
+          logs.slice(0, 3).map((log: any, index: number) => (
+            <TouchableOpacity
+              key={index}
+              style={styles.logItem}
+              onPress={() => handleLogPress(log)}
+              disabled={!isServiceSection}
+              activeOpacity={isServiceSection ? 0.7 : 1}
+            >
+              <View style={styles.logIcon}>
+                <IconSymbol name={icon} size={16} color={colors.icon} />
+              </View>
+              <View style={styles.logContent}>
+                <View style={styles.logTextRow}>
+                  <Text style={styles.logText}>
+                    {getLogText(log)}
+                  </Text>
+                  {isServiceSection && log.receipt_image_url && (
+                    <ServiceReceiptIndicator
+                      hasReceipt={!!log.receipt_image_url}
+                      receiptUrl={log.receipt_image_url}
+                      onPress={() => handleLogPress(log)}
+                      size={16}
+                    />
+                  )}
+                </View>
+                <Text style={styles.logDate}>
+                  {getLogSubtext(log)}
+                </Text>
+                {!isServiceSection && (
+                  <Text style={styles.logDate}>
+                    {formatDate(log.date || log.created_at)}
+                  </Text>
+                )}
+              </View>
+            </TouchableOpacity>
+          ))
+        ) : (
+          <Text style={styles.noLogsText}>No {title.toLowerCase()} recorded yet</Text>
+        )}
+
+        {logs && logs.length > 3 && (
+          <TouchableOpacity style={styles.viewAllButton}>
+            <Text style={styles.viewAllText}>View all {logs.length} entries</Text>
+            <IconSymbol name="chevron.right" size={14} color={colors.tint} />
           </TouchableOpacity>
         )}
       </View>
-
-      {logs && logs.length > 0 ? (
-        logs.slice(0, 3).map((log: any, index: number) => (
-          <View key={index} style={styles.logItem}>
-            <View style={styles.logIcon}>
-              <IconSymbol name={icon} size={16} color={colors.icon} />
-            </View>
-            <View style={styles.logContent}>
-              <Text style={styles.logText}>
-                {log.odometer_reading?.toLocaleString()} km
-              </Text>
-              <Text style={styles.logDate}>
-                {formatDate(log.date || log.created_at)}
-              </Text>
-            </View>
-          </View>
-        ))
-      ) : (
-        <Text style={styles.noLogsText}>No {title.toLowerCase()} recorded yet</Text>
-      )}
-
-      {logs && logs.length > 3 && (
-        <TouchableOpacity style={styles.viewAllButton}>
-          <Text style={styles.viewAllText}>View all {logs.length} entries</Text>
-          <IconSymbol name="chevron.right" size={14} color={colors.tint} />
-        </TouchableOpacity>
-      )}
-    </View>
-  );
+    );
+  };
 
   const styles = StyleSheet.create({
     container: {
@@ -454,10 +499,17 @@ export default function VehicleDetailScreen() {
     logContent: {
       flex: 1,
     },
+    logTextRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      marginBottom: 2,
+    },
     logText: {
       fontSize: 14,
       color: colors.text,
       fontWeight: '500',
+      flex: 1,
     },
     logDate: {
       fontSize: 12,
@@ -645,36 +697,27 @@ export default function VehicleDetailScreen() {
           title="Recent Mileage"
           logs={vehicle.mileage_logs?.slice(0, 3).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()) || []}
           icon="speedometer"
-          onAddPress={vehicle.is_own_vehicle ?
-            () => router.push(`/logs/mileage/add?vehicleId=${vehicle.id}` as any) :
-            () => router.push(`/logs/mileage/add?vehicleId=${vehicle.id}` as any)
-          }
-          showAddButton={true} // Both owners and members can add logs for shared vehicles
-          isReadOnly={!vehicle.is_own_vehicle}
+          onAddPress={() => router.push(`/logs/mileage/add?vehicleId=${vehicle.id}` as any)}
+          showAddButton={true} // Both owners and members can add logs
+          isReadOnly={false} // All users can edit
         />
 
         <LogSection
           title="Recent Fuel"
           logs={vehicle.fuel_logs?.slice(0, 3).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()) || []}
           icon="fuelpump"
-          onAddPress={vehicle.is_own_vehicle ?
-            () => router.push(`/logs/fuel/add?vehicleId=${vehicle.id}` as any) :
-            () => router.push(`/logs/fuel/add?vehicleId=${vehicle.id}` as any)
-          }
-          showAddButton={true} // Both owners and members can add logs for shared vehicles
-          isReadOnly={!vehicle.is_own_vehicle}
+          onAddPress={() => router.push(`/logs/fuel/add?vehicleId=${vehicle.id}` as any)}
+          showAddButton={true} // Both owners and members can add logs
+          isReadOnly={false} // All users can edit
         />
 
         <LogSection
           title="Recent Service"
           logs={vehicle.service_logs?.slice(0, 3).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()) || []}
           icon="wrench"
-          onAddPress={vehicle.is_own_vehicle ?
-            () => router.push(`/logs/service/add?vehicleId=${vehicle.id}` as any) :
-            () => router.push(`/logs/service/add?vehicleId=${vehicle.id}` as any)
-          }
-          showAddButton={true} // Both owners and members can add logs for shared vehicles
-          isReadOnly={!vehicle.is_own_vehicle}
+          onAddPress={() => router.push(`/logs/service/add?vehicleId=${vehicle.id}` as any)}
+          showAddButton={true} // Both owners and members can add logs
+          isReadOnly={false} // All users can edit
         />
       </ScrollView>
     </SafeAreaView>

@@ -15,7 +15,10 @@ export function ThemedText({
   type = 'default',
   ...rest
 }: ThemedTextProps) {
-  const color = useThemeColor({ light: lightColor, dark: darkColor }, 'text');
+  // Use different color for link type
+  const color = type === 'link'
+    ? useThemeColor({ light: lightColor, dark: darkColor }, 'link')
+    : useThemeColor({ light: lightColor, dark: darkColor }, 'text');
 
   return (
     <Text
@@ -55,6 +58,6 @@ const styles = StyleSheet.create({
   link: {
     lineHeight: 30,
     fontSize: 16,
-    color: '#0a7ea4',
+    // Color will be overridden by theme-aware color from useThemeColor
   },
 });

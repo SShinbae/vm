@@ -116,7 +116,7 @@ export function Button({
         baseStyle.push(styles.textMedium);
     }
 
-    // Variant text styles
+    // Variant text styles - improved contrast for dark mode
     switch (variant) {
       case 'secondary':
         baseStyle.push({ color: colors.text });
@@ -124,7 +124,11 @@ export function Button({
       case 'outline':
         baseStyle.push({ color: colors.tint });
         break;
+      case 'danger':
+        baseStyle.push({ color: 'white' });
+        break;
       default:
+        // Primary button: use white text for better contrast with tint background
         baseStyle.push({ color: 'white' });
     }
 
@@ -153,7 +157,10 @@ export function Button({
         return colors.text;
       case 'outline':
         return colors.tint;
+      case 'danger':
+        return 'white';
       default:
+        // Primary button: use white icons for better contrast with tint background
         return 'white';
     }
   };

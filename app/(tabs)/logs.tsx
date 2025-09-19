@@ -18,6 +18,7 @@ import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { formatDate } from '@/lib/utils/dateUtils';
+import { ServiceReceiptIndicator } from '@/components/ui/ReceiptViewer';
 
 type LogType = 'mileage' | 'fuel' | 'service';
 
@@ -86,6 +87,24 @@ export default function LogsScreen() {
     );
   };
 
+  const handleViewServiceDetail = (serviceId: string) => {
+    router.push(`/logs/service/${serviceId}` as any);
+  };
+
+  const handleEditLog = (type: LogType, id: string) => {
+    switch (type) {
+      case 'mileage':
+        router.push(`/logs/mileage/${id}/edit` as any);
+        break;
+      case 'fuel':
+        router.push(`/logs/fuel/${id}/edit` as any);
+        break;
+      case 'service':
+        router.push(`/logs/service/${id}/edit` as any);
+        break;
+    }
+  };
+
   useFocusEffect(
     useCallback(() => {
       fetchAllLogs();
@@ -116,6 +135,34 @@ export default function LogsScreen() {
     </TouchableOpacity>
   );
 
+  const VehicleHeader = ({ vehicle, isSharedVehicle }: { vehicle: any; isSharedVehicle: boolean }) => (
+    <View style={styles.vehicleHeader}>
+      <View style={[styles.vehicleHeaderIcon, isSharedVehicle && styles.sharedVehicleHeaderIcon]}>
+        <IconSymbol
+          name={isSharedVehicle ? "person.2.fill" : "car.fill"}
+          size={20}
+          color="white"
+        />
+      </View>
+      <View style={styles.vehicleHeaderInfo}>
+        <View style={styles.vehicleHeaderTitleRow}>
+          <Text style={styles.vehicleHeaderTitle}>
+            {vehicle?.year} {vehicle?.make} {vehicle?.model}
+          </Text>
+          {isSharedVehicle && (
+            <View style={styles.sharedVehicleBadge}>
+              <IconSymbol name="person.2.fill" size={12} color={colors.tint} />
+              <Text style={styles.sharedVehicleBadgeText}>Shared</Text>
+            </View>
+          )}
+        </View>
+        {vehicle?.license_plate && (
+          <Text style={styles.vehicleHeaderPlate}>{vehicle.license_plate}</Text>
+        )}
+      </View>
+    </View>
+  );
+
   const LogCard = ({ log, type }: { log: any; type: LogType }) => {
     const getLogDetails = () => {
       switch (type) {
@@ -139,6 +186,8 @@ export default function LogsScreen() {
             subtitle: `${log.description} • ${log.cost ? `RM${log.cost}` : ''}`,
             icon: 'wrench',
             color: '#FF9800',
+            hasReceipt: !!log.receipt_image_url,
+            receiptUrl: log.receipt_image_url,
           };
         default:
           return { title: '', subtitle: '', icon: 'doc', color: colors.tint };
@@ -148,8 +197,20 @@ export default function LogsScreen() {
     const details = getLogDetails();
     const isSharedVehicle = log.is_shared_vehicle || false;
 
+    const handleCardPress = () => {
+      if (type === 'service') {
+        handleViewServiceDetail(log.id);
+      } else {
+        handleEditLog(type, log.id);
+      }
+    };
+
     return (
-      <View style={[styles.logCard, isSharedVehicle && styles.sharedLogCard]}>
+      <TouchableOpacity
+        style={[styles.logCard, isSharedVehicle && styles.sharedLogCard]}
+        onPress={handleCardPress}
+        activeOpacity={0.7}
+      >
         <View style={styles.logHeader}>
           <View style={[styles.logIcon, { backgroundColor: details.color + '20' }]}>
             <IconSymbol name={details.icon} size={20} color={details.color} />
@@ -157,27 +218,43 @@ export default function LogsScreen() {
           <View style={styles.logInfo}>
             <View style={styles.logTitleRow}>
               <Text style={styles.logTitle}>{details.title}</Text>
-              {isSharedVehicle && (
-                <View style={styles.sharedBadge}>
-                  <IconSymbol name="person.2.fill" size={12} color={colors.tint} />
-                  <Text style={styles.sharedBadgeText}>Shared</Text>
-                </View>
+              {type === 'service' && details.hasReceipt && (
+                <ServiceReceiptIndicator
+                  hasReceipt={details.hasReceipt}
+                  receiptUrl={details.receiptUrl}
+                  onPress={() => handleViewServiceDetail(log.id)}
+                  size={18}
+                />
               )}
             </View>
             <Text style={styles.logSubtitle}>{details.subtitle}</Text>
             <Text style={styles.logDate}>
-              {formatDate(log.date)} • {(log as any).vehicles?.make} {(log as any).vehicles?.model}
-              {isSharedVehicle && <Text style={styles.ownedByText}> (Owner's vehicle)</Text>}
+              {formatDate(log.date)}
+              {isSharedVehicle && <Text style={styles.ownedByText}> • Shared vehicle</Text>}
             </Text>
           </View>
-          <TouchableOpacity
-            style={styles.deleteButton}
-            onPress={() => handleDeleteLog(type, log.id, details.title)}
-          >
-            <IconSymbol name="trash" size={18} color="#ff4444" />
-          </TouchableOpacity>
+          <View style={styles.actionButtons}>
+            <TouchableOpacity
+              style={styles.editButton}
+              onPress={(e) => {
+                e.stopPropagation();
+                handleEditLog(type, log.id);
+              }}
+            >
+              <IconSymbol name="pencil" size={18} color={colors.tint} />
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.deleteButton}
+              onPress={(e) => {
+                e.stopPropagation();
+                handleDeleteLog(type, log.id, details.title);
+              }}
+            >
+              <IconSymbol name="trash" size={18} color="#ff4444" />
+            </TouchableOpacity>
+          </View>
         </View>
-      </View>
+      </TouchableOpacity>
     );
   };
 
@@ -192,6 +269,32 @@ export default function LogsScreen() {
       default:
         return [];
     }
+  };
+
+  const getGroupedLogsByVehicle = () => {
+    const logs = getCurrentLogs();
+    const grouped: { [vehicleId: string]: { vehicle: any; logs: any[] } } = {};
+
+    logs.forEach(log => {
+      const vehicleId = log.vehicle_id;
+      const vehicle = (log as any).vehicles;
+
+      if (!grouped[vehicleId]) {
+        grouped[vehicleId] = {
+          vehicle,
+          logs: []
+        };
+      }
+
+      grouped[vehicleId].logs.push(log);
+    });
+
+    // Sort logs within each vehicle group by date (newest first)
+    Object.values(grouped).forEach(group => {
+      group.logs.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    });
+
+    return grouped;
   };
 
   const getAddRoute = () => {
@@ -383,6 +486,13 @@ export default function LogsScreen() {
       color: colors.tint,
       fontStyle: 'italic',
     },
+    actionButtons: {
+      flexDirection: 'column',
+      gap: 8,
+    },
+    editButton: {
+      padding: 8,
+    },
     deleteButton: {
       padding: 8,
     },
@@ -390,6 +500,66 @@ export default function LogsScreen() {
       flex: 1,
       justifyContent: 'center',
       alignItems: 'center',
+    },
+    vehicleHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: 20,
+      paddingVertical: 16,
+      backgroundColor: colors.background,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.icon + '10',
+      marginTop: 12,
+    },
+    vehicleHeaderIcon: {
+      width: 36,
+      height: 36,
+      borderRadius: 18,
+      backgroundColor: colors.tint,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginRight: 12,
+    },
+    sharedVehicleHeaderIcon: {
+      backgroundColor: '#4CAF50',
+    },
+    vehicleHeaderInfo: {
+      flex: 1,
+    },
+    vehicleHeaderTitleRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      marginBottom: 2,
+    },
+    vehicleHeaderTitle: {
+      fontSize: 18,
+      fontWeight: '600',
+      color: colors.text,
+      flex: 1,
+    },
+    sharedVehicleBadge: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: colors.tint + '15',
+      paddingHorizontal: 6,
+      paddingVertical: 2,
+      borderRadius: 8,
+      gap: 4,
+    },
+    sharedVehicleBadgeText: {
+      fontSize: 10,
+      fontWeight: '500',
+      color: colors.tint,
+    },
+    vehicleHeaderPlate: {
+      fontSize: 14,
+      color: colors.icon,
+      fontWeight: '500',
+    },
+    vehicleLogsSection: {
+      paddingHorizontal: 20,
+      paddingBottom: 8,
     },
   });
 
@@ -407,6 +577,7 @@ export default function LogsScreen() {
   }
 
   const currentLogs = getCurrentLogs();
+  const groupedLogs = getGroupedLogsByVehicle();
 
   return (
     <SafeAreaView style={styles.container}>
@@ -438,7 +609,7 @@ export default function LogsScreen() {
           </View>
           <Text style={styles.emptyTitle}>No {activeTab} logs yet</Text>
           <Text style={styles.emptyDescription}>
-            Start tracking your vehicle's {activeTab} to monitor performance and maintenance.
+            Start tracking your vehicle&apos;s {activeTab} to monitor performance and maintenance.
           </Text>
           <TouchableOpacity
             style={styles.emptyButton}
@@ -451,15 +622,25 @@ export default function LogsScreen() {
       ) : (
         <ScrollView
           style={styles.content}
-          contentContainerStyle={styles.scrollContent}
           refreshControl={
             <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
           }
           showsVerticalScrollIndicator={false}
         >
-          {currentLogs.map((log) => (
-            <LogCard key={log.id} log={log} type={activeTab} />
-          ))}
+          {Object.entries(groupedLogs).map(([vehicleId, { vehicle, logs }]) => {
+            const isSharedVehicle = logs.length > 0 && (logs[0].is_shared_vehicle || false);
+
+            return (
+              <View key={vehicleId}>
+                <VehicleHeader vehicle={vehicle} isSharedVehicle={isSharedVehicle} />
+                <View style={styles.vehicleLogsSection}>
+                  {logs.map((log) => (
+                    <LogCard key={log.id} log={log} type={activeTab} />
+                  ))}
+                </View>
+              </View>
+            );
+          })}
         </ScrollView>
       )}
     </SafeAreaView>

@@ -166,7 +166,7 @@ export default function GroupDetailScreen() {
           <Text style={styles.vehiclePlate}>{vehicle.license_plate}</Text>
           {vehicle.owner_profile && (
             <Text style={styles.vehicleOwner}>
-              Owned by {vehicle.owner_profile.full_name || vehicle.owner_profile.email}
+              Shared by {vehicle.owner_profile.full_name || vehicle.owner_profile.email}
             </Text>
           )}
         </View>

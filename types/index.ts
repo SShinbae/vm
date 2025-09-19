@@ -105,6 +105,30 @@ export interface ServiceLogFormData {
   date: string;
   odometer_reading: number;
   next_service_due?: string;
+  receipt_image_url?: string;
+  ocr_extracted_data?: OCRExtractedData;
+  auto_filled?: boolean;
+}
+
+export interface OCRExtractedData {
+  raw_text: string;
+  confidence: number;
+  extracted_fields: {
+    service_type?: string;
+    description?: string;
+    cost?: number;
+    date?: string;
+    odometer_reading?: number;
+    business_name?: string;
+    confidence_scores?: {
+      service_type?: number;
+      description?: number;
+      cost?: number;
+      date?: number;
+      odometer_reading?: number;
+    };
+  };
+  processing_timestamp: string;
 }
 
 export interface GroupFormData {
