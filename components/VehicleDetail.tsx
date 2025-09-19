@@ -214,7 +214,7 @@ export const VehicleDetail: React.FC<VehicleDetailProps> = ({
           <Text style={styles.vehiclePlate}>{vehicle.license_plate}</Text>
           {!vehicle.is_own_vehicle && vehicle.owner_profile && (
             <Text style={styles.ownerInfo}>
-              Owned by {vehicle.owner_profile.full_name || vehicle.owner_profile.email}
+              Shared by {vehicle.owner_profile.full_name || vehicle.owner_profile.email}
             </Text>
           )}
         </View>

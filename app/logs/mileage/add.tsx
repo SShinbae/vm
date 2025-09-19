@@ -14,15 +14,16 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { MileageLogService } from '@/lib/services/loggingService';
-import { VehicleService } from '@/lib/services/vehicleService';
-import { MileageLogFormData, Vehicle } from '@/types';
+import { VehicleServiceV2 } from '@/lib/services/vehicleServiceV2';
+import { MileageLogFormData } from '@/types';
+import { VehicleWithDetails } from '@/types/database-v2';
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 
 export default function AddMileageLogScreen() {
   const { vehicleId } = useLocalSearchParams<{ vehicleId?: string }>();
-  const [vehicles, setVehicles] = useState<Vehicle[]>([]);
+  const [vehicles, setVehicles] = useState<VehicleWithDetails[]>([]);
   const [formData, setFormData] = useState<MileageLogFormData>({
     vehicle_id: vehicleId || '',
     odometer_reading: 0,
@@ -36,11 +37,13 @@ export default function AddMileageLogScreen() {
 
   useEffect(() => {
     const fetchVehicles = async () => {
-      const { data, error } = await VehicleService.getVehicles();
+      const { data, error } = await VehicleServiceV2.getVehiclesSeparated();
       if (!error && data) {
-        setVehicles(data);
-        if (!vehicleId && data.length > 0) {
-          setFormData(prev => ({ ...prev, vehicle_id: data[0].id }));
+        // Combine both owned and shared vehicles for the dropdown
+        const allVehicles = [...data.ownVehicles, ...data.sharedVehicles];
+        setVehicles(allVehicles);
+        if (!vehicleId && allVehicles.length > 0) {
+          setFormData(prev => ({ ...prev, vehicle_id: allVehicles[0].id }));
         }
       }
       setVehiclesLoading(false);

@@ -174,6 +174,9 @@ export interface Database {
           date: string
           odometer_reading: number
           next_service_due: string | null
+          receipt_image_url: string | null
+          ocr_extracted_data: any | null
+          auto_filled: boolean | null
           created_at: string
         }
         Insert: {
@@ -186,6 +189,9 @@ export interface Database {
           date: string
           odometer_reading: number
           next_service_due?: string | null
+          receipt_image_url?: string | null
+          ocr_extracted_data?: any | null
+          auto_filled?: boolean | null
         }
         Update: {
           service_type?: string
@@ -194,6 +200,9 @@ export interface Database {
           date?: string
           odometer_reading?: number
           next_service_due?: string | null
+          receipt_image_url?: string | null
+          ocr_extracted_data?: any | null
+          auto_filled?: boolean | null
         }
       }
     }
