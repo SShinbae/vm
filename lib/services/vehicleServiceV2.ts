@@ -508,8 +508,8 @@ export class VehicleServiceV2 {
         return { data: null, error: 'Vehicle not found or access denied', loading: false };
       }
 
-      // Get additional data
-      const [imagesResult, sharingResult, ownerResult] = await Promise.all([
+      // Get additional data including record counts and detailed logs
+      const [imagesResult, sharingResult, ownerResult, recordCountsResult, detailedLogsResult] = await Promise.all([
         supabase
           .from('vehicle_images')
           .select('*')
@@ -526,6 +526,8 @@ export class VehicleServiceV2 {
               .eq('id', vehicle.user_id)
               .single()
           : Promise.resolve({ data: null, error: null }),
+        this.getVehicleRecordCounts(id),
+        this.getVehicleDetailedLogs(id),
       ]);
 
       const enhancedVehicle: VehicleWithDetails = {
@@ -546,10 +548,19 @@ export class VehicleServiceV2 {
           shared_with_groups: sharingResult.data.shared_groups.map(sg => sg.group_name),
           total_shares: sharingResult.data.total_shares,
         } : undefined,
+        // Use detailed logs from separate queries, fall back to nested query logs
+        mileage_logs: detailedLogsResult.data?.mileage_logs || vehicle.mileage_logs || [],
+        fuel_logs: detailedLogsResult.data?.fuel_logs || vehicle.fuel_logs || [],
+        service_logs: detailedLogsResult.data?.service_logs || vehicle.service_logs || [],
         logs: {
-          latest_mileage: vehicle.mileage_logs?.[0] || undefined,
-          latest_fuel: vehicle.fuel_logs?.[0] || undefined,
-          latest_service: vehicle.service_logs?.[0] || undefined,
+          latest_mileage: detailedLogsResult.data?.mileage_logs?.[0] || vehicle.mileage_logs?.[0] || undefined,
+          latest_fuel: detailedLogsResult.data?.fuel_logs?.[0] || vehicle.fuel_logs?.[0] || undefined,
+          latest_service: detailedLogsResult.data?.service_logs?.[0] || vehicle.service_logs?.[0] || undefined,
+          counts: recordCountsResult.data || {
+            fuel_count: 0,
+            service_count: 0,
+            mileage_count: 0,
+          },
         },
       };
 
@@ -743,6 +754,191 @@ export class VehicleServiceV2 {
     } catch (error) {
       console.error('Unexpected error fetching user groups:', error);
       return { data: null, error: 'Failed to fetch groups', loading: false };
+    }
+  }
+
+  /**
+   * Get record counts for a vehicle (fuel, service, mileage)
+   */
+  static async getVehicleRecordCounts(vehicleId: string): Promise<ApiResponse<{
+    fuel_count: number;
+    service_count: number;
+    mileage_count: number;
+    access_status?: {
+      fuel_accessible: boolean;
+      service_accessible: boolean;
+      mileage_accessible: boolean;
+      has_permission_issues: boolean;
+    };
+  }>> {
+    try {
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+
+      if (userError || !user) {
+        return {
+          data: {
+            fuel_count: 0,
+            service_count: 0,
+            mileage_count: 0,
+            access_status: {
+              fuel_accessible: false,
+              service_accessible: false,
+              mileage_accessible: false,
+              has_permission_issues: true,
+            }
+          },
+          error: 'User not authenticated',
+          loading: false
+        };
+      }
+
+      // Get counts for all log types in parallel
+      const [fuelCountResult, serviceCountResult, mileageCountResult] = await Promise.all([
+        supabase
+          .from('fuel_logs')
+          .select('id', { count: 'exact', head: true })
+          .eq('vehicle_id', vehicleId),
+        supabase
+          .from('service_logs')
+          .select('id', { count: 'exact', head: true })
+          .eq('vehicle_id', vehicleId),
+        supabase
+          .from('mileage_logs')
+          .select('id', { count: 'exact', head: true })
+          .eq('vehicle_id', vehicleId),
+      ]);
+
+      // Check for permission-related errors (like RLS policy violations)
+      const isPermissionError = (error: any) => {
+        return error && (
+          error.message?.includes('permission') ||
+          error.message?.includes('policy') ||
+          error.message?.includes('RLS') ||
+          error.code === 'PGRST116' // PostgREST insufficient privilege error
+        );
+      };
+
+      const access_status = {
+        fuel_accessible: !fuelCountResult.error,
+        service_accessible: !serviceCountResult.error,
+        mileage_accessible: !mileageCountResult.error,
+        has_permission_issues:
+          isPermissionError(fuelCountResult.error) ||
+          isPermissionError(serviceCountResult.error) ||
+          isPermissionError(mileageCountResult.error)
+      };
+
+      const counts = {
+        fuel_count: fuelCountResult.count || 0,
+        service_count: serviceCountResult.count || 0,
+        mileage_count: mileageCountResult.count || 0,
+        access_status,
+      };
+
+      // Log errors with appropriate context
+      if (fuelCountResult.error) {
+        const errorType = isPermissionError(fuelCountResult.error) ? 'Permission denied' : 'Database error';
+        console.warn(`${errorType} for fuel logs on vehicle ${vehicleId}:`, fuelCountResult.error);
+      }
+      if (serviceCountResult.error) {
+        const errorType = isPermissionError(serviceCountResult.error) ? 'Permission denied' : 'Database error';
+        console.warn(`${errorType} for service logs on vehicle ${vehicleId}:`, serviceCountResult.error);
+      }
+      if (mileageCountResult.error) {
+        const errorType = isPermissionError(mileageCountResult.error) ? 'Permission denied' : 'Database error';
+        console.warn(`${errorType} for mileage logs on vehicle ${vehicleId}:`, mileageCountResult.error);
+      }
+
+      return { data: counts, error: null, loading: false };
+
+    } catch (error) {
+      console.error('Unexpected error fetching vehicle record counts:', error);
+      return {
+        data: {
+          fuel_count: 0,
+          service_count: 0,
+          mileage_count: 0,
+          access_status: {
+            fuel_accessible: false,
+            service_accessible: false,
+            mileage_accessible: false,
+            has_permission_issues: true,
+          }
+        },
+        error: 'Failed to fetch record counts',
+        loading: false
+      };
+    }
+  }
+
+  /**
+   * Get detailed logs for a vehicle using separate queries (for RLS compatibility)
+   */
+  static async getVehicleDetailedLogs(vehicleId: string): Promise<ApiResponse<{
+    mileage_logs: any[];
+    fuel_logs: any[];
+    service_logs: any[];
+  }>> {
+    try {
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+
+      if (userError || !user) {
+        return {
+          data: { mileage_logs: [], fuel_logs: [], service_logs: [] },
+          error: null,
+          loading: false
+        };
+      }
+
+      // Get detailed logs for all types in parallel using direct queries
+      // This ensures RLS policies work consistently with the count queries
+      const [mileageLogsResult, fuelLogsResult, serviceLogsResult] = await Promise.all([
+        supabase
+          .from('mileage_logs')
+          .select('*')
+          .eq('vehicle_id', vehicleId)
+          .order('date', { ascending: false })
+          .limit(10), // Get recent 10 records
+        supabase
+          .from('fuel_logs')
+          .select('*')
+          .eq('vehicle_id', vehicleId)
+          .order('date', { ascending: false })
+          .limit(10), // Get recent 10 records
+        supabase
+          .from('service_logs')
+          .select('*')
+          .eq('vehicle_id', vehicleId)
+          .order('date', { ascending: false })
+          .limit(10), // Get recent 10 records
+      ]);
+
+      const logs = {
+        mileage_logs: mileageLogsResult.data || [],
+        fuel_logs: fuelLogsResult.data || [],
+        service_logs: serviceLogsResult.data || [],
+      };
+
+      // Log any errors but don't fail completely - graceful degradation
+      if (mileageLogsResult.error) {
+        console.warn(`Could not fetch mileage logs for vehicle ${vehicleId}:`, mileageLogsResult.error);
+      }
+      if (fuelLogsResult.error) {
+        console.warn(`Could not fetch fuel logs for vehicle ${vehicleId}:`, fuelLogsResult.error);
+      }
+      if (serviceLogsResult.error) {
+        console.warn(`Could not fetch service logs for vehicle ${vehicleId}:`, serviceLogsResult.error);
+      }
+
+      return { data: logs, error: null, loading: false };
+
+    } catch (error) {
+      console.error('Unexpected error fetching vehicle detailed logs:', error);
+      return {
+        data: { mileage_logs: [], fuel_logs: [], service_logs: [] },
+        error: null,
+        loading: false
+      };
     }
   }
 }

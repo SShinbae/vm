@@ -248,7 +248,15 @@ export const VehicleDetail: React.FC<VehicleDetailProps> = ({
               <IconSymbol name="fuelpump.fill" size={20} color={colors.tint} />
             </View>
             <View style={styles.detailContent}>
-              <Text style={styles.detailLabel}>Fuel Records</Text>
+              <Text style={styles.detailLabel}>
+                Fuel Records {(() => {
+                  if (vehicle.logs?.counts?.access_status?.fuel_accessible === false) {
+                    return vehicle.logs.counts.access_status.has_permission_issues ? '(Limited)' : '(Error)';
+                  }
+                  return vehicle.logs?.counts?.fuel_count !== undefined ?
+                    `(${vehicle.logs.counts.fuel_count})` : '';
+                })()}
+              </Text>
               <Text style={styles.detailValue}>
                 {vehicle.logs?.latest_fuel ?
                   `${vehicle.logs.latest_fuel.liters_filled}L on ${formatDate(vehicle.logs.latest_fuel.date)}` :
@@ -263,7 +271,15 @@ export const VehicleDetail: React.FC<VehicleDetailProps> = ({
               <IconSymbol name="wrench.and.screwdriver.fill" size={20} color={colors.tint} />
             </View>
             <View style={styles.detailContent}>
-              <Text style={styles.detailLabel}>Service Records</Text>
+              <Text style={styles.detailLabel}>
+                Service Records {(() => {
+                  if (vehicle.logs?.counts?.access_status?.service_accessible === false) {
+                    return vehicle.logs.counts.access_status.has_permission_issues ? '(Limited)' : '(Error)';
+                  }
+                  return vehicle.logs?.counts?.service_count !== undefined ?
+                    `(${vehicle.logs.counts.service_count})` : '';
+                })()}
+              </Text>
               <Text style={styles.detailValue}>
                 {vehicle.logs?.latest_service ?
                   `${vehicle.logs.latest_service.service_type} on ${formatDate(vehicle.logs.latest_service.date)}` :
@@ -278,7 +294,15 @@ export const VehicleDetail: React.FC<VehicleDetailProps> = ({
               <IconSymbol name="list.bullet.clipboard.fill" size={20} color={colors.tint} />
             </View>
             <View style={styles.detailContent}>
-              <Text style={styles.detailLabel}>Mileage Records</Text>
+              <Text style={styles.detailLabel}>
+                Mileage Records {(() => {
+                  if (vehicle.logs?.counts?.access_status?.mileage_accessible === false) {
+                    return vehicle.logs.counts.access_status.has_permission_issues ? '(Limited)' : '(Error)';
+                  }
+                  return vehicle.logs?.counts?.mileage_count !== undefined ?
+                    `(${vehicle.logs.counts.mileage_count})` : '';
+                })()}
+              </Text>
               <Text style={styles.detailValue}>
                 {vehicle.logs?.latest_mileage ?
                   `${vehicle.logs.latest_mileage.odometer_reading.toLocaleString()} km on ${formatDate(vehicle.logs.latest_mileage.date)}` :

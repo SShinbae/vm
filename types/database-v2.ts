@@ -426,6 +426,10 @@ export interface VehicleWithDetails extends Vehicle {
   owner_profile?: Profile | null
   images: VehicleImage[]
   shared_groups: Group[]
+  // Log arrays for UI components
+  mileage_logs?: MileageLog[]
+  fuel_logs?: FuelLog[]
+  service_logs?: ServiceLog[]
   sharing_info?: {
     is_shared: boolean
     shared_with_groups: string[]
@@ -435,6 +439,17 @@ export interface VehicleWithDetails extends Vehicle {
     latest_mileage?: MileageLog
     latest_fuel?: FuelLog
     latest_service?: ServiceLog
+    counts?: {
+      fuel_count: number
+      service_count: number
+      mileage_count: number
+      access_status?: {
+        fuel_accessible: boolean
+        service_accessible: boolean
+        mileage_accessible: boolean
+        has_permission_issues: boolean
+      }
+    }
   }
 }
 
