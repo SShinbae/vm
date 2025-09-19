@@ -146,18 +146,28 @@ export default function LogsScreen() {
     };
 
     const details = getLogDetails();
+    const isSharedVehicle = log.is_shared_vehicle || false;
 
     return (
-      <View style={styles.logCard}>
+      <View style={[styles.logCard, isSharedVehicle && styles.sharedLogCard]}>
         <View style={styles.logHeader}>
           <View style={[styles.logIcon, { backgroundColor: details.color + '20' }]}>
             <IconSymbol name={details.icon} size={20} color={details.color} />
           </View>
           <View style={styles.logInfo}>
-            <Text style={styles.logTitle}>{details.title}</Text>
+            <View style={styles.logTitleRow}>
+              <Text style={styles.logTitle}>{details.title}</Text>
+              {isSharedVehicle && (
+                <View style={styles.sharedBadge}>
+                  <IconSymbol name="person.2.fill" size={12} color={colors.tint} />
+                  <Text style={styles.sharedBadgeText}>Shared</Text>
+                </View>
+              )}
+            </View>
             <Text style={styles.logSubtitle}>{details.subtitle}</Text>
             <Text style={styles.logDate}>
               {formatDate(log.date)} • {(log as any).vehicles?.make} {(log as any).vehicles?.model}
+              {isSharedVehicle && <Text style={styles.ownedByText}> (Owner's vehicle)</Text>}
             </Text>
           </View>
           <TouchableOpacity
@@ -314,6 +324,10 @@ export default function LogsScreen() {
       shadowOpacity: 0.1,
       shadowRadius: 4,
     },
+    sharedLogCard: {
+      borderColor: colors.tint + '40',
+      backgroundColor: colors.tint + '05',
+    },
     logHeader: {
       flexDirection: 'row',
       alignItems: 'flex-start',
@@ -329,11 +343,31 @@ export default function LogsScreen() {
     logInfo: {
       flex: 1,
     },
+    logTitleRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      marginBottom: 4,
+    },
     logTitle: {
       fontSize: 16,
       fontWeight: '600',
       color: colors.text,
-      marginBottom: 4,
+      flex: 1,
+    },
+    sharedBadge: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: colors.tint + '15',
+      paddingHorizontal: 6,
+      paddingVertical: 2,
+      borderRadius: 8,
+      gap: 4,
+    },
+    sharedBadgeText: {
+      fontSize: 10,
+      fontWeight: '500',
+      color: colors.tint,
     },
     logSubtitle: {
       fontSize: 14,
@@ -343,6 +377,11 @@ export default function LogsScreen() {
     logDate: {
       fontSize: 12,
       color: colors.icon,
+    },
+    ownedByText: {
+      fontSize: 11,
+      color: colors.tint,
+      fontStyle: 'italic',
     },
     deleteButton: {
       padding: 8,

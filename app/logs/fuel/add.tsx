@@ -105,46 +105,84 @@ export default function AddFuelLogScreen() {
     );
   };
 
-  const VehicleSelector = () => (
-    <View style={styles.inputContainer}>
-      <Text style={styles.label}>
-        Vehicle <Text style={styles.requiredLabel}>*</Text>
-      </Text>
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        style={styles.vehicleSelector}
-        contentContainerStyle={styles.vehicleSelectorContent}
-      >
-        {vehicles.map((vehicle) => (
-          <TouchableOpacity
-            key={vehicle.id}
-            style={[
-              styles.vehicleOption,
-              formData.vehicle_id === vehicle.id && styles.vehicleOptionSelected,
-            ]}
-            onPress={() => setFormData(prev => ({ ...prev, vehicle_id: vehicle.id }))}
-          >
-            <View style={styles.vehicleIcon}>
-              <IconSymbol name="car.fill" size={16} color="white" />
+  const VehicleSelector = () => {
+    const selectedVehicle = vehicles.find(v => v.id === formData.vehicle_id);
+    const isLocked = !!vehicleId; // Lock when vehicleId is provided from navigation
+
+    if (isLocked && selectedVehicle) {
+      // Show locked single vehicle when navigated from vehicle detail
+      return (
+        <View style={styles.inputContainer}>
+          <Text style={styles.label}>
+            Vehicle <Text style={styles.requiredLabel}>*</Text>
+          </Text>
+          <View style={styles.lockedVehicleContainer}>
+            <View style={styles.lockedVehicle}>
+              <View style={styles.vehicleIcon}>
+                <IconSymbol name="car.fill" size={16} color="white" />
+              </View>
+              <View style={styles.lockedVehicleInfo}>
+                <Text style={styles.lockedVehicleText}>
+                  {selectedVehicle.year} {selectedVehicle.make} {selectedVehicle.model}
+                </Text>
+                <Text style={styles.lockedVehiclePlate}>
+                  {selectedVehicle.license_plate}
+                </Text>
+              </View>
+              <View style={styles.lockIcon}>
+                <IconSymbol name="lock.fill" size={14} color={colors.icon} />
+              </View>
             </View>
-            <Text style={[
-              styles.vehicleOptionText,
-              formData.vehicle_id === vehicle.id && styles.vehicleOptionTextSelected,
-            ]}>
-              {vehicle.year} {vehicle.make}
+            <Text style={styles.lockedHelpText}>
+              Adding fuel log for this vehicle
             </Text>
-            <Text style={[
-              styles.vehiclePlateText,
-              formData.vehicle_id === vehicle.id && styles.vehiclePlateTextSelected,
-            ]}>
-              {vehicle.license_plate}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
-    </View>
-  );
+          </View>
+        </View>
+      );
+    }
+
+    // Show full vehicle selector when accessed from logs tab
+    return (
+      <View style={styles.inputContainer}>
+        <Text style={styles.label}>
+          Vehicle <Text style={styles.requiredLabel}>*</Text>
+        </Text>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={styles.vehicleSelector}
+          contentContainerStyle={styles.vehicleSelectorContent}
+        >
+          {vehicles.map((vehicle) => (
+            <TouchableOpacity
+              key={vehicle.id}
+              style={[
+                styles.vehicleOption,
+                formData.vehicle_id === vehicle.id && styles.vehicleOptionSelected,
+              ]}
+              onPress={() => setFormData(prev => ({ ...prev, vehicle_id: vehicle.id }))}
+            >
+              <View style={styles.vehicleIcon}>
+                <IconSymbol name="car.fill" size={16} color="white" />
+              </View>
+              <Text style={[
+                styles.vehicleOptionText,
+                formData.vehicle_id === vehicle.id && styles.vehicleOptionTextSelected,
+              ]}>
+                {vehicle.year} {vehicle.make}
+              </Text>
+              <Text style={[
+                styles.vehiclePlateText,
+                formData.vehicle_id === vehicle.id && styles.vehiclePlateTextSelected,
+              ]}>
+                {vehicle.license_plate}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+      </View>
+    );
+  };
 
   const styles = StyleSheet.create({
     container: {
@@ -273,6 +311,40 @@ export default function AddFuelLogScreen() {
     vehiclePlateTextSelected: {
       color: colors.tint,
     },
+    lockedVehicleContainer: {
+      gap: 8,
+    },
+    lockedVehicle: {
+      backgroundColor: colors.background,
+      borderWidth: 1,
+      borderColor: colors.tint,
+      borderRadius: 8,
+      padding: 16,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
+    },
+    lockedVehicleInfo: {
+      flex: 1,
+    },
+    lockedVehicleText: {
+      fontSize: 16,
+      fontWeight: '600',
+      color: colors.text,
+    },
+    lockedVehiclePlate: {
+      fontSize: 14,
+      color: colors.icon,
+      marginTop: 2,
+    },
+    lockIcon: {
+      padding: 4,
+    },
+    lockedHelpText: {
+      fontSize: 12,
+      color: colors.icon,
+      fontStyle: 'italic',
+    },
     helpText: {
       fontSize: 12,
       color: colors.icon,
@@ -333,7 +405,12 @@ export default function AddFuelLogScreen() {
         <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
           <IconSymbol name="chevron.left" size={24} color={colors.text} />
         </TouchableOpacity>
-        <Text style={styles.title}>Add Fuel Log</Text>
+        <Text style={styles.title}>
+          {vehicleId && vehicles.find(v => v.id === vehicleId)
+            ? `Add Fuel - ${vehicles.find(v => v.id === vehicleId)?.year} ${vehicles.find(v => v.id === vehicleId)?.make}`
+            : 'Add Fuel Log'
+          }
+        </Text>
         <TouchableOpacity
           style={[styles.saveButton, (!isFormValid() || loading) && styles.saveButtonDisabled]}
           onPress={handleSave}

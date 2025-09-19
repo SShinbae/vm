@@ -21,7 +21,8 @@ export class MileageLogService {
         return { data: null, error: 'User not authenticated', loading: false };
       }
 
-      let query = supabase
+      // Build base query for owned vehicles
+      let ownedQuery = supabase
         .from('mileage_logs')
         .select(`
           *,
@@ -31,17 +32,79 @@ export class MileageLogService {
         .order('date', { ascending: false });
 
       if (vehicleId) {
-        query = query.eq('vehicle_id', vehicleId);
+        ownedQuery = ownedQuery.eq('vehicle_id', vehicleId);
       }
 
-      const { data, error } = await query;
+      // First, get the shared vehicle IDs that the user has access to
+      let sharedVehicleIds: string[] = [];
+      if (!vehicleId) {
+        // Get user's group memberships
+        const { data: userGroups, error: groupError } = await supabase
+          .from('group_members')
+          .select('group_id')
+          .eq('user_id', user.id);
 
-      if (error) {
-        console.error('Error fetching mileage logs:', error);
-        return { data: null, error: error.message, loading: false };
+        if (!groupError && userGroups && userGroups.length > 0) {
+          const groupIds = userGroups.map(g => g.group_id);
+
+          // Get vehicles shared with these groups
+          const { data: sharedVehicles, error: shareError } = await supabase
+            .from('vehicle_group_shares')
+            .select('vehicle_id')
+            .in('group_id', groupIds);
+
+          if (!shareError && sharedVehicles) {
+            sharedVehicleIds = sharedVehicles.map(sv => sv.vehicle_id);
+          }
+        }
       }
 
-      return { data: data || [], error: null, loading: false };
+      // Get logs for both owned vehicles and shared vehicles
+      const [ownedLogsResult, sharedLogsResult] = await Promise.all([
+        // Owned vehicle logs
+        ownedQuery,
+
+        // Shared vehicle logs (only if we have shared vehicle IDs)
+        sharedVehicleIds.length > 0 ? supabase
+          .from('mileage_logs')
+          .select(`
+            *,
+            vehicles!inner(make, model, year, license_plate, user_id)
+          `)
+          .in('vehicle_id', sharedVehicleIds)
+          .order('date', { ascending: false })
+        : Promise.resolve({ data: [], error: null })
+      ]);
+
+      // Handle errors
+      if (ownedLogsResult.error) {
+        console.error('Error fetching owned mileage logs:', ownedLogsResult.error);
+        return { data: null, error: ownedLogsResult.error.message, loading: false };
+      }
+
+      if (sharedLogsResult.error) {
+        console.warn('Error fetching shared mileage logs:', sharedLogsResult.error);
+        // Don't fail completely, just use owned logs
+      }
+
+      // Combine and sort all logs
+      const ownedLogs = ownedLogsResult.data || [];
+      const sharedLogs = (sharedLogsResult.data || []).map(log => ({
+        ...log,
+        is_shared_vehicle: true // Mark as shared for UI indicators
+      }));
+
+      const allLogs = [...ownedLogs, ...sharedLogs];
+
+      // Remove duplicates (in case user owns and has access to same vehicle through sharing)
+      const uniqueLogs = allLogs.filter((log, index, self) =>
+        index === self.findIndex(l => l.id === log.id)
+      );
+
+      // Sort by date descending
+      uniqueLogs.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+      return { data: uniqueLogs, error: null, loading: false };
     } catch (error) {
       console.error('Unexpected error fetching mileage logs:', error);
       return { data: null, error: 'Failed to fetch mileage logs', loading: false };
@@ -150,7 +213,8 @@ export class FuelLogService {
         return { data: null, error: 'User not authenticated', loading: false };
       }
 
-      let query = supabase
+      // Build base query for owned vehicles
+      let ownedQuery = supabase
         .from('fuel_logs')
         .select(`
           *,
@@ -160,17 +224,79 @@ export class FuelLogService {
         .order('date', { ascending: false });
 
       if (vehicleId) {
-        query = query.eq('vehicle_id', vehicleId);
+        ownedQuery = ownedQuery.eq('vehicle_id', vehicleId);
       }
 
-      const { data, error } = await query;
+      // First, get the shared vehicle IDs that the user has access to
+      let sharedVehicleIds: string[] = [];
+      if (!vehicleId) {
+        // Get user's group memberships
+        const { data: userGroups, error: groupError } = await supabase
+          .from('group_members')
+          .select('group_id')
+          .eq('user_id', user.id);
 
-      if (error) {
-        console.error('Error fetching fuel logs:', error);
-        return { data: null, error: error.message, loading: false };
+        if (!groupError && userGroups && userGroups.length > 0) {
+          const groupIds = userGroups.map(g => g.group_id);
+
+          // Get vehicles shared with these groups
+          const { data: sharedVehicles, error: shareError } = await supabase
+            .from('vehicle_group_shares')
+            .select('vehicle_id')
+            .in('group_id', groupIds);
+
+          if (!shareError && sharedVehicles) {
+            sharedVehicleIds = sharedVehicles.map(sv => sv.vehicle_id);
+          }
+        }
       }
 
-      return { data: data || [], error: null, loading: false };
+      // Get logs for both owned vehicles and shared vehicles
+      const [ownedLogsResult, sharedLogsResult] = await Promise.all([
+        // Owned vehicle logs
+        ownedQuery,
+
+        // Shared vehicle logs (only if we have shared vehicle IDs)
+        sharedVehicleIds.length > 0 ? supabase
+          .from('fuel_logs')
+          .select(`
+            *,
+            vehicles!inner(make, model, year, license_plate, user_id)
+          `)
+          .in('vehicle_id', sharedVehicleIds)
+          .order('date', { ascending: false })
+        : Promise.resolve({ data: [], error: null })
+      ]);
+
+      // Handle errors
+      if (ownedLogsResult.error) {
+        console.error('Error fetching owned fuel logs:', ownedLogsResult.error);
+        return { data: null, error: ownedLogsResult.error.message, loading: false };
+      }
+
+      if (sharedLogsResult.error) {
+        console.warn('Error fetching shared fuel logs:', sharedLogsResult.error);
+        // Don't fail completely, just use owned logs
+      }
+
+      // Combine and sort all logs
+      const ownedLogs = ownedLogsResult.data || [];
+      const sharedLogs = (sharedLogsResult.data || []).map(log => ({
+        ...log,
+        is_shared_vehicle: true // Mark as shared for UI indicators
+      }));
+
+      const allLogs = [...ownedLogs, ...sharedLogs];
+
+      // Remove duplicates (in case user owns and has access to same vehicle through sharing)
+      const uniqueLogs = allLogs.filter((log, index, self) =>
+        index === self.findIndex(l => l.id === log.id)
+      );
+
+      // Sort by date descending
+      uniqueLogs.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+      return { data: uniqueLogs, error: null, loading: false };
     } catch (error) {
       console.error('Unexpected error fetching fuel logs:', error);
       return { data: null, error: 'Failed to fetch fuel logs', loading: false };
@@ -268,7 +394,8 @@ export class ServiceLogService {
         return { data: null, error: 'User not authenticated', loading: false };
       }
 
-      let query = supabase
+      // Build base query for owned vehicles
+      let ownedQuery = supabase
         .from('service_logs')
         .select(`
           *,
@@ -278,17 +405,79 @@ export class ServiceLogService {
         .order('date', { ascending: false });
 
       if (vehicleId) {
-        query = query.eq('vehicle_id', vehicleId);
+        ownedQuery = ownedQuery.eq('vehicle_id', vehicleId);
       }
 
-      const { data, error } = await query;
+      // First, get the shared vehicle IDs that the user has access to
+      let sharedVehicleIds: string[] = [];
+      if (!vehicleId) {
+        // Get user's group memberships
+        const { data: userGroups, error: groupError } = await supabase
+          .from('group_members')
+          .select('group_id')
+          .eq('user_id', user.id);
 
-      if (error) {
-        console.error('Error fetching service logs:', error);
-        return { data: null, error: error.message, loading: false };
+        if (!groupError && userGroups && userGroups.length > 0) {
+          const groupIds = userGroups.map(g => g.group_id);
+
+          // Get vehicles shared with these groups
+          const { data: sharedVehicles, error: shareError } = await supabase
+            .from('vehicle_group_shares')
+            .select('vehicle_id')
+            .in('group_id', groupIds);
+
+          if (!shareError && sharedVehicles) {
+            sharedVehicleIds = sharedVehicles.map(sv => sv.vehicle_id);
+          }
+        }
       }
 
-      return { data: data || [], error: null, loading: false };
+      // Get logs for both owned vehicles and shared vehicles
+      const [ownedLogsResult, sharedLogsResult] = await Promise.all([
+        // Owned vehicle logs
+        ownedQuery,
+
+        // Shared vehicle logs (only if we have shared vehicle IDs)
+        sharedVehicleIds.length > 0 ? supabase
+          .from('service_logs')
+          .select(`
+            *,
+            vehicles!inner(make, model, year, license_plate, user_id)
+          `)
+          .in('vehicle_id', sharedVehicleIds)
+          .order('date', { ascending: false })
+        : Promise.resolve({ data: [], error: null })
+      ]);
+
+      // Handle errors
+      if (ownedLogsResult.error) {
+        console.error('Error fetching owned service logs:', ownedLogsResult.error);
+        return { data: null, error: ownedLogsResult.error.message, loading: false };
+      }
+
+      if (sharedLogsResult.error) {
+        console.warn('Error fetching shared service logs:', sharedLogsResult.error);
+        // Don't fail completely, just use owned logs
+      }
+
+      // Combine and sort all logs
+      const ownedLogs = ownedLogsResult.data || [];
+      const sharedLogs = (sharedLogsResult.data || []).map(log => ({
+        ...log,
+        is_shared_vehicle: true // Mark as shared for UI indicators
+      }));
+
+      const allLogs = [...ownedLogs, ...sharedLogs];
+
+      // Remove duplicates (in case user owns and has access to same vehicle through sharing)
+      const uniqueLogs = allLogs.filter((log, index, self) =>
+        index === self.findIndex(l => l.id === log.id)
+      );
+
+      // Sort by date descending
+      uniqueLogs.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+      return { data: uniqueLogs, error: null, loading: false };
     } catch (error) {
       console.error('Unexpected error fetching service logs:', error);
       return { data: null, error: 'Failed to fetch service logs', loading: false };

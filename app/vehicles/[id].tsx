@@ -189,13 +189,18 @@ export default function VehicleDetailScreen() {
     </View>
   );
 
-  const LogSection = ({ title, logs, icon, onAddPress }: any) => (
+  const LogSection = ({ title, logs, icon, onAddPress, showAddButton = true, isReadOnly = false }: any) => (
     <View style={styles.logSection}>
       <View style={styles.logHeader}>
-        <Text style={styles.logTitle}>{title}</Text>
-        <TouchableOpacity style={styles.addLogButton} onPress={onAddPress}>
-          <IconSymbol name="plus" size={16} color={colors.tint} />
-        </TouchableOpacity>
+        <Text style={styles.logTitle}>
+          {title}
+          {isReadOnly && <Text style={styles.readOnlyIndicator}> (Shared)</Text>}
+        </Text>
+        {showAddButton && (
+          <TouchableOpacity style={styles.addLogButton} onPress={onAddPress}>
+            <IconSymbol name="plus" size={16} color={colors.tint} />
+          </TouchableOpacity>
+        )}
       </View>
 
       {logs && logs.length > 0 ? (
@@ -418,6 +423,12 @@ export default function VehicleDetailScreen() {
       fontWeight: '600',
       color: colors.text,
     },
+    readOnlyIndicator: {
+      fontSize: 14,
+      fontWeight: '400',
+      color: colors.icon,
+      fontStyle: 'italic',
+    },
     addLogButton: {
       width: 32,
       height: 32,
@@ -550,29 +561,31 @@ export default function VehicleDetailScreen() {
           </View>
         </View>
 
-        <View style={styles.sharingCard}>
-          <View style={styles.sharingHeader}>
-            <View style={styles.sharingIcon}>
-              <IconSymbol name="person.3.fill" size={20} color={colors.tint} />
+        {vehicle.is_own_vehicle && (
+          <View style={styles.sharingCard}>
+            <View style={styles.sharingHeader}>
+              <View style={styles.sharingIcon}>
+                <IconSymbol name="person.3.fill" size={20} color={colors.tint} />
+              </View>
+              <View style={styles.sharingInfo}>
+                <Text style={styles.sharingTitle}>Share with Groups</Text>
+                <Text style={styles.sharingDescription}>
+                  Allow members of your groups to view this vehicle and its logs
+                </Text>
+              </View>
+              <Switch
+                value={vehicle.sharing_info?.is_shared || false}
+                onValueChange={handleToggleSharing}
+                disabled={sharingLoading}
+                trackColor={{
+                  false: colors.icon + '30',
+                  true: colors.tint + '50'
+                }}
+                thumbColor={vehicle.sharing_info?.is_shared ? colors.tint : colors.background}
+              />
             </View>
-            <View style={styles.sharingInfo}>
-              <Text style={styles.sharingTitle}>Share with Groups</Text>
-              <Text style={styles.sharingDescription}>
-                Allow members of your groups to view this vehicle and its logs
-              </Text>
-            </View>
-            <Switch
-              value={vehicle.sharing_info?.is_shared || false}
-              onValueChange={handleToggleSharing}
-              disabled={sharingLoading}
-              trackColor={{
-                false: colors.icon + '30',
-                true: colors.tint + '50'
-              }}
-              thumbColor={vehicle.sharing_info?.is_shared ? colors.tint : colors.background}
-            />
           </View>
-        </View>
+        )}
 
         <View style={styles.statsGrid}>
           <StatCard
@@ -589,19 +602,40 @@ export default function VehicleDetailScreen() {
           />
           <StatCard
             title="Fuel Records"
-            value="N/A"
+            value={(() => {
+              if (vehicle.logs?.counts?.access_status?.fuel_accessible === false) {
+                return vehicle.logs.counts.access_status.has_permission_issues ? 'Access Limited' : 'Error';
+              }
+              return vehicle.logs?.counts?.fuel_count !== undefined ?
+                `${vehicle.logs.counts.fuel_count} ${vehicle.logs.counts.fuel_count === 1 ? 'record' : 'records'}` :
+                'N/A';
+            })()}
             subtitle={vehicle.logs?.latest_fuel ? `Latest: ${formatDate(vehicle.logs.latest_fuel.date)}` : 'No records'}
             icon="fuelpump"
           />
           <StatCard
             title="Service Records"
-            value="N/A"
+            value={(() => {
+              if (vehicle.logs?.counts?.access_status?.service_accessible === false) {
+                return vehicle.logs.counts.access_status.has_permission_issues ? 'Access Limited' : 'Error';
+              }
+              return vehicle.logs?.counts?.service_count !== undefined ?
+                `${vehicle.logs.counts.service_count} ${vehicle.logs.counts.service_count === 1 ? 'record' : 'records'}` :
+                'N/A';
+            })()}
             subtitle={vehicle.logs?.latest_service ? `Latest: ${formatDate(vehicle.logs.latest_service.date)}` : 'No records'}
             icon="wrench"
           />
           <StatCard
             title="Mileage Records"
-            value="N/A"
+            value={(() => {
+              if (vehicle.logs?.counts?.access_status?.mileage_accessible === false) {
+                return vehicle.logs.counts.access_status.has_permission_issues ? 'Access Limited' : 'Error';
+              }
+              return vehicle.logs?.counts?.mileage_count !== undefined ?
+                `${vehicle.logs.counts.mileage_count} ${vehicle.logs.counts.mileage_count === 1 ? 'record' : 'records'}` :
+                'N/A';
+            })()}
             subtitle={vehicle.logs?.latest_mileage ? `Latest: ${formatDate(vehicle.logs.latest_mileage.date)}` : 'No records'}
             icon="chart.line.uptrend.xyaxis"
           />
@@ -609,23 +643,38 @@ export default function VehicleDetailScreen() {
 
         <LogSection
           title="Recent Mileage"
-          logs={[]}
+          logs={vehicle.mileage_logs?.slice(0, 3).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()) || []}
           icon="speedometer"
-          onAddPress={() => router.push(`/logs/mileage/add?vehicleId=${vehicle.id}` as any)}
+          onAddPress={vehicle.is_own_vehicle ?
+            () => router.push(`/logs/mileage/add?vehicleId=${vehicle.id}` as any) :
+            () => router.push(`/logs/mileage/add?vehicleId=${vehicle.id}` as any)
+          }
+          showAddButton={true} // Both owners and members can add logs for shared vehicles
+          isReadOnly={!vehicle.is_own_vehicle}
         />
 
         <LogSection
           title="Recent Fuel"
-          logs={[]}
+          logs={vehicle.fuel_logs?.slice(0, 3).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()) || []}
           icon="fuelpump"
-          onAddPress={() => router.push(`/logs/fuel/add?vehicleId=${vehicle.id}` as any)}
+          onAddPress={vehicle.is_own_vehicle ?
+            () => router.push(`/logs/fuel/add?vehicleId=${vehicle.id}` as any) :
+            () => router.push(`/logs/fuel/add?vehicleId=${vehicle.id}` as any)
+          }
+          showAddButton={true} // Both owners and members can add logs for shared vehicles
+          isReadOnly={!vehicle.is_own_vehicle}
         />
 
         <LogSection
           title="Recent Service"
-          logs={[]}
+          logs={vehicle.service_logs?.slice(0, 3).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()) || []}
           icon="wrench"
-          onAddPress={() => router.push(`/logs/service/add?vehicleId=${vehicle.id}` as any)}
+          onAddPress={vehicle.is_own_vehicle ?
+            () => router.push(`/logs/service/add?vehicleId=${vehicle.id}` as any) :
+            () => router.push(`/logs/service/add?vehicleId=${vehicle.id}` as any)
+          }
+          showAddButton={true} // Both owners and members can add logs for shared vehicles
+          isReadOnly={!vehicle.is_own_vehicle}
         />
       </ScrollView>
     </SafeAreaView>
