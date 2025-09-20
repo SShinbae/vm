@@ -97,11 +97,17 @@ export interface FuelLogFormData {
   location?: string;
 }
 
+export interface ServiceLogItem {
+  description: string;
+  price: number;
+}
+
 export interface ServiceLogFormData {
   vehicle_id: string;
   service_type: ServiceType;
-  description: string;
-  cost?: number;
+  description: string; // For backward compatibility, will store JSON of items
+  cost?: number; // For backward compatibility, will store calculated total
+  items?: ServiceLogItem[]; // New field for itemized breakdown
   date: string;
   odometer_reading: number;
   next_service_due?: string;
@@ -136,6 +142,35 @@ export interface GroupFormData {
   description?: string;
 }
 
+// Services types
+export interface ServiceTemplate {
+  id: string;
+  name: string;
+  description?: string;
+  items: ServiceItem[];
+  total_cost: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ServiceItem {
+  id: string;
+  description: string;
+  price: number;
+  order: number;
+}
+
+export interface ServiceTemplateFormData {
+  name: string;
+  description?: string;
+  items: ServiceItemFormData[];
+}
+
+export interface ServiceItemFormData {
+  description: string;
+  price: number;
+}
+
 // Auth types
 export interface AuthUser {
   id: string;
@@ -154,6 +189,7 @@ export interface ApiResponse<T> {
   data: T | null;
   error: string | null;
   loading: boolean;
+  confidence?: number;
 }
 
 // Navigation types

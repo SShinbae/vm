@@ -12,22 +12,69 @@ export interface ReceiptProcessingResult {
 }
 
 export class OCRService {
-  // Service type mapping for common keywords
+  // Enhanced service type mapping with weighted keywords
   private static SERVICE_TYPE_KEYWORDS = {
-    oil_change: ['oil change', 'oil service', 'lube', 'motor oil', 'synthetic oil', 'conventional oil'],
-    tire_rotation: ['tire rotation', 'tire service', 'rotate tires', 'wheel rotation'],
-    brake_service: ['brake', 'brake service', 'brake pad', 'brake fluid', 'brake repair'],
-    general_maintenance: ['maintenance', 'tune up', 'service', 'check up', 'inspection service'],
-    repair: ['repair', 'fix', 'replacement', 'diagnostic'],
-    inspection: ['inspection', 'state inspection', 'safety inspection', 'emissions test'],
+    oil_change: {
+      primary: ['oil change', 'oil service', 'lube service', 'oil and filter'],
+      secondary: ['motor oil', 'synthetic oil', 'conventional oil', 'engine oil'],
+      contextual: ['filter', 'drain', 'refill', 'lubrication'],
+      weight: { primary: 10, secondary: 6, contextual: 3 }
+    },
+    tire_rotation: {
+      primary: ['tire rotation', 'tire service', 'rotate tires'],
+      secondary: ['wheel rotation', 'tire balance', 'wheel alignment'],
+      contextual: ['rotation', 'balance', 'alignment', 'mounting'],
+      weight: { primary: 10, secondary: 6, contextual: 3 }
+    },
+    brake_service: {
+      primary: ['brake service', 'brake repair', 'brake pad replacement'],
+      secondary: ['brake pad', 'brake fluid', 'brake rotor', 'brake disc'],
+      contextual: ['brake', 'stopping', 'hydraulic', 'calipers'],
+      weight: { primary: 10, secondary: 6, contextual: 3 }
+    },
+    general_maintenance: {
+      primary: ['maintenance', 'tune up', 'service package', 'full service'],
+      secondary: ['check up', 'inspection service', 'multi-point', 'preventive'],
+      contextual: ['maintain', 'servicing', 'upkeep', 'routine'],
+      weight: { primary: 10, secondary: 6, contextual: 3 }
+    },
+    repair: {
+      primary: ['repair', 'diagnostic', 'troubleshoot', 'replacement'],
+      secondary: ['fix', 'diagnose', 'replace', 'rebuild'],
+      contextual: ['problem', 'issue', 'fault', 'malfunction'],
+      weight: { primary: 10, secondary: 6, contextual: 3 }
+    },
+    inspection: {
+      primary: ['inspection', 'state inspection', 'safety inspection', 'emissions test'],
+      secondary: ['smog test', 'vehicle inspection', 'annual inspection'],
+      contextual: ['test', 'check', 'certification', 'compliance'],
+      weight: { primary: 10, secondary: 6, contextual: 3 }
+    }
   };
 
-  // Common service business names for better context
-  private static SERVICE_BUSINESSES = [
-    'jiffy lube', 'valvoline', 'mobil 1', 'quick lube', 'oil express',
-    'midas', 'firestone', 'goodyear', 'pep boys', 'autozone',
-    'advance auto', 'ntb', 'tire kingdom', 'brake check'
-  ];
+  // Enhanced service business database with scoring
+  private static SERVICE_BUSINESSES = {
+    // Chain auto services
+    chains: {
+      'jiffy lube': { variants: ['jiffy lube', 'jiffylube'], score: 8 },
+      'valvoline instant oil change': { variants: ['valvoline', 'valvoline instant'], score: 8 },
+      'mobil 1 lube express': { variants: ['mobil 1', 'mobil one', 'exxonmobil'], score: 8 },
+      'quick lube': { variants: ['quick lube', 'quicklube'], score: 6 },
+      'midas': { variants: ['midas', 'midas auto'], score: 7 },
+      'firestone': { variants: ['firestone', 'firestone complete'], score: 7 },
+      'goodyear': { variants: ['goodyear', 'goodyear tire'], score: 7 },
+      'pep boys': { variants: ['pep boys', 'pepboys'], score: 7 },
+      'autozone': { variants: ['autozone', 'auto zone'], score: 6 },
+      'ntb': { variants: ['ntb', 'national tire'], score: 6 },
+      'tire kingdom': { variants: ['tire kingdom', 'tirekingdom'], score: 6 }
+    },
+    // Common patterns for independent shops
+    patterns: [
+      { regex: /([\w\s]+)\s+(auto|automotive|service|garage|shop|tire|oil)/i, score: 5 },
+      { regex: /([\w\s]+)\s+(lube|quick|express)/i, score: 4 },
+      { regex: /(\w+)'?s\s+(auto|service|garage|shop)/i, score: 4 }
+    ]
+  };
 
   /**
    * Request camera/gallery permissions
@@ -45,7 +92,7 @@ export class OCRService {
   }
 
   /**
-   * Launch camera to capture receipt
+   * Launch camera to capture receipt with optimized settings for OCR
    */
   static async captureReceiptFromCamera(): Promise<ImagePicker.ImagePickerResult | null> {
     try {
@@ -57,9 +104,13 @@ export class OCRService {
       const result = await ImagePicker.launchCameraAsync({
         mediaTypes: ['images'],
         allowsEditing: true,
-        aspect: [3, 4],
-        quality: 0.8,
+        aspect: [2, 3], // Better aspect ratio for receipts (taller)
+        quality: 1.0,   // Maximum quality for better OCR
         base64: false,
+        exif: false,    // Don't include EXIF data to reduce size
+        // Additional camera settings for better text capture
+        videoQuality: ImagePicker.UIImagePickerControllerQualityType.High,
+        preferredAssetRepresentationMode: ImagePicker.AssetRepresentationMode.Current,
       });
 
       return result;
@@ -70,7 +121,7 @@ export class OCRService {
   }
 
   /**
-   * Pick receipt from gallery
+   * Pick receipt from gallery with optimized settings for OCR
    */
   static async pickReceiptFromGallery(): Promise<ImagePicker.ImagePickerResult | null> {
     try {
@@ -82,9 +133,13 @@ export class OCRService {
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ['images'],
         allowsEditing: true,
-        aspect: [3, 4],
-        quality: 0.8,
+        aspect: [2, 3], // Better aspect ratio for receipts (taller)
+        quality: 1.0,   // Maximum quality for better OCR
         base64: false,
+        exif: false,    // Don't include EXIF data to reduce size
+        // Allow selection of high-quality images
+        videoQuality: ImagePicker.UIImagePickerControllerQualityType.High,
+        preferredAssetRepresentationMode: ImagePicker.AssetRepresentationMode.Current,
       });
 
       return result;
@@ -150,7 +205,7 @@ export class OCRService {
   }
 
   /**
-   * Extract text from image using Google Vision API
+   * Extract text from image using Google Vision API (deprecated - use GoogleVisionService directly)
    */
   static async extractTextFromImage(imageUri: string): Promise<string> {
     try {
@@ -188,128 +243,392 @@ export class OCRService {
   }
 
   /**
-   * Parse extracted text to identify service information
+   * Advanced service type detection with weighted scoring
    */
-  static parseExtractedText(rawText: string): OCRExtractedData['extracted_fields'] {
-    // Validate input
-    if (!rawText || typeof rawText !== 'string') {
-      console.warn('Invalid rawText provided to parseExtractedText:', rawText);
-      return {
-        confidence_scores: {}
-      };
-    }
-
-    const text = rawText.toLowerCase();
-    const lines = rawText.split('\n');
-
-    const extracted: OCRExtractedData['extracted_fields'] = {
-      confidence_scores: {}
-    };
-
-    // Extract service type
-    let highestServiceTypeMatch = '';
-    let highestServiceTypeScore = 0;
+  private static detectServiceType(text: string): { type: string; score: number } {
+    const lowerText = text.toLowerCase();
+    let bestMatch = { type: '', score: 0 };
 
     for (const [serviceType, keywords] of Object.entries(this.SERVICE_TYPE_KEYWORDS)) {
-      for (const keyword of keywords) {
-        if (text.includes(keyword.toLowerCase())) {
-          const score = keyword.length / text.length * 100;
-          if (score > highestServiceTypeScore) {
-            highestServiceTypeScore = score;
-            highestServiceTypeMatch = serviceType;
+      let totalScore = 0;
+      let matchCount = 0;
+
+      // Check primary keywords
+      for (const keyword of keywords.primary) {
+        if (lowerText.includes(keyword.toLowerCase())) {
+          totalScore += keywords.weight.primary;
+          matchCount++;
+        }
+      }
+
+      // Check secondary keywords
+      for (const keyword of keywords.secondary) {
+        if (lowerText.includes(keyword.toLowerCase())) {
+          totalScore += keywords.weight.secondary;
+          matchCount++;
+        }
+      }
+
+      // Check contextual keywords
+      for (const keyword of keywords.contextual) {
+        if (lowerText.includes(keyword.toLowerCase())) {
+          totalScore += keywords.weight.contextual;
+          matchCount++;
+        }
+      }
+
+      // Boost score based on proximity of keywords
+      if (matchCount > 1) {
+        totalScore *= (1 + (matchCount - 1) * 0.2);
+      }
+
+      if (totalScore > bestMatch.score) {
+        bestMatch = { type: serviceType, score: totalScore };
+      }
+    }
+
+    return bestMatch;
+  }
+
+  /**
+   * Enhanced cost extraction with context analysis
+   */
+  private static extractCost(text: string): { cost: number; confidence: number } {
+    const lines = text.split('\n');
+    const costs = [];
+
+    // Enhanced cost patterns with context
+    const costPatterns = [
+      // Total patterns (highest priority)
+      { pattern: /(?:total|grand\s*total|amount\s*due|final\s*total)[:\s]*\$([0-9,]+\.?[0-9]*)/gi, weight: 10, type: 'total' },
+      { pattern: /\$([0-9,]+\.?[0-9]*)\s*(?:total|due|owed)/gi, weight: 10, type: 'total' },
+
+      // Service-specific patterns
+      { pattern: /(?:service|labor|parts)[:\s]*\$([0-9,]+\.?[0-9]*)/gi, weight: 8, type: 'service' },
+
+      // Tax patterns (lower priority)
+      { pattern: /(?:tax|hst|gst|pst)[:\s]*\$([0-9,]+\.?[0-9]*)/gi, weight: 3, type: 'tax' },
+
+      // Generic dollar amounts
+      { pattern: /\$([0-9,]+\.?[0-9]*)/g, weight: 1, type: 'generic' }
+    ];
+
+    for (const line of lines) {
+      for (const { pattern, weight, type } of costPatterns) {
+        const matches = [...line.matchAll(pattern)];
+        for (const match of matches) {
+          const amount = parseFloat(match[1].replace(/,/g, ''));
+          if (!isNaN(amount) && amount > 0 && amount < 10000) { // Reasonable range
+            costs.push({ amount, weight, type, line: line.trim() });
           }
         }
       }
     }
 
-    if (highestServiceTypeMatch) {
-      extracted.service_type = highestServiceTypeMatch;
-      extracted.confidence_scores!.service_type = Math.min(highestServiceTypeScore * 10, 95);
+    if (costs.length === 0) {
+      return { cost: 0, confidence: 0 };
     }
 
-    // Extract cost
-    const costPattern = /\$(\d+\.?\d*)/g;
-    const costMatches = rawText.match(costPattern);
-    if (costMatches && costMatches.length > 0) {
-      // Take the last/largest amount as it's likely the total
-      const costs = costMatches
-        .filter(match => match && typeof match === 'string')
-        .map(match => parseFloat(match.replace('$', '')))
-        .filter(cost => !isNaN(cost));
+    // Sort by weight (descending) and amount (descending for same weight)
+    costs.sort((a, b) => {
+      if (a.weight !== b.weight) return b.weight - a.weight;
+      return b.amount - a.amount;
+    });
 
-      if (costs.length > 0) {
-        extracted.cost = Math.max(...costs);
-        extracted.confidence_scores!.cost = 80;
-      }
-    }
+    const bestCost = costs[0];
+    let confidence = 0;
 
-    // Extract date
-    const datePatterns = [
-      /(\d{1,2})\/(\d{1,2})\/(\d{4})/g, // MM/DD/YYYY
-      /(\d{4})-(\d{1,2})-(\d{1,2})/g,   // YYYY-MM-DD
-      /(\d{1,2})-(\d{1,2})-(\d{4})/g,   // DD-MM-YYYY
-    ];
-
-    for (const pattern of datePatterns) {
-      const dateMatch = rawText.match(pattern);
-      if (dateMatch) {
-        extracted.date = dateMatch[0];
-        extracted.confidence_scores!.date = 75;
+    switch (bestCost.type) {
+      case 'total':
+        confidence = 95;
         break;
-      }
+      case 'service':
+        confidence = 85;
+        break;
+      case 'tax':
+        confidence = 40;
+        break;
+      default:
+        confidence = costs.length === 1 ? 70 : 50;
     }
 
-    // Extract mileage/odometer reading
-    const mileagePatterns = [
-      /mileage:?\s*(\d+[,\.]?\d*)/gi,
-      /odometer:?\s*(\d+[,\.]?\d*)/gi,
-      /miles:?\s*(\d+[,\.]?\d*)/gi,
+    return { cost: bestCost.amount, confidence };
+  }
+
+  /**
+   * Enhanced date extraction with multiple formats
+   */
+  private static extractDate(text: string): { date: string; confidence: number } {
+    const datePatterns = [
+      // MM/DD/YYYY or MM-DD-YYYY
+      { pattern: /(\d{1,2})[\/-](\d{1,2})[\/-](\d{4})/g, confidence: 85, format: 'US' },
+      // DD/MM/YYYY or DD-MM-YYYY
+      { pattern: /(\d{1,2})[\/-](\d{1,2})[\/-](\d{4})/g, confidence: 80, format: 'EU' },
+      // YYYY-MM-DD
+      { pattern: /(\d{4})-(\d{1,2})-(\d{1,2})/g, confidence: 90, format: 'ISO' },
+      // Month DD, YYYY
+      { pattern: /(january|february|march|april|may|june|july|august|september|october|november|december)\s+(\d{1,2}),?\s+(\d{4})/gi, confidence: 95, format: 'written' },
+      // Mon DD, YYYY
+      { pattern: /(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)\s+(\d{1,2}),?\s+(\d{4})/gi, confidence: 90, format: 'abbreviated' },
     ];
 
-    for (const pattern of mileagePatterns) {
-      const mileageMatch = text.match(pattern);
-      if (mileageMatch && mileageMatch[1] && typeof mileageMatch[1] === 'string') {
-        const cleanedMileage = mileageMatch[1].replace(/[,\.]/g, '');
-        const mileage = parseInt(cleanedMileage);
-        if (!isNaN(mileage) && mileage > 0 && mileage < 1000000) { // Reasonable range
-          extracted.odometer_reading = mileage;
-          extracted.confidence_scores!.odometer_reading = 70;
-          break;
+    const lines = text.split('\n');
+    let bestMatch = { date: '', confidence: 0 };
+
+    for (const line of lines) {
+      // Skip lines that are too long or seem irrelevant
+      if (line.length > 100) continue;
+
+      for (const { pattern, confidence, format } of datePatterns) {
+        const matches = [...line.matchAll(pattern)];
+        for (const match of matches) {
+          if (confidence > bestMatch.confidence) {
+            let dateStr = match[0];
+
+            // Additional validation for date ranges
+            if (format === 'US' || format === 'EU') {
+              const parts = dateStr.split(/[\/-]/);
+              const month = parseInt(parts[format === 'US' ? 0 : 1]);
+              const day = parseInt(parts[format === 'US' ? 1 : 0]);
+              const year = parseInt(parts[2]);
+
+              if (month < 1 || month > 12 || day < 1 || day > 31 || year < 2000 || year > 2030) {
+                continue;
+              }
+            }
+
+            bestMatch = { date: dateStr, confidence };
+          }
         }
       }
     }
 
-    // Extract business name
-    for (const business of this.SERVICE_BUSINESSES) {
-      if (text.includes(business)) {
-        extracted.business_name = business.split(' ').map(word =>
-          word.charAt(0).toUpperCase() + word.slice(1)
-        ).join(' ');
-        break;
+    return bestMatch;
+  }
+
+  /**
+   * Enhanced mileage/odometer extraction
+   */
+  private static extractOdometer(text: string): { odometer: number; confidence: number } {
+    const lines = text.split('\n');
+    const odometerPatterns = [
+      { pattern: /(?:odometer|odo|mileage|miles?)[:=\s]+(\d{1,3}(?:,\d{3})*(?:\.\d+)?)/gi, confidence: 90 },
+      { pattern: /(?:current\s+)?(?:mileage|miles?)[:=\s]+(\d{1,3}(?:,\d{3})*(?:\.\d+)?)/gi, confidence: 85 },
+      { pattern: /(\d{1,3}(?:,\d{3})*(?:\.\d+)?)\s*(?:miles?|km|kilometres?)/gi, confidence: 75 },
+      { pattern: /(?:at|@)\s*(\d{1,3}(?:,\d{3})*(?:\.\d+)?)\s*(?:miles?|km)/gi, confidence: 80 },
+    ];
+
+    let bestMatch = { odometer: 0, confidence: 0 };
+
+    for (const line of lines) {
+      for (const { pattern, confidence } of odometerPatterns) {
+        const matches = [...line.matchAll(pattern)];
+        for (const match of matches) {
+          const reading = parseInt(match[1].replace(/,/g, ''));
+          if (!isNaN(reading) && reading > 0 && reading < 1000000) {
+            if (confidence > bestMatch.confidence) {
+              bestMatch = { odometer: reading, confidence };
+            }
+          }
+        }
       }
     }
 
-    // Generate description based on services found
-    const serviceKeywords = [];
-    if (text.includes('oil')) serviceKeywords.push('oil change');
-    if (text.includes('filter')) serviceKeywords.push('filter replacement');
-    if (text.includes('inspection')) serviceKeywords.push('inspection');
-    if (text.includes('brake')) serviceKeywords.push('brake service');
-    if (text.includes('tire')) serviceKeywords.push('tire service');
+    return bestMatch;
+  }
 
-    if (serviceKeywords.length > 0) {
-      extracted.description = serviceKeywords.join(', ');
-      extracted.confidence_scores!.description = 60;
-    } else if (extracted.business_name) {
-      extracted.description = `Service at ${extracted.business_name}`;
-      extracted.confidence_scores!.description = 40;
+  /**
+   * Enhanced business name extraction
+   */
+  private static extractBusinessName(text: string): { name: string; confidence: number } {
+    const lines = text.split('\n');
+    let bestMatch = { name: '', confidence: 0 };
+
+    // Check for known chains first
+    for (const [businessName, { variants, score }] of Object.entries(this.SERVICE_BUSINESSES.chains)) {
+      for (const variant of variants) {
+        if (text.toLowerCase().includes(variant.toLowerCase())) {
+          if (score > bestMatch.confidence) {
+            bestMatch = {
+              name: businessName.split(' ').map(word =>
+                word.charAt(0).toUpperCase() + word.slice(1)
+              ).join(' '),
+              confidence: score * 10
+            };
+          }
+        }
+      }
     }
+
+    // Check patterns for independent shops
+    if (bestMatch.confidence < 70) {
+      for (const line of lines.slice(0, 5)) { // Check first 5 lines
+        if (line.length > 50) continue; // Skip very long lines
+
+        for (const { regex, score } of this.SERVICE_BUSINESSES.patterns) {
+          const match = line.match(regex);
+          if (match && score * 10 > bestMatch.confidence) {
+            bestMatch = {
+              name: line.trim(),
+              confidence: score * 10
+            };
+          }
+        }
+      }
+    }
+
+    return bestMatch;
+  }
+
+  /**
+   * Parse extracted text to identify service information with enhanced accuracy
+   */
+  static parseExtractedText(rawText: string): OCRExtractedData['extracted_fields'] {
+    // Validate input
+    if (!rawText || typeof rawText !== 'string') {
+      console.warn('Invalid rawText provided to parseExtractedText:', rawText);
+      return { confidence_scores: {} };
+    }
+
+    const extracted: OCRExtractedData['extracted_fields'] = {
+      confidence_scores: {}
+    };
+
+    // Extract service type with weighted scoring
+    const serviceTypeResult = this.detectServiceType(rawText);
+    if (serviceTypeResult.score > 5) {
+      extracted.service_type = serviceTypeResult.type;
+      extracted.confidence_scores!.service_type = Math.min(serviceTypeResult.score * 5, 95);
+    }
+
+    // Extract cost with context analysis
+    const costResult = this.extractCost(rawText);
+    if (costResult.cost > 0) {
+      extracted.cost = costResult.cost;
+      extracted.confidence_scores!.cost = costResult.confidence;
+    }
+
+    // Extract date with multiple format support
+    const dateResult = this.extractDate(rawText);
+    if (dateResult.date) {
+      extracted.date = dateResult.date;
+      extracted.confidence_scores!.date = dateResult.confidence;
+    }
+
+    // Extract odometer reading
+    const odometerResult = this.extractOdometer(rawText);
+    if (odometerResult.odometer > 0) {
+      extracted.odometer_reading = odometerResult.odometer;
+      extracted.confidence_scores!.odometer_reading = odometerResult.confidence;
+    }
+
+    // Extract business name
+    const businessResult = this.extractBusinessName(rawText);
+    if (businessResult.name) {
+      extracted.business_name = businessResult.name;
+    }
+
+    // Generate intelligent description
+    this.generateDescription(extracted, rawText);
 
     return extracted;
   }
 
   /**
-   * Process receipt image end-to-end
+   * Generate intelligent service description
+   */
+  private static generateDescription(extracted: OCRExtractedData['extracted_fields'], rawText: string): void {
+    const parts = [];
+
+    // Add service type if detected
+    if (extracted.service_type) {
+      const readableType = extracted.service_type.replace('_', ' ')
+        .replace(/\b\w/g, l => l.toUpperCase());
+      parts.push(readableType);
+    }
+
+    // Look for specific service details in text
+    const text = rawText.toLowerCase();
+    const serviceDetails = [];
+
+    if (text.includes('oil') && text.includes('filter')) {
+      serviceDetails.push('oil & filter change');
+    } else if (text.includes('oil')) {
+      serviceDetails.push('oil change');
+    } else if (text.includes('filter')) {
+      serviceDetails.push('filter replacement');
+    }
+
+    if (text.includes('tire') && text.includes('rotation')) {
+      serviceDetails.push('tire rotation');
+    }
+
+    if (text.includes('brake')) {
+      serviceDetails.push('brake service');
+    }
+
+    if (text.includes('inspection')) {
+      serviceDetails.push('vehicle inspection');
+    }
+
+    // Combine parts
+    if (serviceDetails.length > 0) {
+      parts.push(...serviceDetails);
+    }
+
+    if (extracted.business_name && !parts.some(p => p.toLowerCase().includes('service'))) {
+      parts.push(`at ${extracted.business_name}`);
+    }
+
+    if (parts.length > 0) {
+      extracted.description = parts.join(', ');
+      extracted.confidence_scores!.description = Math.min(parts.length * 20 + 40, 85);
+    } else {
+      extracted.description = 'Vehicle service';
+      extracted.confidence_scores!.description = 30;
+    }
+  }
+
+  /**
+   * Calculate overall confidence with multi-factor analysis
+   */
+  private static calculateOverallConfidence(extractedFields: OCRExtractedData['extracted_fields'], ocrConfidence: number = 0): number {
+    const confidenceScores = extractedFields.confidence_scores || {};
+    const fieldScores = Object.values(confidenceScores);
+
+    if (fieldScores.length === 0) {
+      return Math.max(ocrConfidence * 0.3, 20); // Minimum 20% if we have some text
+    }
+
+    // Weight different fields by importance
+    const weights = {
+      cost: 0.3,          // Most important for receipts
+      service_type: 0.25,  // Second most important
+      date: 0.2,          // Important for record keeping
+      odometer_reading: 0.15, // Useful but not critical
+      description: 0.1     // Least critical as it's often generated
+    };
+
+    let weightedSum = 0;
+    let totalWeight = 0;
+
+    for (const [field, score] of Object.entries(confidenceScores)) {
+      const weight = weights[field as keyof typeof weights] || 0.05;
+      weightedSum += score * weight;
+      totalWeight += weight;
+    }
+
+    const fieldConfidence = totalWeight > 0 ? weightedSum / totalWeight : 0;
+
+    // Combine with OCR confidence (40% field analysis, 40% OCR confidence, 20% completeness bonus)
+    const completenessBonus = (fieldScores.length / 5) * 20; // Bonus for having more fields
+    const finalConfidence = (fieldConfidence * 0.4) + (ocrConfidence * 0.4) + (completenessBonus * 0.2);
+
+    return Math.min(Math.round(finalConfidence), 95); // Cap at 95%
+  }
+
+  /**
+   * Process receipt image end-to-end with enhanced analysis
    */
   static async processReceiptImage(imageUri: string): Promise<ReceiptProcessingResult> {
     try {
@@ -322,32 +641,43 @@ export class OCRService {
         };
       }
 
-      // Extract text from image
-      const rawText = await this.extractTextFromImage(imageUri);
+      // Extract text from image with confidence
+      const extractionResult = await GoogleVisionService.extractTextFromImage(imageUri);
 
-      if (!rawText || typeof rawText !== 'string' || rawText.trim().length === 0) {
+      if (extractionResult.error || !extractionResult.data) {
+        return {
+          success: false,
+          error: extractionResult.error || 'No text could be extracted from the receipt image'
+        };
+      }
+
+      const rawText = extractionResult.data;
+      const ocrConfidence = extractionResult.confidence || 0;
+
+      if (!rawText || rawText.trim().length === 0) {
         return {
           success: false,
           error: 'No text could be extracted from the receipt image'
         };
       }
 
-      // Parse extracted text
+      console.log(`Processing receipt with ${rawText.length} characters, OCR confidence: ${ocrConfidence.toFixed(1)}%`);
+
+      // Parse extracted text with enhanced methods
       const extractedFields = this.parseExtractedText(rawText);
 
-      // Calculate overall confidence score
-      const confidenceScores = extractedFields.confidence_scores || {};
-      const scores = Object.values(confidenceScores);
-      const averageConfidence = scores.length > 0
-        ? scores.reduce((sum, score) => sum + score, 0) / scores.length
-        : 30;
+      // Calculate sophisticated overall confidence
+      const overallConfidence = this.calculateOverallConfidence(extractedFields, ocrConfidence);
 
       const ocrData: OCRExtractedData = {
         raw_text: rawText,
-        confidence: Math.round(averageConfidence),
+        confidence: overallConfidence,
         extracted_fields: extractedFields,
         processing_timestamp: new Date().toISOString(),
       };
+
+      console.log(`Processing complete. Final confidence: ${overallConfidence}%`);
+      console.log('Extracted fields:', Object.keys(extractedFields).filter(k => k !== 'confidence_scores' && extractedFields[k as keyof typeof extractedFields]));
 
       return {
         success: true,

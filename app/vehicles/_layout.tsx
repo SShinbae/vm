@@ -27,6 +27,8 @@ export default function VehiclesLayout() {
         }}
       />
       <Stack.Screen name="[id]/edit" />
+      <Stack.Screen name="services/add" />
+      <Stack.Screen name="services/[id]/edit" />
     </Stack>
   );
 }

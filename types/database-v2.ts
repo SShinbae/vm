@@ -287,6 +287,55 @@ export interface Database {
           next_service_due?: string | null
         }
       }
+
+      // =================== SERVICE TEMPLATES ===================
+      service_templates: {
+        Row: {
+          id: string
+          user_id: string
+          name: string
+          description: string | null
+          total_cost: number
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          user_id: string
+          name: string
+          description?: string | null
+          total_cost?: number
+        }
+        Update: {
+          name?: string
+          description?: string | null
+          total_cost?: number
+          updated_at?: string
+        }
+      }
+
+      service_template_items: {
+        Row: {
+          id: string
+          template_id: string
+          description: string
+          price: number
+          display_order: number
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          template_id: string
+          description: string
+          price: number
+          display_order: number
+        }
+        Update: {
+          description?: string
+          price?: number
+          display_order?: number
+          updated_at?: string
+        }
+      }
     }
 
     Views: {
@@ -415,6 +464,15 @@ export type FuelLogUpdate = Database['public']['Tables']['fuel_logs']['Update']
 export type ServiceLog = Database['public']['Tables']['service_logs']['Row']
 export type ServiceLogInsert = Database['public']['Tables']['service_logs']['Insert']
 export type ServiceLogUpdate = Database['public']['Tables']['service_logs']['Update']
+
+// Service template types
+export type ServiceTemplate = Database['public']['Tables']['service_templates']['Row']
+export type ServiceTemplateInsert = Database['public']['Tables']['service_templates']['Insert']
+export type ServiceTemplateUpdate = Database['public']['Tables']['service_templates']['Update']
+
+export type ServiceTemplateItem = Database['public']['Tables']['service_template_items']['Row']
+export type ServiceTemplateItemInsert = Database['public']['Tables']['service_template_items']['Insert']
+export type ServiceTemplateItemUpdate = Database['public']['Tables']['service_template_items']['Update']
 
 // =====================================================
 // ENHANCED COMPOSITE TYPES

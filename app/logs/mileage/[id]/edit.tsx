@@ -14,7 +14,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { MileageLogService } from '@/lib/services/loggingService';
-import { VehicleServiceV2 } from '@/lib/services/vehicleServiceV2';
+import { VehicleService } from '@/lib/services/vehicleService';
 import { MileageLogFormData, MileageLog } from '@/types';
 import { VehicleWithDetails } from '@/types/database-v2';
 import { Colors } from '@/constants/theme';

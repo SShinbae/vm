@@ -14,15 +14,16 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { ServiceLogService } from '@/lib/services/loggingService';
-import { VehicleServiceV2 } from '@/lib/services/vehicleServiceV2';
+import { VehicleService } from '@/lib/services/vehicleService';
 import { OCRService, ReceiptProcessingResult } from '@/lib/services/ocrService';
-import { ServiceLogFormData, ServiceType, OCRExtractedData } from '@/types';
+import { ServiceLogFormData, ServiceType, OCRExtractedData, ServiceLogItem } from '@/types';
 import { VehicleWithDetails } from '@/types/database-v2';
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { ReceiptCapture, OCRResultDisplay } from '@/components/ui/ReceiptCapture';
 import { ReceiptViewer } from '@/components/ui/ReceiptViewer';
+import { ServiceItemsInput, calculateTotalCost, validateServiceItems, createDefaultServiceItems } from '@/components/ui/ServiceItemsInput';
 
 const SERVICE_TYPES: { value: ServiceType; label: string; icon: string }[] = [
   { value: 'oil_change', label: 'Oil Change', icon: 'drop' },
@@ -42,6 +43,7 @@ export default function AddServiceLogScreen() {
     service_type: 'general_maintenance',
     description: '',
     cost: 0,
+    items: createDefaultServiceItems(),
     date: new Date().toISOString().split('T')[0],
     odometer_reading: 0,
     next_service_due: '',
@@ -59,7 +61,7 @@ export default function AddServiceLogScreen() {
 
   useEffect(() => {
     const fetchVehicles = async () => {
-      const { data, error } = await VehicleServiceV2.getVehiclesSeparated();
+      const { data, error } = await VehicleService.getVehiclesSeparated();
       if (!error && data) {
         // Combine both owned and shared vehicles for the dropdown
         const allVehicles = [...data.ownVehicles, ...data.sharedVehicles];
@@ -80,10 +82,14 @@ export default function AddServiceLogScreen() {
       Alert.alert('Error', 'Please select a vehicle');
       return;
     }
-    if (!formData.description.trim()) {
-      Alert.alert('Error', 'Please enter a service description');
+
+    // Validate service items
+    const itemsError = validateServiceItems(formData.items || []);
+    if (itemsError) {
+      Alert.alert('Error', itemsError);
       return;
     }
+
     if (formData.odometer_reading <= 0) {
       Alert.alert('Error', 'Please enter a valid odometer reading');
       return;
@@ -95,11 +101,15 @@ export default function AddServiceLogScreen() {
 
     setLoading(true);
 
+    // Calculate total cost and serialize items
+    const totalCost = calculateTotalCost(formData.items || []);
+    const itemsJson = JSON.stringify(formData.items || []);
+
     const logData = {
       vehicle_id: formData.vehicle_id,
       service_type: formData.service_type,
-      description: formData.description.trim(),
-      cost: formData.cost || undefined,
+      description: itemsJson, // Store items as JSON for backward compatibility
+      cost: totalCost,
       date: formData.date,
       odometer_reading: formData.odometer_reading,
       next_service_due: formData.next_service_due?.trim() || undefined,
@@ -124,9 +134,12 @@ export default function AddServiceLogScreen() {
   };
 
   const isFormValid = () => {
+    const itemsValid = formData.items && formData.items.length > 0 &&
+      formData.items.some(item => item.description.trim() && item.price > 0);
+
     return (
       formData.vehicle_id &&
-      formData.description.trim() &&
+      itemsValid &&
       formData.odometer_reading > 0 &&
       formData.date
     );
@@ -749,57 +762,26 @@ export default function AddServiceLogScreen() {
               </View>
             )}
 
+            <ServiceItemsInput
+              items={formData.items || []}
+              onItemsChange={(items) => setFormData(prev => ({ ...prev, items }))}
+            />
+
             <View style={styles.inputContainer}>
               <Text style={styles.label}>
-                Description <Text style={styles.requiredLabel}>*</Text>
+                Odometer (km) <Text style={styles.requiredLabel}>*</Text>
               </Text>
               <TextInput
-                style={[styles.input, styles.textArea]}
-                value={formData.description}
-                onChangeText={(text) => setFormData(prev => ({ ...prev, description: text }))}
-                placeholder="Describe the service performed..."
+                style={styles.input}
+                value={formData.odometer_reading.toString()}
+                onChangeText={(text) => {
+                  const reading = parseInt(text.replace(/,/g, '')) || 0;
+                  setFormData(prev => ({ ...prev, odometer_reading: reading }));
+                }}
+                placeholder="150,000"
                 placeholderTextColor={colors.icon}
-                multiline
-                textAlignVertical="top"
+                keyboardType="numeric"
               />
-            </View>
-
-            <View style={styles.row}>
-              <View style={styles.flex1}>
-                <View style={styles.inputContainer}>
-                  <Text style={styles.label}>Cost (Optional)</Text>
-                  <TextInput
-                    style={styles.input}
-                    value={formData.cost?.toString() || ''}
-                    onChangeText={(text) => {
-                      const cost = parseFloat(text) || 0;
-                      setFormData(prev => ({ ...prev, cost }));
-                    }}
-                    placeholder="150.00"
-                    placeholderTextColor={colors.icon}
-                    keyboardType="numeric"
-                  />
-                </View>
-              </View>
-
-              <View style={styles.flex1}>
-                <View style={styles.inputContainer}>
-                  <Text style={styles.label}>
-                    Odometer (km) <Text style={styles.requiredLabel}>*</Text>
-                  </Text>
-                  <TextInput
-                    style={styles.input}
-                    value={formData.odometer_reading.toString()}
-                    onChangeText={(text) => {
-                      const reading = parseInt(text.replace(/,/g, '')) || 0;
-                      setFormData(prev => ({ ...prev, odometer_reading: reading }));
-                    }}
-                    placeholder="150,000"
-                    placeholderTextColor={colors.icon}
-                    keyboardType="numeric"
-                  />
-                </View>
-              </View>
             </View>
 
             <View style={styles.row}>

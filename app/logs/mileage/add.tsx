@@ -14,7 +14,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { MileageLogService } from '@/lib/services/loggingService';
-import { VehicleServiceV2 } from '@/lib/services/vehicleServiceV2';
+import { VehicleService } from '@/lib/services/vehicleService';
 import { MileageLogFormData } from '@/types';
 import { VehicleWithDetails } from '@/types/database-v2';
 import { Colors } from '@/constants/theme';
@@ -37,7 +37,7 @@ export default function AddMileageLogScreen() {
 
   useEffect(() => {
     const fetchVehicles = async () => {
-      const { data, error } = await VehicleServiceV2.getVehiclesSeparated();
+      const { data, error } = await VehicleService.getVehiclesSeparated();
       if (!error && data) {
         // Combine both owned and shared vehicles for the dropdown
         const allVehicles = [...data.ownVehicles, ...data.sharedVehicles];
