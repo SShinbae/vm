@@ -1,7 +1,7 @@
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
-import { VehicleServiceV2 } from '@/lib/services/vehicleServiceV2';
+import { VehicleService } from '@/lib/services/vehicleService';
 import { formatDate, formatDateWithPrefix } from '@/lib/utils/dateUtils';
 import { VehicleWithDetails } from '@/types/database-v2';
 import { ReceiptViewer, ServiceReceiptIndicator } from '@/components/ui/ReceiptViewer';
@@ -33,8 +33,8 @@ export default function VehicleDetailScreen() {
     if (!id) return;
 
     try {
-      // Using VehicleServiceV2.getVehicleById for more detailed data
-      const vehicleResult = await VehicleServiceV2.getVehicleById(id);
+      // Using VehicleService.getVehicleById for more detailed data
+      const vehicleResult = await VehicleService.getVehicleById(id);
 
       if (vehicleResult.error) {
         console.error('Error fetching vehicle:', vehicleResult.error);
@@ -73,7 +73,7 @@ export default function VehicleDetailScreen() {
           text: 'Delete',
           style: 'destructive',
           onPress: async () => {
-            const { error } = await VehicleServiceV2.deleteVehicle(vehicle.id);
+            const { error } = await VehicleService.deleteVehicle(vehicle.id);
             if (error) {
               Alert.alert('Error', 'Failed to delete vehicle');
             } else {
@@ -101,7 +101,7 @@ export default function VehicleDetailScreen() {
               setSharingLoading(true);
               try {
                 // Get user's groups
-                const { data: groups, error: groupsError } = await VehicleServiceV2.getUserGroups();
+                const { data: groups, error: groupsError } = await VehicleService.getUserGroups();
 
                 if (groupsError || !groups || groups.length === 0) {
                   Alert.alert('Error', 'No groups found. You need to be a member of at least one group to share vehicles.');
@@ -110,7 +110,7 @@ export default function VehicleDetailScreen() {
 
                 // Share with all groups
                 const groupIds = groups.map(group => group.id);
-                const { error: shareError } = await VehicleServiceV2.shareVehicleWithGroups(vehicle.id, groupIds);
+                const { error: shareError } = await VehicleService.shareVehicleWithGroups(vehicle.id, groupIds);
 
                 if (shareError) {
                   Alert.alert('Error', 'Failed to share vehicle: ' + shareError);
@@ -140,7 +140,7 @@ export default function VehicleDetailScreen() {
       // When turning off sharing, remove all shares
       setSharingLoading(true);
       try {
-        const { error } = await VehicleServiceV2.shareVehicleWithGroups(vehicle.id, []);
+        const { error } = await VehicleService.shareVehicleWithGroups(vehicle.id, []);
 
         if (error) {
           Alert.alert('Error', 'Failed to stop sharing');

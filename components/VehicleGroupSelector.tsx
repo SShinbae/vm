@@ -1,7 +1,7 @@
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
-import { VehicleServiceV2 } from '@/lib/services/vehicleServiceV2';
+import { VehicleService } from '@/lib/services/vehicleService';
 import { Group } from '@/types';
 import React, { useEffect, useState } from 'react';
 import {
@@ -38,7 +38,7 @@ export const VehicleGroupSelector: React.FC<VehicleGroupSelectorProps> = ({
 
   const fetchUserGroups = async () => {
     try {
-      const { data, error } = await VehicleServiceV2.getUserGroups();
+      const { data, error } = await VehicleService.getUserGroups();
       if (data && !error) {
         setAvailableGroups(data);
         console.log('📋 Fetched user groups:', data.length);
@@ -61,7 +61,7 @@ export const VehicleGroupSelector: React.FC<VehicleGroupSelectorProps> = ({
   const handleSaveSharing = async () => {
     setLoading(true);
     try {
-      const { error } = await VehicleServiceV2.shareVehicleWithGroups(
+      const { error } = await VehicleService.shareVehicleWithGroups(
         vehicleId,
         selectedGroups
       );

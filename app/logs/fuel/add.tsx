@@ -2,7 +2,7 @@ import { IconSymbol } from '@/components/ui/icon-symbol';
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { FuelLogService } from '@/lib/services/loggingService';
-import { VehicleServiceV2 } from '@/lib/services/vehicleServiceV2';
+import { VehicleService } from '@/lib/services/vehicleService';
 import { FuelLogFormData } from '@/types';
 import { VehicleWithDetails } from '@/types/database-v2';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -39,7 +39,7 @@ export default function AddFuelLogScreen() {
 
   useEffect(() => {
     const fetchVehicles = async () => {
-      const { data, error } = await VehicleServiceV2.getVehiclesSeparated();
+      const { data, error } = await VehicleService.getVehiclesSeparated();
       if (!error && data) {
         // Combine both owned and shared vehicles for the dropdown
         const allVehicles = [...data.ownVehicles, ...data.sharedVehicles];

@@ -228,7 +228,7 @@ export function ReceiptCapture({ onReceiptProcessed, onPictureOnly, onCancel, di
           onPress: () => {
             Alert.alert(
               'Scan Receipt',
-              'This will process the receipt and auto-fill service details.',
+              'Enhanced OCR will extract service type, cost, date, mileage, and business info. For best results, ensure good lighting and clear text.',
               [
                 { text: 'Take Photo', onPress: handleCameraCapture },
                 { text: 'Choose from Gallery', onPress: handleGalleryPick },
@@ -345,7 +345,7 @@ export function ReceiptCapture({ onReceiptProcessed, onPictureOnly, onCancel, di
           <Text style={styles.processingText}>Processing receipt...</Text>
         </View>
         <Text style={styles.helpText}>
-          Extracting service details from your receipt
+          🔍 Using enhanced OCR to extract service details, cost, date, and mileage from your receipt
         </Text>
       </View>
     );
@@ -363,7 +363,7 @@ export function ReceiptCapture({ onReceiptProcessed, onPictureOnly, onCancel, di
       </TouchableOpacity>
 
       <Text style={styles.helpText}>
-        Scan receipts to auto-fill details, or save pictures to review later with your service records
+        📱 For best OCR results: Use good lighting, keep receipt flat, ensure text is clear and readable
       </Text>
 
       <Modal
