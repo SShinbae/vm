@@ -10,6 +10,7 @@ import {
   StyleSheet,
   ActivityIndicator,
   ScrollView,
+  Dimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Link, router } from 'expo-router';
@@ -17,12 +18,19 @@ import { useAuth } from '@/lib/contexts/AuthContext';
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 
+const { width: screenWidth } = Dimensions.get('window');
+
 export default function RegisterScreen() {
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [fullNameFocused, setFullNameFocused] = useState(false);
+  const [emailFocused, setEmailFocused] = useState(false);
+  const [passwordFocused, setPasswordFocused] = useState(false);
+  const [confirmPasswordFocused, setConfirmPasswordFocused] = useState(false);
+  const [agreeToTerms, setAgreeToTerms] = useState(false);
   const { signUp } = useAuth();
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
@@ -46,6 +54,10 @@ export default function RegisterScreen() {
     }
     if (password !== confirmPassword) {
       Alert.alert('Error', 'Passwords do not match');
+      return false;
+    }
+    if (!agreeToTerms) {
+      Alert.alert('Error', 'Please agree to the Terms of Service');
       return false;
     }
     return true;
@@ -77,24 +89,47 @@ export default function RegisterScreen() {
   };
 
   const isFormValid = () => {
-    return fullName.trim() && email.trim() && password.length >= 6 && password === confirmPassword;
+    return fullName.trim() && email.trim() && password.length >= 6 && password === confirmPassword && agreeToTerms;
+  };
+
+  const getPasswordStrength = () => {
+    if (password.length === 0) return null;
+    if (password.length < 6) return { text: 'Too short', style: styles.passwordWeak };
+    if (password.length < 8) return { text: 'Weak', style: styles.passwordWeak };
+    if (password.length < 12 && /(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(password)) {
+      return { text: 'Strong', style: styles.passwordStrong };
+    }
+    if (password.length >= 8) return { text: 'Good', style: styles.passwordMedium };
+    return { text: 'Weak', style: styles.passwordWeak };
   };
 
   const styles = StyleSheet.create({
     container: {
       flex: 1,
-      backgroundColor: colors.background,
-    },
-    content: {
-      flex: 1,
-      padding: 20,
+      backgroundColor: colors.facebook?.background || colors.surface,
     },
     scrollContent: {
       flexGrow: 1,
-      justifyContent: 'center',
+      paddingVertical: 20,
+    },
+    content: {
+      paddingHorizontal: 20,
+      maxWidth: screenWidth > 600 ? 400 : '100%',
+      alignSelf: 'center',
+      width: '100%',
+    },
+    logoContainer: {
+      alignItems: 'center',
+      marginBottom: 32,
+    },
+    logo: {
+      fontSize: 48,
+      fontWeight: 'bold',
+      color: colors.facebook?.primary || colors.tint,
+      marginBottom: 8,
     },
     title: {
-      fontSize: 32,
+      fontSize: 24,
       fontWeight: 'bold',
       color: colors.text,
       textAlign: 'center',
@@ -102,61 +137,168 @@ export default function RegisterScreen() {
     },
     subtitle: {
       fontSize: 16,
-      color: colors.icon,
+      color: colors.facebook?.gray || colors.icon,
       textAlign: 'center',
-      marginBottom: 40,
+      marginBottom: 32,
+      lineHeight: 22,
+    },
+    card: {
+      backgroundColor: colors.facebook?.card || colors.background,
+      borderRadius: 12,
+      padding: 24,
+      shadowColor: '#000',
+      shadowOffset: {
+        width: 0,
+        height: 2,
+      },
+      shadowOpacity: 0.1,
+      shadowRadius: 8,
+      elevation: 4,
+      marginBottom: 24,
     },
     inputContainer: {
       marginBottom: 16,
     },
-    label: {
-      fontSize: 16,
-      fontWeight: '600',
-      color: colors.text,
-      marginBottom: 8,
-    },
     input: {
-      backgroundColor: colors.background,
+      backgroundColor: colors.facebook?.lightGray || colors.surface,
       borderWidth: 1,
-      borderColor: colors.icon,
+      borderColor: colors.facebook?.divider || colors.border,
       borderRadius: 8,
       paddingHorizontal: 16,
-      paddingVertical: 12,
+      paddingVertical: 14,
       fontSize: 16,
       color: colors.text,
+      minHeight: 52,
+    },
+    inputFocused: {
+      borderColor: colors.facebook?.primary || colors.tint,
+      borderWidth: 2,
+      backgroundColor: colors.facebook?.card || colors.background,
+    },
+    passwordStrength: {
+      fontSize: 12,
+      marginTop: 4,
+      marginLeft: 4,
+    },
+    passwordWeak: {
+      color: colors.facebook?.error || '#F02849',
+    },
+    passwordMedium: {
+      color: '#FFA500',
+    },
+    passwordStrong: {
+      color: colors.facebook?.success || colors.facebook?.secondary,
+    },
+    checkboxContainer: {
+      flexDirection: 'row',
+      alignItems: 'flex-start',
+      marginBottom: 20,
+      paddingHorizontal: 4,
+    },
+    checkbox: {
+      width: 20,
+      height: 20,
+      borderWidth: 2,
+      borderColor: colors.facebook?.divider || colors.border,
+      borderRadius: 4,
+      marginRight: 12,
+      marginTop: 2,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    checkboxChecked: {
+      backgroundColor: colors.facebook?.primary || colors.tint,
+      borderColor: colors.facebook?.primary || colors.tint,
+    },
+    checkboxText: {
+      fontSize: 14,
+      color: colors.facebook?.gray || colors.icon,
+      flex: 1,
+      lineHeight: 20,
+    },
+    termsLink: {
+      color: colors.facebook?.primary || colors.tint,
+      textDecorationLine: 'underline',
     },
     button: {
-      backgroundColor: colors.tint,
+      backgroundColor: colors.facebook?.secondary || colors.facebook?.primary || colors.tint,
       borderRadius: 8,
       paddingVertical: 16,
       alignItems: 'center',
-      marginTop: 8,
+      marginBottom: 16,
+      minHeight: 52,
+      shadowColor: colors.facebook?.secondary || colors.facebook?.primary || colors.tint,
+      shadowOffset: {
+        width: 0,
+        height: 2,
+      },
+      shadowOpacity: 0.2,
+      shadowRadius: 4,
+      elevation: 3,
     },
     buttonDisabled: {
       opacity: 0.6,
+      shadowOpacity: 0,
+      elevation: 0,
     },
     buttonText: {
-      color: 'white',
+      color: '#FFFFFF',
       fontSize: 16,
       fontWeight: '600',
     },
-    linkContainer: {
-      marginTop: 24,
+    dividerContainer: {
+      flexDirection: 'row',
       alignItems: 'center',
+      marginBottom: 24,
+    },
+    dividerLine: {
+      flex: 1,
+      height: 1,
+      backgroundColor: colors.facebook?.divider || colors.border,
     },
     dividerText: {
-      color: colors.icon,
+      color: colors.facebook?.gray || colors.icon,
       fontSize: 14,
+      marginHorizontal: 16,
+      fontWeight: '500',
+    },
+    signinContainer: {
+      alignItems: 'center',
+      backgroundColor: colors.facebook?.card || colors.background,
+      borderRadius: 12,
+      padding: 20,
+      shadowColor: '#000',
+      shadowOffset: {
+        width: 0,
+        height: 1,
+      },
+      shadowOpacity: 0.05,
+      shadowRadius: 4,
+      elevation: 2,
+    },
+    signinText: {
+      color: colors.facebook?.gray || colors.icon,
+      fontSize: 14,
+      marginBottom: 16,
       textAlign: 'center',
     },
-    link: {
-      color: colors.tint,
-      fontSize: 16,
-      fontWeight: '500',
-      textAlign: 'center',
-      marginTop: 8,
+    signinButton: {
+      backgroundColor: 'transparent',
+      borderWidth: 1,
+      borderColor: colors.facebook?.primary || colors.tint,
+      borderRadius: 8,
+      paddingVertical: 12,
+      paddingHorizontal: 24,
+      minHeight: 44,
+    },
+    signinButtonText: {
+      color: colors.facebook?.primary || colors.tint,
+      fontSize: 14,
+      fontWeight: '600',
     },
   });
+
+  const passwordStrength = getPasswordStrength();
 
   return (
     <SafeAreaView style={styles.container}>
@@ -164,83 +306,142 @@ export default function RegisterScreen() {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.container}
       >
-        <ScrollView contentContainerStyle={styles.scrollContent}>
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
           <View style={styles.content}>
-            <Text style={styles.title}>Create Account</Text>
-            <Text style={styles.subtitle}>Join us to manage your vehicles</Text>
-
-            <View style={styles.inputContainer}>
-              <Text style={styles.label}>Full Name</Text>
-              <TextInput
-                style={styles.input}
-                value={fullName}
-                onChangeText={setFullName}
-                placeholder="Enter your full name"
-                placeholderTextColor={colors.icon}
-                autoCapitalize="words"
-                autoCorrect={false}
-              />
+            {/* Logo Section */}
+            <View style={styles.logoContainer}>
+              <Text style={styles.logo}>VehicleSync</Text>
+              <Text style={styles.title}>Create a new account</Text>
+              <Text style={styles.subtitle}>
+                Join VehicleSync and start managing your vehicles with ease. Connect with other vehicle enthusiasts.
+              </Text>
             </View>
 
-            <View style={styles.inputContainer}>
-              <Text style={styles.label}>Email</Text>
-              <TextInput
-                style={styles.input}
-                value={email}
-                onChangeText={setEmail}
-                placeholder="Enter your email"
-                placeholderTextColor={colors.icon}
-                keyboardType="email-address"
-                autoCapitalize="none"
-                autoCorrect={false}
-              />
+            {/* Registration Card */}
+            <View style={styles.card}>
+              <View style={styles.inputContainer}>
+                <TextInput
+                  style={[
+                    styles.input,
+                    fullNameFocused && styles.inputFocused,
+                  ]}
+                  value={fullName}
+                  onChangeText={setFullName}
+                  placeholder="Full name"
+                  placeholderTextColor={colors.facebook?.placeholder || colors.icon}
+                  autoCapitalize="words"
+                  autoCorrect={false}
+                  onFocus={() => setFullNameFocused(true)}
+                  onBlur={() => setFullNameFocused(false)}
+                />
+              </View>
+
+              <View style={styles.inputContainer}>
+                <TextInput
+                  style={[
+                    styles.input,
+                    emailFocused && styles.inputFocused,
+                  ]}
+                  value={email}
+                  onChangeText={setEmail}
+                  placeholder="Email address"
+                  placeholderTextColor={colors.facebook?.placeholder || colors.icon}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  onFocus={() => setEmailFocused(true)}
+                  onBlur={() => setEmailFocused(false)}
+                />
+              </View>
+
+              <View style={styles.inputContainer}>
+                <TextInput
+                  style={[
+                    styles.input,
+                    passwordFocused && styles.inputFocused,
+                  ]}
+                  value={password}
+                  onChangeText={setPassword}
+                  placeholder="Password"
+                  placeholderTextColor={colors.facebook?.placeholder || colors.icon}
+                  secureTextEntry
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  onFocus={() => setPasswordFocused(true)}
+                  onBlur={() => setPasswordFocused(false)}
+                />
+                {passwordStrength && (
+                  <Text style={[styles.passwordStrength, passwordStrength.style]}>
+                    {passwordStrength.text}
+                  </Text>
+                )}
+              </View>
+
+              <View style={styles.inputContainer}>
+                <TextInput
+                  style={[
+                    styles.input,
+                    confirmPasswordFocused && styles.inputFocused,
+                  ]}
+                  value={confirmPassword}
+                  onChangeText={setConfirmPassword}
+                  placeholder="Confirm password"
+                  placeholderTextColor={colors.facebook?.placeholder || colors.icon}
+                  secureTextEntry
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  onFocus={() => setConfirmPasswordFocused(true)}
+                  onBlur={() => setConfirmPasswordFocused(false)}
+                />
+              </View>
+
+              {/* Terms of Service Checkbox */}
+              <TouchableOpacity
+                style={styles.checkboxContainer}
+                onPress={() => setAgreeToTerms(!agreeToTerms)}
+              >
+                <View style={[styles.checkbox, agreeToTerms && styles.checkboxChecked]}>
+                  {agreeToTerms && (
+                    <Text style={{ color: '#FFFFFF', fontSize: 12, fontWeight: 'bold' }}>✓</Text>
+                  )}
+                </View>
+                <Text style={styles.checkboxText}>
+                  By clicking Sign Up, you agree to our{' '}
+                  <Text style={styles.termsLink}>Terms</Text>,{' '}
+                  <Text style={styles.termsLink}>Privacy Policy</Text> and{' '}
+                  <Text style={styles.termsLink}>Cookies Policy</Text>.
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.button, (!isFormValid() || loading) && styles.buttonDisabled]}
+                onPress={handleSignUp}
+                disabled={!isFormValid() || loading}
+              >
+                {loading ? (
+                  <ActivityIndicator color="white" size="small" />
+                ) : (
+                  <Text style={styles.buttonText}>Sign Up</Text>
+                )}
+              </TouchableOpacity>
             </View>
 
-            <View style={styles.inputContainer}>
-              <Text style={styles.label}>Password</Text>
-              <TextInput
-                style={styles.input}
-                value={password}
-                onChangeText={setPassword}
-                placeholder="Create a password"
-                placeholderTextColor={colors.icon}
-                secureTextEntry
-                autoCapitalize="none"
-                autoCorrect={false}
-              />
+            {/* Divider */}
+            <View style={styles.dividerContainer}>
+              <View style={styles.dividerLine} />
+              <Text style={styles.dividerText}>or</Text>
+              <View style={styles.dividerLine} />
             </View>
 
-            <View style={styles.inputContainer}>
-              <Text style={styles.label}>Confirm Password</Text>
-              <TextInput
-                style={styles.input}
-                value={confirmPassword}
-                onChangeText={setConfirmPassword}
-                placeholder="Confirm your password"
-                placeholderTextColor={colors.icon}
-                secureTextEntry
-                autoCapitalize="none"
-                autoCorrect={false}
-              />
-            </View>
-
-            <TouchableOpacity
-              style={[styles.button, (!isFormValid() || loading) && styles.buttonDisabled]}
-              onPress={handleSignUp}
-              disabled={!isFormValid() || loading}
-            >
-              {loading ? (
-                <ActivityIndicator color="white" />
-              ) : (
-                <Text style={styles.buttonText}>Create Account</Text>
-              )}
-            </TouchableOpacity>
-
-            <View style={styles.linkContainer}>
-              <Text style={styles.dividerText}>Already have an account?</Text>
+            {/* Sign In Section */}
+            <View style={styles.signinContainer}>
+              <Text style={styles.signinText}>Already have an account?</Text>
               <Link href="/(auth)/login" asChild>
-                <TouchableOpacity>
-                  <Text style={styles.link}>Sign In</Text>
+                <TouchableOpacity style={styles.signinButton}>
+                  <Text style={styles.signinButtonText}>Log In</Text>
                 </TouchableOpacity>
               </Link>
             </View>

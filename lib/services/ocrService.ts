@@ -109,8 +109,6 @@ export class OCRService {
         base64: false,
         exif: false,    // Don't include EXIF data to reduce size
         // Additional camera settings for better text capture
-        videoQuality: ImagePicker.UIImagePickerControllerQualityType.High,
-        preferredAssetRepresentationMode: ImagePicker.AssetRepresentationMode.Current,
       });
 
       return result;
@@ -138,8 +136,6 @@ export class OCRService {
         base64: false,
         exif: false,    // Don't include EXIF data to reduce size
         // Allow selection of high-quality images
-        videoQuality: ImagePicker.UIImagePickerControllerQualityType.High,
-        preferredAssetRepresentationMode: ImagePicker.AssetRepresentationMode.Current,
       });
 
       return result;
@@ -315,7 +311,11 @@ export class OCRService {
 
     for (const line of lines) {
       for (const { pattern, weight, type } of costPatterns) {
-        const matches = [...line.matchAll(pattern)];
+        let match;
+        const matches = [];
+        while ((match = pattern.exec(line)) !== null) {
+          matches.push(match);
+        }
         for (const match of matches) {
           const amount = parseFloat(match[1].replace(/,/g, ''));
           if (!isNaN(amount) && amount > 0 && amount < 10000) { // Reasonable range
@@ -380,7 +380,11 @@ export class OCRService {
       if (line.length > 100) continue;
 
       for (const { pattern, confidence, format } of datePatterns) {
-        const matches = [...line.matchAll(pattern)];
+        let match;
+        const matches = [];
+        while ((match = pattern.exec(line)) !== null) {
+          matches.push(match);
+        }
         for (const match of matches) {
           if (confidence > bestMatch.confidence) {
             let dateStr = match[0];
@@ -422,7 +426,11 @@ export class OCRService {
 
     for (const line of lines) {
       for (const { pattern, confidence } of odometerPatterns) {
-        const matches = [...line.matchAll(pattern)];
+        let match;
+        const matches = [];
+        while ((match = pattern.exec(line)) !== null) {
+          matches.push(match);
+        }
         for (const match of matches) {
           const reading = parseInt(match[1].replace(/,/g, ''));
           if (!isNaN(reading) && reading > 0 && reading < 1000000) {

@@ -5,33 +5,68 @@
 
 import { Platform } from 'react-native';
 
-const tintColorLight = '#0a7ea4';
-const tintColorDark = '#4A9EFF'; // Changed from white to light blue for better contrast
+// Facebook-inspired color palette
+const facebookBlue = '#1877F2';
+const facebookBlueHover = '#166FE5';
+const facebookGreen = '#42B883';
+const facebookGray = '#8A8D91';
+const facebookLightGray = '#F5F6F7';
+
+const tintColorLight = facebookBlue;
+const tintColorDark = '#4A9EFF';
 
 export const Colors = {
   light: {
-    text: '#11181C',
-    background: '#fff',
+    text: '#1C1E21',
+    background: '#FFFFFF',
     tint: tintColorLight,
-    icon: '#687076',
-    tabIconDefault: '#687076',
+    icon: facebookGray,
+    tabIconDefault: facebookGray,
     tabIconSelected: tintColorLight,
-    // Additional semantic colors
-    surface: '#f8f9fa',
-    border: '#e1e4e8',
-    link: '#0a7ea4',
+    // Facebook-inspired semantic colors
+    surface: facebookLightGray,
+    border: '#DADDE1',
+    link: facebookBlue,
+    // Facebook-specific colors
+    facebook: {
+      primary: facebookBlue,
+      primaryHover: facebookBlueHover,
+      secondary: facebookGreen,
+      gray: facebookGray,
+      lightGray: facebookLightGray,
+      background: '#F0F2F5',
+      card: '#FFFFFF',
+      divider: '#DADDE1',
+      placeholder: '#8A8D91',
+      error: '#F02849',
+      success: facebookGreen,
+    },
   },
   dark: {
-    text: '#ECEDEE',
-    background: '#151718',
+    text: '#E4E6EA',
+    background: '#18191A',
     tint: tintColorDark,
-    icon: '#9BA1A6',
-    tabIconDefault: '#9BA1A6',
+    icon: '#B0B3B8',
+    tabIconDefault: '#B0B3B8',
     tabIconSelected: tintColorDark,
-    // Additional semantic colors for dark mode
-    surface: '#1e2124',
-    border: '#2f3136',
+    // Facebook-inspired dark mode colors
+    surface: '#242526',
+    border: '#3A3B3C',
     link: '#4A9EFF',
+    // Facebook-specific dark colors
+    facebook: {
+      primary: tintColorDark,
+      primaryHover: '#3A8BFF',
+      secondary: facebookGreen,
+      gray: '#B0B3B8',
+      lightGray: '#3A3B3C',
+      background: '#18191A',
+      card: '#242526',
+      divider: '#3A3B3C',
+      placeholder: '#B0B3B8',
+      error: '#F02849',
+      success: facebookGreen,
+    },
   },
 };
 
