@@ -9,6 +9,8 @@ import {
   Platform,
   StyleSheet,
   ActivityIndicator,
+  Dimensions,
+  ScrollView,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Link, router } from 'expo-router';
@@ -16,10 +18,15 @@ import { useAuth } from '@/lib/contexts/AuthContext';
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 
+const { width: screenWidth } = Dimensions.get('window');
+
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [emailFocused, setEmailFocused] = useState(false);
+  const [passwordFocused, setPasswordFocused] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
   const { signIn } = useAuth();
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
@@ -44,81 +51,180 @@ export default function LoginScreen() {
   const styles = StyleSheet.create({
     container: {
       flex: 1,
-      backgroundColor: colors.background,
+      backgroundColor: colors.facebook?.background || colors.surface,
+    },
+    scrollContainer: {
+      flexGrow: 1,
     },
     content: {
       flex: 1,
-      padding: 20,
+      paddingHorizontal: 20,
       justifyContent: 'center',
+      maxWidth: screenWidth > 600 ? 400 : '100%',
+      alignSelf: 'center',
+      width: '100%',
     },
-    title: {
-      fontSize: 32,
+    logoContainer: {
+      alignItems: 'center',
+      marginBottom: 32,
+    },
+    logo: {
+      fontSize: 48,
       fontWeight: 'bold',
+      color: colors.facebook?.primary || colors.tint,
+      marginBottom: 8,
+    },
+    tagline: {
+      fontSize: 20,
       color: colors.text,
       textAlign: 'center',
       marginBottom: 8,
     },
     subtitle: {
       fontSize: 16,
-      color: colors.icon,
+      color: colors.facebook?.gray || colors.icon,
       textAlign: 'center',
       marginBottom: 40,
     },
-    inputContainer: {
-      marginBottom: 16,
+    card: {
+      backgroundColor: colors.facebook?.card || colors.background,
+      borderRadius: 12,
+      padding: 24,
+      shadowColor: '#000',
+      shadowOffset: {
+        width: 0,
+        height: 2,
+      },
+      shadowOpacity: 0.1,
+      shadowRadius: 8,
+      elevation: 4,
+      marginBottom: 24,
     },
-    label: {
-      fontSize: 16,
-      fontWeight: '600',
-      color: colors.text,
-      marginBottom: 8,
+    inputContainer: {
+      marginBottom: 20,
     },
     input: {
-      backgroundColor: colors.background,
+      backgroundColor: colors.facebook?.lightGray || colors.surface,
       borderWidth: 1,
-      borderColor: colors.icon,
+      borderColor: colors.facebook?.divider || colors.border,
       borderRadius: 8,
       paddingHorizontal: 16,
-      paddingVertical: 12,
+      paddingVertical: 14,
       fontSize: 16,
       color: colors.text,
+      minHeight: 52,
     },
     inputFocused: {
-      borderColor: colors.tint,
+      borderColor: colors.facebook?.primary || colors.tint,
       borderWidth: 2,
+      backgroundColor: colors.facebook?.card || colors.background,
+    },
+    checkboxContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: 20,
+    },
+    checkbox: {
+      width: 20,
+      height: 20,
+      borderWidth: 2,
+      borderColor: colors.facebook?.divider || colors.border,
+      borderRadius: 4,
+      marginRight: 12,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    checkboxChecked: {
+      backgroundColor: colors.facebook?.primary || colors.tint,
+      borderColor: colors.facebook?.primary || colors.tint,
+    },
+    checkboxText: {
+      fontSize: 14,
+      color: colors.facebook?.gray || colors.icon,
+      flex: 1,
     },
     button: {
-      backgroundColor: colors.tint,
+      backgroundColor: colors.facebook?.primary || colors.tint,
       borderRadius: 8,
       paddingVertical: 16,
       alignItems: 'center',
-      marginTop: 8,
+      marginBottom: 16,
+      minHeight: 52,
+      shadowColor: colors.facebook?.primary || colors.tint,
+      shadowOffset: {
+        width: 0,
+        height: 2,
+      },
+      shadowOpacity: 0.2,
+      shadowRadius: 4,
+      elevation: 3,
     },
     buttonDisabled: {
       opacity: 0.6,
+      shadowOpacity: 0,
+      elevation: 0,
     },
     buttonText: {
-      color: 'white',
+      color: '#FFFFFF',
       fontSize: 16,
       fontWeight: '600',
     },
-    linkContainer: {
-      marginTop: 24,
+    forgotPasswordContainer: {
       alignItems: 'center',
+      marginBottom: 24,
     },
-    link: {
-      color: colors.tint,
-      fontSize: 16,
+    forgotPasswordText: {
+      color: colors.facebook?.primary || colors.tint,
+      fontSize: 14,
       fontWeight: '500',
     },
-    divider: {
-      marginTop: 32,
-      marginBottom: 16,
+    dividerContainer: {
+      flexDirection: 'row',
       alignItems: 'center',
+      marginBottom: 24,
+    },
+    dividerLine: {
+      flex: 1,
+      height: 1,
+      backgroundColor: colors.facebook?.divider || colors.border,
     },
     dividerText: {
-      color: colors.icon,
+      color: colors.facebook?.gray || colors.icon,
       fontSize: 14,
+      marginHorizontal: 16,
+      fontWeight: '500',
+    },
+    signupContainer: {
+      alignItems: 'center',
+      backgroundColor: colors.facebook?.card || colors.background,
+      borderRadius: 12,
+      padding: 20,
+      shadowColor: '#000',
+      shadowOffset: {
+        width: 0,
+        height: 1,
+      },
+      shadowOpacity: 0.05,
+      shadowRadius: 4,
+      elevation: 2,
+    },
+    signupText: {
+      color: colors.facebook?.gray || colors.icon,
+      fontSize: 14,
+      marginBottom: 16,
+      textAlign: 'center',
+    },
+    signupButton: {
+      backgroundColor: colors.facebook?.secondary || colors.facebook?.primary || colors.tint,
+      borderRadius: 8,
+      paddingVertical: 12,
+      paddingHorizontal: 24,
+      minHeight: 44,
+    },
+    signupButtonText: {
+      color: '#FFFFFF',
+      fontSize: 14,
+      fontWeight: '600',
     },
   });
 
@@ -128,70 +234,109 @@ export default function LoginScreen() {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.container}
       >
-        <View style={styles.content}>
-          <Text style={styles.title}>Welcome Back</Text>
-          <Text style={styles.subtitle}>Sign in to your account</Text>
+        <ScrollView
+          contentContainerStyle={styles.scrollContainer}
+          showsVerticalScrollIndicator={false}
+        >
+          <View style={styles.content}>
+            {/* Logo Section */}
+            <View style={styles.logoContainer}>
+              <Text style={styles.logo}>VehicleSync</Text>
+              <Text style={styles.tagline}>Connect with your vehicles</Text>
+              <Text style={styles.subtitle}>Manage your fleet with ease</Text>
+            </View>
 
-          <View style={styles.inputContainer}>
-            <Text style={styles.label}>Email</Text>
-            <TextInput
-              style={styles.input}
-              value={email}
-              onChangeText={setEmail}
-              placeholder="Enter your email"
-              placeholderTextColor={colors.icon}
-              keyboardType="email-address"
-              autoCapitalize="none"
-              autoCorrect={false}
-            />
-          </View>
+            {/* Login Card */}
+            <View style={styles.card}>
+              <View style={styles.inputContainer}>
+                <TextInput
+                  style={[
+                    styles.input,
+                    emailFocused && styles.inputFocused,
+                  ]}
+                  value={email}
+                  onChangeText={setEmail}
+                  placeholder="Email address"
+                  placeholderTextColor={colors.facebook?.placeholder || colors.icon}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  onFocus={() => setEmailFocused(true)}
+                  onBlur={() => setEmailFocused(false)}
+                />
+              </View>
 
-          <View style={styles.inputContainer}>
-            <Text style={styles.label}>Password</Text>
-            <TextInput
-              style={styles.input}
-              value={password}
-              onChangeText={setPassword}
-              placeholder="Enter your password"
-              placeholderTextColor={colors.icon}
-              secureTextEntry
-              autoCapitalize="none"
-              autoCorrect={false}
-            />
-          </View>
+              <View style={styles.inputContainer}>
+                <TextInput
+                  style={[
+                    styles.input,
+                    passwordFocused && styles.inputFocused,
+                  ]}
+                  value={password}
+                  onChangeText={setPassword}
+                  placeholder="Password"
+                  placeholderTextColor={colors.facebook?.placeholder || colors.icon}
+                  secureTextEntry
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  onFocus={() => setPasswordFocused(true)}
+                  onBlur={() => setPasswordFocused(false)}
+                />
+              </View>
 
-          <TouchableOpacity
-            style={[styles.button, (loading || !email.trim() || !password.trim()) && styles.buttonDisabled]}
-            onPress={handleSignIn}
-            disabled={loading || !email.trim() || !password.trim()}
-          >
-            {loading ? (
-              <ActivityIndicator color="white" />
-            ) : (
-              <Text style={styles.buttonText}>Sign In</Text>
-            )}
-          </TouchableOpacity>
-
-          <View style={styles.linkContainer}>
-            <Link href="/(auth)/forgot-password" asChild>
-              <TouchableOpacity>
-                <Text style={styles.link}>Forgot your password?</Text>
+              {/* Remember Me Checkbox */}
+              <TouchableOpacity
+                style={styles.checkboxContainer}
+                onPress={() => setRememberMe(!rememberMe)}
+              >
+                <View style={[styles.checkbox, rememberMe && styles.checkboxChecked]}>
+                  {rememberMe && (
+                    <Text style={{ color: '#FFFFFF', fontSize: 12, fontWeight: 'bold' }}>✓</Text>
+                  )}
+                </View>
+                <Text style={styles.checkboxText}>Keep me signed in</Text>
               </TouchableOpacity>
-            </Link>
-          </View>
 
-          <View style={styles.divider}>
-            <Text style={styles.dividerText}>Don&apos;t have an account?</Text>
-          </View>
+              <TouchableOpacity
+                style={[styles.button, (loading || !email.trim() || !password.trim()) && styles.buttonDisabled]}
+                onPress={handleSignIn}
+                disabled={loading || !email.trim() || !password.trim()}
+              >
+                {loading ? (
+                  <ActivityIndicator color="white" size="small" />
+                ) : (
+                  <Text style={styles.buttonText}>Log In</Text>
+                )}
+              </TouchableOpacity>
 
-          <Link href="/(auth)/register" asChild>
-            <TouchableOpacity>
-              <Text style={[styles.link, { textAlign: 'center' }]}>
-                Create Account
-              </Text>
-            </TouchableOpacity>
-          </Link>
-        </View>
+              {/* Forgot Password */}
+              <View style={styles.forgotPasswordContainer}>
+                <Link href="/(auth)/forgot-password" asChild>
+                  <TouchableOpacity>
+                    <Text style={styles.forgotPasswordText}>Forgotten password?</Text>
+                  </TouchableOpacity>
+                </Link>
+              </View>
+            </View>
+
+            {/* Divider */}
+            <View style={styles.dividerContainer}>
+              <View style={styles.dividerLine} />
+              <Text style={styles.dividerText}>or</Text>
+              <View style={styles.dividerLine} />
+            </View>
+
+            {/* Sign Up Section */}
+            <View style={styles.signupContainer}>
+              <Text style={styles.signupText}>Don&apos;t have an account?</Text>
+              <Link href="/(auth)/register" asChild>
+                <TouchableOpacity style={styles.signupButton}>
+                  <Text style={styles.signupButtonText}>Create new account</Text>
+                </TouchableOpacity>
+              </Link>
+            </View>
+          </View>
+        </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );

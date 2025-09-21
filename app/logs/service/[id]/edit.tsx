@@ -1,25 +1,26 @@
-import React, { useState, useEffect } from 'react';
+import { IconSymbol } from '@/components/ui/icon-symbol';
+import { ReceiptViewer } from '@/components/ui/ReceiptViewer';
+import { ServiceItemsInput, calculateTotalCost, createDefaultServiceItems, validateServiceItems } from '@/components/ui/ServiceItemsInput';
+import { DatePicker } from '@/components/ui/DatePicker';
+import { Colors } from '@/constants/theme';
+import { useColorScheme } from '@/hooks/use-color-scheme';
+import { ServiceLogService } from '@/lib/services/loggingService';
+import { ServiceLog, ServiceLogFormData, ServiceLogItem, ServiceType } from '@/types';
+import { router, useLocalSearchParams } from 'expo-router';
+import React, { useEffect, useState } from 'react';
 import {
-  View,
+  ActivityIndicator,
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
-  ScrollView,
-  KeyboardAvoidingView,
-  Platform,
-  StyleSheet,
-  Alert,
-  ActivityIndicator,
+  View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { router, useLocalSearchParams } from 'expo-router';
-import { ServiceLogService } from '@/lib/services/loggingService';
-import { ServiceLogFormData, ServiceLog, ServiceType, ServiceLogItem } from '@/types';
-import { Colors } from '@/constants/theme';
-import { useColorScheme } from '@/hooks/use-color-scheme';
-import { IconSymbol } from '@/components/ui/icon-symbol';
-import { ReceiptViewer } from '@/components/ui/ReceiptViewer';
-import { ServiceItemsInput, calculateTotalCost, validateServiceItems, createDefaultServiceItems } from '@/components/ui/ServiceItemsInput';
 
 const SERVICE_TYPES: { value: ServiceType; label: string; icon: string }[] = [
   { value: 'oil_change', label: 'Oil Change', icon: 'drop' },
@@ -467,31 +468,24 @@ export default function EditServiceLogScreen() {
 
             <View style={styles.row}>
               <View style={styles.flex1}>
-                <View style={styles.inputContainer}>
-                  <Text style={styles.label}>
-                    Date <Text style={styles.requiredLabel}>*</Text>
-                  </Text>
-                  <TextInput
-                    style={styles.input}
-                    value={formData.date}
-                    onChangeText={(text) => setFormData(prev => ({ ...prev, date: text }))}
-                    placeholder="2024-01-01"
-                    placeholderTextColor={colors.icon}
-                  />
-                </View>
+                <DatePicker
+                  label="Date"
+                  value={formData.date}
+                  onDateChange={(date) => setFormData(prev => ({ ...prev, date }))}
+                  placeholder="Select date"
+                  required
+                  style={{ marginBottom: 0 }}
+                />
               </View>
 
               <View style={styles.flex1}>
-                <View style={styles.inputContainer}>
-                  <Text style={styles.label}>Next Service Due</Text>
-                  <TextInput
-                    style={styles.input}
-                    value={formData.next_service_due}
-                    onChangeText={(text) => setFormData(prev => ({ ...prev, next_service_due: text }))}
-                    placeholder="2024-06-01"
-                    placeholderTextColor={colors.icon}
-                  />
-                </View>
+                <DatePicker
+                  label="Next Service Due"
+                  value={formData.next_service_due}
+                  onDateChange={(date) => setFormData(prev => ({ ...prev, next_service_due: date }))}
+                  placeholder="Select next service date"
+                  style={{ marginBottom: 0 }}
+                />
               </View>
             </View>
           </View>

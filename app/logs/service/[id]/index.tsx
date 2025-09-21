@@ -1,21 +1,21 @@
-import React, { useState, useEffect } from 'react';
-import {
-  View,
-  Text,
-  ScrollView,
-  StyleSheet,
-  Alert,
-  ActivityIndicator,
-  TouchableOpacity,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { router, useLocalSearchParams } from 'expo-router';
-import { ServiceLogService } from '@/lib/services/loggingService';
-import { ServiceLog, ServiceType } from '@/types';
-import { Colors } from '@/constants/theme';
-import { useColorScheme } from '@/hooks/use-color-scheme';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { ReceiptViewer } from '@/components/ui/ReceiptViewer';
+import { Colors } from '@/constants/theme';
+import { useColorScheme } from '@/hooks/use-color-scheme';
+import { ServiceLogService } from '@/lib/services/loggingService';
+import { ServiceLog, ServiceType } from '@/types';
+import { router, useLocalSearchParams } from 'expo-router';
+import React, { useEffect, useState } from 'react';
+import {
+  ActivityIndicator,
+  Alert,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const SERVICE_TYPE_LABELS: Record<ServiceType, string> = {
   oil_change: 'Oil Change',
@@ -117,7 +117,7 @@ export default function ServiceLogDetailScreen() {
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
+    return new Date(dateString).toLocaleDateString('en-MY', {
       year: 'numeric',
       month: 'long',
       day: 'numeric',
@@ -125,9 +125,9 @@ export default function ServiceLogDetailScreen() {
   };
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
+    return new Intl.NumberFormat('en-MY', {
       style: 'currency',
-      currency: 'USD',
+      currency: 'MYR',
     }).format(amount);
   };
 

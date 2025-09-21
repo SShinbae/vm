@@ -3,6 +3,7 @@
 // Core Components
 export { Button } from './Button';
 export { Input } from './Input';
+export { DatePicker } from './DatePicker';
 export { Card, CardHeader, CardContent, CardFooter } from './Card';
 export { Modal, ConfirmModal, AlertModal } from './Modal';
 export { IconSymbol } from './icon-symbol';

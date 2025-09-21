@@ -24,6 +24,7 @@ import { IconSymbol } from '@/components/ui/icon-symbol';
 import { ReceiptCapture, OCRResultDisplay } from '@/components/ui/ReceiptCapture';
 import { ReceiptViewer } from '@/components/ui/ReceiptViewer';
 import { ServiceItemsInput, calculateTotalCost, validateServiceItems, createDefaultServiceItems } from '@/components/ui/ServiceItemsInput';
+import { DatePicker } from '@/components/ui/DatePicker';
 
 const SERVICE_TYPES: { value: ServiceType; label: string; icon: string }[] = [
   { value: 'oil_change', label: 'Oil Change', icon: 'drop' },
@@ -786,31 +787,24 @@ export default function AddServiceLogScreen() {
 
             <View style={styles.row}>
               <View style={styles.flex1}>
-                <View style={styles.inputContainer}>
-                  <Text style={styles.label}>
-                    Date <Text style={styles.requiredLabel}>*</Text>
-                  </Text>
-                  <TextInput
-                    style={styles.input}
-                    value={formData.date}
-                    onChangeText={(text) => setFormData(prev => ({ ...prev, date: text }))}
-                    placeholder="2024-01-01"
-                    placeholderTextColor={colors.icon}
-                  />
-                </View>
+                <DatePicker
+                  label="Date"
+                  value={formData.date}
+                  onDateChange={(date) => setFormData(prev => ({ ...prev, date }))}
+                  placeholder="Select date"
+                  required
+                  style={{ marginBottom: 0 }}
+                />
               </View>
 
               <View style={styles.flex1}>
-                <View style={styles.inputContainer}>
-                  <Text style={styles.label}>Next Service Due</Text>
-                  <TextInput
-                    style={styles.input}
-                    value={formData.next_service_due}
-                    onChangeText={(text) => setFormData(prev => ({ ...prev, next_service_due: text }))}
-                    placeholder="2024-06-01"
-                    placeholderTextColor={colors.icon}
-                  />
-                </View>
+                <DatePicker
+                  label="Next Service Due"
+                  value={formData.next_service_due}
+                  onDateChange={(date) => setFormData(prev => ({ ...prev, next_service_due: date }))}
+                  placeholder="Select next service date"
+                  style={{ marginBottom: 0 }}
+                />
               </View>
             </View>
           </View>
