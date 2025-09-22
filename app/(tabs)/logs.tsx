@@ -1,24 +1,26 @@
-import React, { useState, useCallback } from 'react';
-import { useFocusEffect } from '@react-navigation/native';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  ScrollView,
-  StyleSheet,
-  ActivityIndicator,
-  RefreshControl,
-  Alert,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { router } from 'expo-router';
-import { MileageLogService, FuelLogService, ServiceLogService } from '@/lib/services/loggingService';
-import { MileageLog, FuelLog, ServiceLog } from '@/types';
+import { IconSymbol } from '@/components/ui/icon-symbol';
+import { AlertModal, ConfirmModal } from '@/components/ui/Modal';
+import { ServiceReceiptIndicator } from '@/components/ui/ReceiptViewer';
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
-import { IconSymbol } from '@/components/ui/icon-symbol';
+import { FuelLogService, MileageLogService, ServiceLogService } from '@/lib/services/loggingService';
 import { formatDate } from '@/lib/utils/dateUtils';
-import { ServiceReceiptIndicator } from '@/components/ui/ReceiptViewer';
+import { canUserAccessVehicle, formatServiceItems } from '@/lib/utils/serviceUtils';
+import { supabase } from '@/services/supabaseClient';
+import { FuelLog, MileageLog, ServiceLog } from '@/types';
+import { useFocusEffect } from '@react-navigation/native';
+import { router } from 'expo-router';
+import React, { useCallback, useEffect, useState } from 'react';
+import {
+  ActivityIndicator,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 type LogType = 'mileage' | 'fuel' | 'service';
 
@@ -29,8 +31,32 @@ export default function LogsScreen() {
   const [serviceLogs, setServiceLogs] = useState<ServiceLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+
+  // Modal states
+  const [deleteModalVisible, setDeleteModalVisible] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [selectedLog, setSelectedLog] = useState<{type: LogType, id: string, description: string} | null>(null);
+  const [alertModalVisible, setAlertModalVisible] = useState(false);
+  const [alertMessage, setAlertMessage] = useState('');
+  const [alertTitle, setAlertTitle] = useState('');
+  const [alertVariant, setAlertVariant] = useState<'info' | 'success' | 'warning' | 'error'>('info');
+
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
+
+  // Helper function to check if user can modify a log
+  const canUserModifyLog = async (log: any): Promise<boolean> => {
+    try {
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if (userError || !user) return false;
+
+      // Use the standardized permission function
+      return await canUserAccessVehicle(log.vehicle_id, user.id);
+    } catch (error) {
+      console.error('Error checking modify permission:', error);
+      return false;
+    }
+  };
 
   const fetchAllLogs = useCallback(async () => {
     const [mileageResult, fuelResult, serviceResult] = await Promise.all([
@@ -52,39 +78,72 @@ export default function LogsScreen() {
     setRefreshing(false);
   }, [fetchAllLogs]);
 
-  const handleDeleteLog = async (type: LogType, id: string, description: string) => {
-    Alert.alert(
-      'Delete Log',
-      `Are you sure you want to delete this ${type} log: ${description}?`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            let result;
-            switch (type) {
-              case 'mileage':
-                result = await MileageLogService.deleteMileageLog(id);
-                break;
-              case 'fuel':
-                result = await FuelLogService.deleteFuelLog(id);
-                break;
-              case 'service':
-                result = await ServiceLogService.deleteServiceLog(id);
-                break;
-            }
+  const handleDeleteLog = (type: LogType, id: string, description: string) => {
+    setSelectedLog({ type, id, description });
+    setDeleteModalVisible(true);
+  };
 
-            if (result?.error) {
-              Alert.alert('Error', `Failed to delete ${type} log`);
-            } else {
-              await fetchAllLogs();
-              Alert.alert('Success', `${type} log deleted successfully`);
-            }
-          },
-        },
-      ]
-    );
+  const handleConfirmDelete = async () => {
+    if (!selectedLog) return;
+
+    setDeleteLoading(true);
+
+    let result;
+    switch (selectedLog.type) {
+      case 'mileage':
+        result = await MileageLogService.deleteMileageLog(selectedLog.id);
+        break;
+      case 'fuel':
+        result = await FuelLogService.deleteFuelLog(selectedLog.id);
+        break;
+      case 'service':
+        result = await ServiceLogService.deleteServiceLog(selectedLog.id);
+        break;
+    }
+
+    setDeleteLoading(false);
+    setDeleteModalVisible(false);
+
+    if (result?.error) {
+      console.error(`Error deleting ${selectedLog.type} log:`, result.error);
+
+      // Provide more specific error messages based on the error content
+      let errorMessage = result.error;
+      if (result.error.includes('not found') || result.error.includes('Log not found')) {
+        errorMessage = `This ${selectedLog.type} log no longer exists. It may have been deleted by another user.`;
+      } else if (result.error === 'PERMISSION_DENIED_SHARED_VEHICLE') {
+        errorMessage = `This ${selectedLog.type} log belongs to a shared vehicle. You can view it but cannot modify or delete it.`;
+      } else if (result.error === 'PERMISSION_DENIED_ACCESS') {
+        errorMessage = `You do not have permission to delete this ${selectedLog.type} log.`;
+      } else if (result.error.includes('Access denied') || result.error.includes('not authenticated')) {
+        errorMessage = `You do not have permission to delete this ${selectedLog.type} log.`;
+      } else if (result.error.includes('Failed to delete')) {
+        errorMessage = `Unable to delete ${selectedLog.type} log. Please check your internet connection and try again.`;
+      }
+
+      showAlert('Error', errorMessage, 'error');
+
+      // Refresh the logs to ensure UI is in sync with actual state
+      await fetchAllLogs();
+    } else if (result?.data === true) {
+      // Only show success if the deletion actually succeeded
+      await fetchAllLogs();
+      showAlert('Success', `${selectedLog.type} log deleted successfully`, 'success');
+    } else {
+      // Handle unexpected response (not error, but not successful either)
+      console.warn(`Unexpected response when deleting ${selectedLog.type} log:`, result);
+      showAlert('Warning', `${selectedLog.type} log deletion status unclear. Please refresh to see current state.`, 'warning');
+      await fetchAllLogs();
+    }
+
+    setSelectedLog(null);
+  };
+
+  const showAlert = (title: string, message: string, variant: 'info' | 'success' | 'warning' | 'error' = 'info') => {
+    setAlertTitle(title);
+    setAlertMessage(message);
+    setAlertVariant(variant);
+    setAlertModalVisible(true);
   };
 
   const handleViewServiceDetail = (serviceId: string) => {
@@ -164,6 +223,16 @@ export default function LogsScreen() {
   );
 
   const LogCard = ({ log, type }: { log: any; type: LogType }) => {
+    const [canModify, setCanModify] = useState<boolean | null>(null);
+
+    // Check modification permissions when component mounts
+    useEffect(() => {
+      const checkPermissions = async () => {
+        const hasPermission = await canUserModifyLog(log);
+        setCanModify(hasPermission);
+      };
+      checkPermissions();
+    }, [log]);
     const getLogDetails = () => {
       switch (type) {
         case 'mileage':
@@ -175,15 +244,16 @@ export default function LogsScreen() {
           };
         case 'fuel':
           return {
-            title: `${log.liters_filled} L`,
-            subtitle: `${log.cost ? `RM${log.cost}` : ''} • ${log.odometer_reading?.toLocaleString()} km`,
+            title: `${log.cost ? `RM${log.cost}` : ''} `,
+            subtitle: `${log.liters_filled} L`,
+            odometer: log.odometer_reading ? `${log.odometer_reading.toLocaleString()} km` : null,
             icon: 'fuelpump',
             color: '#4CAF50',
           };
         case 'service':
           return {
             title: log.service_type?.replace('_', ' ').toUpperCase(),
-            subtitle: `${log.description} • ${log.cost ? `RM${log.cost}` : ''}`,
+            subtitle: `${formatServiceItems(log.description)}${log.cost ? ` • RM${log.cost}` : ''}`,
             icon: 'wrench',
             color: '#FF9800',
             hasReceipt: !!log.receipt_image_url,
@@ -227,31 +297,50 @@ export default function LogsScreen() {
                 />
               )}
             </View>
+            {/* <Text style={styles.logSubtitle}>{details.subtitle}</Text> */}
             <Text style={styles.logSubtitle}>{details.subtitle}</Text>
+{details.odometer && (
+  <Text style={styles.logOdometer}>{details.odometer}</Text>
+)}
             <Text style={styles.logDate}>
               {formatDate(log.date)}
-              {isSharedVehicle && <Text style={styles.ownedByText}> • Shared vehicle</Text>}
             </Text>
           </View>
           <View style={styles.actionButtons}>
-            <TouchableOpacity
-              style={styles.editButton}
-              onPress={(e) => {
-                e.stopPropagation();
-                handleEditLog(type, log.id);
-              }}
-            >
-              <IconSymbol name="pencil" size={18} color={colors.tint} />
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.deleteButton}
-              onPress={(e) => {
-                e.stopPropagation();
-                handleDeleteLog(type, log.id, details.title);
-              }}
-            >
-              <IconSymbol name="trash" size={18} color="#ff4444" />
-            </TouchableOpacity>
+            {canModify === null ? (
+              // Loading state - show placeholder
+              <View style={styles.actionLoading}>
+                <ActivityIndicator size="small" color={colors.icon} />
+              </View>
+            ) : canModify ? (
+              // User can modify - show edit and delete buttons
+              <>
+                <TouchableOpacity
+                  style={styles.editButton}
+                  onPress={(e) => {
+                    e.stopPropagation();
+                    handleEditLog(type, log.id);
+                  }}
+                >
+                  <IconSymbol name="pencil" size={18} color={colors.tint} />
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.deleteButton}
+                  onPress={(e) => {
+                    e.stopPropagation();
+                    handleDeleteLog(type, log.id, details.title);
+                  }}
+                >
+                  <IconSymbol name="trash" size={18} color="#ff4444" />
+                </TouchableOpacity>
+              </>
+            ) : (
+              // Read-only log - show indicator
+              <View style={styles.readOnlyIndicator}>
+                <IconSymbol name="eye" size={18} color={colors.icon} />
+                <Text style={styles.readOnlyText}>View Only</Text>
+              </View>
+            )}
           </View>
         </View>
       </TouchableOpacity>
@@ -477,9 +566,15 @@ export default function LogsScreen() {
       color: colors.icon,
       marginBottom: 4,
     },
+    logOdometer: {
+      fontSize: 13,
+      color: colors.icon + '80',
+      marginBottom: 4,
+    },
     logDate: {
       fontSize: 12,
-      color: colors.icon,
+      // color: colors.icon,
+      color: colors.icon + '80',
     },
     ownedByText: {
       fontSize: 11,
@@ -495,6 +590,24 @@ export default function LogsScreen() {
     },
     deleteButton: {
       padding: 8,
+    },
+    actionLoading: {
+      padding: 8,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    readOnlyIndicator: {
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: 4,
+      opacity: 0.6,
+    },
+    readOnlyText: {
+      fontSize: 10,
+      color: colors.icon,
+      marginTop: 2,
+      textAlign: 'center',
     },
     loadingContainer: {
       flex: 1,
@@ -643,6 +756,31 @@ export default function LogsScreen() {
           })}
         </ScrollView>
       )}
+
+      <ConfirmModal
+        visible={deleteModalVisible}
+        onClose={() => {
+          if (!deleteLoading) {
+            setDeleteModalVisible(false);
+            setSelectedLog(null);
+          }
+        }}
+        onConfirm={handleConfirmDelete}
+        title="Delete Log"
+        message={selectedLog ? `Are you sure you want to delete this ${selectedLog.type} log: ${selectedLog.description}?` : ''}
+        confirmText="Delete"
+        cancelText="Cancel"
+        variant="danger"
+        loading={deleteLoading}
+      />
+
+      <AlertModal
+        visible={alertModalVisible}
+        onClose={() => setAlertModalVisible(false)}
+        title={alertTitle}
+        message={alertMessage}
+        variant={alertVariant}
+      />
     </SafeAreaView>
   );
 }

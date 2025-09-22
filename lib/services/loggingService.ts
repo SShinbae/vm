@@ -1,4 +1,5 @@
 import { supabase } from '../../services/supabaseClient';
+import { canUserAccessVehicle } from '../utils/serviceUtils';
 import {
   MileageLog,
   FuelLog,
@@ -120,7 +121,7 @@ export class MileageLogService {
       }
 
       // Validate that user can access the vehicle (owns it or has shared access)
-      const hasAccess = await this.canUserAccessVehicle(log.vehicle_id, user.id);
+      const hasAccess = await canUserAccessVehicle(log.vehicle_id, user.id);
 
       if (!hasAccess) {
         return { data: null, error: 'Vehicle not found or access denied', loading: false };
@@ -163,43 +164,69 @@ export class MileageLogService {
       const { data: { user }, error: userError } = await supabase.auth.getUser();
 
       if (userError || !user) {
+        console.error('User authentication failed:', userError);
         return { data: null, error: 'User not authenticated', loading: false };
       }
 
-      // First, get the log to check vehicle access
+      console.log('Updating mileage log:', id, 'with updates:', updates);
+
+      // First, get the log to check vehicle access and ensure it exists
       const { data: existingLog, error: fetchError } = await supabase
         .from('mileage_logs')
-        .select('vehicle_id')
+        .select('vehicle_id, user_id')
         .eq('id', id)
         .single();
 
-      if (fetchError || !existingLog) {
-        return { data: null, error: 'Log not found', loading: false };
+      if (fetchError) {
+        console.error('Error fetching existing mileage log:', fetchError);
+        if (fetchError.code === 'PGRST116') {
+          return { data: null, error: 'Mileage log not found', loading: false };
+        }
+        return { data: null, error: 'Failed to verify mileage log exists', loading: false };
+      }
+
+      if (!existingLog) {
+        console.error('No mileage log found with ID:', id);
+        return { data: null, error: 'Mileage log not found', loading: false };
       }
 
       // Validate that user can access the vehicle (owns it or has shared access)
-      const hasAccess = await this.canUserAccessVehicle(existingLog.vehicle_id, user.id);
+      const hasAccess = await canUserAccessVehicle(existingLog.vehicle_id, user.id);
 
       if (!hasAccess) {
-        return { data: null, error: 'Access denied', loading: false };
+        console.error('User does not have access to vehicle:', existingLog.vehicle_id);
+        return { data: null, error: 'Access denied - you do not have permission to edit this mileage log', loading: false };
       }
 
-      const { data, error } = await supabase
+      // Perform the update and return the results
+      const { data: updateResult, error: updateError } = await supabase
         .from('mileage_logs')
         .update(updates)
         .eq('id', id)
-        .select()
-        .single();
+        .select();
 
-      if (error) {
-        console.error('Error updating mileage log:', error);
-        return { data: null, error: error.message, loading: false };
+      if (updateError) {
+        console.error('Error updating mileage log:', updateError);
+        return { data: null, error: `Failed to update mileage log: ${updateError.message}`, loading: false };
       }
 
-      return { data, error: null, loading: false };
+      // Check if any rows were updated
+      if (!updateResult || updateResult.length === 0) {
+        console.error('No rows were updated for mileage log ID:', id);
+        return { data: null, error: 'Mileage log could not be updated - it may have been deleted', loading: false };
+      }
+
+      if (updateResult.length > 1) {
+        console.warn('Multiple rows updated for mileage log ID:', id, 'Updated count:', updateResult.length);
+      }
+
+      const updatedLog = updateResult[0] as MileageLog;
+      console.log('Successfully updated mileage log:', updatedLog);
+
+      return { data: updatedLog, error: null, loading: false };
     } catch (error) {
       console.error('Unexpected error updating mileage log:', error);
-      return { data: null, error: 'Failed to update mileage log', loading: false };
+      return { data: null, error: 'An unexpected error occurred while updating the mileage log', loading: false };
     }
   }
 
@@ -208,88 +235,79 @@ export class MileageLogService {
       const { data: { user }, error: userError } = await supabase.auth.getUser();
 
       if (userError || !user) {
+        console.error('User authentication failed:', userError);
         return { data: null, error: 'User not authenticated', loading: false };
       }
 
-      // First, get the log to check vehicle access
+      console.log('Deleting mileage log:', id);
+
+      // First, get the log to check vehicle access and ensure it exists
       const { data: existingLog, error: fetchError } = await supabase
         .from('mileage_logs')
         .select('vehicle_id')
         .eq('id', id)
         .single();
 
-      if (fetchError || !existingLog) {
-        return { data: null, error: 'Log not found', loading: false };
+      if (fetchError) {
+        console.error('Error fetching existing mileage log for deletion:', fetchError);
+        if (fetchError.code === 'PGRST116') {
+          return { data: null, error: 'Mileage log not found', loading: false };
+        }
+        return { data: null, error: 'Failed to verify mileage log exists', loading: false };
+      }
+
+      if (!existingLog) {
+        console.error('No mileage log found with ID for deletion:', id);
+        return { data: null, error: 'Mileage log not found', loading: false };
       }
 
       // Validate that user can access the vehicle (owns it or has shared access)
-      const hasAccess = await this.canUserAccessVehicle(existingLog.vehicle_id, user.id);
+      const hasAccess = await canUserAccessVehicle(existingLog.vehicle_id, user.id);
 
       if (!hasAccess) {
-        return { data: null, error: 'Access denied', loading: false };
+        console.error('User does not have access to vehicle for deletion:', existingLog.vehicle_id);
+
+        // Check if the log belongs to a shared vehicle that user can only view
+        const { data: vehicle, error: vehicleError } = await supabase
+          .from('vehicles')
+          .select('user_id, make, model, year')
+          .eq('id', existingLog.vehicle_id)
+          .single();
+
+        if (!vehicleError && vehicle && vehicle.user_id !== user.id) {
+          return { data: null, error: 'PERMISSION_DENIED_SHARED_VEHICLE', loading: false };
+        }
+
+        return { data: null, error: 'PERMISSION_DENIED_ACCESS', loading: false };
       }
 
-      const { error } = await supabase
+      // Perform the deletion
+      const { data: deleteResult, error: deleteError } = await supabase
         .from('mileage_logs')
         .delete()
-        .eq('id', id);
+        .eq('id', id)
+        .select();
 
-      if (error) {
-        console.error('Error deleting mileage log:', error);
-        return { data: null, error: error.message, loading: false };
+      if (deleteError) {
+        console.error('Error deleting mileage log:', deleteError);
+        return { data: null, error: `Failed to delete mileage log: ${deleteError.message}`, loading: false };
       }
+
+      // Check if any rows were actually deleted
+      if (!deleteResult || deleteResult.length === 0) {
+        console.error('No rows were deleted for mileage log ID:', id);
+        return { data: null, error: 'Mileage log could not be deleted - it may have already been removed', loading: false };
+      }
+
+      console.log('Successfully deleted mileage log:', id, 'Deleted count:', deleteResult.length);
 
       return { data: true, error: null, loading: false };
     } catch (error) {
       console.error('Unexpected error deleting mileage log:', error);
-      return { data: null, error: 'Failed to delete mileage log', loading: false };
+      return { data: null, error: 'An unexpected error occurred while deleting the mileage log', loading: false };
     }
   }
 
-  /**
-   * Helper method to check if a user can access a vehicle (owns it or has shared access through groups)
-   */
-  private static async canUserAccessVehicle(vehicleId: string, userId: string): Promise<boolean> {
-    try {
-      // First, check if user owns the vehicle
-      const { data: ownedVehicle, error: ownedError } = await supabase
-        .from('vehicles')
-        .select('id')
-        .eq('id', vehicleId)
-        .eq('user_id', userId)
-        .single();
-
-      if (!ownedError && ownedVehicle) {
-        return true; // User owns the vehicle
-      }
-
-      // If not owned, check if vehicle is shared with user through groups
-      // First, get user's group memberships
-      const { data: userGroups, error: groupError } = await supabase
-        .from('group_members')
-        .select('group_id')
-        .eq('user_id', userId);
-
-      if (groupError || !userGroups || userGroups.length === 0) {
-        return false; // No groups to check
-      }
-
-      const groupIds = userGroups.map(g => g.group_id);
-
-      // Check if vehicle is shared with any of these groups
-      const { data: sharedVehicles, error: shareError } = await supabase
-        .from('vehicle_group_shares')
-        .select('vehicle_id')
-        .eq('vehicle_id', vehicleId)
-        .in('group_id', groupIds);
-
-      return !shareError && sharedVehicles && sharedVehicles.length > 0;
-
-    } catch (error) {
-      console.error('Error checking vehicle access:', error);
-      return false;
-    }
-  }
 }
 
 export class FuelLogService {
@@ -400,7 +418,7 @@ export class FuelLogService {
       }
 
       // Validate that user can access the vehicle (owns it or has shared access)
-      const hasAccess = await this.canUserAccessVehicle(log.vehicle_id, user.id);
+      const hasAccess = await canUserAccessVehicle(log.vehicle_id, user.id);
 
       if (!hasAccess) {
         return { data: null, error: 'Vehicle not found or access denied', loading: false };
@@ -432,43 +450,69 @@ export class FuelLogService {
       const { data: { user }, error: userError } = await supabase.auth.getUser();
 
       if (userError || !user) {
+        console.error('User authentication failed:', userError);
         return { data: null, error: 'User not authenticated', loading: false };
       }
 
-      // First, get the log to check vehicle access
+      console.log('Updating fuel log:', id, 'with updates:', updates);
+
+      // First, get the log to check vehicle access and ensure it exists
       const { data: existingLog, error: fetchError } = await supabase
         .from('fuel_logs')
-        .select('vehicle_id')
+        .select('vehicle_id, user_id')
         .eq('id', id)
         .single();
 
-      if (fetchError || !existingLog) {
-        return { data: null, error: 'Log not found', loading: false };
+      if (fetchError) {
+        console.error('Error fetching existing fuel log:', fetchError);
+        if (fetchError.code === 'PGRST116') {
+          return { data: null, error: 'Fuel log not found', loading: false };
+        }
+        return { data: null, error: 'Failed to verify fuel log exists', loading: false };
+      }
+
+      if (!existingLog) {
+        console.error('No fuel log found with ID:', id);
+        return { data: null, error: 'Fuel log not found', loading: false };
       }
 
       // Validate that user can access the vehicle (owns it or has shared access)
-      const hasAccess = await this.canUserAccessVehicle(existingLog.vehicle_id, user.id);
+      const hasAccess = await canUserAccessVehicle(existingLog.vehicle_id, user.id);
 
       if (!hasAccess) {
-        return { data: null, error: 'Access denied', loading: false };
+        console.error('User does not have access to vehicle:', existingLog.vehicle_id);
+        return { data: null, error: 'Access denied - you do not have permission to edit this fuel log', loading: false };
       }
 
-      const { data, error } = await supabase
+      // Perform the update and return the results
+      const { data: updateResult, error: updateError } = await supabase
         .from('fuel_logs')
         .update(updates)
         .eq('id', id)
-        .select()
-        .single();
+        .select();
 
-      if (error) {
-        console.error('Error updating fuel log:', error);
-        return { data: null, error: error.message, loading: false };
+      if (updateError) {
+        console.error('Error updating fuel log:', updateError);
+        return { data: null, error: `Failed to update fuel log: ${updateError.message}`, loading: false };
       }
 
-      return { data, error: null, loading: false };
+      // Check if any rows were updated
+      if (!updateResult || updateResult.length === 0) {
+        console.error('No rows were updated for fuel log ID:', id);
+        return { data: null, error: 'Fuel log could not be updated - it may have been deleted', loading: false };
+      }
+
+      if (updateResult.length > 1) {
+        console.warn('Multiple rows updated for fuel log ID:', id, 'Updated count:', updateResult.length);
+      }
+
+      const updatedLog = updateResult[0] as FuelLog;
+      console.log('Successfully updated fuel log:', updatedLog);
+
+      return { data: updatedLog, error: null, loading: false };
     } catch (error) {
       console.error('Unexpected error updating fuel log:', error);
-      return { data: null, error: 'Failed to update fuel log', loading: false };
+      return { data: null, error: 'An unexpected error occurred while updating the fuel log', loading: false };
     }
   }
 
@@ -477,88 +521,79 @@ export class FuelLogService {
       const { data: { user }, error: userError } = await supabase.auth.getUser();
 
       if (userError || !user) {
+        console.error('User authentication failed:', userError);
         return { data: null, error: 'User not authenticated', loading: false };
       }
 
-      // First, get the log to check vehicle access
+      console.log('Deleting fuel log:', id);
+
+      // First, get the log to check vehicle access and ensure it exists
       const { data: existingLog, error: fetchError } = await supabase
         .from('fuel_logs')
         .select('vehicle_id')
         .eq('id', id)
         .single();
 
-      if (fetchError || !existingLog) {
-        return { data: null, error: 'Log not found', loading: false };
+      if (fetchError) {
+        console.error('Error fetching existing fuel log for deletion:', fetchError);
+        if (fetchError.code === 'PGRST116') {
+          return { data: null, error: 'Fuel log not found', loading: false };
+        }
+        return { data: null, error: 'Failed to verify fuel log exists', loading: false };
+      }
+
+      if (!existingLog) {
+        console.error('No fuel log found with ID for deletion:', id);
+        return { data: null, error: 'Fuel log not found', loading: false };
       }
 
       // Validate that user can access the vehicle (owns it or has shared access)
-      const hasAccess = await this.canUserAccessVehicle(existingLog.vehicle_id, user.id);
+      const hasAccess = await canUserAccessVehicle(existingLog.vehicle_id, user.id);
 
       if (!hasAccess) {
-        return { data: null, error: 'Access denied', loading: false };
+        console.error('User does not have access to vehicle for deletion:', existingLog.vehicle_id);
+
+        // Check if the log belongs to a shared vehicle that user can only view
+        const { data: vehicle, error: vehicleError } = await supabase
+          .from('vehicles')
+          .select('user_id, make, model, year')
+          .eq('id', existingLog.vehicle_id)
+          .single();
+
+        if (!vehicleError && vehicle && vehicle.user_id !== user.id) {
+          return { data: null, error: 'PERMISSION_DENIED_SHARED_VEHICLE', loading: false };
+        }
+
+        return { data: null, error: 'PERMISSION_DENIED_ACCESS', loading: false };
       }
 
-      const { error } = await supabase
+      // Perform the deletion
+      const { data: deleteResult, error: deleteError } = await supabase
         .from('fuel_logs')
         .delete()
-        .eq('id', id);
+        .eq('id', id)
+        .select();
 
-      if (error) {
-        console.error('Error deleting fuel log:', error);
-        return { data: null, error: error.message, loading: false };
+      if (deleteError) {
+        console.error('Error deleting fuel log:', deleteError);
+        return { data: null, error: `Failed to delete fuel log: ${deleteError.message}`, loading: false };
       }
+
+      // Check if any rows were actually deleted
+      if (!deleteResult || deleteResult.length === 0) {
+        console.error('No rows were deleted for fuel log ID:', id);
+        return { data: null, error: 'Fuel log could not be deleted - it may have already been removed', loading: false };
+      }
+
+      console.log('Successfully deleted fuel log:', id, 'Deleted count:', deleteResult.length);
 
       return { data: true, error: null, loading: false };
     } catch (error) {
       console.error('Unexpected error deleting fuel log:', error);
-      return { data: null, error: 'Failed to delete fuel log', loading: false };
+      return { data: null, error: 'An unexpected error occurred while deleting the fuel log', loading: false };
     }
   }
 
-  /**
-   * Helper method to check if a user can access a vehicle (owns it or has shared access through groups)
-   */
-  private static async canUserAccessVehicle(vehicleId: string, userId: string): Promise<boolean> {
-    try {
-      // First, check if user owns the vehicle
-      const { data: ownedVehicle, error: ownedError } = await supabase
-        .from('vehicles')
-        .select('id')
-        .eq('id', vehicleId)
-        .eq('user_id', userId)
-        .single();
-
-      if (!ownedError && ownedVehicle) {
-        return true; // User owns the vehicle
-      }
-
-      // If not owned, check if vehicle is shared with user through groups
-      // First, get user's group memberships
-      const { data: userGroups, error: groupError } = await supabase
-        .from('group_members')
-        .select('group_id')
-        .eq('user_id', userId);
-
-      if (groupError || !userGroups || userGroups.length === 0) {
-        return false; // No groups to check
-      }
-
-      const groupIds = userGroups.map(g => g.group_id);
-
-      // Check if vehicle is shared with any of these groups
-      const { data: sharedVehicles, error: shareError } = await supabase
-        .from('vehicle_group_shares')
-        .select('vehicle_id')
-        .eq('vehicle_id', vehicleId)
-        .in('group_id', groupIds);
-
-      return !shareError && sharedVehicles && sharedVehicles.length > 0;
-
-    } catch (error) {
-      console.error('Error checking vehicle access:', error);
-      return false;
-    }
-  }
 }
 
 export class ServiceLogService {
@@ -669,7 +704,7 @@ export class ServiceLogService {
       }
 
       // Validate that user can access the vehicle (owns it or has shared access)
-      const hasAccess = await this.canUserAccessVehicle(log.vehicle_id, user.id);
+      const hasAccess = await canUserAccessVehicle(log.vehicle_id, user.id);
 
       if (!hasAccess) {
         return { data: null, error: 'Vehicle not found or access denied', loading: false };
@@ -701,43 +736,69 @@ export class ServiceLogService {
       const { data: { user }, error: userError } = await supabase.auth.getUser();
 
       if (userError || !user) {
+        console.error('User authentication failed:', userError);
         return { data: null, error: 'User not authenticated', loading: false };
       }
 
-      // First, get the log to check vehicle access
+      console.log('Updating service log:', id, 'with updates:', updates);
+
+      // First, get the log to check vehicle access and ensure it exists
       const { data: existingLog, error: fetchError } = await supabase
         .from('service_logs')
-        .select('vehicle_id')
+        .select('vehicle_id, user_id')
         .eq('id', id)
         .single();
 
-      if (fetchError || !existingLog) {
-        return { data: null, error: 'Log not found', loading: false };
+      if (fetchError) {
+        console.error('Error fetching existing service log:', fetchError);
+        if (fetchError.code === 'PGRST116') {
+          return { data: null, error: 'Service log not found', loading: false };
+        }
+        return { data: null, error: 'Failed to verify service log exists', loading: false };
+      }
+
+      if (!existingLog) {
+        console.error('No service log found with ID:', id);
+        return { data: null, error: 'Service log not found', loading: false };
       }
 
       // Validate that user can access the vehicle (owns it or has shared access)
-      const hasAccess = await this.canUserAccessVehicle(existingLog.vehicle_id, user.id);
+      const hasAccess = await canUserAccessVehicle(existingLog.vehicle_id, user.id);
 
       if (!hasAccess) {
-        return { data: null, error: 'Access denied', loading: false };
+        console.error('User does not have access to vehicle:', existingLog.vehicle_id);
+        return { data: null, error: 'Access denied - you do not have permission to edit this service log', loading: false };
       }
 
-      const { data, error } = await supabase
+      // Perform the update and return the results
+      const { data: updateResult, error: updateError } = await supabase
         .from('service_logs')
         .update(updates)
         .eq('id', id)
-        .select()
-        .single();
+        .select();
 
-      if (error) {
-        console.error('Error updating service log:', error);
-        return { data: null, error: error.message, loading: false };
+      if (updateError) {
+        console.error('Error updating service log:', updateError);
+        return { data: null, error: `Failed to update service log: ${updateError.message}`, loading: false };
       }
 
-      return { data, error: null, loading: false };
+      // Check if any rows were updated
+      if (!updateResult || updateResult.length === 0) {
+        console.error('No rows were updated for service log ID:', id);
+        return { data: null, error: 'Service log could not be updated - it may have been deleted', loading: false };
+      }
+
+      if (updateResult.length > 1) {
+        console.warn('Multiple rows updated for service log ID:', id, 'Updated count:', updateResult.length);
+      }
+
+      const updatedLog = updateResult[0] as ServiceLog;
+      console.log('Successfully updated service log:', updatedLog);
+
+      return { data: updatedLog, error: null, loading: false };
     } catch (error) {
       console.error('Unexpected error updating service log:', error);
-      return { data: null, error: 'Failed to update service log', loading: false };
+      return { data: null, error: 'An unexpected error occurred while updating the service log', loading: false };
     }
   }
 
@@ -746,86 +807,65 @@ export class ServiceLogService {
       const { data: { user }, error: userError } = await supabase.auth.getUser();
 
       if (userError || !user) {
+        console.error('User authentication failed:', userError);
         return { data: null, error: 'User not authenticated', loading: false };
       }
 
-      // First, get the log to check vehicle access
+      console.log('Deleting service log:', id);
+
+      // First, get the log to check vehicle access and ensure it exists
       const { data: existingLog, error: fetchError } = await supabase
         .from('service_logs')
         .select('vehicle_id')
         .eq('id', id)
         .single();
 
-      if (fetchError || !existingLog) {
-        return { data: null, error: 'Log not found', loading: false };
+      if (fetchError) {
+        console.error('Error fetching existing service log for deletion:', fetchError);
+        if (fetchError.code === 'PGRST116') {
+          return { data: null, error: 'Service log not found', loading: false };
+        }
+        return { data: null, error: 'Failed to verify service log exists', loading: false };
+      }
+
+      if (!existingLog) {
+        console.error('No service log found with ID for deletion:', id);
+        return { data: null, error: 'Service log not found', loading: false };
       }
 
       // Validate that user can access the vehicle (owns it or has shared access)
-      const hasAccess = await this.canUserAccessVehicle(existingLog.vehicle_id, user.id);
+      const hasAccess = await canUserAccessVehicle(existingLog.vehicle_id, user.id);
 
       if (!hasAccess) {
-        return { data: null, error: 'Access denied', loading: false };
+        console.error('User does not have access to vehicle for deletion:', existingLog.vehicle_id);
+        return { data: null, error: 'Access denied - you do not have permission to delete this service log', loading: false };
       }
 
-      const { error } = await supabase
+      // Perform the deletion
+      const { data: deleteResult, error: deleteError } = await supabase
         .from('service_logs')
         .delete()
-        .eq('id', id);
+        .eq('id', id)
+        .select();
 
-      if (error) {
-        console.error('Error deleting service log:', error);
-        return { data: null, error: error.message, loading: false };
+      if (deleteError) {
+        console.error('Error deleting service log:', deleteError);
+        return { data: null, error: `Failed to delete service log: ${deleteError.message}`, loading: false };
       }
+
+      // Check if any rows were actually deleted
+      if (!deleteResult || deleteResult.length === 0) {
+        console.error('No rows were deleted for service log ID:', id);
+        return { data: null, error: 'Service log could not be deleted - it may have already been removed', loading: false };
+      }
+
+      console.log('Successfully deleted service log:', id, 'Deleted count:', deleteResult.length);
 
       return { data: true, error: null, loading: false };
     } catch (error) {
       console.error('Unexpected error deleting service log:', error);
-      return { data: null, error: 'Failed to delete service log', loading: false };
+      return { data: null, error: 'An unexpected error occurred while deleting the service log', loading: false };
     }
   }
 
-  /**
-   * Helper method to check if a user can access a vehicle (owns it or has shared access through groups)
-   */
-  private static async canUserAccessVehicle(vehicleId: string, userId: string): Promise<boolean> {
-    try {
-      // First, check if user owns the vehicle
-      const { data: ownedVehicle, error: ownedError } = await supabase
-        .from('vehicles')
-        .select('id')
-        .eq('id', vehicleId)
-        .eq('user_id', userId)
-        .single();
-
-      if (!ownedError && ownedVehicle) {
-        return true; // User owns the vehicle
-      }
-
-      // If not owned, check if vehicle is shared with user through groups
-      // First, get user's group memberships
-      const { data: userGroups, error: groupError } = await supabase
-        .from('group_members')
-        .select('group_id')
-        .eq('user_id', userId);
-
-      if (groupError || !userGroups || userGroups.length === 0) {
-        return false; // No groups to check
-      }
-
-      const groupIds = userGroups.map(g => g.group_id);
-
-      // Check if vehicle is shared with any of these groups
-      const { data: sharedVehicles, error: shareError } = await supabase
-        .from('vehicle_group_shares')
-        .select('vehicle_id')
-        .eq('vehicle_id', vehicleId)
-        .in('group_id', groupIds);
-
-      return !shareError && sharedVehicles && sharedVehicles.length > 0;
-
-    } catch (error) {
-      console.error('Error checking vehicle access:', error);
-      return false;
-    }
-  }
 }

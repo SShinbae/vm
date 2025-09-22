@@ -9,10 +9,12 @@ import {
   ActivityIndicator,
   Platform,
 } from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
 import { IconSymbol } from './icon-symbol';
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { ImageUploadService } from '@/lib/services/imageUploadService';
+import { ImageCropModal } from './ImageCropModal';
 
 interface ImageUploadProps {
   type: 'avatar' | 'vehicle_main' | 'vehicle_gallery';
@@ -39,6 +41,8 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
 }) => {
   const [uploading, setUploading] = useState(false);
   const [localImageUri, setLocalImageUri] = useState<string | null>(null);
+  const [showCropModal, setShowCropModal] = useState(false);
+  const [selectedImageUri, setSelectedImageUri] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
@@ -66,18 +70,138 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
   const handleFileSelect = (event: any) => {
     const file = event.target.files?.[0];
     if (file) {
-      processImageFile(file);
+      // For web, show crop modal first
+      const imageUrl = URL.createObjectURL(file);
+      setSelectedImageUri(imageUrl);
+      setShowCropModal(true);
     }
   };
 
   const pickImageFromCamera = async () => {
-    // Implementation would use expo-image-picker
-    Alert.alert('Info', 'Camera functionality requires expo-image-picker to be installed');
+    try {
+      // Request camera permissions
+      const { status } = await ImagePicker.requestCameraPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Permission Denied', 'Camera access is required to take photos.');
+        return;
+      }
+
+      const result = await ImagePicker.launchCameraAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: type === 'avatar' ? [1, 1] : [4, 3],
+        quality: 0.8,
+      });
+
+      if (!result.canceled && result.assets[0]) {
+        await processImageUri(result.assets[0].uri);
+      }
+    } catch (error: any) {
+      Alert.alert('Camera Error', error.message || 'Failed to access camera');
+    }
   };
 
   const pickImageFromGallery = async () => {
-    // Implementation would use expo-image-picker
-    Alert.alert('Info', 'Gallery functionality requires expo-image-picker to be installed');
+    try {
+      // Request media library permissions
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Permission Denied', 'Photo library access is required to select images.');
+        return;
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: type === 'avatar' ? [1, 1] : [4, 3],
+        quality: 0.8,
+      });
+
+      if (!result.canceled && result.assets[0]) {
+        await processImageUri(result.assets[0].uri);
+      }
+    } catch (error: any) {
+      Alert.alert('Gallery Error', error.message || 'Failed to access photo library');
+    }
+  };
+
+  const processImageUri = async (uri: string) => {
+    try {
+      setUploading(true);
+      setLocalImageUri(uri);
+
+      // Convert URI to File for upload service
+      const response = await fetch(uri);
+      const blob = await response.blob();
+      const fileName = `image_${Date.now()}.jpg`;
+      const file = new File([blob], fileName, { type: 'image/jpeg' });
+
+      // Validate file
+      const validation = ImageUploadService.validateImageFile(file);
+      if (!validation.isValid) {
+        onUploadError?.(validation.error!);
+        Alert.alert('Invalid File', validation.error!);
+        setLocalImageUri(null);
+        return;
+      }
+
+      let result;
+      if (type === 'avatar') {
+        result = await ImageUploadService.uploadProfileAvatar(file);
+      } else {
+        if (!vehicleId) {
+          throw new Error('Vehicle ID is required for vehicle images');
+        }
+        result = await ImageUploadService.uploadVehicleImage(
+          vehicleId,
+          file,
+          type === 'vehicle_main' ? 'vehicle_main' : 'vehicle_gallery'
+        );
+      }
+
+      if (result.error) {
+        onUploadError?.(result.error);
+        Alert.alert('Upload Failed', result.error);
+        setLocalImageUri(null);
+      } else {
+        const imageUrl = type === 'avatar' ? result.data! : result.data!.image_url;
+        onUploadComplete?.(imageUrl);
+        Alert.alert('Success', 'Image uploaded successfully!');
+      }
+    } catch (error: any) {
+      onUploadError?.(error.message);
+      Alert.alert('Upload Error', error.message);
+      setLocalImageUri(null);
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleCropComplete = (croppedFile: File) => {
+    setShowCropModal(false);
+    if (selectedImageUri) {
+      URL.revokeObjectURL(selectedImageUri);
+      setSelectedImageUri(null);
+    }
+    processImageFile(croppedFile);
+  };
+
+  const handleCropCancel = () => {
+    setShowCropModal(false);
+    if (selectedImageUri) {
+      URL.revokeObjectURL(selectedImageUri);
+      setSelectedImageUri(null);
+    }
+  };
+
+  const handleCropError = (error: string) => {
+    setShowCropModal(false);
+    if (selectedImageUri) {
+      URL.revokeObjectURL(selectedImageUri);
+      setSelectedImageUri(null);
+    }
+    onUploadError?.(error);
+    Alert.alert('Crop Error', error);
   };
 
   const processImageFile = async (file: File) => {
@@ -240,14 +364,15 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
     },
     deleteButton: {
       position: 'absolute',
-      top: 4,
-      right: 4,
+      top: -8,
+      right: -8,
       backgroundColor: '#ff4444',
       borderRadius: 12,
       width: 24,
       height: 24,
       justifyContent: 'center',
       alignItems: 'center',
+      zIndex: 10,
     },
     uploadingText: {
       fontSize: 12,
@@ -316,6 +441,17 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
           accept="image/*"
           onChange={handleFileSelect}
           style={styles.hiddenInput}
+        />
+      )}
+
+      {/* Image Crop Modal for web */}
+      {Platform.OS === 'web' && selectedImageUri && (
+        <ImageCropModal
+          visible={showCropModal}
+          imageUri={selectedImageUri}
+          onClose={handleCropCancel}
+          onCropComplete={handleCropComplete}
+          onError={handleCropError}
         />
       )}
     </View>

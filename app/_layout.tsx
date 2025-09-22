@@ -1,4 +1,4 @@
-import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
+import { DarkTheme, DefaultTheme, ThemeProvider as NavigationThemeProvider } from '@react-navigation/native';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import 'react-native-reanimated';
@@ -6,6 +6,7 @@ import '../global.css';
 
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { AuthProvider } from '@/lib/contexts/AuthContext';
+import { ThemeProvider } from '@/lib/contexts/ThemeContext';
 import { AuthGuard } from '@/components/AuthGuard';
 import '@/lib/utils/testSupabase';
 
@@ -14,10 +15,18 @@ export const unstable_settings = {
 };
 
 export default function RootLayout() {
+  return (
+    <ThemeProvider>
+      <RootLayoutContent />
+    </ThemeProvider>
+  );
+}
+
+function RootLayoutContent() {
   const colorScheme = useColorScheme();
 
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+    <NavigationThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
       <AuthProvider>
         <AuthGuard>
           <Stack>
@@ -28,6 +37,6 @@ export default function RootLayout() {
         </AuthGuard>
       </AuthProvider>
       <StatusBar style="auto" />
-    </ThemeProvider>
+    </NavigationThemeProvider>
   );
 }

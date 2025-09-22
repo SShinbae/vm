@@ -5,6 +5,7 @@ import {
   TouchableOpacity,
   StyleSheet,
   Platform,
+  TextInput,
 } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { IconSymbol } from './icon-symbol';
@@ -82,6 +83,22 @@ export function DatePicker({
   const currentDate = value ? parseDate(value) : new Date();
   const displayValue = value ? formatDisplayDate(parseDate(value)) : placeholder;
 
+  // For web platform, we'll use a text input with HTML5 date input as fallback
+  const isWeb = Platform.OS === 'web';
+
+  const handleTextInputChange = (text: string) => {
+    // Handle direct text input for web platform
+    if (text.match(/^\d{4}-\d{2}-\d{2}$/)) {
+      // YYYY-MM-DD format from HTML5 date input
+      onDateChange(text);
+    } else if (text.match(/^\d{2}\/\d{2}\/\d{4}$/)) {
+      // DD/MM/YYYY format - convert to YYYY-MM-DD
+      const [day, month, year] = text.split('/');
+      const formattedDate = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+      onDateChange(formattedDate);
+    }
+  };
+
   const styles = StyleSheet.create({
     container: {
       marginBottom: 20,
@@ -116,6 +133,16 @@ export function DatePicker({
     iconContainer: {
       marginLeft: 12,
     },
+    webInput: {
+      backgroundColor: colors.background,
+      borderWidth: 1,
+      borderColor: colors.icon,
+      borderRadius: 8,
+      paddingHorizontal: 16,
+      paddingVertical: 12,
+      fontSize: 16,
+      color: colors.text,
+    },
   });
 
   return (
@@ -124,25 +151,40 @@ export function DatePicker({
         {label} {required && <Text style={styles.requiredLabel}>*</Text>}
       </Text>
 
-      <TouchableOpacity
-        style={styles.dateButton}
-        onPress={handlePress}
-        activeOpacity={0.7}
-      >
-        <Text style={styles.dateText}>{displayValue}</Text>
-        <View style={styles.iconContainer}>
-          <IconSymbol name="calendar" size={20} color={colors.icon} />
-        </View>
-      </TouchableOpacity>
-
-      {showPicker && (
-        <DateTimePicker
-          value={currentDate}
-          mode="date"
-          display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-          onChange={handleDateChange}
-          style={{ backgroundColor: colors.background }}
+      {isWeb ? (
+        // Web fallback: use TextInput with HTML5 date type
+        <TextInput
+          style={styles.webInput}
+          value={value || ''}
+          onChangeText={handleTextInputChange}
+          placeholder={placeholder}
+          placeholderTextColor={colors.icon}
+          // @ts-ignore - type property is valid for web but not in RN types
+          type="date"
         />
+      ) : (
+        <>
+          <TouchableOpacity
+            style={styles.dateButton}
+            onPress={handlePress}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.dateText}>{displayValue}</Text>
+            <View style={styles.iconContainer}>
+              <IconSymbol name="calendar" size={20} color={colors.icon} />
+            </View>
+          </TouchableOpacity>
+
+          {showPicker && (
+            <DateTimePicker
+              value={currentDate}
+              mode="date"
+              display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+              onChange={handleDateChange}
+              style={{ backgroundColor: colors.background }}
+            />
+          )}
+        </>
       )}
     </View>
   );

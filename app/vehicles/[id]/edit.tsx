@@ -22,6 +22,7 @@ import { IconSymbol } from '@/components/ui/icon-symbol';
 export default function EditVehicleScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const [vehicle, setVehicle] = useState<Vehicle | null>(null);
+  const [isSharedVehicle, setIsSharedVehicle] = useState(false);
   const [formData, setFormData] = useState<VehicleFormData>({
     make: '',
     model: '',
@@ -41,10 +42,15 @@ export default function EditVehicleScreen() {
       const { data, error } = await VehicleService.getVehicleById(id);
 
       if (error) {
-        Alert.alert('Error', 'Failed to load vehicle details');
+        let errorMessage = 'Failed to load vehicle details';
+        if (error.includes('not found') || error.includes('access denied')) {
+          errorMessage = 'Vehicle not found or you do not have permission to access it.';
+        }
+        Alert.alert('Error', errorMessage);
         router.back();
       } else if (data) {
         setVehicle(data);
+        setIsSharedVehicle(!data.is_own_vehicle);
         setFormData({
           make: data.make,
           model: data.model,
@@ -62,6 +68,16 @@ export default function EditVehicleScreen() {
 
   const handleSave = async () => {
     if (!vehicle) return;
+
+    // Check if this is a shared vehicle - only owners can edit vehicle details
+    if (isSharedVehicle) {
+      Alert.alert(
+        'Cannot Edit Vehicle',
+        'Only the vehicle owner can edit vehicle details. You have read-only access to this shared vehicle.',
+        [{ text: 'OK' }]
+      );
+      return;
+    }
 
     // Validation
     if (!formData.make.trim()) {
@@ -95,7 +111,11 @@ export default function EditVehicleScreen() {
     setSaving(false);
 
     if (error) {
-      Alert.alert('Error', error);
+      let errorMessage = error;
+      if (error.includes('permission') || error.includes('access denied')) {
+        errorMessage = 'You do not have permission to edit this vehicle. Only the owner can modify vehicle details.';
+      }
+      Alert.alert('Error', errorMessage);
     } else {
       Alert.alert('Success', 'Vehicle updated successfully', [
         {
@@ -229,6 +249,21 @@ export default function EditVehicleScreen() {
       justifyContent: 'center',
       alignItems: 'center',
     },
+    sharedNotice: {
+      backgroundColor: colors.icon + '10',
+      borderRadius: 8,
+      padding: 12,
+      marginBottom: 20,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+    },
+    sharedNoticeText: {
+      fontSize: 14,
+      color: colors.icon,
+      flex: 1,
+      lineHeight: 18,
+    },
   });
 
   if (loading) {
@@ -253,14 +288,16 @@ export default function EditVehicleScreen() {
         <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
           <IconSymbol name="chevron.left" size={24} color={colors.text} />
         </TouchableOpacity>
-        <Text style={styles.title}>Edit Vehicle</Text>
+        <Text style={styles.title}>
+          Edit Vehicle {isSharedVehicle && '(Shared)'}
+        </Text>
         <TouchableOpacity
           style={[
             styles.saveButton,
-            (!isFormValid() || !hasChanges() || saving) && styles.saveButtonDisabled,
+            (!isFormValid() || !hasChanges() || saving || isSharedVehicle) && styles.saveButtonDisabled,
           ]}
           onPress={handleSave}
-          disabled={!isFormValid() || !hasChanges() || saving}
+          disabled={!isFormValid() || !hasChanges() || saving || isSharedVehicle}
         >
           {saving ? (
             <ActivityIndicator color="white" size="small" />
@@ -283,6 +320,15 @@ export default function EditVehicleScreen() {
           keyboardShouldPersistTaps="handled"
         >
           <View style={styles.formCard}>
+            {isSharedVehicle && (
+              <View style={styles.sharedNotice}>
+                <IconSymbol name="person.2.fill" size={16} color={colors.icon} />
+                <Text style={styles.sharedNoticeText}>
+                  This is a shared vehicle. Only the owner can edit vehicle details.
+                </Text>
+              </View>
+            )}
+
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Basic Information</Text>
 

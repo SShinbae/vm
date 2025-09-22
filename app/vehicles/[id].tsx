@@ -1,8 +1,10 @@
 import { IconSymbol } from '@/components/ui/icon-symbol';
+import { ConfirmModal, AlertModal } from '@/components/ui/Modal';
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { VehicleService } from '@/lib/services/vehicleService';
 import { formatDate, formatDateWithPrefix } from '@/lib/utils/dateUtils';
+import { formatServiceItems } from '@/lib/utils/serviceUtils';
 import { VehicleWithDetails } from '@/types/database-v2';
 import { ReceiptViewer, ServiceReceiptIndicator } from '@/components/ui/ReceiptViewer';
 import { router, useLocalSearchParams, useFocusEffect } from 'expo-router';
@@ -26,6 +28,15 @@ export default function VehicleDetailScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [sharingLoading, setSharingLoading] = useState(false);
+
+  // Modal states
+  const [deleteModalVisible, setDeleteModalVisible] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [alertModalVisible, setAlertModalVisible] = useState(false);
+  const [alertMessage, setAlertMessage] = useState('');
+  const [alertTitle, setAlertTitle] = useState('');
+  const [alertVariant, setAlertVariant] = useState<'info' | 'success' | 'warning' | 'error'>('info');
+
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
 
@@ -38,17 +49,17 @@ export default function VehicleDetailScreen() {
 
       if (vehicleResult.error) {
         console.error('Error fetching vehicle:', vehicleResult.error);
-        Alert.alert('Error', 'Failed to load vehicle details');
+        showAlert('Error', 'Failed to load vehicle details', 'error');
         router.back();
       } else if (vehicleResult.data) {
         setVehicle(vehicleResult.data);
       } else {
-        Alert.alert('Error', 'Vehicle not found');
+        showAlert('Error', 'Vehicle not found', 'error');
         router.back();
       }
     } catch (error) {
       console.error('Unexpected error fetching vehicle data:', error);
-      Alert.alert('Error', 'Failed to load vehicle details');
+      showAlert('Error', 'Failed to load vehicle details', 'error');
       router.back();
     }
 
@@ -63,26 +74,29 @@ export default function VehicleDetailScreen() {
 
   const handleDelete = () => {
     if (!vehicle) return;
+    setDeleteModalVisible(true);
+  };
 
-    Alert.alert(
-      'Delete Vehicle',
-      `Are you sure you want to delete ${vehicle.year} ${vehicle.make} ${vehicle.model}? This action cannot be undone and will delete all associated logs.`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            const { error } = await VehicleService.deleteVehicle(vehicle.id);
-            if (error) {
-              Alert.alert('Error', 'Failed to delete vehicle');
-            } else {
-              router.back();
-            }
-          },
-        },
-      ]
-    );
+  const handleConfirmDelete = async () => {
+    if (!vehicle) return;
+
+    setDeleteLoading(true);
+    const { error } = await VehicleService.deleteVehicle(vehicle.id);
+    setDeleteLoading(false);
+    setDeleteModalVisible(false);
+
+    if (error) {
+      showAlert('Error', 'Failed to delete vehicle', 'error');
+    } else {
+      router.back();
+    }
+  };
+
+  const showAlert = (title: string, message: string, variant: 'info' | 'success' | 'warning' | 'error' = 'info') => {
+    setAlertTitle(title);
+    setAlertMessage(message);
+    setAlertVariant(variant);
+    setAlertModalVisible(true);
   };
 
   const handleToggleSharing = async (shared: boolean) => {
@@ -104,7 +118,7 @@ export default function VehicleDetailScreen() {
                 const { data: groups, error: groupsError } = await VehicleService.getUserGroups();
 
                 if (groupsError || !groups || groups.length === 0) {
-                  Alert.alert('Error', 'No groups found. You need to be a member of at least one group to share vehicles.');
+                  showAlert('Error', 'No groups found. You need to be a member of at least one group to share vehicles.', 'error');
                   return;
                 }
 
@@ -113,7 +127,7 @@ export default function VehicleDetailScreen() {
                 const { error: shareError } = await VehicleService.shareVehicleWithGroups(vehicle.id, groupIds);
 
                 if (shareError) {
-                  Alert.alert('Error', 'Failed to share vehicle: ' + shareError);
+                  showAlert('Error', 'Failed to share vehicle: ' + shareError, 'error');
                 } else {
                   // Update local state with actual data
                   setVehicle(prev => prev ? {
@@ -124,11 +138,11 @@ export default function VehicleDetailScreen() {
                       total_shares: groups.length
                     }
                   } : null);
-                  Alert.alert('Success', `Vehicle shared with ${groups.length} group(s)`);
+                  showAlert('Success', `Vehicle shared with ${groups.length} group(s)`, 'success');
                 }
               } catch (error) {
                 console.error('Error sharing vehicle:', error);
-                Alert.alert('Error', 'Failed to share vehicle');
+                showAlert('Error', 'Failed to share vehicle', 'error');
               } finally {
                 setSharingLoading(false);
               }
@@ -143,7 +157,7 @@ export default function VehicleDetailScreen() {
         const { error } = await VehicleService.shareVehicleWithGroups(vehicle.id, []);
 
         if (error) {
-          Alert.alert('Error', 'Failed to stop sharing');
+          showAlert('Error', 'Failed to stop sharing', 'error');
         } else {
           setVehicle(prev => prev ? {
             ...prev,
@@ -153,10 +167,10 @@ export default function VehicleDetailScreen() {
               total_shares: 0
             }
           } : null);
-          Alert.alert('Success', 'Vehicle is no longer shared');
+          showAlert('Success', 'Vehicle is no longer shared', 'success');
         }
       } catch {
-        Alert.alert('Error', 'Failed to update sharing settings');
+        showAlert('Error', 'Failed to update sharing settings', 'error');
       } finally {
         setSharingLoading(false);
       }
@@ -202,7 +216,8 @@ export default function VehicleDetailScreen() {
 
     const getLogSubtext = (log: any) => {
       if (isServiceSection) {
-        return `${log.description}${log.cost ? ` • RM${log.cost}` : ''}`;
+        const formattedDescription = formatServiceItems(log.description);
+        return `${formattedDescription}${log.cost ? ` • RM${log.cost}` : ''}`;
       }
       return formatDate(log.date || log.created_at);
     };
@@ -720,6 +735,30 @@ export default function VehicleDetailScreen() {
           isReadOnly={false} // All users can edit
         />
       </ScrollView>
+
+      <ConfirmModal
+        visible={deleteModalVisible}
+        onClose={() => {
+          if (!deleteLoading) {
+            setDeleteModalVisible(false);
+          }
+        }}
+        onConfirm={handleConfirmDelete}
+        title="Delete Vehicle"
+        message={vehicle ? `Are you sure you want to delete ${vehicle.year} ${vehicle.make} ${vehicle.model}? This action cannot be undone and will delete all associated logs.` : ''}
+        confirmText="Delete"
+        cancelText="Cancel"
+        variant="danger"
+        loading={deleteLoading}
+      />
+
+      <AlertModal
+        visible={alertModalVisible}
+        onClose={() => setAlertModalVisible(false)}
+        title={alertTitle}
+        message={alertMessage}
+        variant={alertVariant}
+      />
     </SafeAreaView>
   );
 }
