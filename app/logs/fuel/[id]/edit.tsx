@@ -18,6 +18,7 @@ import { FuelLogFormData, FuelLog } from '@/types';
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { IconSymbol } from '@/components/ui/icon-symbol';
+import { DatePicker } from '@/components/ui/DatePicker';
 
 export default function EditFuelLogScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -46,14 +47,27 @@ export default function EditFuelLogScreen() {
       try {
         const { data: logs, error } = await FuelLogService.getFuelLogs();
         if (error) {
-          Alert.alert('Error', 'Failed to load fuel log');
+          console.error('Error fetching fuel logs:', error);
+          let errorMessage = 'Failed to load fuel log';
+          if (error.includes('User not authenticated')) {
+            errorMessage = 'Your session has expired. Please log in again.';
+          } else if (error.includes('Failed to fetch')) {
+            errorMessage = 'Unable to load fuel log. Please check your internet connection.';
+          }
+          Alert.alert('Error', errorMessage);
           router.back();
           return;
         }
 
         const log = logs?.find(l => l.id === id);
         if (!log) {
-          Alert.alert('Error', 'Fuel log not found');
+          console.error('No fuel log found with ID:', id);
+          Alert.alert('Error', 'This fuel log no longer exists. It may have been deleted.', [
+            {
+              text: 'OK',
+              onPress: () => router.back(),
+            },
+          ]);
           router.back();
           return;
         }
@@ -104,11 +118,36 @@ export default function EditFuelLogScreen() {
       location: formData.location?.trim() || undefined,
     };
 
-    const { data, error } = await FuelLogService.updateFuelLog(id!, updateData);
+    const { error } = await FuelLogService.updateFuelLog(id!, updateData);
     setLoading(false);
 
     if (error) {
-      Alert.alert('Error', error);
+      console.error('Error updating fuel log:', error);
+
+      // Provide more specific error messages based on the error content
+      let errorMessage = error;
+      if (error.includes('not found') || error.includes('no longer exists')) {
+        errorMessage = 'This fuel log no longer exists. It may have been deleted by another user.';
+      } else if (error.includes('Access denied') || error.includes('permission')) {
+        errorMessage = 'You do not have permission to edit this fuel log. Please contact the vehicle owner if this is a shared vehicle.';
+      } else if (error.includes('User not authenticated')) {
+        errorMessage = 'Your session has expired. Please log in again.';
+      } else if (error.includes('Failed to update fuel log')) {
+        errorMessage = 'Unable to save changes. Please check your internet connection and try again.';
+      } else if (error.includes('could not be updated')) {
+        errorMessage = 'The fuel log could not be updated. It may have been deleted or you may not have sufficient permissions.';
+      }
+
+      Alert.alert('Error', errorMessage, [
+        {
+          text: 'OK',
+          style: 'default',
+        },
+        ...(error.includes('no longer exists') ? [{
+          text: 'Go Back',
+          onPress: () => router.back(),
+        }] : [])
+      ]);
     } else {
       Alert.alert('Success', 'Fuel log updated successfully', [
         {
@@ -293,16 +332,16 @@ export default function EditFuelLogScreen() {
           <View style={styles.formCard}>
             <View style={styles.inputContainer}>
               <Text style={styles.label}>Vehicle</Text>
-              {fuelLog?.vehicles && (
+              {(fuelLog as any)?.vehicles && (
                 <View style={styles.vehicleInfo}>
                   <View style={styles.vehicleIcon}>
                     <IconSymbol name="car.fill" size={16} color="white" />
                   </View>
                   <View>
                     <Text style={styles.vehicleText}>
-                      {fuelLog.vehicles.year} {fuelLog.vehicles.make} {fuelLog.vehicles.model}
+                      {(fuelLog as any).vehicles.year} {(fuelLog as any).vehicles.make} {(fuelLog as any).vehicles.model}
                     </Text>
-                    <Text style={styles.vehiclePlate}>{fuelLog.vehicles.license_plate}</Text>
+                    <Text style={styles.vehiclePlate}>{(fuelLog as any).vehicles.license_plate}</Text>
                   </View>
                 </View>
               )}
@@ -367,18 +406,13 @@ export default function EditFuelLogScreen() {
               </View>
 
               <View style={styles.flex1}>
-                <View style={styles.inputContainer}>
-                  <Text style={styles.label}>
-                    Date <Text style={styles.requiredLabel}>*</Text>
-                  </Text>
-                  <TextInput
-                    style={styles.input}
-                    value={formData.date}
-                    onChangeText={(text) => setFormData(prev => ({ ...prev, date: text }))}
-                    placeholder="2024-01-01"
-                    placeholderTextColor={colors.icon}
-                  />
-                </View>
+                <DatePicker
+                  label="Date"
+                  value={formData.date}
+                  onDateChange={(date) => setFormData(prev => ({ ...prev, date }))}
+                  placeholder="Select date"
+                  required={true}
+                />
               </View>
             </View>
 

@@ -464,7 +464,7 @@ export default function AddFuelLogScreen() {
 
               <View style={styles.flex1}>
                 <View style={styles.inputContainer}>
-                  <Text style={styles.label}>Cost (Optional)</Text>
+                  <Text style={styles.label}>Cost</Text>
                   <TextInput
                     style={styles.input}
                     value={formData.cost?.toString() || ''}

@@ -131,6 +131,21 @@ export default function ServiceLogDetailScreen() {
     }).format(amount);
   };
 
+  const formatServiceDescription = (description: string) => {
+    try {
+      // Try to parse as JSON first
+      const parsed = JSON.parse(description);
+      if (Array.isArray(parsed)) {
+        return parsed
+          .map((item, index) => `${index + 1}) ${item.description} | RM${item.price}`)
+          .join('\n');
+      }
+    } catch {
+      // If it's not valid JSON, return as is
+    }
+    return description;
+  };
+
   const styles = StyleSheet.create({
     container: {
       flex: 1,
@@ -416,7 +431,7 @@ export default function ServiceLogDetailScreen() {
             <View style={styles.detailRow}>
               <Text style={styles.detailLabel}>Description</Text>
             </View>
-            <Text style={styles.description}>{serviceLog.description}</Text>
+            <Text style={styles.description}>{formatServiceDescription(serviceLog.description)}</Text>
           </View>
 
           <View style={styles.detailSection}>

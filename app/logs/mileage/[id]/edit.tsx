@@ -14,12 +14,11 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { MileageLogService } from '@/lib/services/loggingService';
-import { VehicleService } from '@/lib/services/vehicleService';
 import { MileageLogFormData, MileageLog } from '@/types';
-import { VehicleWithDetails } from '@/types/database-v2';
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { IconSymbol } from '@/components/ui/icon-symbol';
+import { DatePicker } from '@/components/ui/DatePicker';
 
 export default function EditMileageLogScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -46,14 +45,27 @@ export default function EditMileageLogScreen() {
       try {
         const { data: logs, error } = await MileageLogService.getMileageLogs();
         if (error) {
-          Alert.alert('Error', 'Failed to load mileage log');
+          console.error('Error fetching mileage logs:', error);
+          let errorMessage = 'Failed to load mileage log';
+          if (error.includes('User not authenticated')) {
+            errorMessage = 'Your session has expired. Please log in again.';
+          } else if (error.includes('Failed to fetch')) {
+            errorMessage = 'Unable to load mileage log. Please check your internet connection.';
+          }
+          Alert.alert('Error', errorMessage);
           router.back();
           return;
         }
 
         const log = logs?.find(l => l.id === id);
         if (!log) {
-          Alert.alert('Error', 'Mileage log not found');
+          console.error('No mileage log found with ID:', id);
+          Alert.alert('Error', 'This mileage log no longer exists. It may have been deleted.', [
+            {
+              text: 'OK',
+              onPress: () => router.back(),
+            },
+          ]);
           router.back();
           return;
         }
@@ -96,11 +108,36 @@ export default function EditMileageLogScreen() {
       notes: formData.notes?.trim() || undefined,
     };
 
-    const { data, error } = await MileageLogService.updateMileageLog(id!, updateData);
+    const { error } = await MileageLogService.updateMileageLog(id!, updateData);
     setLoading(false);
 
     if (error) {
-      Alert.alert('Error', error);
+      console.error('Error updating mileage log:', error);
+
+      // Provide more specific error messages based on the error content
+      let errorMessage = error;
+      if (error.includes('not found') || error.includes('no longer exists')) {
+        errorMessage = 'This mileage log no longer exists. It may have been deleted by another user.';
+      } else if (error.includes('Access denied') || error.includes('permission')) {
+        errorMessage = 'You do not have permission to edit this mileage log. Please contact the vehicle owner if this is a shared vehicle.';
+      } else if (error.includes('User not authenticated')) {
+        errorMessage = 'Your session has expired. Please log in again.';
+      } else if (error.includes('Failed to update mileage log')) {
+        errorMessage = 'Unable to save changes. Please check your internet connection and try again.';
+      } else if (error.includes('could not be updated')) {
+        errorMessage = 'The mileage log could not be updated. It may have been deleted or you may not have sufficient permissions.';
+      }
+
+      Alert.alert('Error', errorMessage, [
+        {
+          text: 'OK',
+          style: 'default',
+        },
+        ...(error.includes('no longer exists') ? [{
+          text: 'Go Back',
+          onPress: () => router.back(),
+        }] : [])
+      ]);
     } else {
       Alert.alert('Success', 'Mileage log updated successfully', [
         {
@@ -310,18 +347,13 @@ export default function EditMileageLogScreen() {
               />
             </View>
 
-            <View style={styles.inputContainer}>
-              <Text style={styles.label}>
-                Date <Text style={styles.requiredLabel}>*</Text>
-              </Text>
-              <TextInput
-                style={styles.input}
-                value={formData.date}
-                onChangeText={(text) => setFormData(prev => ({ ...prev, date: text }))}
-                placeholder="2024-01-01"
-                placeholderTextColor={colors.icon}
-              />
-            </View>
+            <DatePicker
+              label="Date"
+              value={formData.date}
+              onDateChange={(date) => setFormData(prev => ({ ...prev, date }))}
+              placeholder="Select date"
+              required={true}
+            />
 
             <View style={styles.inputContainer}>
               <Text style={styles.label}>Notes (Optional)</Text>
