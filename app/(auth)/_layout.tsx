@@ -39,6 +39,13 @@ export default function AuthLayout() {
           presentation: 'modal'
         }}
       />
+      <Stack.Screen
+        name="email-confirmation"
+        options={{
+          title: 'Email Confirmation',
+          headerShown: false
+        }}
+      />
     </Stack>
   );
 }
