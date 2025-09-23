@@ -1,6 +1,6 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
 import { Session, User } from '@supabase/supabase-js';
 import Constants from 'expo-constants';
+import React, { createContext, useContext, useEffect, useState } from 'react';
 import { supabase } from '../../services/supabaseClient';
 import { AuthState, AuthUser, Profile } from '../../types';
 
@@ -103,7 +103,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     setState(prev => ({ ...prev, loading: true }));
 
     try {
-      const siteUrl = Constants.expoConfig?.extra?.siteUrl || 'http://localhost:3000';
+      const siteUrl = Constants.expoConfig?.extra?.siteUrl;
       const emailRedirectUrl = `${siteUrl}/auth/confirm`;
 
       // Debug logging to ensure correct URL is being used
@@ -169,7 +169,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   const resetPassword = async (email: string) => {
     try {
-      const siteUrl = Constants.expoConfig?.extra?.siteUrl || 'http://localhost:3000';
+      const siteUrl = Constants.expoConfig?.extra?.siteUrl;
       const resetPasswordUrl = `${siteUrl}/reset-password`;
 
       // Debug logging to ensure correct URL is being used
@@ -199,11 +199,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
     try {
       const { error } = await supabase
-        .from('profiles')
+        .from<Profile>('profiles')
         .update({
           ...updates,
           updated_at: new Date().toISOString(),
-        })
+        } as Partial<Profile>)
         .eq('id', state.user.id);
 
       if (error) {
