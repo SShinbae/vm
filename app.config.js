@@ -54,6 +54,7 @@ export default {
       supabaseUrl: process.env.SUPABASE_URL,
       supabaseKey: process.env.SUPABASE_KEY,
       googleVisionApiKey: process.env.GOOGLE_VISION_API_KEY,
+      siteUrl: process.env.SITE_URL,
     },
   },
 };
