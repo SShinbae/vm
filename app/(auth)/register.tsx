@@ -75,16 +75,10 @@ export default function RegisterScreen() {
     if (error) {
       Alert.alert('Registration Failed', error);
     } else {
-      Alert.alert(
-        'Registration Successful',
-        'Please check your email to verify your account.',
-        [
-          {
-            text: 'OK',
-            onPress: () => router.replace('/(auth)/login'),
-          },
-        ]
-      );
+      router.replace({
+        pathname: '/(auth)/email-confirmation',
+        params: { email: email.trim().toLowerCase() }
+      });
     }
   };
 

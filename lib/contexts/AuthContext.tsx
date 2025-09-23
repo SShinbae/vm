@@ -104,11 +104,17 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
     try {
       const siteUrl = Constants.expoConfig?.extra?.siteUrl || 'http://localhost:3000';
+      const emailRedirectUrl = `${siteUrl}/auth/confirm`;
+
+      // Debug logging to ensure correct URL is being used
+      console.log('Email confirmation URL:', emailRedirectUrl);
+      console.log('Site URL from config:', Constants.expoConfig?.extra?.siteUrl);
+
       const { error } = await supabase.auth.signUp({
         email,
         password,
         options: {
-          emailRedirectTo: `${siteUrl}/auth/confirm`,
+          emailRedirectTo: emailRedirectUrl,
           data: {
             full_name: fullName || '',
           },
@@ -164,8 +170,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const resetPassword = async (email: string) => {
     try {
       const siteUrl = Constants.expoConfig?.extra?.siteUrl || 'http://localhost:3000';
+      const resetPasswordUrl = `${siteUrl}/reset-password`;
+
+      // Debug logging to ensure correct URL is being used
+      console.log('Reset password URL:', resetPasswordUrl);
+      console.log('Site URL from config:', Constants.expoConfig?.extra?.siteUrl);
+
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${siteUrl}/reset-password`,
+        redirectTo: resetPasswordUrl,
       });
 
       if (error) {
