@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { Session, User } from '@supabase/supabase-js';
+import Constants from 'expo-constants';
 import { supabase } from '../../services/supabaseClient';
 import { AuthState, AuthUser, Profile } from '../../types';
 
@@ -102,10 +103,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
     setState(prev => ({ ...prev, loading: true }));
 
     try {
+      const siteUrl = Constants.expoConfig?.extra?.siteUrl || 'http://localhost:3000';
       const { error } = await supabase.auth.signUp({
         email,
         password,
         options: {
+          emailRedirectTo: `${siteUrl}/auth/confirm`,
           data: {
             full_name: fullName || '',
           },
@@ -160,8 +163,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   const resetPassword = async (email: string) => {
     try {
+      const siteUrl = Constants.expoConfig?.extra?.siteUrl || 'http://localhost:3000';
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: 'vehiclesapp://reset-password',
+        redirectTo: `${siteUrl}/reset-password`,
       });
 
       if (error) {

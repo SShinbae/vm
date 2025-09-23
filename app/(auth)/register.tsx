@@ -1,22 +1,22 @@
+import { Colors } from '@/constants/theme';
+import { useColorScheme } from '@/hooks/use-color-scheme';
+import { useAuth } from '@/lib/contexts/AuthContext';
+import { Link, router } from 'expo-router';
 import React, { useState } from 'react';
 import {
-  View,
+  ActivityIndicator,
+  Alert,
+  Dimensions,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
-  Alert,
-  KeyboardAvoidingView,
-  Platform,
-  StyleSheet,
-  ActivityIndicator,
-  ScrollView,
-  Dimensions,
+  View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Link, router } from 'expo-router';
-import { useAuth } from '@/lib/contexts/AuthContext';
-import { Colors } from '@/constants/theme';
-import { useColorScheme } from '@/hooks/use-color-scheme';
 
 const { width: screenWidth } = Dimensions.get('window');
 
@@ -313,10 +313,10 @@ export default function RegisterScreen() {
           <View style={styles.content}>
             {/* Logo Section */}
             <View style={styles.logoContainer}>
-              <Text style={styles.logo}>VehicleSync</Text>
+              <Text style={styles.logo}>Vehicle Management</Text>
               <Text style={styles.title}>Create a new account</Text>
               <Text style={styles.subtitle}>
-                Join VehicleSync and start managing your vehicles with ease. Connect with other vehicle enthusiasts.
+                Join Vehicle Management and start managing your vehicles with ease. Connect with other vehicle enthusiasts.
               </Text>
             </View>
 
