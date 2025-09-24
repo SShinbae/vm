@@ -46,6 +46,13 @@ export default function AuthLayout() {
           headerShown: false
         }}
       />
+      <Stack.Screen
+        name="confirm"
+        options={{
+          title: 'Registration Complete',
+          headerShown: false
+        }}
+      />
     </Stack>
   );
 }

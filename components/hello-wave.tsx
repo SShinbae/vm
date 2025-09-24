@@ -1,24 +1,33 @@
-import Animated, { useSharedValue, useAnimatedStyle, withRepeat, withTiming, withSequence } from 'react-native-reanimated';
-import { useEffect } from 'react';
+import { Animated, Text } from 'react-native';
+import { useEffect, useRef } from 'react';
 
 export function HelloWave() {
-  const rotateAnimation = useSharedValue(0);
+  const rotateAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    rotateAnimation.value = withRepeat(
-      withSequence(
-        withTiming(25, { duration: 150 }),
-        withTiming(-25, { duration: 150 }),
-        withTiming(25, { duration: 150 }),
-        withTiming(0, { duration: 150 })
-      ),
-      1
-    );
+    Animated.sequence([
+      Animated.timing(rotateAnim, {
+        toValue: 25,
+        duration: 150,
+        useNativeDriver: true,
+      }),
+      Animated.timing(rotateAnim, {
+        toValue: -25,
+        duration: 150,
+        useNativeDriver: true,
+      }),
+      Animated.timing(rotateAnim, {
+        toValue: 25,
+        duration: 150,
+        useNativeDriver: true,
+      }),
+      Animated.timing(rotateAnim, {
+        toValue: 0,
+        duration: 150,
+        useNativeDriver: true,
+      }),
+    ]).start();
   }, []);
-
-  const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ rotate: `${rotateAnimation.value}deg` }],
-  }));
 
   return (
     <Animated.Text
@@ -26,7 +35,11 @@ export function HelloWave() {
         fontSize: 28,
         lineHeight: 32,
         marginTop: -6,
-      }, animatedStyle]}>
+        transform: [{ rotate: rotateAnim.interpolate({
+          inputRange: [-25, 25],
+          outputRange: ['-25deg', '25deg'],
+        }) }],
+      }]}>
       👋
     </Animated.Text>
   );

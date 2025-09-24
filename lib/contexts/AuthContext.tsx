@@ -104,11 +104,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
     try {
       const siteUrl = Constants.expoConfig?.extra?.siteUrl;
-      const emailRedirectUrl = `${siteUrl}/auth/confirm`;
+      const emailRedirectUrl = `${siteUrl}/(auth)/auth/confirm`;
 
-      // Debug logging to ensure correct URL is being used
       console.log('Email confirmation URL:', emailRedirectUrl);
-      console.log('Site URL from config:', Constants.expoConfig?.extra?.siteUrl);
 
       const { error } = await supabase.auth.signUp({
         email,

@@ -55,6 +55,8 @@ const MAPPING = {
   'fuelpump': 'local-gas-station',
   'wrench': 'build',
   'chart.line.uptrend.xyaxis': 'trending-up',
+  'magnifyingglass': 'search',
+  'chevron.down': 'keyboard-arrow-down',
 } as IconMapping;
 
 /**
