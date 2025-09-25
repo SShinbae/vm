@@ -8,6 +8,7 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
@@ -20,6 +21,7 @@ import { IconSymbol } from '@/components/ui/icon-symbol';
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useResponsiveLayout } from '@/hooks/use-responsive-layout';
+import { useAuth } from '@/lib/contexts/AuthContext';
 import { formatDateWithPrefix } from '@/lib/utils/dateUtils';
 import { ServiceTemplate } from '@/types';
 import { VehicleWithDetails } from '@/types/database-v2';
@@ -27,12 +29,15 @@ import { VehicleWithDetails } from '@/types/database-v2';
 type TabType = 'vehicles' | 'services';
 
 export default function VehiclesScreen() {
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<TabType>('vehicles');
   const [ownVehicles, setOwnVehicles] = useState<VehicleWithDetails[]>([]);
   const [sharedVehicles, setSharedVehicles] = useState<VehicleWithDetails[]>([]);
   const [serviceTemplates, setServiceTemplates] = useState<ServiceTemplate[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [tableSearchQuery, setTableSearchQuery] = useState('');
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
   const layout = useResponsiveLayout();
@@ -249,7 +254,8 @@ export default function VehiclesScreen() {
     </TouchableOpacity>
   );
 
-  const TabButton = ({ type, label, icon }: { type: TabType; label: string; icon: string }) => (
+
+  const TabButton = ({ type, label, icon }: { type: TabType; label: string; icon: any }) => (
     <TouchableOpacity
       style={[
         styles.tabButton,
@@ -260,12 +266,12 @@ export default function VehiclesScreen() {
       <IconSymbol
         name={icon}
         size={20}
-        color={activeTab === type ? 'white' : colors.icon}
+        color={activeTab === type ? 'white' : colors.textSecondary}
       />
       <Text
         style={[
           styles.tabButtonText,
-          { color: activeTab === type ? 'white' : colors.icon },
+          { color: activeTab === type ? 'white' : colors.textSecondary },
         ]}
       >
         {label}
@@ -276,38 +282,39 @@ export default function VehiclesScreen() {
   const styles = StyleSheet.create({
     container: {
       flex: 1,
-      backgroundColor: colors.background,
+      backgroundColor: colors.surface,
     },
     header: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      paddingHorizontal: 20,
-      paddingVertical: 16,
+      paddingHorizontal: 24,
+      paddingVertical: 20,
+      backgroundColor: colors.background,
       borderBottomWidth: 1,
-      borderBottomColor: colors.icon + '20',
+      borderBottomColor: colors.border,
     },
-    title: {
+    greeting: {
       fontSize: 32,
-      fontWeight: 'bold',
+      fontWeight: '700',
       color: colors.text,
+      marginBottom: 4,
     },
-    addButton: {
-      backgroundColor: colors.tint,
-      paddingHorizontal: 16,
-      paddingVertical: 8,
-      borderRadius: 20,
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 6,
-    },
-    addButtonText: {
-      color: 'white',
-      fontSize: 14,
-      fontWeight: '600',
+    subtitle: {
+      fontSize: 16,
+      color: colors.textSecondary,
     },
     content: {
       flex: 1,
+    },
+    scrollContent: {
+      paddingBottom: 20,
+    },
+    section: {
+      padding: 24,
+    },
+    sectionTitle: {
+      fontSize: 22,
+      fontWeight: '600',
+      color: colors.text,
+      marginBottom: 20,
     },
     emptyContainer: {
       flex: 1,
@@ -351,17 +358,20 @@ export default function VehiclesScreen() {
       padding: 20,
     },
     vehicleCard: {
-      backgroundColor: colors.background,
-      borderRadius: 12,
-      padding: 16,
+      backgroundColor: colors.card,
+      borderRadius: 16,
+      padding: 20,
       marginBottom: 12,
       borderWidth: 1,
-      borderColor: colors.icon + '20',
-      elevation: 2,
+      borderColor: colors.cardBorder,
       shadowColor: '#000',
-      shadowOffset: { width: 0, height: 2 },
+      shadowOffset: {
+        width: 0,
+        height: 2,
+      },
       shadowOpacity: 0.1,
-      shadowRadius: 4,
+      shadowRadius: 8,
+      elevation: 4,
     },
     vehicleHeader: {
       flexDirection: 'row',
@@ -369,13 +379,13 @@ export default function VehiclesScreen() {
       marginBottom: 12,
     },
     vehicleIcon: {
-      width: 40,
-      height: 40,
-      borderRadius: 20,
+      width: 48,
+      height: 48,
+      borderRadius: 24,
       backgroundColor: colors.tint,
       alignItems: 'center',
       justifyContent: 'center',
-      marginRight: 12,
+      marginRight: 16,
     },
     vehicleInfo: {
       flex: 1,
@@ -387,100 +397,97 @@ export default function VehiclesScreen() {
       marginBottom: 4,
     },
     vehicleName: {
-      fontSize: 18,
+      fontSize: 16,
       fontWeight: '600',
       color: colors.text,
       flex: 1,
     },
     sharedBadge: {
-      backgroundColor: '#4CAF50',
-      borderRadius: 10,
-      width: 20,
-      height: 20,
+      backgroundColor: '#10B981',
+      borderRadius: 12,
+      paddingHorizontal: 8,
+      paddingVertical: 4,
+      flexDirection: 'row',
       alignItems: 'center',
-      justifyContent: 'center',
+      gap: 4,
     },
     vehiclePlate: {
       fontSize: 14,
-      color: colors.icon,
-      fontWeight: '500',
+      color: colors.textSecondary,
     },
     groupVehicleIcon: {
-      backgroundColor: '#4CAF50', // Green color for group vehicles
+      backgroundColor: '#10B981',
     },
     ownerInfo: {
       fontSize: 12,
-      color: '#4CAF50',
-      fontStyle: 'italic',
-      marginTop: 2,
+      color: '#10B981',
+      fontWeight: '500',
+      marginTop: 4,
     },
     sharingStatus: {
       fontSize: 12,
-      color: '#4CAF50',
-      fontWeight: '500',
-      marginTop: 2,
+      color: '#6B7280',
+      marginTop: 4,
     },
     sectionHeader: {
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
-      paddingHorizontal: 20,
-      paddingVertical: 16,
+      paddingHorizontal: layout.isMobile ? 16 : 24,
+      paddingVertical: 20,
+      backgroundColor: '#FFFFFF',
       borderBottomWidth: 1,
-      borderBottomColor: colors.icon + '10',
-    },
-    sectionTitle: {
-      fontSize: 20,
-      fontWeight: '600',
-      color: colors.text,
+      borderBottomColor: '#F3F4F6',
     },
     sectionSubtitle: {
       fontSize: 14,
-      color: colors.icon,
+      color: '#6B7280',
       marginTop: 2,
     },
     sectionCount: {
-      backgroundColor: colors.tint,
+      backgroundColor: '#F59E0B',
       borderRadius: 12,
-      paddingHorizontal: 8,
-      paddingVertical: 4,
-      minWidth: 24,
+      paddingHorizontal: 12,
+      paddingVertical: 6,
+      minWidth: 32,
       alignItems: 'center',
     },
     sectionCountText: {
-      fontSize: 12,
+      fontSize: 14,
       fontWeight: '600',
       color: 'white',
     },
     sectionContent: {
-      padding: 20,
+      padding: layout.isMobile ? 16 : 24,
     },
     emptySection: {
-      paddingVertical: 40,
-      paddingHorizontal: 20,
+      paddingVertical: 60,
+      paddingHorizontal: 24,
       alignItems: 'center',
+      backgroundColor: '#FFFFFF',
     },
     emptySectionIcon: {
-      width: 60,
-      height: 60,
-      borderRadius: 30,
-      backgroundColor: colors.icon + '20',
+      width: 80,
+      height: 80,
+      borderRadius: 40,
+      backgroundColor: '#F3F4F6',
       alignItems: 'center',
       justifyContent: 'center',
-      marginBottom: 16,
+      marginBottom: 20,
     },
     emptySectionTitle: {
-      fontSize: 16,
+      fontSize: 18,
       fontWeight: '600',
-      color: colors.text,
+      color: '#111827',
       marginBottom: 8,
       textAlign: 'center',
     },
     emptySectionDescription: {
       fontSize: 14,
-      color: colors.icon,
+      color: '#6B7280',
       textAlign: 'center',
-      lineHeight: 20,
+      lineHeight: 22,
+      maxWidth: 400,
     },
     deleteButton: {
       padding: 8,
@@ -490,7 +497,7 @@ export default function VehiclesScreen() {
     },
     detailLabel: {
       fontSize: 12,
-      color: colors.icon,
+      color: '#6B7280',
       textTransform: 'uppercase',
       letterSpacing: 0.5,
     },
@@ -500,25 +507,25 @@ export default function VehiclesScreen() {
       alignItems: 'center',
       paddingTop: 12,
       borderTopWidth: 1,
-      borderTopColor: colors.icon + '10',
+      borderTopColor: '#F3F4F6',
     },
     addedDate: {
       fontSize: 12,
-      color: colors.icon,
+      color: '#6B7280',
     },
     loadingContainer: {
       flex: 1,
       justifyContent: 'center',
       alignItems: 'center',
     },
-    // Tab styles
     tabs: {
       flexDirection: 'row',
-      paddingHorizontal: 20,
-      paddingVertical: 12,
-      gap: 8,
+      paddingHorizontal: layout.isMobile ? 16 : 24,
+      paddingVertical: 16,
+      gap: 12,
+      backgroundColor: colors.background,
       borderBottomWidth: 1,
-      borderBottomColor: colors.icon + '20',
+      borderBottomColor: colors.border,
     },
     tabButton: {
       flex: 1,
@@ -527,43 +534,75 @@ export default function VehiclesScreen() {
       justifyContent: 'center',
       paddingVertical: 12,
       paddingHorizontal: 16,
-      borderRadius: 8,
+      borderRadius: 12,
       borderWidth: 1,
-      borderColor: colors.icon + '30',
-      backgroundColor: colors.background,
+      borderColor: colors.border,
+      backgroundColor: colors.card,
       gap: 8,
     },
     tabButtonText: {
       fontSize: 14,
       fontWeight: '500',
     },
-    // Service card styles
+    quickActionsGrid: {
+      gap: 16,
+    },
+    quickActionCard: {
+      backgroundColor: colors.card,
+      borderRadius: 16,
+      padding: 20,
+      borderWidth: 1,
+      borderColor: colors.cardBorder,
+      alignItems: 'center',
+      gap: 12,
+      shadowColor: '#000',
+      shadowOffset: {
+        width: 0,
+        height: 2,
+      },
+      shadowOpacity: 0.1,
+      shadowRadius: 8,
+      elevation: 4,
+    },
+    quickActionIcon: {
+      width: 56,
+      height: 56,
+      borderRadius: 28,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    quickActionTitle: {
+      fontSize: 14,
+      fontWeight: '600',
+      color: colors.text,
+      textAlign: 'center',
+    },
     serviceCard: {
-      backgroundColor: colors.background,
+      backgroundColor: '#FFFFFF',
       borderRadius: 12,
-      padding: 16,
+      padding: layout.isMobile ? 16 : 20,
       marginBottom: 12,
       borderWidth: 1,
-      borderColor: colors.icon + '20',
-      elevation: 2,
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.1,
-      shadowRadius: 4,
+      borderColor: '#F3F4F6',
+      shadowColor: '#000000',
+      shadowOffset: { width: 0, height: 1 },
+      shadowOpacity: 0.05,
+      shadowRadius: 3,
+      elevation: 1,
     },
     serviceHeader: {
       flexDirection: 'row',
       alignItems: 'flex-start',
-      marginBottom: 12,
+      marginBottom: 16,
     },
     serviceIcon: {
-      width: 40,
-      height: 40,
-      borderRadius: 20,
-      backgroundColor: colors.tint + '20',
+      width: 48,
+      height: 48,
+      borderRadius: 24,
+      backgroundColor: '#FEF3C7',
       alignItems: 'center',
       justifyContent: 'center',
-      marginRight: 12,
+      marginRight: 16,
     },
     serviceInfo: {
       flex: 1,
@@ -571,25 +610,25 @@ export default function VehiclesScreen() {
     serviceName: {
       fontSize: 16,
       fontWeight: '600',
-      color: colors.text,
+      color: '#111827',
       marginBottom: 4,
     },
     serviceDescription: {
       fontSize: 14,
-      color: colors.icon,
+      color: '#6B7280',
       marginBottom: 4,
     },
     serviceItemCount: {
       fontSize: 12,
-      color: colors.icon,
+      color: '#9CA3AF',
     },
     serviceCost: {
       alignItems: 'flex-end',
     },
     serviceCostText: {
-      fontSize: 18,
-      fontWeight: 'bold',
-      color: colors.tint,
+      fontSize: 20,
+      fontWeight: '700',
+      color: '#F59E0B',
     },
     serviceItems: {
       marginBottom: 12,
@@ -598,77 +637,169 @@ export default function VehiclesScreen() {
       flexDirection: 'row',
       justifyContent: 'space-between',
       alignItems: 'center',
-      paddingVertical: 4,
+      paddingVertical: 6,
     },
     serviceItemDescription: {
       flex: 1,
       fontSize: 14,
-      color: colors.text,
+      color: '#111827',
       marginRight: 12,
     },
     serviceItemPrice: {
       fontSize: 14,
-      fontWeight: '500',
-      color: colors.icon,
+      fontWeight: '600',
+      color: '#6B7280',
     },
     moreItems: {
       fontSize: 12,
-      color: colors.icon,
+      color: '#9CA3AF',
       fontStyle: 'italic',
       marginTop: 4,
     },
     actionButtons: {
       flexDirection: 'row',
       justifyContent: 'flex-end',
-      gap: 8,
+      gap: 12,
       borderTopWidth: 1,
-      borderTopColor: colors.icon + '10',
+      borderTopColor: '#F3F4F6',
       paddingTop: 12,
     },
     editButton: {
       padding: 8,
+    },
+    tableSearchContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: '#F3F4F6',
+      borderRadius: 6,
+      paddingHorizontal: 12,
+      paddingVertical: 8,
+      gap: 8,
+      minWidth: layout.isMobile ? 100 : 200,
+    },
+    tableSearchInput: {
+      fontSize: 14,
+      color: '#111827',
+      flex: 1,
+    },
+    tableSortButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: '#F3F4F6',
+      borderRadius: 6,
+      paddingHorizontal: 12,
+      paddingVertical: 8,
+      gap: 8,
+    },
+    tableSortText: {
+      fontSize: 14,
+      color: '#6B7280',
     },
   });
 
   if (loading) {
     return (
       <SafeAreaView style={styles.container}>
-        <View style={styles.header}>
-          <Text style={styles.title}>Vehicles</Text>
-        </View>
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={colors.tint} />
-        </View>
+        <WebLayout>
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color={colors.tint} />
+          </View>
+        </WebLayout>
       </SafeAreaView>
     );
   }
+
+  const QuickActionCard = ({ title, icon, onPress, color }: any) => (
+    <TouchableOpacity style={[styles.quickActionCard, { borderColor: color + '30' }]} onPress={onPress}>
+      <View style={[styles.quickActionIcon, { backgroundColor: color + '20' }]}>
+        <IconSymbol name={icon} size={24} color={color} />
+      </View>
+      <Text style={styles.quickActionTitle}>{title}</Text>
+    </TouchableOpacity>
+  );
 
   return (
     <SafeAreaView style={styles.container}>
       <WebLayout>
         <View style={styles.header}>
-          <Text style={styles.title}>Vehicles</Text>
-          <TouchableOpacity
-            style={styles.addButton}
-            onPress={() => router.push(activeTab === 'vehicles' ? '/vehicles/add' : '/vehicles/services/add')}
-          >
-            <IconSymbol name="plus" size={16} color="white" />
-            <Text style={styles.addButtonText}>Add</Text>
-          </TouchableOpacity>
+          <Text style={styles.greeting}>
+            {activeTab === 'vehicles' ? 'Vehicles' : 'Service Templates'}
+          </Text>
+          <Text style={styles.subtitle}>Manage your fleet and maintenance</Text>
         </View>
 
-   
+      <View style={styles.tabs}>
+        <TabButton type="vehicles" label="Vehicles" icon="car.fill" />
+        <TabButton type="services" label="Services" icon="gear" />
+      </View>
 
         <ScrollView
           style={styles.content}
+          contentContainerStyle={styles.scrollContent}
           refreshControl={
             <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
           }
           showsVerticalScrollIndicator={false}
         >
+          {/* Quick Actions */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Quick Actions</Text>
+            <ResponsiveGrid minItemWidth={150} spacing={16} style={styles.quickActionsGrid}>
+              <QuickActionCard
+                title={`Add ${activeTab === 'vehicles' ? 'Vehicle' : 'Template'}`}
+                icon="plus.circle.fill"
+                color={colors.tint}
+                onPress={() => router.push(activeTab === 'vehicles' ? '/vehicles/add' : '/vehicles/services/add')}
+              />
+              {activeTab === 'vehicles' && (
+                <>
+                  <QuickActionCard
+                    title="Log Fuel"
+                    icon="fuelpump.fill"
+                    color={colors.chart.fuel}
+                    onPress={() => router.push('/logs/fuel/add' as any)}
+                  />
+                  <QuickActionCard
+                    title="Log Service"
+                    icon="wrench.fill"
+                    color={colors.chart.service}
+                    onPress={() => router.push('/logs/service/add' as any)}
+                  />
+                </>
+              )}
+            </ResponsiveGrid>
+          </View>
           {activeTab === 'vehicles' ? (
             <>
               {/* My Vehicles Section */}
+              <View style={styles.sectionHeader}>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.sectionTitle}>My Vehicles</Text>
+                  <Text style={styles.sectionSubtitle}>Vehicles you own and manage</Text>
+                </View>
+                {layout.isDesktop && ownVehicles.length > 0 && (
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                    <View style={styles.tableSearchContainer}>
+                      <IconSymbol name="magnifyingglass" size={16} color={colors.icon} />
+                      <TextInput
+                        style={styles.tableSearchInput}
+                        placeholder="Search"
+                        value={tableSearchQuery}
+                        onChangeText={setTableSearchQuery}
+                        placeholderTextColor={colors.icon}
+                      />
+                    </View>
+                    <TouchableOpacity style={styles.tableSortButton}>
+                      <Text style={styles.tableSortText}>Sort by</Text>
+                      <IconSymbol name="chevron.down" size={14} color={colors.icon} />
+                    </TouchableOpacity>
+                  </View>
+                )}
+                <View style={styles.sectionCount}>
+                  <Text style={styles.sectionCountText}>{ownVehicles.length}</Text>
+                </View>
+              </View>
+
               {ownVehicles.length === 0 ? (
                 <View style={styles.emptySection}>
                   <View style={styles.emptySectionIcon}>
@@ -697,10 +828,28 @@ export default function VehiclesScreen() {
 
               {/* Shared Vehicles Section */}
               <View style={styles.sectionHeader}>
-                <View>
+                <View style={{ flex: 1 }}>
                   <Text style={styles.sectionTitle}>Shared Vehicles</Text>
                   <Text style={styles.sectionSubtitle}>Vehicles shared by group members</Text>
                 </View>
+                {layout.isDesktop && (
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                    <View style={styles.tableSearchContainer}>
+                      <IconSymbol name="magnifyingglass" size={16} color={colors.icon} />
+                      <TextInput
+                        style={styles.tableSearchInput}
+                        placeholder="Search"
+                        value={tableSearchQuery}
+                        onChangeText={setTableSearchQuery}
+                        placeholderTextColor={colors.icon}
+                      />
+                    </View>
+                    <TouchableOpacity style={styles.tableSortButton}>
+                      <Text style={styles.tableSortText}>Sort by</Text>
+                      <IconSymbol name="chevron.down" size={14} color={colors.icon} />
+                    </TouchableOpacity>
+                  </View>
+                )}
                 <View style={styles.sectionCount}>
                   <Text style={styles.sectionCountText}>{sharedVehicles.length}</Text>
                 </View>

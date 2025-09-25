@@ -4,7 +4,11 @@
       "Bash(npm install:*)",
       "Bash(npx tsc:*)",
       "Bash(node:*)",
-      "Bash(npx expo lint:*)"
+      "Bash(npx expo lint:*)",
+      "Bash(npx expo install:*)",
+      "Bash(npx expo start:*)",
+      "Bash(npm run typecheck:*)",
+      "Bash(npm start)"
     ],
     "deny": [],
     "ask": []

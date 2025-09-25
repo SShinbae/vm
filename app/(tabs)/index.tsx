@@ -1,12 +1,15 @@
 import { ResponsiveGrid } from '@/components/layout/ResponsiveGrid';
 import { WebLayout } from '@/components/layout/WebLayout';
 import { IconSymbol } from '@/components/ui/icon-symbol';
+import { MetricCard } from '@/components/ui/MetricCard';
+import { TrendCard } from '@/components/ui/TrendCard';
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useResponsiveLayout } from '@/hooks/use-responsive-layout';
 import { useAuth } from '@/lib/contexts/AuthContext';
 import { FuelLogService, ServiceLogService } from '@/lib/services/loggingService';
 import { VehicleService } from '@/lib/services/vehicleService';
+import { AnalyticsService } from '@/lib/services/analyticsService';
 import { Vehicle } from '@/types';
 import { router } from 'expo-router';
 import React, { useCallback, useEffect, useState } from 'react';
@@ -21,89 +24,23 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-interface Analytics {
-  totalExpenses: number;
-  fuelCosts: number;
-  serviceCosts: number;
-  avgCostPerMile: number;
-  fuelTrend: number;
-  serviceTrend: number;
-  costPerMileTrend: number;
-}
-
 export default function DashboardScreen() {
   const { user } = useAuth();
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
-  const [analytics, setAnalytics] = useState<Analytics | null>(null);
+  const [analyticsData, setAnalyticsData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
   const layout = useResponsiveLayout();
 
-  const calculateAnalytics = useCallback(async () => {
+  const loadAnalytics = useCallback(async () => {
     try {
-      const [fuelResponse, serviceResponse] = await Promise.all([
-        FuelLogService.getFuelLogs(),
-        ServiceLogService.getServiceLogs()
-      ]);
-
-      const fuelLogs = fuelResponse.data || [];
-      const serviceLogs = serviceResponse.data || [];
-
-      const now = new Date();
-      const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-      const thisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-      const twoMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 2, 1);
-
-      // Current month costs
-      const thisMonthFuel = fuelLogs
-        .filter(log => new Date(log.date) >= thisMonth)
-        .reduce((sum, log) => sum + (log.cost || 0), 0);
-
-      const thisMonthService = serviceLogs
-        .filter(log => new Date(log.date) >= thisMonth)
-        .reduce((sum, log) => sum + (log.cost || 0), 0);
-
-      // Last month costs for comparison
-      const lastMonthFuel = fuelLogs
-        .filter(log => new Date(log.date) >= lastMonth && new Date(log.date) < thisMonth)
-        .reduce((sum, log) => sum + (log.cost || 0), 0);
-
-      const lastMonthService = serviceLogs
-        .filter(log => new Date(log.date) >= lastMonth && new Date(log.date) < thisMonth)
-        .reduce((sum, log) => sum + (log.cost || 0), 0);
-
-      // Calculate trends (percentage change)
-      const fuelTrend = lastMonthFuel > 0 ? ((thisMonthFuel - lastMonthFuel) / lastMonthFuel) * 100 : 0;
-      const serviceTrend = lastMonthService > 0 ? ((thisMonthService - lastMonthService) / lastMonthService) * 100 : 0;
-
-      // Calculate average cost per mile (rough estimate)
-      const totalCosts = thisMonthFuel + thisMonthService;
-      const avgCostPerMile = totalCosts > 0 ? totalCosts / Math.max(1, fuelLogs.length * 50) : 0; // Rough estimate
-      const lastMonthAvg = (lastMonthFuel + lastMonthService) / Math.max(1, fuelLogs.filter(log => new Date(log.date) >= lastMonth && new Date(log.date) < thisMonth).length * 50);
-      const costPerMileTrend = lastMonthAvg > 0 ? ((avgCostPerMile - lastMonthAvg) / lastMonthAvg) * 100 : 0;
-
-      setAnalytics({
-        totalExpenses: thisMonthFuel + thisMonthService,
-        fuelCosts: thisMonthFuel,
-        serviceCosts: thisMonthService,
-        avgCostPerMile,
-        fuelTrend,
-        serviceTrend,
-        costPerMileTrend
-      });
+      const data = await AnalyticsService.getAnalytics('last6months');
+      setAnalyticsData(data);
     } catch (error) {
-      console.error('Error calculating analytics:', error);
-      setAnalytics({
-        totalExpenses: 0,
-        fuelCosts: 0,
-        serviceCosts: 0,
-        avgCostPerMile: 0,
-        fuelTrend: 0,
-        serviceTrend: 0,
-        costPerMileTrend: 0
-      });
+      console.error('Error loading analytics:', error);
+      setAnalyticsData(null);
     }
   }, []);
 
@@ -112,9 +49,9 @@ export default function DashboardScreen() {
     if (!error && data) {
       setVehicles(data);
     }
-    await calculateAnalytics();
+    await loadAnalytics();
     setLoading(false);
-  }, [calculateAnalytics]);
+  }, [loadAnalytics]);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -126,18 +63,6 @@ export default function DashboardScreen() {
     fetchData();
   }, [fetchData]);
 
-  const MetricCard = ({ title, value, trend, unit = '' }: { title: string, value: number, trend: number, unit?: string }) => (
-    <View style={styles.metricCard}>
-      <Text style={styles.metricTitle}>{title}</Text>
-      <View style={styles.metricValueRow}>
-        <Text style={styles.metricValue}>{unit}{value.toFixed(unit === 'RM' ? 2 : 0)}</Text>
-        <Text style={[styles.metricTrend, { color: trend >= 0 ? colors.facebook.success : colors.facebook.error }]}>
-          {trend >= 0 ? '📈' : '📉'} {Math.abs(trend).toFixed(1)}%
-        </Text>
-      </View>
-      <Text style={styles.metricSubtext}>compared to last month</Text>
-    </View>
-  );
 
   const QuickActionCard = ({ title, icon, onPress, color }: any) => (
     <TouchableOpacity style={[styles.quickActionCard, { borderColor: color + '30' }]} onPress={onPress}>
@@ -155,7 +80,7 @@ export default function DashboardScreen() {
     >
       <View style={styles.vehicleHeader}>
         <View style={styles.vehicleIcon}>
-          <IconSymbol name="car.fill" size={20} color="white" />
+          <IconSymbol name="car.fill" size={20} color={colors.tint} />
         </View>
         <View style={styles.vehicleInfo}>
           <Text style={styles.vehicleName}>
@@ -171,87 +96,24 @@ export default function DashboardScreen() {
   const styles = StyleSheet.create({
     container: {
       flex: 1,
-      backgroundColor: colors.facebook.background,
+      backgroundColor: colors.surface,
     },
     header: {
       paddingHorizontal: 24,
-      paddingVertical: 16,
+      paddingVertical: 20,
       backgroundColor: colors.background,
       borderBottomWidth: 1,
       borderBottomColor: colors.border,
     },
-    breadcrumb: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      marginBottom: 8,
-    },
-    breadcrumbText: {
-      fontSize: 14,
-      color: colors.icon,
-    },
-    breadcrumbActive: {
-      color: colors.text,
-      fontWeight: '500',
-    },
     greeting: {
-      fontSize: 28,
+      fontSize: 32,
       fontWeight: '700',
       color: colors.text,
       marginBottom: 4,
     },
     subtitle: {
       fontSize: 16,
-      color: colors.icon,
-    },
-    analyticsSection: {
-      padding: 24,
-      backgroundColor: colors.background,
-      marginBottom: 24,
-    },
-    analyticsTitle: {
-      fontSize: 24,
-      fontWeight: '700',
-      color: colors.text,
-      marginBottom: 8,
-    },
-    totalExpenses: {
-      fontSize: 36,
-      fontWeight: '700',
-      color: '#b794f6',
-      marginBottom: 32,
-    },
-    metricsRow: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      gap: 16,
-      flexWrap: 'wrap',
-    },
-    metricCard: {
-      flex: 1,
-      minWidth: 120,
-    },
-    metricTitle: {
-      fontSize: 14,
-      color: colors.icon,
-      marginBottom: 8,
-    },
-    metricValueRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      marginBottom: 4,
-      gap: 8,
-    },
-    metricValue: {
-      fontSize: 24,
-      fontWeight: '700',
-      color: colors.text,
-    },
-    metricTrend: {
-      fontSize: 14,
-    },
-    metricSubtext: {
-      fontSize: 12,
-      color: colors.icon,
+      color: colors.textSecondary,
     },
     content: {
       flex: 1,
@@ -261,64 +123,95 @@ export default function DashboardScreen() {
     },
     section: {
       padding: 24,
-      backgroundColor: colors.background,
-      marginBottom: 24,
     },
     sectionTitle: {
-      fontSize: 20,
+      fontSize: 22,
       fontWeight: '600',
       color: colors.text,
+      marginBottom: 20,
+    },
+    analyticsSection: {
+      backgroundColor: colors.background,
       marginBottom: 16,
     },
-    quickActionsGrid: {
+    metricsGrid: {
+      gap: 16,
+    },
+    quickActionsFixed: {
       flexDirection: 'row',
       flexWrap: 'wrap',
       justifyContent: 'space-between',
-      gap: 12,
+      gap: 16,
+    },
+    overviewLayout: {
+      gap: 16,
+    },
+    metricsRow: {
+      flexDirection: 'row',
+      gap: 16,
+    },
+    metricCardHalf: {
+      flex: 1,
     },
     quickActionCard: {
-      backgroundColor: colors.background,
-      borderRadius: 12,
-      padding: 16,
+      backgroundColor: colors.card,
+      borderRadius: 16,
+      padding: 20,
       borderWidth: 1,
-      borderColor: colors.border,
+      borderColor: colors.cardBorder,
       alignItems: 'center',
       gap: 12,
-      width: '48%',
+      shadowColor: '#000',
+      shadowOffset: {
+        width: 0,
+        height: 2,
+      },
+      shadowOpacity: 0.1,
+      shadowRadius: 8,
+      elevation: 4,
+      width: '47%',
     },
     quickActionIcon: {
-      width: 48,
-      height: 48,
-      borderRadius: 24,
+      width: 56,
+      height: 56,
+      borderRadius: 28,
       alignItems: 'center',
       justifyContent: 'center',
     },
     quickActionTitle: {
       fontSize: 14,
-      fontWeight: '500',
+      fontWeight: '600',
       color: colors.text,
       textAlign: 'center',
     },
     vehicleCard: {
-      backgroundColor: colors.background,
-      borderRadius: 12,
-      padding: 16,
+      backgroundColor: colors.card,
+      borderRadius: 16,
+      padding: 20,
       marginBottom: 12,
       borderWidth: 1,
-      borderColor: colors.border,
+      borderColor: colors.cardBorder,
+      shadowColor: '#000',
+      shadowOffset: {
+        width: 0,
+        height: 2,
+      },
+      shadowOpacity: 0.1,
+      shadowRadius: 8,
+      elevation: 4,
     },
     vehicleHeader: {
       flexDirection: 'row',
       alignItems: 'center',
     },
     vehicleIcon: {
-      width: 40,
-      height: 40,
-      borderRadius: 20,
-      backgroundColor: colors.tint,
+      width: 48,
+      height: 48,
+      borderRadius: 24,
+      backgroundColor: colors.tint + '20',
       alignItems: 'center',
       justifyContent: 'center',
-      marginRight: 12,
+      marginRight: 16,
     },
     vehicleInfo: {
       flex: 1,
@@ -327,43 +220,44 @@ export default function DashboardScreen() {
       fontSize: 16,
       fontWeight: '600',
       color: colors.text,
-      marginBottom: 2,
+      marginBottom: 4,
     },
     vehiclePlate: {
       fontSize: 14,
-      color: colors.icon,
+      color: colors.textSecondary,
     },
     emptyState: {
       alignItems: 'center',
-      paddingVertical: 32,
+      paddingVertical: 40,
     },
     emptyIcon: {
-      width: 64,
-      height: 64,
-      borderRadius: 32,
-      backgroundColor: colors.icon + '20',
+      width: 80,
+      height: 80,
+      borderRadius: 40,
+      backgroundColor: colors.backgroundSecondary,
       alignItems: 'center',
       justifyContent: 'center',
-      marginBottom: 16,
+      marginBottom: 20,
     },
     emptyTitle: {
-      fontSize: 18,
+      fontSize: 20,
       fontWeight: '600',
       color: colors.text,
       marginBottom: 8,
     },
     emptyDescription: {
       fontSize: 14,
-      color: colors.icon,
+      color: colors.textSecondary,
       textAlign: 'center',
       lineHeight: 20,
-      marginBottom: 20,
+      marginBottom: 24,
+      maxWidth: 300,
     },
     emptyButton: {
       backgroundColor: colors.tint,
       paddingHorizontal: 24,
       paddingVertical: 12,
-      borderRadius: 8,
+      borderRadius: 12,
       flexDirection: 'row',
       alignItems: 'center',
       gap: 8,
@@ -378,6 +272,7 @@ export default function DashboardScreen() {
       alignItems: 'center',
       justifyContent: 'space-between',
       paddingVertical: 12,
+      marginTop: 8,
     },
     viewAllText: {
       fontSize: 16,
@@ -404,26 +299,26 @@ export default function DashboardScreen() {
   const quickActions = [
     {
       title: "Add Vehicle",
-      icon: "plus",
+      icon: "plus.circle.fill",
       color: colors.tint,
       onPress: () => router.push('/vehicles/add' as any)
     },
     {
       title: "Log Mileage",
       icon: "speedometer",
-      color: "#2196F3",
+      color: colors.chart.mileage,
       onPress: () => router.push('/logs/mileage/add' as any)
     },
     {
       title: "Log Fuel",
-      icon: "fuelpump",
-      color: "#4CAF50",
+      icon: "fuelpump.fill",
+      color: colors.chart.fuel,
       onPress: () => router.push('/logs/fuel/add' as any)
     },
     {
       title: "Log Service",
-      icon: "wrench",
-      color: "#FF9800",
+      icon: "wrench.fill",
+      color: colors.chart.service,
       onPress: () => router.push('/logs/service/add' as any)
     }
   ];
@@ -444,62 +339,53 @@ export default function DashboardScreen() {
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
           showsVerticalScrollIndicator={false}
         >
-          {analytics && (
-            <View style={styles.analyticsSection}>
-              <Text style={styles.analyticsTitle}>Your total vehicle expenses</Text>
-              <Text style={styles.totalExpenses}>RM{analytics.totalExpenses.toFixed(2)}</Text>
+          {/* Analytics Overview */}
+          {analyticsData && analyticsData.totalExpenses > 0 && (
+            <View style={[styles.section, styles.analyticsSection]}>
+              <Text style={styles.sectionTitle}>Overview</Text>
 
-              {layout.isDesktop ? (
+              <View style={styles.overviewLayout}>
+                {/* Total Expenses - Full Width Row */}
+                <TrendCard
+                  title="Total Expenses"
+                  value={`RM${analyticsData.totalExpenses.toFixed(2)}`}
+                  trend={(analyticsData.fuelTrend + analyticsData.serviceTrend) / 2}
+                  subtitle="Last 6 months"
+                  icon="dollarsign.circle.fill"
+                  gradientColors={colors.gradients.primary}
+                  onPress={() => router.push('/analytics')}
+                />
+
+                {/* Fuel and Service - Two Column Row */}
                 <View style={styles.metricsRow}>
-                  <MetricCard
-                    title="Fuel Costs"
-                    value={analytics.fuelCosts}
-                    trend={analytics.fuelTrend}
-                    unit="RM"
-                  />
-                  <MetricCard
-                    title="Service Costs"
-                    value={analytics.serviceCosts}
-                    trend={analytics.serviceTrend}
-                    unit="RM"
-                  />
-                  <MetricCard
-                    title="Avg. Cost per Mile"
-                    value={analytics.avgCostPerMile}
-                    trend={analytics.costPerMileTrend}
-                    unit="RM"
-                  />
-                </View>
-              ) : (
-                <View>
-                  <View style={[styles.metricsRow, { marginBottom: 16 }]}>
+                  <View style={styles.metricCardHalf}>
                     <MetricCard
-                      title="Fuel Costs"
-                      value={analytics.fuelCosts}
-                      trend={analytics.fuelTrend}
-                      unit="RM"
-                    />
-                    <MetricCard
-                      title="Service Costs"
-                      value={analytics.serviceCosts}
-                      trend={analytics.serviceTrend}
-                      unit="RM"
+                      title="Fuel Expenses"
+                      value={`RM${analyticsData.expenseBreakdown.find((e: any) => e.category === 'Fuel')?.amount.toFixed(2) || '0.00'}`}
+                      trend={analyticsData.fuelTrend}
+                      icon="fuelpump.fill"
+                      color={colors.chart.fuel}
+                      size={layout.isMobile ? "small" : "medium"}
                     />
                   </View>
-                  <MetricCard
-                    title="Avg. Cost per Mile"
-                    value={analytics.avgCostPerMile}
-                    trend={analytics.costPerMileTrend}
-                    unit="RM"
-                  />
+                  <View style={styles.metricCardHalf}>
+                    <MetricCard
+                      title="Service Expenses"
+                      value={`RM${analyticsData.expenseBreakdown.find((e: any) => e.category === 'Service')?.amount.toFixed(2) || '0.00'}`}
+                      trend={analyticsData.serviceTrend}
+                      icon="wrench.fill"
+                      color={colors.chart.service}
+                      size={layout.isMobile ? "small" : "medium"}
+                    />
+                  </View>
                 </View>
-              )}
+              </View>
             </View>
           )}
 
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Quick Actions</Text>
-            <View style={styles.quickActionsGrid}>
+            <View style={styles.quickActionsFixed}>
               {quickActions.map((action, index) => (
                 <QuickActionCard
                   key={index}

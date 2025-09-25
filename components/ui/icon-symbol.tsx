@@ -55,6 +55,20 @@ const MAPPING = {
   'fuelpump': 'local-gas-station',
   'wrench': 'build',
   'chart.line.uptrend.xyaxis': 'trending-up',
+
+  // Financial & Action Icons
+  'dollarsign.circle.fill': 'attach-money',
+  'plus.circle.fill': 'add-circle',
+  'wrench.fill': 'build',
+
+  // Trend Icons
+  'minus': 'remove',
+  'arrow.up.right': 'trending-up',
+  'arrow.down.right': 'trending-down',
+
+  // Logout Icons
+  'arrow.right.square.fill': 'logout',
+  'arrow.right.square': 'logout',
 } as IconMapping;
 
 /**
