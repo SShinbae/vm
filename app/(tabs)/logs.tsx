@@ -4,6 +4,7 @@ import { ServiceReceiptIndicator } from '@/components/ui/ReceiptViewer';
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { FuelLogService, MileageLogService, ServiceLogService } from '@/lib/services/loggingService';
+import { safePromiseAll, isFulfilled } from '@/lib/utils/networkUtils';
 import { formatDate } from '@/lib/utils/dateUtils';
 import { canUserAccessVehicle, formatServiceItems } from '@/lib/utils/serviceUtils';
 import { supabase } from '@/services/supabaseClient';
@@ -59,17 +60,47 @@ export default function LogsScreen() {
   };
 
   const fetchAllLogs = useCallback(async () => {
-    const [mileageResult, fuelResult, serviceResult] = await Promise.all([
-      MileageLogService.getMileageLogs(),
-      FuelLogService.getFuelLogs(),
-      ServiceLogService.getServiceLogs(),
-    ]);
+    try {
+      // Use network utility for safe promise handling with timeout protection
+      const results = await safePromiseAll([
+        MileageLogService.getMileageLogs(),
+        FuelLogService.getFuelLogs(),
+        ServiceLogService.getServiceLogs(),
+      ], 8000);
 
-    if (mileageResult.data) setMileageLogs(mileageResult.data);
-    if (fuelResult.data) setFuelLogs(fuelResult.data);
-    if (serviceResult.data) setServiceLogs(serviceResult.data);
+      // Process results individually using utility type guards
+      const [mileageResult, fuelResult, serviceResult] = results;
 
-    setLoading(false);
+      if (isFulfilled(mileageResult) && mileageResult.value.data) {
+        setMileageLogs(mileageResult.value.data);
+      } else {
+        console.warn('Failed to fetch mileage logs:', mileageResult.status === 'rejected' ? mileageResult.reason : 'No data');
+        setMileageLogs([]);
+      }
+
+      if (isFulfilled(fuelResult) && fuelResult.value.data) {
+        setFuelLogs(fuelResult.value.data);
+      } else {
+        console.warn('Failed to fetch fuel logs:', fuelResult.status === 'rejected' ? fuelResult.reason : 'No data');
+        setFuelLogs([]);
+      }
+
+      if (isFulfilled(serviceResult) && serviceResult.value.data) {
+        setServiceLogs(serviceResult.value.data);
+      } else {
+        console.warn('Failed to fetch service logs:', serviceResult.status === 'rejected' ? serviceResult.reason : 'No data');
+        setServiceLogs([]);
+      }
+
+    } catch (error) {
+      console.error('Error fetching logs:', error);
+      // Set empty arrays on error to prevent infinite loading
+      setMileageLogs([]);
+      setFuelLogs([]);
+      setServiceLogs([]);
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
   const onRefresh = useCallback(async () => {

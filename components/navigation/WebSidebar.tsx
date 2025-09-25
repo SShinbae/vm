@@ -17,6 +17,7 @@ interface NavItem {
 const NAV_ITEMS: NavItem[] = [
   { name: 'dashboard', icon: 'house.fill', path: '/', label: 'Dashboard' },
   { name: 'vehicles', icon: 'car.fill', path: '/vehicles', label: 'Vehicles' },
+  { name: 'analytics', icon: 'chart.line.uptrend.xyaxis', path: '/analytics', label: 'Analytics' },
   { name: 'logs', icon: 'doc.text.fill', path: '/logs', label: 'Logs' },
   { name: 'groups', icon: 'person.3.fill', path: '/groups', label: 'Groups' },
   { name: 'profile', icon: 'person.fill', path: '/profile', label: 'Profile' },
@@ -125,6 +126,12 @@ export function WebSidebar() {
     },
     userInfo: {
       paddingHorizontal: 8,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+    },
+    userDetails: {
+      flex: 1,
     },
     userName: {
       fontSize: 14,
@@ -137,14 +144,13 @@ export function WebSidebar() {
       color: colors.icon,
     },
     signOutButton: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      paddingHorizontal: 16,
-      paddingVertical: 10,
-      borderRadius: 8,
+      width: 32,
+      height: 32,
+      borderRadius: 16,
       backgroundColor: '#ff4444',
-      gap: 8,
+      alignItems: 'center',
       justifyContent: 'center',
+      marginLeft: 8,
     },
     signOutText: {
       color: 'white',
@@ -168,13 +174,14 @@ export function WebSidebar() {
 
       <View style={styles.userSection}>
         <View style={styles.userInfo}>
-          <Text style={styles.userName}>{user?.email?.split('@')[0]}</Text>
-          <Text style={styles.userEmail}>{user?.email}</Text>
+          <View style={styles.userDetails}>
+            <Text style={styles.userName}>{user?.email?.split('@')[0]}</Text>
+            <Text style={styles.userEmail}>{user?.email}</Text>
+          </View>
+          <TouchableOpacity style={styles.signOutButton} onPress={handleSignOut}>
+            <IconSymbol name="arrow.right.square" size={14} color="white" />
+          </TouchableOpacity>
         </View>
-        <TouchableOpacity style={styles.signOutButton} onPress={handleSignOut}>
-          <IconSymbol name="arrow.right.square" size={16} color="white" />
-          <Text style={styles.signOutText}>Sign Out</Text>
-        </TouchableOpacity>
       </View>
     </View>
   );

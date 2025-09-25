@@ -11,6 +11,7 @@ import {
   Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { router } from 'expo-router';
 import { useAuth } from '@/lib/contexts/AuthContext';
 import { useTheme } from '@/lib/contexts/ThemeContext';
 import { Colors } from '@/constants/theme';
@@ -20,7 +21,7 @@ import { ImageUpload } from '@/components/ui/ImageUpload';
 import { Modal } from '@/components/ui/Modal';
 
 export default function ProfileScreen() {
-  const { user, updateProfile } = useAuth();
+  const { user, updateProfile, signOut } = useAuth();
   const { themeMode, setThemeMode } = useTheme();
   const [fullName, setFullName] = useState(user?.profile?.full_name || '');
   const [username, setUsername] = useState(user?.profile?.username || '');
@@ -86,6 +87,27 @@ export default function ProfileScreen() {
     setAvatarUrl(user?.profile?.avatar_url || null);
   };
 
+  const handleSignOut = async () => {
+    Alert.alert(
+      'Sign Out',
+      'Are you sure you want to sign out?',
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+        {
+          text: 'Sign Out',
+          style: 'destructive',
+          onPress: async () => {
+            await signOut();
+            router.replace('/login');
+          },
+        },
+      ]
+    );
+  };
+
 
 
   const styles = StyleSheet.create({
@@ -117,6 +139,28 @@ export default function ProfileScreen() {
       position: 'absolute',
       width: '100%',
       height: '100%',
+    },
+    logoutButton: {
+      position: 'absolute',
+      top: 16,
+      right: 16,
+      width: 36,
+      height: 36,
+      borderRadius: 18,
+      backgroundColor: 'rgba(255, 255, 255, 0.95)',
+      alignItems: 'center',
+      justifyContent: 'center',
+      shadowColor: '#000000',
+      shadowOffset: {
+        width: 0,
+        height: 2,
+      },
+      shadowOpacity: 0.2,
+      shadowRadius: 4,
+      elevation: 10,
+      zIndex: 1000,
+      borderWidth: 1,
+      borderColor: 'rgba(255, 68, 68, 0.3)',
     },
     circle: {
       position: 'absolute',
@@ -444,6 +488,15 @@ export default function ProfileScreen() {
               <View style={[styles.circle, styles.circle2]} />
               <View style={[styles.circle, styles.circle3]} />
             </View>
+            {Platform.OS !== 'web' && (
+              <TouchableOpacity
+                style={styles.logoutButton}
+                onPress={handleSignOut}
+                activeOpacity={0.7}
+              >
+                <IconSymbol name="arrow.right.square.fill" size={18} color="#ff4444" />
+              </TouchableOpacity>
+            )}
           </View>
 
           {/* Avatar */}
