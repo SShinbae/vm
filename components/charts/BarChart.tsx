@@ -19,7 +19,7 @@ export function BarChart({
   title,
   height = 200,
   color,
-  formatY = (value: number) => `RM${value.toFixed(0)}`,
+  formatY = (value: number) => `RM${(typeof value === 'number' && !isNaN(value)) ? value.toFixed(0) : '0'}`,
   horizontal = false
 }: BarChartProps) {
   const colorScheme = useColorScheme();
@@ -77,7 +77,11 @@ export function BarChart({
     }),
     datasets: [
       {
-        data: data.map(point => point.y),
+        data: data.map(point => {
+          const value = point.y;
+          // Ensure all values are valid numbers
+          return (typeof value === 'number' && !isNaN(value)) ? value : 0;
+        }),
       },
     ],
   };

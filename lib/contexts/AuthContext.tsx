@@ -9,6 +9,7 @@ interface AuthContextType extends AuthState {
   signIn: (email: string, password: string) => Promise<{ error: string | null }>;
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<{ error: string | null }>;
+  updatePassword: (password: string) => Promise<{ error: string | null }>;
   updateProfile: (updates: Partial<Profile>) => Promise<{ error: string | null }>;
 }
 
@@ -190,6 +191,22 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
   };
 
+  const updatePassword = async (password: string) => {
+    try {
+      const { error } = await supabase.auth.updateUser({
+        password: password,
+      });
+
+      if (error) {
+        return { error: error.message };
+      }
+
+      return { error: null };
+    } catch (error) {
+      return { error: 'An unexpected error occurred during password update' };
+    }
+  };
+
   const updateProfile = async (updates: Partial<Profile>) => {
     if (!state.user) {
       return { error: 'No user logged in' };
@@ -230,6 +247,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     signIn,
     signOut,
     resetPassword,
+    updatePassword,
     updateProfile,
   };
 
