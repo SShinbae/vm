@@ -1,24 +1,24 @@
-import React, { useState, useEffect } from 'react';
-import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  ScrollView,
-  Alert,
-  StyleSheet,
-  ActivityIndicator,
-  Platform,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { router } from 'expo-router';
-import { useAuth } from '@/lib/contexts/AuthContext';
-import { useTheme } from '@/lib/contexts/ThemeContext';
-import { Colors } from '@/constants/theme';
-import { useColorScheme } from '@/hooks/use-color-scheme';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { ImageUpload } from '@/components/ui/ImageUpload';
 import { Modal } from '@/components/ui/Modal';
+import { Colors } from '@/constants/theme';
+import { useColorScheme } from '@/hooks/use-color-scheme';
+import { useAuth } from '@/lib/contexts/AuthContext';
+import { useTheme } from '@/lib/contexts/ThemeContext';
+import { router } from 'expo-router';
+import React, { useEffect, useState } from 'react';
+import {
+  ActivityIndicator,
+  Alert,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function ProfileScreen() {
   const { user, updateProfile, signOut } = useAuth();
@@ -188,7 +188,7 @@ export default function ProfileScreen() {
     avatarContainer: {
       alignItems: 'center',
       marginTop: -40,
-      marginBottom: 16,
+      marginBottom: 32,
     },
     profileAvatarUpload: {
       width: 80,
@@ -218,13 +218,13 @@ export default function ProfileScreen() {
     username: {
       fontSize: 14,
       color: colors.icon,
-      marginBottom: 4,
+      marginBottom: 2,
     },
     name: {
       fontSize: 24,
       fontWeight: 'bold',
       color: colors.text,
-      marginBottom: 8,
+      marginBottom: 4,
     },
     locationRow: {
       flexDirection: 'row',

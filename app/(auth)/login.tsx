@@ -73,6 +73,7 @@ export default function LoginScreen() {
       fontWeight: 'bold',
       color: colors.facebook?.primary || colors.tint,
       marginBottom: 8,
+      textAlign: 'center',
     },
     tagline: {
       fontSize: 20,
