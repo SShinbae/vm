@@ -10,7 +10,8 @@
       "Bash(npm run typecheck:*)",
       "Bash(npm start)",
       "Bash(eas build:configure)",
-      "Bash(npm run web:*)"
+      "Bash(npm run web:*)",
+      "Bash(npm run export:*)"
     ],
     "deny": [],
     "ask": []
