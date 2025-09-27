@@ -5,7 +5,6 @@ import { Link, router } from 'expo-router';
 import React, { useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   Dimensions,
   KeyboardAvoidingView,
   Platform,
@@ -17,10 +16,11 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { withWebAlert, useAlert } from '@/components/ui';
 
 const { width: screenWidth } = Dimensions.get('window');
 
-export default function LoginScreen() {
+function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -30,10 +30,11 @@ export default function LoginScreen() {
   const { signIn } = useAuth();
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
+  const { showError } = useAlert();
 
   const handleSignIn = async () => {
     if (!email.trim() || !password.trim()) {
-      Alert.alert('Error', 'Please fill in all fields');
+      showError('Error', 'Please fill in all fields');
       return;
     }
 
@@ -42,7 +43,7 @@ export default function LoginScreen() {
     setLoading(false);
 
     if (error) {
-      Alert.alert('Sign In Failed', error);
+      showError('Sign In Failed', error);
     } else {
       router.replace('/(tabs)');
     }
@@ -341,3 +342,5 @@ export default function LoginScreen() {
     </SafeAreaView>
   );
 }
+
+export default withWebAlert(LoginScreen);

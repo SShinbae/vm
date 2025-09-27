@@ -6,6 +6,7 @@ export { Input } from './Input';
 export { DatePicker } from './DatePicker';
 export { Card, CardHeader, CardContent, CardFooter } from './Card';
 export { Modal, ConfirmModal, AlertModal } from './Modal';
+export { WebAlertProvider, withWebAlert, useAlert } from './WebAlertProvider';
 export { IconSymbol } from './icon-symbol';
 
 // Loading & State Components

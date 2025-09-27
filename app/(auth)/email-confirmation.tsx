@@ -5,7 +5,6 @@ import { Link, router, useLocalSearchParams } from 'expo-router';
 import React, { useState, useEffect } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   Dimensions,
   ScrollView,
   StyleSheet,
@@ -14,15 +13,17 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { withWebAlert, useAlert } from '@/components/ui';
 
 const { width: screenWidth } = Dimensions.get('window');
 
-export default function EmailConfirmationScreen() {
+function EmailConfirmationScreen() {
   const { email } = useLocalSearchParams<{ email: string }>();
   const [resendLoading, setResendLoading] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(0);
   const { signUp } = useAuth();
   const colorScheme = useColorScheme();
+  const { showConfirm } = useAlert();
   const colors = Colors[colorScheme ?? 'light'];
 
   useEffect(() => {
@@ -42,16 +43,13 @@ export default function EmailConfirmationScreen() {
 
     // Note: Since we don't have access to the original password and full name,
     // we'll show a message to go back to registration for now
-    Alert.alert(
+    showConfirm(
       'Resend Verification',
       'To resend the verification email, please go back to the registration form and try again.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Go to Registration',
-          onPress: () => router.replace('/(auth)/register')
-        }
-      ]
+      () => router.replace('/(auth)/register'),
+      undefined,
+      'Go to Registration',
+      'Cancel'
     );
 
     setResendLoading(false);
@@ -315,3 +313,5 @@ export default function EmailConfirmationScreen() {
     </SafeAreaView>
   );
 }
+
+export default withWebAlert(EmailConfirmationScreen);
