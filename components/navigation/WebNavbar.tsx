@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Platform } from 'react-native';
 import { router, usePathname } from 'expo-router';
 import { IconSymbol } from '@/components/ui/icon-symbol';
+import { ConfirmModal } from '@/components/ui/Modal';
 import { useAuth } from '@/lib/contexts/AuthContext';
 import { useResponsiveLayout } from '@/hooks/use-responsive-layout';
 import { Colors } from '@/constants/theme';
@@ -28,13 +29,19 @@ export function WebNavbar() {
   const colors = Colors[colorScheme ?? 'light'];
   const pathname = usePathname();
   const { user, signOut } = useAuth();
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
 
   // Only render on web and larger screens
   if (!layout.isWeb || layout.isMobile) {
     return null;
   }
 
-  const handleSignOut = async () => {
+  const handleSignOutClick = () => {
+    setShowLogoutModal(true);
+  };
+
+  const handleConfirmSignOut = async () => {
+    setShowLogoutModal(false);
     await signOut();
     router.replace('/login');
   };
@@ -168,11 +175,22 @@ export function WebNavbar() {
           <Text style={styles.userName}>{user?.email?.split('@')[0]}</Text>
           <Text style={styles.userEmail}>{user?.email}</Text>
         </View>
-        <TouchableOpacity style={styles.signOutButton} onPress={handleSignOut}>
+        <TouchableOpacity style={styles.signOutButton} onPress={handleSignOutClick}>
           <IconSymbol name="arrow.right.square" size={16} color="white" />
           <Text style={styles.signOutText}>Sign Out</Text>
         </TouchableOpacity>
       </View>
+
+      <ConfirmModal
+        visible={showLogoutModal}
+        onClose={() => setShowLogoutModal(false)}
+        onConfirm={handleConfirmSignOut}
+        title="Sign Out"
+        message="Are you sure you want to sign out?"
+        confirmText="Sign Out"
+        cancelText="Cancel"
+        variant="danger"
+      />
     </View>
   );
 }
