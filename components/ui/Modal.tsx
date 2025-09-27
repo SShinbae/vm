@@ -17,6 +17,17 @@ import { useColorScheme } from '@/hooks/use-color-scheme';
 import { IconSymbol } from './icon-symbol';
 import { Button } from './Button';
 
+// Import createPortal for web platform
+let createPortal: any = null;
+if (Platform.OS === 'web') {
+  try {
+    const ReactDOM = require('react-dom');
+    createPortal = ReactDOM.createPortal;
+  } catch (e) {
+    // Fallback if react-dom is not available
+  }
+}
+
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
 interface ModalProps {
@@ -56,7 +67,8 @@ interface AlertModalProps {
   variant?: 'info' | 'success' | 'warning' | 'error';
 }
 
-export function Modal({
+// Web-specific Modal Component
+function WebModal({
   visible,
   onClose,
   title,
@@ -65,12 +77,167 @@ export function Modal({
   size = 'medium',
   showCloseButton = true,
   closeOnBackdrop = true,
-  animationType = 'slide',
-  presentationStyle = 'overFullScreen',
   containerStyle,
   contentStyle,
   titleStyle,
 }: ModalProps) {
+  const colorScheme = useColorScheme();
+  const colors = Colors[colorScheme ?? 'light'];
+
+  // Prevent body scroll when modal is open
+  React.useEffect(() => {
+    if (Platform.OS === 'web' && typeof document !== 'undefined') {
+      if (visible) {
+        document.body.classList.add('modal-open');
+      } else {
+        document.body.classList.remove('modal-open');
+      }
+
+      return () => {
+        document.body.classList.remove('modal-open');
+      };
+    }
+  }, [visible]);
+
+  const getContentStyle = (): ViewStyle => {
+    const baseStyle: ViewStyle = {
+      backgroundColor: colors.background,
+      borderColor: colors.icon + '20',
+      borderRadius: 12,
+      borderWidth: 1,
+      overflow: 'hidden',
+      minWidth: 280,
+      maxWidth: '100%',
+      position: 'relative',
+      boxShadow: '0 10px 25px rgba(0, 0, 0, 0.25)',
+    };
+
+    if (variant === 'fullscreen') {
+      Object.assign(baseStyle, {
+        width: '100%',
+        height: '100%',
+        borderRadius: 0,
+        borderWidth: 0,
+      });
+    } else if (variant === 'bottom-sheet') {
+      Object.assign(baseStyle, {
+        width: '100%',
+        borderTopLeftRadius: 20,
+        borderTopRightRadius: 20,
+        borderBottomLeftRadius: 0,
+        borderBottomRightRadius: 0,
+        maxHeight: '90vh',
+      });
+    } else {
+      // Default modal sizing
+      switch (size) {
+        case 'small':
+          Object.assign(baseStyle, { maxWidth: '80vw', maxHeight: '40vh' });
+          break;
+        case 'large':
+          Object.assign(baseStyle, { maxWidth: '95vw', maxHeight: '80vh' });
+          break;
+        default:
+          Object.assign(baseStyle, { maxWidth: '90vw', maxHeight: '60vh' });
+      }
+    }
+
+    if (contentStyle) {
+      Object.assign(baseStyle, contentStyle);
+    }
+
+    return baseStyle;
+  };
+
+  const getTitleStyle = (): TextStyle => {
+    const baseStyle: TextStyle = {
+      fontSize: 18,
+      fontWeight: '600',
+      color: colors.text,
+      flex: 1,
+    };
+
+    if (titleStyle) {
+      Object.assign(baseStyle, titleStyle);
+    }
+
+    return baseStyle;
+  };
+
+  const handleBackdropPress = () => {
+    if (closeOnBackdrop) {
+      onClose();
+    }
+  };
+
+  if (!visible) return null;
+
+  const modalContent = (
+    <div
+      className={`web-modal-overlay ${variant === 'bottom-sheet' ? 'bottom-sheet' : ''}`}
+      style={{
+        padding: variant === 'fullscreen' ? 0 : 20,
+        ...containerStyle,
+      }}
+    >
+      {/* Backdrop */}
+      <div
+        className="web-modal-backdrop"
+        onClick={handleBackdropPress}
+      />
+
+      {/* Modal Content */}
+      <div
+        className={`web-modal-content ${variant === 'bottom-sheet' ? 'bottom-sheet' : ''}`}
+      >
+        <View style={getContentStyle()}>
+          {(title || showCloseButton) && (
+            <View style={styles.header}>
+              {title && <Text style={getTitleStyle()}>{title}</Text>}
+              {showCloseButton && (
+                <TouchableOpacity style={styles.closeButton} onPress={onClose}>
+                  <IconSymbol name="xmark" size={20} color={colors.text} />
+                </TouchableOpacity>
+              )}
+            </View>
+          )}
+
+          <View style={styles.body}>{children}</View>
+        </View>
+      </div>
+    </div>
+  );
+
+  // Use portal if available, otherwise render normally
+  if (createPortal && typeof document !== 'undefined') {
+    return createPortal(modalContent, document.body);
+  }
+
+  return modalContent;
+}
+
+export function Modal(props: ModalProps) {
+  // Use web-specific modal for web platform
+  if (Platform.OS === 'web') {
+    return <WebModal {...props} />;
+  }
+
+  // Use React Native modal for mobile platforms
+  const {
+    visible,
+    onClose,
+    title,
+    children,
+    variant = 'default',
+    size = 'medium',
+    showCloseButton = true,
+    closeOnBackdrop = true,
+    animationType = 'slide',
+    presentationStyle = 'overFullScreen',
+    containerStyle,
+    contentStyle,
+    titleStyle,
+  } = props;
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
 

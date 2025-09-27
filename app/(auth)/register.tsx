@@ -5,7 +5,6 @@ import { Link, router } from 'expo-router';
 import React, { useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   Dimensions,
   KeyboardAvoidingView,
   Platform,
@@ -17,10 +16,11 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { withWebAlert, useAlert } from '@/components/ui';
 
 const { width: screenWidth } = Dimensions.get('window');
 
-export default function RegisterScreen() {
+function RegisterScreen() {
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -34,6 +34,7 @@ export default function RegisterScreen() {
   const { signUp } = useAuth();
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
+  const { showError } = useAlert();
 
   const validateForm = () => {
     if (!fullName.trim()) {
@@ -445,3 +446,5 @@ export default function RegisterScreen() {
     </SafeAreaView>
   );
 }
+
+export default withWebAlert(RegisterScreen);

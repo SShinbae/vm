@@ -14,6 +14,7 @@ export default {
       supportsTablet: true,
     },
     android: {
+      package: 'com.vehiclesmanagement.app',
       adaptiveIcon: {
         backgroundColor: '#E6F4FE',
         foregroundImage: './assets/images/android-icon-foreground.png',
@@ -51,6 +52,9 @@ export default {
       reactCompiler: true,
     },
     extra: {
+      eas: {
+        projectId: "13f81b43-039c-43b1-b916-641fbf8161a5"
+      },
       supabaseUrl: process.env.SUPABASE_URL,
       supabaseKey: process.env.SUPABASE_KEY,
       googleVisionApiKey: process.env.GOOGLE_VISION_API_KEY,
