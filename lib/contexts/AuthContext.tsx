@@ -107,11 +107,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
       const siteUrl = Constants.expoConfig?.extra?.siteUrl;
       const emailRedirectUrl = `${siteUrl}/auth/confirm`;
 
-      // Debug logging to ensure correct URL is being used
+      // Enhanced debug logging
+      console.log('=== SIGNUP DEBUG INFO ===');
       console.log('Email confirmation URL:', emailRedirectUrl);
       console.log('Site URL from config:', Constants.expoConfig?.extra?.siteUrl);
+      console.log('Full signup data:', { email, fullName });
+      console.log('========================');
 
-      const { error } = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
@@ -122,14 +125,19 @@ export function AuthProvider({ children }: AuthProviderProps) {
         },
       });
 
+      console.log('Signup result:', { data, error });
+
       if (error) {
+        console.error('Signup error:', error);
         setState(prev => ({ ...prev, loading: false }));
         return { error: error.message };
       }
 
+      console.log('Signup successful, user should receive email confirmation');
       setState(prev => ({ ...prev, loading: false }));
       return { error: null };
     } catch (error) {
+      console.error('Unexpected signup error:', error);
       setState(prev => ({ ...prev, loading: false }));
       return { error: 'An unexpected error occurred during sign up' };
     }

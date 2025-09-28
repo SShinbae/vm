@@ -214,8 +214,8 @@ export default function ConfirmationSuccessScreen() {
               🎉 Account Confirmed!
             </Text>
             <Text style={styles.descriptionText}>
-              Your account is now ready to use. You can start managing your vehicles,
-              tracking maintenance, and accessing all features of the Vehicle Management System.
+              Your email has been successfully verified! You can now sign in to your account
+              and start managing your vehicles, tracking maintenance, and accessing all features.
             </Text>
 
             <TouchableOpacity
@@ -229,7 +229,7 @@ export default function ConfirmationSuccessScreen() {
               {redirecting ? (
                 <ActivityIndicator color="white" size="small" />
               ) : (
-                <Text style={styles.primaryButtonText}>Start Managing Vehicles</Text>
+                <Text style={styles.primaryButtonText}>Continue to Sign In</Text>
               )}
             </TouchableOpacity>
 
