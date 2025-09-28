@@ -26,6 +26,10 @@ function EmailConfirmationScreen() {
   const { showConfirm } = useAlert();
   const colors = Colors[colorScheme ?? 'light'];
 
+  console.log('=== EMAIL CONFIRMATION SCREEN ===');
+  console.log('Email param received:', email);
+  console.log('=================================');
+
   useEffect(() => {
     let interval: NodeJS.Timeout;
     if (resendCooldown > 0) {

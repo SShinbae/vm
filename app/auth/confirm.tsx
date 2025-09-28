@@ -30,29 +30,43 @@ export default function ConfirmEmailScreen() {
 
   useEffect(() => {
     const confirmEmail = async () => {
+      console.log('=== EMAIL CONFIRMATION DEBUG ===');
+      console.log('URL params:', { token_hash, type });
+      console.log('================================');
+
       if (!token_hash || !type) {
+        console.error('Missing required params:', { token_hash, type });
         setError('Invalid confirmation link');
         setLoading(false);
         return;
       }
 
       try {
+        console.log('Attempting to verify OTP...');
         const { data, error } = await supabase.auth.verifyOtp({
           token_hash,
           type: type as 'signup' | 'recovery' | 'email_change',
         });
 
+        console.log('Verification result:', { data, error });
+
         if (error) {
           console.error('Email confirmation error:', error);
           setError(error.message || 'Failed to confirm email');
         } else if (data.user) {
+          console.log('User confirmed successfully:', data.user.email);
           setConfirmed(true);
-          // Auto redirect to login after 3 seconds
+          // Sign out user after verification to ensure manual login
+          console.log('Signing out user to force manual login...');
+          await supabase.auth.signOut();
+          // Redirect to confirmation success page after 2 seconds
           setTimeout(() => {
+            console.log('Redirecting to confirmation success page...');
             setRedirecting(true);
-            router.replace('/(auth)/login');
-          }, 3000);
+            router.replace('/(auth)/confirmation-success');
+          }, 2000);
         } else {
+          console.error('No user data returned after verification');
           setError('Confirmation failed');
         }
       } catch (err) {
@@ -68,7 +82,7 @@ export default function ConfirmEmailScreen() {
 
   const handleGoToLogin = () => {
     setRedirecting(true);
-    router.replace('/(auth)/login');
+    router.replace('/(auth)/confirmation-success');
   };
 
   const styles = StyleSheet.create({
@@ -269,7 +283,7 @@ export default function ConfirmEmailScreen() {
               </View>
               <Text style={styles.title}>Email Confirmed!</Text>
               <Text style={styles.subtitle}>
-                Your email has been successfully verified. You can now sign in to your account.
+                Your email has been successfully verified. Click continue to proceed to sign in.
               </Text>
             </View>
 
@@ -285,13 +299,13 @@ export default function ConfirmEmailScreen() {
                 {redirecting ? (
                   <ActivityIndicator color="white" size="small" />
                 ) : (
-                  <Text style={styles.primaryButtonText}>Continue to Sign In</Text>
+                  <Text style={styles.primaryButtonText}>Continue</Text>
                 )}
               </TouchableOpacity>
 
               {!redirecting && (
                 <Text style={styles.redirectText}>
-                  Redirecting automatically in a few seconds...
+                  Redirecting to success page in a moment...
                 </Text>
               )}
             </View>

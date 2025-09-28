@@ -16,6 +16,7 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Alert } from 'react-native';
 import { withWebAlert, useAlert } from '@/components/ui';
 
 const { width: screenWidth } = Dimensions.get('window');
@@ -69,13 +70,18 @@ function RegisterScreen() {
       return;
     }
 
+    console.log('=== REGISTRATION FLOW DEBUG ===');
+    console.log('Starting registration for:', email.trim().toLowerCase());
+
     setLoading(true);
     const { error } = await signUp(email.trim().toLowerCase(), password, fullName.trim());
     setLoading(false);
 
     if (error) {
+      console.error('Registration failed with error:', error);
       Alert.alert('Registration Failed', error);
     } else {
+      console.log('Registration successful, redirecting to email confirmation page...');
       router.replace({
         pathname: '/(auth)/email-confirmation',
         params: { email: email.trim().toLowerCase() }
