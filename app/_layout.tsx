@@ -9,6 +9,7 @@ import '../global.css';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { AuthProvider } from '@/lib/contexts/AuthContext';
 import { ThemeProvider } from '@/lib/contexts/ThemeContext';
+import { NotificationProvider } from '@/lib/contexts/NotificationContext';
 import { AuthGuard } from '@/components/AuthGuard';
 import '@/lib/utils/testSupabase';
 
@@ -48,14 +49,23 @@ function RootLayoutContent() {
   return (
     <NavigationThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
       <AuthProvider>
-        <AuthGuard>
-          <Stack>
-            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-            <Stack.Screen name="(auth)" options={{ headerShown: false }} />
-            <Stack.Screen name="auth" options={{ headerShown: false }} />
-            <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
-          </Stack>
-        </AuthGuard>
+        <NotificationProvider>
+          <AuthGuard>
+            <Stack>
+              <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+              <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+              <Stack.Screen name="auth" options={{ headerShown: false }} />
+              <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
+              <Stack.Screen
+                name="notifications"
+                options={{
+                  presentation: 'modal',
+                  headerShown: false
+                }}
+              />
+            </Stack>
+          </AuthGuard>
+        </NotificationProvider>
       </AuthProvider>
       <StatusBar style="auto" />
     </NavigationThemeProvider>
