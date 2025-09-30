@@ -19,6 +19,7 @@ import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { Card, CardContent } from '@/components/ui/Card';
 import { AlertModal } from '@/components/ui/Modal';
+import { ImagePicker } from '@/components/ui/ImagePicker';
 
 export default function AddVehicleScreen() {
   const [formData, setFormData] = useState<VehicleFormData>({
@@ -28,6 +29,7 @@ export default function AddVehicleScreen() {
     license_plate: '',
     vin: '',
   });
+  const [imageUri, setImageUri] = useState<string>('');
   const [loading, setLoading] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [showErrorModal, setShowErrorModal] = useState(false);
@@ -68,7 +70,11 @@ export default function AddVehicleScreen() {
       vin: formData.vin?.trim() || undefined,
     };
 
-    const { data, error } = await VehicleService.createVehicle(vehicleData);
+    const { data, error } = await VehicleService.createVehicle(
+      vehicleData,
+      undefined, // sharedGroupIds
+      imageUri || undefined // imageUri
+    );
     setLoading(false);
 
     if (error) {
@@ -265,6 +271,13 @@ export default function AddVehicleScreen() {
             <CardContent>
               <View style={styles.section}>
                 <Text style={styles.sectionTitle}>Basic Information</Text>
+
+                <ImagePicker
+                  onImageSelected={setImageUri}
+                  currentImage={imageUri}
+                  label="Vehicle Photo (Optional)"
+                  placeholder="Add a vehicle photo"
+                />
 
                 <View style={styles.row}>
                   <View style={styles.flex1}>

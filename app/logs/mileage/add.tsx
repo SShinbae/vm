@@ -20,6 +20,7 @@ import { VehicleWithDetails } from '@/types/database-v2';
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { IconSymbol } from '@/components/ui/icon-symbol';
+import { AlertModal } from '@/components/ui/Modal';
 
 export default function AddMileageLogScreen() {
   const { vehicleId } = useLocalSearchParams<{ vehicleId?: string }>();
@@ -32,6 +33,7 @@ export default function AddMileageLogScreen() {
   });
   const [loading, setLoading] = useState(false);
   const [vehiclesLoading, setVehiclesLoading] = useState(true);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
 
@@ -82,12 +84,16 @@ export default function AddMileageLogScreen() {
     if (error) {
       Alert.alert('Error', error);
     } else {
-      Alert.alert('Success', 'Mileage log added successfully', [
-        {
-          text: 'OK',
-          onPress: () => router.back(),
-        },
-      ]);
+      if (Platform.OS === 'web') {
+        setShowSuccessModal(true);
+      } else {
+        Alert.alert('Success', 'Mileage log added successfully', [
+          {
+            text: 'OK',
+            onPress: () => router.back(),
+          },
+        ]);
+      }
     }
   };
 
@@ -392,6 +398,17 @@ export default function AddMileageLogScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
+      <AlertModal
+        visible={showSuccessModal}
+        onClose={() => {
+          setShowSuccessModal(false);
+          router.back();
+        }}
+        title="Success"
+        message="Mileage log added successfully!"
+        variant="success"
+        buttonText="OK"
+      />
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
           <IconSymbol name="chevron.left" size={24} color={colors.text} />

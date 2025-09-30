@@ -37,14 +37,14 @@ export interface AnalyticsData {
   totalExpenses: number;
   fuelTrend: number;
   serviceTrend: number;
-  period: 'last6months' | 'lastyear' | 'alltime';
+  period: 'last3months' | 'last6months' | 'lastyear' | 'alltime';
 }
 
 export class AnalyticsService {
   /**
    * Get comprehensive analytics data for the specified period
    */
-  static async getAnalytics(period: 'last6months' | 'lastyear' | 'alltime' = 'last6months'): Promise<AnalyticsData> {
+  static async getAnalytics(period: 'last3months' | 'last6months' | 'lastyear' | 'alltime' = 'last6months'): Promise<AnalyticsData> {
     try {
       // Fetch all data in parallel
       const [fuelResponse, serviceResponse] = await Promise.all([
@@ -60,6 +60,9 @@ export class AnalyticsService {
       let startDate: Date;
 
       switch (period) {
+        case 'last3months':
+          startDate = new Date(now.getFullYear(), now.getMonth() - 3, 1);
+          break;
         case 'last6months':
           startDate = new Date(now.getFullYear(), now.getMonth() - 6, 1);
           break;
@@ -121,7 +124,7 @@ export class AnalyticsService {
 
     // Initialize months based on period
     const now = new Date();
-    const months = period === 'last6months' ? 6 : 12;
+    const months = period === 'last3months' ? 3 : period === 'last6months' ? 6 : 12;
 
     for (let i = 0; i < months; i++) {
       const year = now.getFullYear();
