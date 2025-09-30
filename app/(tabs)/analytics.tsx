@@ -28,7 +28,7 @@ export default function AnalyticsScreen() {
   const [analyticsData, setAnalyticsData] = useState<AnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [selectedPeriod, setSelectedPeriod] = useState<'last6months' | 'lastyear' | 'alltime'>('last6months');
+  const [selectedPeriod, setSelectedPeriod] = useState<'last3months' | 'last6months' | 'lastyear' | 'alltime'>('last6months');
 
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
@@ -185,6 +185,7 @@ export default function AnalyticsScreen() {
   const PeriodSelector = () => (
     <View style={styles.periodSelector}>
       {[
+        { key: 'last3months', label: '3 Months' },
         { key: 'last6months', label: '6 Months' },
         { key: 'lastyear', label: '1 Year' },
         { key: 'alltime', label: 'All Time' }

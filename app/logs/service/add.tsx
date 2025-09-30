@@ -25,6 +25,7 @@ import { ReceiptCapture, OCRResultDisplay } from '@/components/ui/ReceiptCapture
 import { ReceiptViewer } from '@/components/ui/ReceiptViewer';
 import { ServiceItemsInput, calculateTotalCost, validateServiceItems, createDefaultServiceItems } from '@/components/ui/ServiceItemsInput';
 import { DatePicker } from '@/components/ui/DatePicker';
+import { AlertModal } from '@/components/ui/Modal';
 
 const SERVICE_TYPES: { value: ServiceType; label: string; icon: string }[] = [
   { value: 'oil_change', label: 'Oil Change', icon: 'drop' },
@@ -54,6 +55,7 @@ export default function AddServiceLogScreen() {
   });
   const [loading, setLoading] = useState(false);
   const [vehiclesLoading, setVehiclesLoading] = useState(true);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [ocrResult, setOcrResult] = useState<ReceiptProcessingResult | null>(null);
   const [showOcrResult, setShowOcrResult] = useState(false);
   const [capturedImageUri, setCapturedImageUri] = useState<string | null>(null);
@@ -125,12 +127,16 @@ export default function AddServiceLogScreen() {
     if (error) {
       Alert.alert('Error', error);
     } else {
-      Alert.alert('Success', 'Service log added successfully', [
-        {
-          text: 'OK',
-          onPress: () => router.back(),
-        },
-      ]);
+      if (Platform.OS === 'web') {
+        setShowSuccessModal(true);
+      } else {
+        Alert.alert('Success', 'Service log added successfully', [
+          {
+            text: 'OK',
+            onPress: () => router.back(),
+          },
+        ]);
+      }
     }
   };
 
@@ -677,6 +683,17 @@ export default function AddServiceLogScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
+      <AlertModal
+        visible={showSuccessModal}
+        onClose={() => {
+          setShowSuccessModal(false);
+          router.back();
+        }}
+        title="Success"
+        message="Service log added successfully!"
+        variant="success"
+        buttonText="OK"
+      />
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
           <IconSymbol name="chevron.left" size={24} color={colors.text} />
