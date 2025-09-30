@@ -202,7 +202,7 @@ export function NotificationList({ onNotificationPress }: NotificationListProps)
           className="text-center"
           style={{ color: mutedTextColor }}
         >
-          You'll see notifications here when group members update logs or when you receive invitations.
+          You&apos;ll see notifications here when group members update logs or when you receive invitations.
         </Text>
       </View>
     );

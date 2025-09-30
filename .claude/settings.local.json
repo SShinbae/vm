@@ -11,7 +11,14 @@
       "Bash(npm start)",
       "Bash(eas build:configure)",
       "Bash(npm run web:*)",
-      "Bash(npm run export:*)"
+      "Bash(npm run export:*)",
+      "Bash(npm run lint)",
+      "Bash(npx react-native start:*)",
+      "Bash(npm:*)",
+      "Bash(netstat:*)",
+      "Bash(findstr:*)",
+      "Bash(Get-NetTCPConnection -LocalPort 8081 -ErrorAction SilentlyContinue)",
+      "Bash(Select-Object -Property LocalPort, OwningProcess)"
     ],
     "deny": [],
     "ask": []

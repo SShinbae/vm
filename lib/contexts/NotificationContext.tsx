@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState, useCallback, ReactNode } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { notificationService, NotificationData, NotificationCallback } from '../services/notificationService';
+import { pushNotificationService } from '../services/pushNotificationService';
 import { supabase } from '../../services/supabaseClient';
 
 interface NotificationContextType {
@@ -73,6 +74,9 @@ export function NotificationProvider({ children }: NotificationProviderProps) {
       await notificationService.initialize(user.id);
       notificationService.addCallback(addNotification);
 
+      // Initialize push notifications
+      await pushNotificationService.initialize();
+
       setIsInitialized(true);
     } catch (error) {
       console.error('Error initializing notifications:', error);
@@ -139,6 +143,7 @@ export function NotificationProvider({ children }: NotificationProviderProps) {
           await initializeNotifications();
         } else if (event === 'SIGNED_OUT') {
           notificationService.cleanup();
+          pushNotificationService.cleanup();
           setNotifications([]);
           setIsInitialized(false);
         }
@@ -154,6 +159,7 @@ export function NotificationProvider({ children }: NotificationProviderProps) {
     // Cleanup on unmount
     return () => {
       notificationService.cleanup();
+      pushNotificationService.cleanup();
     };
   }, [initializeNotifications]);
 

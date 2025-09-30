@@ -11,6 +11,7 @@ import { AuthProvider } from '@/lib/contexts/AuthContext';
 import { ThemeProvider } from '@/lib/contexts/ThemeContext';
 import { NotificationProvider } from '@/lib/contexts/NotificationContext';
 import { AuthGuard } from '@/components/AuthGuard';
+import { NotificationManager } from '@/components/ui/NotificationManager';
 import '@/lib/utils/testSupabase';
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
@@ -64,6 +65,7 @@ function RootLayoutContent() {
                 }}
               />
             </Stack>
+            <NotificationManager />
           </AuthGuard>
         </NotificationProvider>
       </AuthProvider>
