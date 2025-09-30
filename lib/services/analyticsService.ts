@@ -123,9 +123,12 @@ export class AnalyticsService {
     const now = new Date();
     const months = period === 'last6months' ? 6 : 12;
 
-    for (let i = months - 1; i >= 0; i--) {
-      const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
-      const monthKey = date.toISOString().slice(0, 7); // YYYY-MM format
+    for (let i = 0; i < months; i++) {
+      const year = now.getFullYear();
+      const month = now.getMonth() - i;
+      const date = new Date(year, month, 1);
+      // Format manually to avoid timezone issues with toISOString()
+      const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
       monthlyData.set(monthKey, { fuel: 0, service: 0 });
     }
 
@@ -147,13 +150,15 @@ export class AnalyticsService {
       }
     });
 
-    // Convert to array format
-    return Array.from(monthlyData.entries()).map(([monthKey, data]) => ({
-      month: this.formatMonthLabel(monthKey),
-      fuel: Math.round(data.fuel * 100) / 100,
-      service: Math.round(data.service * 100) / 100,
-      total: Math.round((data.fuel + data.service) * 100) / 100
-    }));
+    // Convert to array format and sort by date (newest first)
+    return Array.from(monthlyData.entries())
+      .sort((a, b) => b[0].localeCompare(a[0])) // Sort descending by monthKey (YYYY-MM)
+      .map(([monthKey, data]) => ({
+        month: this.formatMonthLabel(monthKey),
+        fuel: Math.round(data.fuel * 100) / 100,
+        service: Math.round(data.service * 100) / 100,
+        total: Math.round((data.fuel + data.service) * 100) / 100
+      }));
   }
 
   /**

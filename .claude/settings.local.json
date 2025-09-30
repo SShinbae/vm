@@ -18,7 +18,9 @@
       "Bash(netstat:*)",
       "Bash(findstr:*)",
       "Bash(Get-NetTCPConnection -LocalPort 8081 -ErrorAction SilentlyContinue)",
-      "Bash(Select-Object -Property LocalPort, OwningProcess)"
+      "Bash(Select-Object -Property LocalPort, OwningProcess)",
+      "Bash(eas build:list:*)",
+      "Bash(del package-lock.json)"
     ],
     "deny": [],
     "ask": []
