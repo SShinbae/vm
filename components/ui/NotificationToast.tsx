@@ -37,6 +37,23 @@ export function NotificationToast({
   const textColor = useThemeColor({}, 'text');
   const borderColor = useThemeColor({}, 'border');
 
+  const handleDismiss = () => {
+    Animated.parallel([
+      Animated.timing(translateY, {
+        toValue: -100,
+        duration: ANIMATION_DURATION,
+        useNativeDriver: true,
+      }),
+      Animated.timing(opacity, {
+        toValue: 0,
+        duration: ANIMATION_DURATION,
+        useNativeDriver: true,
+      }),
+    ]).start(() => {
+      onDismiss();
+    });
+  };
+
   useEffect(() => {
     if (visible && notification) {
       // Clear any existing timeout
@@ -72,23 +89,6 @@ export function NotificationToast({
       }
     };
   }, [visible, notification]);
-
-  const handleDismiss = () => {
-    Animated.parallel([
-      Animated.timing(translateY, {
-        toValue: -100,
-        duration: ANIMATION_DURATION,
-        useNativeDriver: true,
-      }),
-      Animated.timing(opacity, {
-        toValue: 0,
-        duration: ANIMATION_DURATION,
-        useNativeDriver: true,
-      }),
-    ]).start(() => {
-      onDismiss();
-    });
-  };
 
   const handlePress = () => {
     if (notification) {

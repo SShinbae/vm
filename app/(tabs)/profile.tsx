@@ -5,6 +5,8 @@ import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useAuth } from '@/lib/contexts/AuthContext';
 import { useTheme } from '@/lib/contexts/ThemeContext';
+import { NotificationBell } from '@/components/ui/NotificationBell';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
@@ -13,6 +15,7 @@ import {
   Platform,
   ScrollView,
   StyleSheet,
+  Switch,
   Text,
   TextInput,
   TouchableOpacity,
@@ -29,6 +32,15 @@ export default function ProfileScreen() {
   const [loading, setLoading] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+
+  // Notification preferences
+  const [notificationPrefs, setNotificationPrefs] = useState({
+    logUpdates: true,
+    groupMembers: true,
+    invitations: true,
+    inAppToasts: true,
+    pushNotifications: true,
+  });
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
   const isWeb = Platform.OS === 'web';
@@ -37,6 +49,38 @@ export default function ProfileScreen() {
   useEffect(() => {
     setAvatarUrl(user?.profile?.avatar_url || null);
   }, [user?.profile?.avatar_url]);
+
+  // Load notification preferences
+  useEffect(() => {
+    loadNotificationPreferences();
+  }, []);
+
+  const loadNotificationPreferences = async () => {
+    try {
+      const stored = await AsyncStorage.getItem('notification_preferences');
+      if (stored) {
+        const prefs = JSON.parse(stored);
+        setNotificationPrefs(prefs);
+      }
+    } catch (error) {
+      console.error('Error loading notification preferences:', error);
+    }
+  };
+
+  const saveNotificationPreferences = async (prefs: typeof notificationPrefs) => {
+    try {
+      await AsyncStorage.setItem('notification_preferences', JSON.stringify(prefs));
+      setNotificationPrefs(prefs);
+    } catch (error) {
+      console.error('Error saving notification preferences:', error);
+      Alert.alert('Error', 'Failed to save notification preferences');
+    }
+  };
+
+  const updateNotificationPref = (key: keyof typeof notificationPrefs, value: boolean) => {
+    const newPrefs = { ...notificationPrefs, [key]: value };
+    saveNotificationPreferences(newPrefs);
+  };
 
   const handleUpdateProfile = async () => {
     if (!fullName.trim()) {
@@ -161,6 +205,26 @@ export default function ProfileScreen() {
       zIndex: 1000,
       borderWidth: 1,
       borderColor: 'rgba(255, 68, 68, 0.3)',
+    },
+    notificationButton: {
+      position: 'absolute',
+      top: 16,
+      right: 60,
+      width: 36,
+      height: 36,
+      borderRadius: 18,
+      backgroundColor: 'rgba(255, 255, 255, 0.95)',
+      alignItems: 'center',
+      justifyContent: 'center',
+      shadowColor: '#000000',
+      shadowOffset: {
+        width: 0,
+        height: 2,
+      },
+      shadowOpacity: 0.2,
+      shadowRadius: 4,
+      elevation: 10,
+      zIndex: 1000,
     },
     circle: {
       position: 'absolute',
@@ -489,13 +553,21 @@ export default function ProfileScreen() {
               <View style={[styles.circle, styles.circle3]} />
             </View>
             {Platform.OS !== 'web' && (
-              <TouchableOpacity
-                style={styles.logoutButton}
-                onPress={handleSignOut}
-                activeOpacity={0.7}
-              >
-                <IconSymbol name="arrow.right.square.fill" size={18} color="#ff4444" />
-              </TouchableOpacity>
+              <>
+                <View style={styles.notificationButton}>
+                  <NotificationBell
+                    onPress={() => router.push('/notifications')}
+                    size={20}
+                  />
+                </View>
+                <TouchableOpacity
+                  style={styles.logoutButton}
+                  onPress={handleSignOut}
+                  activeOpacity={0.7}
+                >
+                  <IconSymbol name="arrow.right.square.fill" size={18} color="#ff4444" />
+                </TouchableOpacity>
+              </>
             )}
           </View>
 
@@ -669,6 +741,61 @@ export default function ProfileScreen() {
                   </Text>
                 </TouchableOpacity>
               </View>
+            </View>
+          </View>
+
+          {/* Notification Preferences Section */}
+          <View style={styles.informationSection}>
+            <Text style={styles.sectionTitle}>Notification Preferences</Text>
+
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>Log Updates</Text>
+              <Switch
+                value={notificationPrefs.logUpdates}
+                onValueChange={(value) => updateNotificationPref('logUpdates', value)}
+                trackColor={{ false: colors.border, true: colors.tint }}
+                thumbColor={notificationPrefs.logUpdates ? 'white' : colors.icon}
+              />
+            </View>
+
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>Group Members</Text>
+              <Switch
+                value={notificationPrefs.groupMembers}
+                onValueChange={(value) => updateNotificationPref('groupMembers', value)}
+                trackColor={{ false: colors.border, true: colors.tint }}
+                thumbColor={notificationPrefs.groupMembers ? 'white' : colors.icon}
+              />
+            </View>
+
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>Invitations</Text>
+              <Switch
+                value={notificationPrefs.invitations}
+                onValueChange={(value) => updateNotificationPref('invitations', value)}
+                trackColor={{ false: colors.border, true: colors.tint }}
+                thumbColor={notificationPrefs.invitations ? 'white' : colors.icon}
+              />
+            </View>
+
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>In-App Toasts</Text>
+              <Switch
+                value={notificationPrefs.inAppToasts}
+                onValueChange={(value) => updateNotificationPref('inAppToasts', value)}
+                trackColor={{ false: colors.border, true: colors.tint }}
+                thumbColor={notificationPrefs.inAppToasts ? 'white' : colors.icon}
+              />
+            </View>
+
+            <View style={[styles.infoRow, { borderBottomWidth: 0 }]}>
+              <Text style={styles.infoLabel}>Push Notifications</Text>
+              <Switch
+                value={notificationPrefs.pushNotifications}
+                onValueChange={(value) => updateNotificationPref('pushNotifications', value)}
+                trackColor={{ false: colors.border, true: colors.tint }}
+                thumbColor={notificationPrefs.pushNotifications ? 'white' : colors.icon}
+              />
             </View>
           </View>
         </View>
