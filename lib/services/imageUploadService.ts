@@ -1,10 +1,8 @@
 import { supabase } from '../../services/supabaseClient';
 import {
-  ImageUploadData,
-  ImageUploadResult,
+  ApiResponse,
   VehicleImage,
-  VehicleImageInsert,
-  ApiResponse
+  VehicleImageInsert
 } from '../../types/database-v2';
 
 export class ImageUploadService {

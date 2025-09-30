@@ -18,6 +18,9 @@ import { Vehicle, VehicleFormData } from '@/types';
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { IconSymbol } from '@/components/ui/icon-symbol';
+import { ImagePicker } from '@/components/ui/ImagePicker';
+import { updateVehicleImage } from '@/lib/utils/imageUpload';
+import { useDialog } from '@/lib/contexts/DialogContext';
 
 export default function EditVehicleScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -30,10 +33,12 @@ export default function EditVehicleScreen() {
     license_plate: '',
     vin: '',
   });
+  const [imageUri, setImageUri] = useState<string>('');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
+  const dialog = useDialog();
 
   useEffect(() => {
     const fetchVehicle = async () => {
@@ -58,6 +63,7 @@ export default function EditVehicleScreen() {
           license_plate: data.license_plate,
           vin: data.vin || '',
         });
+        setImageUri(data.main_image_url || '');
       }
 
       setLoading(false);
@@ -66,45 +72,159 @@ export default function EditVehicleScreen() {
     fetchVehicle();
   }, [id]);
 
-  const handleSave = async () => {
+  const performSave = async () => {
+    if (!vehicle) return;
+
+    setSaving(true);
+
+    let finalImageUrl = vehicle.main_image_url; // Keep existing image by default
+
+    // Handle image changes (upload new image or remove existing one)
+    if (imageUri !== vehicle.main_image_url) {
+      // If imageUri is empty, user wants to remove the image
+      if (!imageUri) {
+        finalImageUrl = null;
+      } else {
+        // User wants to upload a new image
+        // Validate that it's not an invalid file:// URI
+        if (imageUri.startsWith('file://')) {
+          if (Platform.OS === 'web') {
+            dialog.alert('Error', 'Invalid image format. Please try selecting the image again.');
+          } else {
+            Alert.alert('Error', 'Invalid image format. Please try selecting the image again.');
+          }
+          setSaving(false);
+          return;
+        }
+
+        const uploadResult = await updateVehicleImage(
+          imageUri,
+          vehicle.main_image_url,
+          vehicle.id
+        );
+
+        if (uploadResult.success && uploadResult.url) {
+          finalImageUrl = uploadResult.url;
+        } else {
+          console.error('Failed to upload vehicle image:', uploadResult.error);
+          if (Platform.OS === 'web') {
+            dialog.showConfirm(
+              'Image Upload Failed',
+              'Failed to upload the vehicle image. Would you like to continue without updating the image?',
+              () => {
+                saveVehicleUpdates(vehicle.main_image_url);
+              },
+              () => {
+                setSaving(false);
+                dialog.hideConfirm();
+              },
+              'Continue',
+              'Cancel'
+            );
+          } else {
+            Alert.alert(
+              'Image Upload Failed',
+              'Failed to upload the vehicle image. Would you like to continue without updating the image?',
+              [
+                { text: 'Cancel', style: 'cancel', onPress: () => { setSaving(false); } },
+                {
+                  text: 'Continue',
+                  onPress: () => {
+                    // Continue with the rest of the save logic
+                    saveVehicleUpdates(vehicle.main_image_url);
+                  }
+                }
+              ]
+            );
+          }
+          return;
+        }
+      }
+    }
+
+    saveVehicleUpdates(finalImageUrl);
+  };
+
+  const handleSave = () => {
     if (!vehicle) return;
 
     // Check if this is a shared vehicle - only owners can edit vehicle details
     if (isSharedVehicle) {
-      Alert.alert(
-        'Cannot Edit Vehicle',
-        'Only the vehicle owner can edit vehicle details. You have read-only access to this shared vehicle.',
-        [{ text: 'OK' }]
-      );
+      if (Platform.OS === 'web') {
+        dialog.alert(
+          'Cannot Edit Vehicle',
+          'Only the vehicle owner can edit vehicle details. You have read-only access to this shared vehicle.'
+        );
+      } else {
+        Alert.alert(
+          'Cannot Edit Vehicle',
+          'Only the vehicle owner can edit vehicle details. You have read-only access to this shared vehicle.',
+          [{ text: 'OK' }]
+        );
+      }
       return;
     }
 
     // Validation
     if (!formData.make.trim()) {
-      Alert.alert('Error', 'Please enter the vehicle make');
+      if (Platform.OS === 'web') {
+        dialog.alert('Error', 'Please enter the vehicle make');
+      } else {
+        Alert.alert('Error', 'Please enter the vehicle make');
+      }
       return;
     }
     if (!formData.model.trim()) {
-      Alert.alert('Error', 'Please enter the vehicle model');
+      if (Platform.OS === 'web') {
+        dialog.alert('Error', 'Please enter the vehicle model');
+      } else {
+        Alert.alert('Error', 'Please enter the vehicle model');
+      }
       return;
     }
     if (!formData.license_plate.trim()) {
-      Alert.alert('Error', 'Please enter the license plate');
+      if (Platform.OS === 'web') {
+        dialog.alert('Error', 'Please enter the license plate');
+      } else {
+        Alert.alert('Error', 'Please enter the license plate');
+      }
       return;
     }
     if (formData.year < 1900 || formData.year > new Date().getFullYear() + 2) {
-      Alert.alert('Error', 'Please enter a valid year');
+      if (Platform.OS === 'web') {
+        dialog.alert('Error', 'Please enter a valid year');
+      } else {
+        Alert.alert('Error', 'Please enter a valid year');
+      }
       return;
     }
 
-    setSaving(true);
+    // Show confirmation modal on web, proceed directly on mobile
+    if (Platform.OS === 'web') {
+      dialog.showConfirm(
+        'Update Vehicle',
+        'Are you sure you want to save these changes?',
+        async () => {
+          await performSave();
+          dialog.hideConfirm();
+        },
+        undefined,
+        'Update',
+        'Cancel'
+      );
+    } else {
+      performSave();
+    }
+  };
 
+  const saveVehicleUpdates = async (imageUrl: string | null) => {
     const updates = {
       make: formData.make.trim(),
       model: formData.model.trim(),
       year: formData.year,
       license_plate: formData.license_plate.trim().toUpperCase(),
       vin: formData.vin?.trim() || null,
+      main_image_url: imageUrl || null,
     };
 
     const { error } = await VehicleService.updateVehicle(vehicle.id, updates);
@@ -117,11 +237,41 @@ export default function EditVehicleScreen() {
       }
       Alert.alert('Error', errorMessage);
     } else {
-      Alert.alert('Success', 'Vehicle updated successfully', [
-        {
-          text: 'OK',
-          onPress: () => router.back(),
+      if (Platform.OS === 'web') {
+        dialog.showSuccess('Success', 'Vehicle updated successfully', () => {
+          router.push('/(tabs)/vehicles');
+        });
+      } else {
+        Alert.alert('Success', 'Vehicle updated successfully', [
+          {
+            text: 'OK',
+            onPress: () => router.push('/(tabs)/vehicles'),
+          },
+        ]);
+      }
+    }
+  };
+
+  const handleRemoveImage = () => {
+    if (Platform.OS === 'web') {
+      // Use custom dialog on web
+      dialog.showConfirm(
+        'Remove Photo',
+        'Are you sure you want to remove this photo?',
+        () => {
+          setImageUri('');
+          dialog.hideConfirm();
         },
+        undefined,
+        'Remove',
+        'Cancel',
+        true
+      );
+    } else {
+      // Use native Alert on mobile
+      Alert.alert('Remove Photo', 'Are you sure you want to remove this photo?', [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Remove', style: 'destructive', onPress: () => setImageUri('') },
       ]);
     }
   };
@@ -143,7 +293,8 @@ export default function EditVehicleScreen() {
       formData.model.trim() !== vehicle.model ||
       formData.year !== vehicle.year ||
       formData.license_plate.trim().toUpperCase() !== vehicle.license_plate ||
-      (formData.vin?.trim() || null) !== vehicle.vin
+      (formData.vin?.trim() || null) !== vehicle.vin ||
+      imageUri !== (vehicle.main_image_url || '')
     );
   };
 
@@ -331,6 +482,18 @@ export default function EditVehicleScreen() {
 
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Basic Information</Text>
+
+              {!isSharedVehicle && (
+                <ImagePicker
+                  onImageSelected={setImageUri}
+                  currentImage={imageUri}
+                  label="Vehicle Photo (Optional)"
+                  placeholder="Add a vehicle photo"
+                  aspectRatio={[1, 1]}
+                  allowsEditing={true}
+                  onRemove={handleRemoveImage}
+                />
+              )}
 
               <View style={styles.row}>
                 <View style={styles.flex1}>

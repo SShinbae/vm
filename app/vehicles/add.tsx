@@ -1,25 +1,25 @@
-import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  ScrollView,
-  KeyboardAvoidingView,
-  Platform,
-  StyleSheet,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { router } from 'expo-router';
-import { VehicleService } from '@/lib/services/vehicleService';
-import { VehicleFormData } from '@/types';
-import { Colors } from '@/constants/theme';
-import { useColorScheme } from '@/hooks/use-color-scheme';
-import { IconSymbol } from '@/components/ui/icon-symbol';
-import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { Card, CardContent } from '@/components/ui/Card';
-import { AlertModal } from '@/components/ui/Modal';
+import { IconSymbol } from '@/components/ui/icon-symbol';
 import { ImagePicker } from '@/components/ui/ImagePicker';
+import { Input } from '@/components/ui/Input';
+import { AlertModal } from '@/components/ui/Modal';
+import { Colors } from '@/constants/theme';
+import { useColorScheme } from '@/hooks/use-color-scheme';
+import { VehicleService } from '@/lib/services/vehicleService';
+import { VehicleFormData } from '@/types';
+import { router } from 'expo-router';
+import { useState } from 'react';
+import {
+    KeyboardAvoidingView,
+    Platform,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function AddVehicleScreen() {
   const [formData, setFormData] = useState<VehicleFormData>({
@@ -60,6 +60,13 @@ export default function AddVehicleScreen() {
       return;
     }
 
+    // Validate image URI if provided
+    if (imageUri && imageUri.startsWith('file://')) {
+      setErrorMessage('Invalid image format. Please try selecting the image again.');
+      setShowErrorModal(true);
+      return;
+    }
+
     setLoading(true);
 
     const vehicleData = {
@@ -87,7 +94,7 @@ export default function AddVehicleScreen() {
 
   const handleSuccessModalClose = () => {
     setShowSuccessModal(false);
-    router.back();
+    router.push('/(tabs)/vehicles');
   };
 
   const validateMake = (value: string) => {
@@ -277,6 +284,8 @@ export default function AddVehicleScreen() {
                   currentImage={imageUri}
                   label="Vehicle Photo (Optional)"
                   placeholder="Add a vehicle photo"
+                  aspectRatio={[1, 1]}
+                  allowsEditing={true}
                 />
 
                 <View style={styles.row}>

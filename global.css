@@ -2,6 +2,28 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Theme Variables */
+:root {
+  --background-color: #FFFFFF;
+  --text-color: #1F2937;
+  --border-color: #E5E7EB;
+  --surface-color: #F8F9FA;
+}
+
+:root.dark {
+  --background-color: #222831;
+  --text-color: #F9FAFB;
+  --border-color: #4B5563;
+  --surface-color: #393E46;
+}
+
+/* Global theme support */
+html, body {
+  background-color: var(--background-color);
+  color: var(--text-color);
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
 /* React Image Crop styles - React Native compatible */
 @import 'react-image-crop/dist/ReactCrop.css';
 
@@ -56,6 +78,10 @@
   bottom: 0;
   background-color: rgba(0, 0, 0, 0.5);
   animation: fadeIn 0.2s ease-out;
+}
+
+:root.dark .web-modal-backdrop {
+  background-color: rgba(0, 0, 0, 0.7);
 }
 
 .web-modal-content {

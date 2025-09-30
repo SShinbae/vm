@@ -14,6 +14,7 @@ import { router } from 'expo-router';
 import React, { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
+  Image,
   RefreshControl,
   ScrollView,
   StyleSheet,
@@ -227,13 +228,20 @@ export default function LogsScreen() {
 
   const VehicleHeader = ({ vehicle, isSharedVehicle }: { vehicle: any; isSharedVehicle: boolean }) => (
     <View style={styles.vehicleHeader}>
-      <View style={[styles.vehicleHeaderIcon, isSharedVehicle && styles.sharedVehicleHeaderIcon]}>
-        <IconSymbol
-          name={isSharedVehicle ? "person.2.fill" : "car.fill"}
-          size={20}
-          color="white"
+      {vehicle?.main_image_url ? (
+        <Image
+          source={{ uri: vehicle.main_image_url }}
+          style={[styles.vehicleHeaderImage, isSharedVehicle && styles.sharedVehicleHeaderImage]}
         />
-      </View>
+      ) : (
+        <View style={[styles.vehicleHeaderIcon, isSharedVehicle && styles.sharedVehicleHeaderIcon]}>
+          <IconSymbol
+            name={isSharedVehicle ? "person.2.fill" : "car.fill"}
+            size={20}
+            color="white"
+          />
+        </View>
+      )}
       <View style={styles.vehicleHeaderInfo}>
         <View style={styles.vehicleHeaderTitleRow}>
           <Text style={styles.vehicleHeaderTitle}>
@@ -664,8 +672,19 @@ export default function LogsScreen() {
       justifyContent: 'center',
       marginRight: 12,
     },
+    vehicleHeaderImage: {
+      width: 36,
+      height: 36,
+      borderRadius: 18,
+      marginRight: 12,
+      backgroundColor: colors.icon + '20',
+    },
     sharedVehicleHeaderIcon: {
       backgroundColor: '#4CAF50',
+    },
+    sharedVehicleHeaderImage: {
+      borderWidth: 2,
+      borderColor: '#4CAF50',
     },
     vehicleHeaderInfo: {
       flex: 1,

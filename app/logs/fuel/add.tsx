@@ -1,4 +1,5 @@
 import { IconSymbol } from '@/components/ui/icon-symbol';
+import { AlertModal } from '@/components/ui/Modal';
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { FuelLogService } from '@/lib/services/loggingService';
@@ -20,7 +21,6 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { AlertModal } from '@/components/ui/Modal';
 
 export default function AddFuelLogScreen() {
   const { vehicleId } = useLocalSearchParams<{ vehicleId?: string }>();
@@ -29,6 +29,7 @@ export default function AddFuelLogScreen() {
     vehicle_id: vehicleId || '',
     liters_filled: 0,
     cost: 0,
+    fuel_price: 1.99, // Default to first option
     date: new Date().toISOString().split('T')[0],
     odometer_reading: 0,
     location: '',
@@ -56,14 +57,26 @@ export default function AddFuelLogScreen() {
     fetchVehicles();
   }, [vehicleId]);
 
+  // Auto-calculate liters based on cost and fuel price (only this direction)
+  const calculateLiters = (cost: number, fuelPrice: number) => {
+    if (fuelPrice > 0 && cost > 0) {
+      return Math.round((cost / fuelPrice) * 1000) / 1000; // Round to 3 decimal places
+    }
+    return 0;
+  };
+
   const handleSave = async () => {
     // Validation
     if (!formData.vehicle_id) {
       Alert.alert('Error', 'Please select a vehicle');
       return;
     }
-    if (formData.liters_filled <= 0) {
-      Alert.alert('Error', 'Please enter a valid amount of fuel');
+    if (!formData.cost || formData.cost <= 0) {
+      Alert.alert('Error', 'Please enter a valid cost amount');
+      return;
+    }
+    if (!formData.fuel_price || formData.fuel_price <= 0) {
+      Alert.alert('Error', 'Please select a fuel price');
       return;
     }
     if (formData.odometer_reading <= 0) {
@@ -81,12 +94,13 @@ export default function AddFuelLogScreen() {
       vehicle_id: formData.vehicle_id,
       liters_filled: formData.liters_filled,
       cost: formData.cost || undefined,
+      fuel_price: formData.fuel_price || undefined,
       date: formData.date,
       odometer_reading: formData.odometer_reading,
       location: formData.location?.trim() || undefined,
     };
 
-    const { data, error } = await FuelLogService.createFuelLog(logData);
+    const { error } = await FuelLogService.createFuelLog(logData);
     setLoading(false);
 
     if (error) {
@@ -98,7 +112,7 @@ export default function AddFuelLogScreen() {
         Alert.alert('Success', 'Fuel log added successfully', [
           {
             text: 'OK',
-            onPress: () => router.back(),
+            onPress: () => router.push('/(tabs)/logs'),
           },
         ]);
       }
@@ -108,7 +122,8 @@ export default function AddFuelLogScreen() {
   const isFormValid = () => {
     return (
       formData.vehicle_id &&
-      formData.liters_filled > 0 &&
+      formData.cost && formData.cost > 0 &&
+      formData.fuel_price && formData.fuel_price > 0 &&
       formData.odometer_reading > 0 &&
       formData.date
     );
@@ -365,6 +380,36 @@ export default function AddFuelLogScreen() {
       justifyContent: 'center',
       alignItems: 'center',
     },
+    fuelPriceSelector: {
+      flexDirection: 'row',
+      gap: 8,
+    },
+    fuelPriceOption: {
+      flex: 1,
+      backgroundColor: colors.background,
+      borderWidth: 1,
+      borderColor: colors.icon + '30',
+      borderRadius: 8,
+      paddingVertical: 12,
+      paddingHorizontal: 16,
+      alignItems: 'center',
+    },
+    fuelPriceOptionSelected: {
+      borderColor: colors.tint,
+      backgroundColor: colors.tint + '10',
+    },
+    fuelPriceOptionText: {
+      fontSize: 16,
+      fontWeight: '600',
+      color: colors.text,
+    },
+    fuelPriceOptionTextSelected: {
+      color: colors.tint,
+    },
+    inputReadOnly: {
+      backgroundColor: colors.icon + '10',
+      color: colors.icon,
+    },
   });
 
   if (vehiclesLoading) {
@@ -414,7 +459,7 @@ export default function AddFuelLogScreen() {
         visible={showSuccessModal}
         onClose={() => {
           setShowSuccessModal(false);
-          router.back();
+          router.push('/(tabs)/logs');
         }}
         title="Success"
         message="Fuel log added successfully!"
@@ -459,20 +504,65 @@ export default function AddFuelLogScreen() {
           <View style={styles.formCard}>
             <VehicleSelector />
 
+            <View style={styles.inputContainer}>
+              <Text style={styles.label}>
+                Fuel Price (RM per liter) <Text style={styles.requiredLabel}>*</Text>
+              </Text>
+              <View style={styles.fuelPriceSelector}>
+                {[1.99, 2.60, 3.21].map((price) => (
+                  <TouchableOpacity
+                    key={price}
+                    style={[
+                      styles.fuelPriceOption,
+                      formData.fuel_price === price && styles.fuelPriceOptionSelected,
+                    ]}
+                    onPress={() => {
+                      setFormData(prev => {
+                        const newData = { ...prev, fuel_price: price };
+                        
+                        // Auto-calculate liters if cost is entered
+                        if (prev.cost && prev.cost > 0) {
+                          newData.liters_filled = calculateLiters(prev.cost, price);
+                        }
+                        
+                        return newData;
+                      });
+                    }}
+                  >
+                    <Text style={[
+                      styles.fuelPriceOptionText,
+                      formData.fuel_price === price && styles.fuelPriceOptionTextSelected,
+                    ]}>
+                      RM{price.toFixed(2)}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+
             <View style={styles.row}>
               <View style={styles.flex1}>
                 <View style={styles.inputContainer}>
                   <Text style={styles.label}>
-                    Liters Filled <Text style={styles.requiredLabel}>*</Text>
+                    Cost (RM) <Text style={styles.requiredLabel}>*</Text>
                   </Text>
                   <TextInput
                     style={styles.input}
-                    value={formData.liters_filled.toString()}
+                    value={formData.cost?.toString() || ''}
                     onChangeText={(text) => {
-                      const liters = parseFloat(text) || 0;
-                      setFormData(prev => ({ ...prev, liters_filled: liters }));
+                      const cost = parseFloat(text) || 0;
+                      setFormData(prev => {
+                        const newData = { ...prev, cost };
+                        
+                        // Auto-calculate liters if fuel price is selected
+                        if (prev.fuel_price && prev.fuel_price > 0 && cost > 0) {
+                          newData.liters_filled = calculateLiters(cost, prev.fuel_price);
+                        }
+                        
+                        return newData;
+                      });
                     }}
-                    placeholder="45.50"
+                    placeholder="65.00"
                     placeholderTextColor={colors.icon}
                     keyboardType="numeric"
                   />
@@ -481,18 +571,17 @@ export default function AddFuelLogScreen() {
 
               <View style={styles.flex1}>
                 <View style={styles.inputContainer}>
-                  <Text style={styles.label}>Cost</Text>
+                  <Text style={styles.label}>Liters Filled</Text>
                   <TextInput
-                    style={styles.input}
-                    value={formData.cost?.toString() || ''}
-                    onChangeText={(text) => {
-                      const cost = parseFloat(text) || 0;
-                      setFormData(prev => ({ ...prev, cost }));
-                    }}
-                    placeholder="65.00"
+                    style={[styles.input, styles.inputReadOnly]}
+                    value={formData.liters_filled.toString()}
+                    placeholder="Auto-calculated"
                     placeholderTextColor={colors.icon}
-                    keyboardType="numeric"
+                    editable={false}
                   />
+                  <Text style={styles.helpText}>
+                    Auto-calculated when cost and fuel price are entered
+                  </Text>
                 </View>
               </View>
             </View>

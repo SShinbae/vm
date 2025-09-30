@@ -1,9 +1,10 @@
+import { useDialog } from '@/lib/contexts/DialogContext';
 import { useFocusEffect } from '@react-navigation/native';
 import { router } from 'expo-router';
-import { useCallback, useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
+  Image,
   RefreshControl,
   ScrollView,
   StyleSheet,
@@ -32,12 +33,13 @@ export default function VehiclesScreen() {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
   const layout = useResponsiveLayout();
+  const dialog = useDialog();
 
   const fetchData = useCallback(async () => {
     const vehiclesResult = await VehicleService.getVehiclesSeparated();
 
     if (vehiclesResult.error) {
-      Alert.alert('Error', 'Failed to load vehicles');
+      dialog.showError('Error', 'Failed to load vehicles');
       console.error('Failed to fetch vehicles:', vehiclesResult.error);
     } else if (vehiclesResult.data) {
       // Combine own and shared vehicles into one array
@@ -52,7 +54,7 @@ export default function VehiclesScreen() {
     }
 
     setLoading(false);
-  }, []);
+  }, [dialog]);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -61,7 +63,7 @@ export default function VehiclesScreen() {
   }, [fetchData]);
 
   const handleDeleteVehicle = (vehicle: VehicleWithDetails) => {
-    Alert.alert(
+    dialog.alert(
       'Delete Vehicle',
       `Are you sure you want to delete ${vehicle.year} ${vehicle.make} ${vehicle.model}? This action cannot be undone.`,
       [
@@ -72,26 +74,59 @@ export default function VehiclesScreen() {
           onPress: async () => {
             const { error } = await VehicleService.deleteVehicle(vehicle.id);
             if (error) {
-              Alert.alert('Error', 'Failed to delete vehicle');
+              dialog.showError('Error', 'Failed to delete vehicle');
             } else {
               setAllVehicles(prev => prev.filter(v => v.id !== vehicle.id));
-              Alert.alert('Success', 'Vehicle deleted successfully');
+              dialog.showSuccess('Success', 'Vehicle deleted successfully');
             }
+            dialog.hideConfirm();
           },
         },
       ]
     );
   };
 
-  const VehicleCard = ({ vehicle }: { vehicle: VehicleWithDetails }) => (
-    <TouchableOpacity
-      style={styles.vehicleCard}
-      onPress={() => router.push(`/vehicles/${vehicle.id}` as any)}
-    >
-      <View style={styles.vehicleHeader}>
-        <View style={[styles.vehicleIcon, !vehicle.is_own_vehicle && styles.groupVehicleIcon]}>
-          <IconSymbol name={!vehicle.is_own_vehicle ? "person.3.fill" : "car.fill"} size={24} color="white" />
-        </View>
+  const VehicleCard = ({ vehicle }: { vehicle: VehicleWithDetails }) => {
+    const [imageError, setImageError] = React.useState(false);
+
+    // Check if image URL is valid
+    const isValidImageUrl = (url: string | null) => {
+      if (!url) return false;
+      // Check for common invalid patterns
+      if (url.startsWith('file://')) return false;
+      if (url.includes('undefined') || url.includes('null')) return false;
+      return true;
+    };
+
+    const imageUrl = vehicle.main_image_url && isValidImageUrl(vehicle.main_image_url) 
+      ? vehicle.main_image_url 
+      : null;
+
+    return (
+      <TouchableOpacity
+        style={styles.vehicleCard}
+        onPress={() => router.push(`/vehicles/${vehicle.id}` as any)}
+      >
+        <View style={styles.vehicleHeader}>
+          {imageUrl && !imageError ? (
+            <Image
+              source={{ uri: imageUrl }}
+              style={[styles.vehicleImage, !vehicle.is_own_vehicle && styles.groupVehicleImage]}
+              resizeMode="cover"
+              onError={(error) => {
+                console.error('Image load error for vehicle:', vehicle.id, error.nativeEvent);
+                console.log('Failed URL:', imageUrl);
+                setImageError(true);
+              }}
+              onLoad={() => {
+                console.log('Image loaded successfully for vehicle:', vehicle.id);
+              }}
+            />
+          ) : (
+            <View style={[styles.vehicleIcon, !vehicle.is_own_vehicle && styles.groupVehicleIcon]}>
+              <IconSymbol name={!vehicle.is_own_vehicle ? "person.3.fill" : "car.fill"} size={24} color="white" />
+            </View>
+          )}
         <View style={styles.vehicleInfo}>
           <View style={styles.vehicleNameRow}>
             <Text style={styles.vehicleName}>
@@ -143,7 +178,8 @@ export default function VehiclesScreen() {
         <IconSymbol name="chevron.right" size={16} color={colors.icon} />
       </View>
     </TouchableOpacity>
-  );
+    );
+  };
 
   useFocusEffect(
     useCallback(() => {
@@ -257,6 +293,18 @@ export default function VehiclesScreen() {
       alignItems: 'center',
       justifyContent: 'center',
       marginRight: 16,
+    },
+    vehicleImage: {
+      width: 48,
+      height: 48,
+      borderRadius: 24,
+      marginRight: 16,
+      backgroundColor: colors.surface,
+      overflow: 'hidden', // Ensures borderRadius works on web
+    },
+    groupVehicleImage: {
+      borderWidth: 2,
+      borderColor: '#10B981',
     },
     vehicleInfo: {
       flex: 1,

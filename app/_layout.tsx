@@ -10,6 +10,7 @@ import { useColorScheme } from '@/hooks/use-color-scheme';
 import { AuthProvider } from '@/lib/contexts/AuthContext';
 import { ThemeProvider } from '@/lib/contexts/ThemeContext';
 import { NotificationProvider } from '@/lib/contexts/NotificationContext';
+import { DialogProvider } from '@/lib/contexts/DialogContext';
 import { AuthGuard } from '@/components/AuthGuard';
 import { NotificationManager } from '@/components/ui/NotificationManager';
 import '@/lib/utils/testSupabase';
@@ -51,22 +52,24 @@ function RootLayoutContent() {
     <NavigationThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
       <AuthProvider>
         <NotificationProvider>
-          <AuthGuard>
-            <Stack>
-              <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-              <Stack.Screen name="(auth)" options={{ headerShown: false }} />
-              <Stack.Screen name="auth" options={{ headerShown: false }} />
-              <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
-              <Stack.Screen
-                name="notifications"
-                options={{
-                  presentation: 'modal',
-                  headerShown: false
-                }}
-              />
-            </Stack>
-            <NotificationManager />
-          </AuthGuard>
+          <DialogProvider>
+            <AuthGuard>
+              <Stack>
+                <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+                <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+                <Stack.Screen name="auth" options={{ headerShown: false }} />
+                <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
+                <Stack.Screen
+                  name="notifications"
+                  options={{
+                    presentation: 'modal',
+                    headerShown: false
+                  }}
+                />
+              </Stack>
+              <NotificationManager />
+            </AuthGuard>
+          </DialogProvider>
         </NotificationProvider>
       </AuthProvider>
       <StatusBar style="auto" />

@@ -15,6 +15,7 @@ import { router } from 'expo-router';
 import React, { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
+  Image,
   RefreshControl,
   ScrollView,
   StyleSheet,
@@ -73,15 +74,34 @@ export default function DashboardScreen() {
     </TouchableOpacity>
   );
 
-  const VehicleCard = ({ vehicle }: { vehicle: Vehicle }) => (
-    <TouchableOpacity
-      style={styles.vehicleCard}
-      onPress={() => router.push(`/vehicles/${vehicle.id}` as any)}
-    >
-      <View style={styles.vehicleHeader}>
-        <View style={styles.vehicleIcon}>
-          <IconSymbol name="car.fill" size={20} color={colors.tint} />
-        </View>
+  const VehicleCard = ({ vehicle }: { vehicle: Vehicle }) => {
+    const [imageError, setImageError] = React.useState(false);
+
+    return (
+      <TouchableOpacity
+        style={styles.vehicleCard}
+        onPress={() => router.push(`/vehicles/${vehicle.id}` as any)}
+      >
+        <View style={styles.vehicleHeader}>
+          {vehicle.main_image_url && !imageError ? (
+            <Image
+              source={{ uri: vehicle.main_image_url }}
+              style={styles.vehicleImage}
+              resizeMode="cover"
+              onError={(error) => {
+                console.error('Dashboard - Image load error for vehicle:', vehicle.id, error.nativeEvent);
+                console.log('Dashboard - Failed URL:', vehicle.main_image_url);
+                setImageError(true);
+              }}
+              onLoad={() => {
+                console.log('Dashboard - Image loaded successfully for vehicle:', vehicle.id);
+              }}
+            />
+          ) : (
+            <View style={styles.vehicleIcon}>
+              <IconSymbol name="car.fill" size={20} color={colors.tint} />
+            </View>
+          )}
         <View style={styles.vehicleInfo}>
           <Text style={styles.vehicleName}>
             {vehicle.year} {vehicle.make} {vehicle.model}
@@ -91,7 +111,8 @@ export default function DashboardScreen() {
         <IconSymbol name="chevron.right" size={16} color={colors.icon} />
       </View>
     </TouchableOpacity>
-  );
+    );
+  };
 
   const styles = StyleSheet.create({
     container: {
@@ -212,6 +233,13 @@ export default function DashboardScreen() {
       alignItems: 'center',
       justifyContent: 'center',
       marginRight: 16,
+    },
+    vehicleImage: {
+      width: 48,
+      height: 48,
+      borderRadius: 24,
+      marginRight: 16,
+      backgroundColor: colors.backgroundSecondary,
     },
     vehicleInfo: {
       flex: 1,

@@ -90,8 +90,9 @@ export interface MileageLogFormData {
 
 export interface FuelLogFormData {
   vehicle_id: string;
-  liters_filled: number;
-  cost?: number;
+  liters_filled: number; // Auto-calculated but still number type for form
+  cost: number; // Now required
+  fuel_price: number; // Now required (from dropdown)
   date: string;
   odometer_reading: number;
   location?: string;
