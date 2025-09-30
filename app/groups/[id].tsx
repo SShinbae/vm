@@ -7,6 +7,7 @@ import {
   StyleSheet,
   Alert,
   ActivityIndicator,
+  Image,
   RefreshControl,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -156,9 +157,16 @@ export default function GroupDetailScreen() {
       onPress={() => router.push(`/vehicles/${vehicle.id}` as any)}
     >
       <View style={styles.vehicleHeader}>
-        <View style={styles.vehicleIcon}>
-          <IconSymbol name="car.fill" size={20} color="white" />
-        </View>
+        {vehicle.main_image_url ? (
+          <Image
+            source={{ uri: vehicle.main_image_url }}
+            style={styles.vehicleImage}
+          />
+        ) : (
+          <View style={styles.vehicleIcon}>
+            <IconSymbol name="car.fill" size={20} color="white" />
+          </View>
+        )}
         <View style={styles.vehicleInfo}>
           <Text style={styles.vehicleName}>
             {vehicle.year} {vehicle.make} {vehicle.model}
@@ -516,6 +524,13 @@ export default function GroupDetailScreen() {
       alignItems: 'center',
       justifyContent: 'center',
       marginRight: 12,
+    },
+    vehicleImage: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      marginRight: 12,
+      backgroundColor: colors.icon + '20',
     },
     vehicleInfo: {
       flex: 1,

@@ -90,7 +90,7 @@ export default function AddMileageLogScreen() {
         Alert.alert('Success', 'Mileage log added successfully', [
           {
             text: 'OK',
-            onPress: () => router.back(),
+            onPress: () => router.push('/(tabs)/logs'),
           },
         ]);
       }
@@ -402,7 +402,7 @@ export default function AddMileageLogScreen() {
         visible={showSuccessModal}
         onClose={() => {
           setShowSuccessModal(false);
-          router.back();
+          router.push('/(tabs)/logs');
         }}
         title="Success"
         message="Mileage log added successfully!"

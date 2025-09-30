@@ -133,7 +133,7 @@ export default function AddServiceLogScreen() {
         Alert.alert('Success', 'Service log added successfully', [
           {
             text: 'OK',
-            onPress: () => router.back(),
+            onPress: () => router.push('/(tabs)/logs'),
           },
         ]);
       }
@@ -687,7 +687,7 @@ export default function AddServiceLogScreen() {
         visible={showSuccessModal}
         onClose={() => {
           setShowSuccessModal(false);
-          router.back();
+          router.push('/(tabs)/logs');
         }}
         title="Success"
         message="Service log added successfully!"

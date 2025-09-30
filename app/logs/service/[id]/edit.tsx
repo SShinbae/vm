@@ -169,7 +169,7 @@ export default function EditServiceLogScreen() {
       Alert.alert('Success', 'Service log updated successfully', [
         {
           text: 'OK',
-          onPress: () => router.back(),
+          onPress: () => router.push('/(tabs)/logs'),
         },
       ]);
     }

@@ -1,24 +1,24 @@
-import React, { useState, useEffect } from 'react';
-import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  ScrollView,
-  KeyboardAvoidingView,
-  Platform,
-  StyleSheet,
-  Alert,
-  ActivityIndicator,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { router, useLocalSearchParams } from 'expo-router';
-import { FuelLogService } from '@/lib/services/loggingService';
-import { FuelLogFormData, FuelLog } from '@/types';
+import { DatePicker } from '@/components/ui/DatePicker';
+import { IconSymbol } from '@/components/ui/icon-symbol';
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
-import { IconSymbol } from '@/components/ui/icon-symbol';
-import { DatePicker } from '@/components/ui/DatePicker';
+import { FuelLogService } from '@/lib/services/loggingService';
+import { FuelLog, FuelLogFormData } from '@/types';
+import { router, useLocalSearchParams } from 'expo-router';
+import React, { useEffect, useState } from 'react';
+import {
+    ActivityIndicator,
+    Alert,
+    KeyboardAvoidingView,
+    Platform,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function EditFuelLogScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -27,6 +27,7 @@ export default function EditFuelLogScreen() {
     vehicle_id: '',
     liters_filled: 0,
     cost: 0,
+    fuel_price: 1.99, // Default to first option
     date: new Date().toISOString().split('T')[0],
     odometer_reading: 0,
     location: '',
@@ -35,6 +36,14 @@ export default function EditFuelLogScreen() {
   const [dataLoading, setDataLoading] = useState(true);
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
+
+  // Auto-calculate liters based on cost and fuel price (only this direction)
+  const calculateLiters = (cost: number, fuelPrice: number) => {
+    if (fuelPrice > 0 && cost > 0) {
+      return Math.round((cost / fuelPrice) * 1000) / 1000; // Round to 3 decimal places
+    }
+    return 0;
+  };
 
   useEffect(() => {
     const fetchFuelLog = async () => {
@@ -77,6 +86,7 @@ export default function EditFuelLogScreen() {
           vehicle_id: log.vehicle_id,
           liters_filled: log.liters_filled,
           cost: log.cost || 0,
+          fuel_price: (log as any).fuel_price || 1.99, // Default if not set
           date: log.date,
           odometer_reading: log.odometer_reading,
           location: log.location || '',
@@ -95,8 +105,12 @@ export default function EditFuelLogScreen() {
 
   const handleSave = async () => {
     // Validation
-    if (formData.liters_filled <= 0) {
-      Alert.alert('Error', 'Please enter a valid amount of fuel');
+    if (!formData.cost || formData.cost <= 0) {
+      Alert.alert('Error', 'Please enter a valid cost amount');
+      return;
+    }
+    if (!formData.fuel_price || formData.fuel_price <= 0) {
+      Alert.alert('Error', 'Please select a fuel price');
       return;
     }
     if (formData.odometer_reading <= 0) {
@@ -113,6 +127,7 @@ export default function EditFuelLogScreen() {
     const updateData = {
       liters_filled: formData.liters_filled,
       cost: formData.cost || undefined,
+      fuel_price: formData.fuel_price || undefined,
       date: formData.date,
       odometer_reading: formData.odometer_reading,
       location: formData.location?.trim() || undefined,
@@ -152,7 +167,7 @@ export default function EditFuelLogScreen() {
       Alert.alert('Success', 'Fuel log updated successfully', [
         {
           text: 'OK',
-          onPress: () => router.back(),
+          onPress: () => router.push('/(tabs)/logs'),
         },
       ]);
     }
@@ -160,7 +175,8 @@ export default function EditFuelLogScreen() {
 
   const isFormValid = () => {
     return (
-      formData.liters_filled > 0 &&
+      formData.cost && formData.cost > 0 &&
+      formData.fuel_price && formData.fuel_price > 0 &&
       formData.odometer_reading > 0 &&
       formData.date
     );
@@ -279,6 +295,36 @@ export default function EditFuelLogScreen() {
       color: colors.icon,
       marginTop: 2,
     },
+    fuelPriceSelector: {
+      flexDirection: 'row',
+      gap: 8,
+    },
+    fuelPriceOption: {
+      flex: 1,
+      backgroundColor: colors.background,
+      borderWidth: 1,
+      borderColor: colors.icon + '30',
+      borderRadius: 8,
+      paddingVertical: 12,
+      paddingHorizontal: 16,
+      alignItems: 'center',
+    },
+    fuelPriceOptionSelected: {
+      borderColor: colors.tint,
+      backgroundColor: colors.tint + '10',
+    },
+    fuelPriceOptionText: {
+      fontSize: 16,
+      fontWeight: '600',
+      color: colors.text,
+    },
+    fuelPriceOptionTextSelected: {
+      color: colors.tint,
+    },
+    inputReadOnly: {
+      backgroundColor: colors.icon + '10',
+      color: colors.icon,
+    },
   });
 
   if (dataLoading) {
@@ -347,20 +393,65 @@ export default function EditFuelLogScreen() {
               )}
             </View>
 
+            <View style={styles.inputContainer}>
+              <Text style={styles.label}>
+                Fuel Price (RM per liter) <Text style={styles.requiredLabel}>*</Text>
+              </Text>
+              <View style={styles.fuelPriceSelector}>
+                {[1.99, 2.60, 3.21].map((price) => (
+                  <TouchableOpacity
+                    key={price}
+                    style={[
+                      styles.fuelPriceOption,
+                      formData.fuel_price === price && styles.fuelPriceOptionSelected,
+                    ]}
+                    onPress={() => {
+                      setFormData(prev => {
+                        const newData = { ...prev, fuel_price: price };
+                        
+                        // Auto-calculate liters if cost is entered
+                        if (prev.cost && prev.cost > 0) {
+                          newData.liters_filled = calculateLiters(prev.cost, price);
+                        }
+                        
+                        return newData;
+                      });
+                    }}
+                  >
+                    <Text style={[
+                      styles.fuelPriceOptionText,
+                      formData.fuel_price === price && styles.fuelPriceOptionTextSelected,
+                    ]}>
+                      RM{price.toFixed(2)}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+
             <View style={styles.row}>
               <View style={styles.flex1}>
                 <View style={styles.inputContainer}>
                   <Text style={styles.label}>
-                    Liters Filled <Text style={styles.requiredLabel}>*</Text>
+                    Cost (RM) <Text style={styles.requiredLabel}>*</Text>
                   </Text>
                   <TextInput
                     style={styles.input}
-                    value={formData.liters_filled.toString()}
+                    value={formData.cost?.toString() || ''}
                     onChangeText={(text) => {
-                      const liters = parseFloat(text) || 0;
-                      setFormData(prev => ({ ...prev, liters_filled: liters }));
+                      const cost = parseFloat(text) || 0;
+                      setFormData(prev => {
+                        const newData = { ...prev, cost };
+                        
+                        // Auto-calculate liters if fuel price is selected
+                        if (prev.fuel_price && prev.fuel_price > 0 && cost > 0) {
+                          newData.liters_filled = calculateLiters(cost, prev.fuel_price);
+                        }
+                        
+                        return newData;
+                      });
                     }}
-                    placeholder="45.5"
+                    placeholder="65.00"
                     placeholderTextColor={colors.icon}
                     keyboardType="numeric"
                   />
@@ -369,17 +460,13 @@ export default function EditFuelLogScreen() {
 
               <View style={styles.flex1}>
                 <View style={styles.inputContainer}>
-                  <Text style={styles.label}>Cost (Optional)</Text>
+                  <Text style={styles.label}>Liters Filled</Text>
                   <TextInput
-                    style={styles.input}
-                    value={formData.cost?.toString() || ''}
-                    onChangeText={(text) => {
-                      const cost = parseFloat(text) || 0;
-                      setFormData(prev => ({ ...prev, cost }));
-                    }}
-                    placeholder="120.00"
+                    style={[styles.input, styles.inputReadOnly]}
+                    value={formData.liters_filled.toString()}
+                    placeholder="Auto-calculated"
                     placeholderTextColor={colors.icon}
-                    keyboardType="numeric"
+                    editable={false}
                   />
                 </View>
               </View>

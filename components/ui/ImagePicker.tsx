@@ -22,6 +22,7 @@ interface ImagePickerProps {
   allowsEditing?: boolean;
   label?: string;
   placeholder?: string;
+  onRemove?: () => void; // Optional custom remove handler
 }
 
 export function ImagePicker({
@@ -32,6 +33,7 @@ export function ImagePicker({
   allowsEditing = true,
   label = 'Vehicle Photo',
   placeholder = 'Add a photo',
+  onRemove,
 }: ImagePickerProps) {
   const [loading, setLoading] = useState(false);
   const colorScheme = useColorScheme();
@@ -115,10 +117,16 @@ export function ImagePicker({
   };
 
   const removeImage = () => {
-    Alert.alert('Remove Photo', 'Are you sure you want to remove this photo?', [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Remove', style: 'destructive', onPress: () => onImageSelected('') },
-    ]);
+    if (onRemove) {
+      // Use custom remove handler if provided
+      onRemove();
+    } else {
+      // Default behavior: show native alert
+      Alert.alert('Remove Photo', 'Are you sure you want to remove this photo?', [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Remove', style: 'destructive', onPress: () => onImageSelected('') },
+      ]);
+    }
   };
 
   const styles = StyleSheet.create({
@@ -191,46 +199,48 @@ export function ImagePicker({
   });
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.label}>{label}</Text>
-      <TouchableOpacity
-        style={styles.imageContainer}
-        onPress={currentImage ? removeImage : showImageOptions}
-        activeOpacity={0.7}
-      >
-        {currentImage ? (
-          <View style={styles.imagePreview}>
-            <Image source={{ uri: currentImage }} style={styles.image} />
-            <TouchableOpacity
-              style={styles.removeButton}
-              onPress={(e) => {
-                e.stopPropagation();
-                removeImage();
-              }}
-            >
-              <IconSymbol name="xmark" size={16} color="white" />
-            </TouchableOpacity>
-            {loading && (
-              <View style={styles.loadingOverlay}>
-                <ActivityIndicator size="large" color="white" />
-              </View>
-            )}
-          </View>
-        ) : (
-          <View style={styles.placeholder}>
-            <View style={styles.placeholderIcon}>
-              <IconSymbol name="camera.fill" size={32} color={colors.tint} />
+    <>
+      <View style={styles.container}>
+        <Text style={styles.label}>{label}</Text>
+        <TouchableOpacity
+          style={styles.imageContainer}
+          onPress={currentImage ? removeImage : showImageOptions}
+          activeOpacity={0.7}
+        >
+          {currentImage ? (
+            <View style={styles.imagePreview}>
+              <Image source={{ uri: currentImage }} style={styles.image} />
+              <TouchableOpacity
+                style={styles.removeButton}
+                onPress={(e) => {
+                  e.stopPropagation();
+                  removeImage();
+                }}
+              >
+                <IconSymbol name="xmark" size={16} color="white" />
+              </TouchableOpacity>
+              {loading && (
+                <View style={styles.loadingOverlay}>
+                  <ActivityIndicator size="large" color="white" />
+                </View>
+              )}
             </View>
-            <Text style={styles.placeholderText}>{placeholder}</Text>
-            <Text style={styles.placeholderHint}>
-              {Platform.OS === 'web'
-                ? 'Click to upload a photo'
-                : 'Tap to take a photo or choose from gallery'}
-            </Text>
-            {loading && <ActivityIndicator size="small" color={colors.tint} />}
-          </View>
-        )}
-      </TouchableOpacity>
-    </View>
+          ) : (
+            <View style={styles.placeholder}>
+              <View style={styles.placeholderIcon}>
+                <IconSymbol name="camera.fill" size={32} color={colors.tint} />
+              </View>
+              <Text style={styles.placeholderText}>{placeholder}</Text>
+              <Text style={styles.placeholderHint}>
+                {Platform.OS === 'web'
+                  ? 'Click to upload a photo'
+                  : 'Tap to take a photo or choose from gallery'}
+              </Text>
+              {loading && <ActivityIndicator size="small" color={colors.tint} />}
+            </View>
+          )}
+        </TouchableOpacity>
+      </View>
+    </>
   );
 }

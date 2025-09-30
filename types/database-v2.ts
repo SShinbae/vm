@@ -230,6 +230,7 @@ export interface Database {
           user_id: string
           liters_filled: number
           cost: number | null
+          fuel_price: number | null
           date: string
           odometer_reading: number
           location: string | null
@@ -241,6 +242,7 @@ export interface Database {
           user_id: string
           liters_filled: number
           cost?: number | null
+          fuel_price?: number | null
           date: string
           odometer_reading: number
           location?: string | null
@@ -248,6 +250,7 @@ export interface Database {
         Update: {
           liters_filled?: number
           cost?: number | null
+          fuel_price?: number | null
           date?: string
           odometer_reading?: number
           location?: string | null

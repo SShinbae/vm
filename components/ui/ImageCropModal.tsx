@@ -1,15 +1,34 @@
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
-import React, { useCallback, useRef, useState } from 'react';
+import * as ImageManipulator from 'expo-image-manipulator';
+import React, { useCallback, useState } from 'react';
 import {
+  Animated,
+  Image,
+  Modal,
+  PanResponder,
   Platform,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
+
+// Import expo-crop-image for mobile
+let ImageEditor: any = null;
+if (Platform.OS !== 'web') {
+  try {
+    const expoCropImage = require('expo-crop-image');
+    ImageEditor = expoCropImage.ImageEditor;
+  } catch (error) {
+    console.warn('expo-crop-image not available:', error);
+  }
+}
 
 // Only import react-dom createPortal on web
 let createPortal: any = null;
 if (Platform.OS === 'web') {
   try {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const reactDom = require('react-dom');
     createPortal = reactDom.createPortal;
   } catch (error) {
@@ -17,34 +36,25 @@ if (Platform.OS === 'web') {
   }
 }
 
-// Only import ReactCrop on web
-let ReactCrop: any = null;
-let centerCrop: any = null;
-let makeAspectCrop: any = null;
-let convertToPixelCrop: any = null;
-
-if (Platform.OS === 'web') {
-  try {
-    // Dynamic import for web-only dependency
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const cropModule = require('react-image-crop');
-    ReactCrop = cropModule.default;
-    centerCrop = cropModule.centerCrop;
-    makeAspectCrop = cropModule.makeAspectCrop;
-    convertToPixelCrop = cropModule.convertToPixelCrop;
-    console.log('react-image-crop loaded successfully');
-  } catch (error) {
-    console.warn('react-image-crop not available', error);
-  }
-}
-
 interface ImageCropModalProps {
   visible: boolean;
   imageUri: string;
   onClose: () => void;
-  onCropComplete: (croppedImageFile: File) => void;
+  onCropComplete: (croppedImageUri: string) => void;
   onError: (error: string) => void;
+  title?: string;
+  description?: string;
+  aspectRatio?: number;
 }
+
+interface CropArea {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+type ResizeHandle = 'topLeft' | 'topRight' | 'bottomLeft' | 'bottomRight' | 'top' | 'right' | 'bottom' | 'left' | null;
 
 export const ImageCropModal: React.FC<ImageCropModalProps> = ({
   visible,
@@ -52,405 +62,1020 @@ export const ImageCropModal: React.FC<ImageCropModalProps> = ({
   onClose,
   onCropComplete,
   onError,
+  title = 'Crop Image',
+  description = 'Drag to adjust the crop area.',
+  aspectRatio = 1,
 }) => {
-  const [crop, setCrop] = useState<any>();
-  const [completedCrop, setCompletedCrop] = useState<any>();
   const [processing, setProcessing] = useState(false);
-  const imgRef = useRef<HTMLImageElement>(null);
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
 
-  // Initialize crop when image is first loaded
-  const onImageLoad = useCallback((e: React.SyntheticEvent<HTMLImageElement>) => {
-    console.log('Image loaded, setting up crop');
-    
-    if (centerCrop && makeAspectCrop) {
-      const { width, height } = e.currentTarget;
-      console.log('Image dimensions:', { width, height });
+  // For mobile - use expo-crop-image
+  if (Platform.OS !== 'web' && ImageEditor) {
+    return (
+      <Modal
+        visible={visible}
+        transparent
+        animationType="slide"
+        onRequestClose={onClose}
+      >
+        <ImageEditor
+          imageUri={imageUri}
+          fixedAspectRatio={aspectRatio}
+          minimumCropDimensions={{
+            width: 50,
+            height: 50,
+          }}
+          onEditingCancel={onClose}
+          onEditingComplete={async (result: { uri: string }) => {
+            try {
+              onCropComplete(result.uri);
+              onClose();
+            } catch (error: any) {
+              console.error('Error completing crop:', error);
+              onError(error.message || 'Failed to crop image');
+            }
+          }}
+        />
+      </Modal>
+    );
+  }
 
-      try {
-        // Create initial crop - centered square taking up 80% of the image
-        const initialCrop = centerCrop(
-          makeAspectCrop(
-            {
-              unit: '%',
-              width: 80,
-            },
-            1, // 1:1 aspect ratio for square crop
-            width,
-            height,
-          ),
-          width,
-          height,
-        );
+  // For web - use enhanced custom cropper
+  return (
+    <WebCropModal
+      visible={visible}
+      imageUri={imageUri}
+      onClose={onClose}
+      onCropComplete={onCropComplete}
+      onError={onError}
+      title={title}
+      description={description}
+      aspectRatio={aspectRatio}
+      colors={colors}
+      processing={processing}
+      setProcessing={setProcessing}
+    />
+  );
+};
 
-        console.log('Generated initial crop:', initialCrop);
-        setCrop(initialCrop);
-        setCompletedCrop(initialCrop);
-      } catch (error) {
-        console.error('Error creating initial crop:', error);
-        // Fallback to a simple centered crop
-        const fallbackCrop = {
-          unit: '%' as const,
-          width: 80,
-          height: 80,
-          x: 10,
-          y: 10,
-        };
-        setCrop(fallbackCrop);
-        setCompletedCrop(fallbackCrop);
+// Web-specific crop modal component
+const WebCropModal: React.FC<{
+  visible: boolean;
+  imageUri: string;
+  onClose: () => void;
+  onCropComplete: (uri: string) => void;
+  onError: (error: string) => void;
+  title: string;
+  description: string;
+  aspectRatio: number;
+  colors: any;
+  processing: boolean;
+  setProcessing: (val: boolean) => void;
+}> = ({
+  visible,
+  imageUri,
+  onClose,
+  onCropComplete,
+  onError,
+  title,
+  description,
+  aspectRatio,
+  colors,
+  processing,
+  setProcessing,
+}) => {
+  const [imageSize, setImageSize] = useState({ width: 0, height: 0 });
+  const [cropArea, setCropArea] = useState<CropArea>({ x: 0, y: 0, width: 0, height: 0 });
+  const [isDragging, setIsDragging] = useState(false);
+  const [isResizing, setIsResizing] = useState(false);
+  const [activeResizeHandle, setActiveResizeHandle] = useState<ResizeHandle>(null);
+  const pan = React.useRef(new Animated.ValueXY()).current;
+  const imageRef = React.useRef<any>(null);
+
+  // Initialize crop area when image loads
+  const onImageLoad = useCallback(
+    (event: any) => {
+      let width, height;
+
+      // Handle different event formats for web vs mobile
+      if (Platform.OS === 'web') {
+        // On web, try multiple methods to get dimensions
+        console.log('Web onLoad event:', event);
+        console.log('Image ref:', imageRef.current);
+
+        // Method 1: Use the ref (most reliable on web)
+        if (imageRef.current && typeof imageRef.current.naturalWidth !== 'undefined') {
+          width = imageRef.current.naturalWidth;
+          height = imageRef.current.naturalHeight;
+          console.log('Got dimensions from ref.naturalWidth/Height');
+        }
+        // Method 2: Try event.target
+        else if (event.target) {
+          width = event.target.naturalWidth || event.target.width;
+          height = event.target.naturalHeight || event.target.height;
+          console.log('Got dimensions from event.target');
+        }
+        // Method 3: Try nativeEvent (might work in some cases)
+        else if (event.nativeEvent?.target) {
+          width = event.nativeEvent.target.naturalWidth || event.nativeEvent.target.width;
+          height = event.nativeEvent.target.naturalHeight || event.nativeEvent.target.height;
+          console.log('Got dimensions from event.nativeEvent.target');
+        }
+      } else {
+        // On mobile, use event.nativeEvent
+        if (event.nativeEvent) {
+          const source = event.nativeEvent.source;
+          width = source?.width;
+          height = source?.height;
+        }
       }
-    } else {
-      console.warn('centerCrop or makeAspectCrop not available, using fallback');
-      // Fallback crop if react-image-crop functions aren't available
-      const fallbackCrop = {
-        unit: '%' as const,
-        width: 80,
-        height: 80,
-        x: 10,
-        y: 10,
+
+      console.log('Image loaded, dimensions:', { width, height, platform: Platform.OS });
+
+      if (!width || !height || width === 0 || height === 0) {
+        console.error('Invalid image dimensions:', { width, height });
+        return;
+      }
+
+      setImageSize({ width, height });
+
+      // Calculate initial crop area (80% of image, centered, maintaining aspect ratio)
+      const cropSize = Math.min(width, height) * 0.8;
+      const cropWidth = aspectRatio >= 1 ? cropSize : cropSize * aspectRatio;
+      const cropHeight = aspectRatio >= 1 ? cropSize / aspectRatio : cropSize;
+
+      const initialCropArea = {
+        x: (width - cropWidth) / 2,
+        y: (height - cropHeight) / 2,
+        width: cropWidth,
+        height: cropHeight,
       };
-      setCrop(fallbackCrop);
-      setCompletedCrop(fallbackCrop);
-    }
-  }, []);
 
-    const getCroppedImage = useCallback(async (): Promise<File | null> => {
-    // Use completedCrop if available, otherwise fall back to current crop
-    const cropToUse = completedCrop || crop;
+      console.log('Initial crop area calculated:', initialCropArea);
+      setCropArea(initialCropArea);
+    },
+    [aspectRatio]
+  );
+
+  // Web-specific mouse/touch handlers for dragging and resizing
+  const [dragStart, setDragStart] = useState<{ x: number; y: number; cropX: number; cropY: number; cropWidth: number; cropHeight: number } | null>(null);
+
+  const handleDragStart = (event: any) => {
+    const clientX = event.clientX || event.nativeEvent?.clientX || (event.touches && event.touches[0]?.clientX);
+    const clientY = event.clientY || event.nativeEvent?.clientY || (event.touches && event.touches[0]?.clientY);
     
-    console.log('getCroppedImage called', {
-      completedCrop,
-      crop,
-      cropToUse,
-      imgRefCurrent: !!imgRef.current,
-      convertToPixelCrop: !!convertToPixelCrop
-    });
-
-    if (!cropToUse) {
-      console.error('No crop available');
-      return null;
+    if (clientX !== undefined && clientY !== undefined) {
+      setIsDragging(true);
+      setDragStart({ 
+        x: clientX, 
+        y: clientY, 
+        cropX: cropArea.x, 
+        cropY: cropArea.y, 
+        cropWidth: cropArea.width, 
+        cropHeight: cropArea.height 
+      });
+      if (event.preventDefault) event.preventDefault();
     }
+  };
 
-    if (!imgRef.current) {
-      console.error('No image reference available');
-      return null;
+  const handleDragMove = React.useCallback((event: any) => {
+    if (!isDragging || !dragStart) return;
+    
+    const clientX = event.clientX || event.nativeEvent?.clientX || (event.touches && event.touches[0]?.clientX);
+    const clientY = event.clientY || event.nativeEvent?.clientY || (event.touches && event.touches[0]?.clientY);
+    
+    if (clientX !== undefined && clientY !== undefined) {
+      const deltaX = clientX - dragStart.x;
+      const deltaY = clientY - dragStart.y;
+      
+      // Calculate new position
+      const newX = cropArea.x + deltaX;
+      const newY = cropArea.y + deltaY;
+
+      // Constrain to image bounds
+      const constrainedX = Math.max(0, Math.min(newX, imageSize.width - cropArea.width));
+      const constrainedY = Math.max(0, Math.min(newY, imageSize.height - cropArea.height));
+
+      setCropArea((prev) => ({
+        ...prev,
+        x: constrainedX,
+        y: constrainedY,
+      }));
+      
+      setDragStart({ 
+        x: clientX, 
+        y: clientY, 
+        cropX: constrainedX, 
+        cropY: constrainedY, 
+        cropWidth: cropArea.width, 
+        cropHeight: cropArea.height 
+      });
+      if (event.preventDefault) event.preventDefault();
     }
+  }, [isDragging, dragStart, cropArea, imageSize]);
 
-    if (!convertToPixelCrop) {
-      console.error('convertToPixelCrop function not available');
-      return null;
+  const handleDragEnd = () => {
+    setIsDragging(false);
+    setIsResizing(false);
+    setActiveResizeHandle(null);
+    setDragStart(null);
+  };
+
+  // Handle resize start for corner and edge handles
+  const handleResizeStart = (event: any, handle: ResizeHandle) => {
+    const clientX = event.clientX || event.nativeEvent?.clientX || (event.touches && event.touches[0]?.clientX);
+    const clientY = event.clientY || event.nativeEvent?.clientY || (event.touches && event.touches[0]?.clientY);
+    
+    if (clientX !== undefined && clientY !== undefined) {
+      setIsResizing(true);
+      setActiveResizeHandle(handle);
+      setDragStart({ 
+        x: clientX, 
+        y: clientY, 
+        cropX: cropArea.x, 
+        cropY: cropArea.y, 
+        cropWidth: cropArea.width, 
+        cropHeight: cropArea.height 
+      });
+      if (event.preventDefault) event.preventDefault();
+      if (event.stopPropagation) event.stopPropagation();
+    }
+  };
+
+  // Handle resize move
+  const handleResizeMove = React.useCallback((event: any) => {
+    if (!isResizing || !dragStart || !activeResizeHandle) return;
+    
+    const clientX = event.clientX || event.nativeEvent?.clientX || (event.touches && event.touches[0]?.clientX);
+    const clientY = event.clientY || event.nativeEvent?.clientY || (event.touches && event.touches[0]?.clientY);
+    
+    if (clientX !== undefined && clientY !== undefined) {
+      const deltaX = clientX - dragStart.x;
+      const deltaY = clientY - dragStart.y;
+      
+      let newCropArea = { ...cropArea };
+      
+      // Handle different resize directions
+      switch (activeResizeHandle) {
+        case 'topLeft':
+          newCropArea.x = Math.max(0, dragStart.cropX + deltaX);
+          newCropArea.y = Math.max(0, dragStart.cropY + deltaY);
+          newCropArea.width = Math.max(50, dragStart.cropWidth - deltaX);
+          newCropArea.height = Math.max(50, dragStart.cropHeight - deltaY);
+          break;
+        case 'topRight':
+          newCropArea.y = Math.max(0, dragStart.cropY + deltaY);
+          newCropArea.width = Math.max(50, dragStart.cropWidth + deltaX);
+          newCropArea.height = Math.max(50, dragStart.cropHeight - deltaY);
+          break;
+        case 'bottomLeft':
+          newCropArea.x = Math.max(0, dragStart.cropX + deltaX);
+          newCropArea.width = Math.max(50, dragStart.cropWidth - deltaX);
+          newCropArea.height = Math.max(50, dragStart.cropHeight + deltaY);
+          break;
+        case 'bottomRight':
+          newCropArea.width = Math.max(50, dragStart.cropWidth + deltaX);
+          newCropArea.height = Math.max(50, dragStart.cropHeight + deltaY);
+          break;
+        case 'top':
+          newCropArea.y = Math.max(0, dragStart.cropY + deltaY);
+          newCropArea.height = Math.max(50, dragStart.cropHeight - deltaY);
+          break;
+        case 'bottom':
+          newCropArea.height = Math.max(50, dragStart.cropHeight + deltaY);
+          break;
+        case 'left':
+          newCropArea.x = Math.max(0, dragStart.cropX + deltaX);
+          newCropArea.width = Math.max(50, dragStart.cropWidth - deltaX);
+          break;
+        case 'right':
+          newCropArea.width = Math.max(50, dragStart.cropWidth + deltaX);
+          break;
+      }
+      
+      // Maintain aspect ratio if enabled
+      if (aspectRatio && aspectRatio !== 0) {
+        if (activeResizeHandle === 'topLeft' || activeResizeHandle === 'topRight' || 
+            activeResizeHandle === 'bottomLeft' || activeResizeHandle === 'bottomRight') {
+          const newHeight = newCropArea.width / aspectRatio;
+          newCropArea.height = newHeight;
+          
+          // Adjust position if needed for top handles
+          if (activeResizeHandle === 'topLeft' || activeResizeHandle === 'topRight') {
+            newCropArea.y = Math.max(0, dragStart.cropY + dragStart.cropHeight - newHeight);
+          }
+        }
+      }
+      
+      // Constrain to image bounds
+      newCropArea.x = Math.max(0, Math.min(newCropArea.x, imageSize.width - newCropArea.width));
+      newCropArea.y = Math.max(0, Math.min(newCropArea.y, imageSize.height - newCropArea.height));
+      newCropArea.width = Math.min(newCropArea.width, imageSize.width - newCropArea.x);
+      newCropArea.height = Math.min(newCropArea.height, imageSize.height - newCropArea.y);
+      
+      setCropArea(newCropArea);
+      
+      if (event.preventDefault) event.preventDefault();
+    }
+  }, [isResizing, dragStart, activeResizeHandle, cropArea, aspectRatio, imageSize]);
+
+  // Add global event listeners for web dragging and resizing
+  React.useEffect(() => {
+    if (Platform.OS === 'web' && (isDragging || isResizing) && typeof document !== 'undefined') {
+      const handlePointerMove = (e: PointerEvent) => {
+        if (isResizing) {
+          handleResizeMove(e);
+        } else if (isDragging) {
+          handleDragMove(e);
+        }
+      };
+      const handlePointerUp = () => handleDragEnd();
+      const handleMouseMove = (e: MouseEvent) => {
+        if (isResizing) {
+          handleResizeMove(e);
+        } else if (isDragging) {
+          handleDragMove(e);
+        }
+      };
+      const handleMouseUp = () => handleDragEnd();
+
+      document.addEventListener('pointermove', handlePointerMove);
+      document.addEventListener('pointerup', handlePointerUp);
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+
+      return () => {
+        document.removeEventListener('pointermove', handlePointerMove);
+        document.removeEventListener('pointerup', handlePointerUp);
+        document.removeEventListener('mousemove', handleMouseMove);
+        document.removeEventListener('mouseup', handleMouseUp);
+      };
+    }
+  }, [isDragging, isResizing, handleDragMove, handleResizeMove]);
+
+  // Pan responder for mobile fallback
+  const panResponder = React.useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => Platform.OS !== 'web',
+      onMoveShouldSetPanResponder: () => Platform.OS !== 'web',
+      onPanResponderGrant: () => {
+        setIsDragging(true);
+      },
+      onPanResponderMove: (_, gesture) => {
+        // Calculate new position
+        const newX = cropArea.x + gesture.dx;
+        const newY = cropArea.y + gesture.dy;
+
+        // Constrain to image bounds
+        const constrainedX = Math.max(0, Math.min(newX, imageSize.width - cropArea.width));
+        const constrainedY = Math.max(0, Math.min(newY, imageSize.height - cropArea.height));
+
+        setCropArea((prev) => ({
+          ...prev,
+          x: constrainedX,
+          y: constrainedY,
+        }));
+      },
+      onPanResponderRelease: () => {
+        setIsDragging(false);
+        pan.flattenOffset();
+      },
+    })
+  ).current;
+
+  const handleSave = async () => {
+    if (processing) return;
+
+    if (!cropArea.width || !cropArea.height) {
+      onError('Invalid crop area. Please try again.');
+      return;
     }
 
     setProcessing(true);
 
     try {
-      const image = imgRef.current;
-      console.log('Image details:', {
-        naturalWidth: image.naturalWidth,
-        naturalHeight: image.naturalHeight,
-        displayWidth: image.width,
-        displayHeight: image.height,
-        cropToUse
-      });
+      console.log('Cropping image with area:', cropArea);
 
-      // Validate that we have valid crop data
-      if (!cropToUse.width || !cropToUse.height || cropToUse.width <= 0 || cropToUse.height <= 0) {
-        throw new Error('Invalid crop dimensions');
-      }
-
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d');
-
-      if (!ctx) {
-        throw new Error('Unable to create canvas context');
-      }
-
-      // Convert percentage crop to pixel crop
-      const pixelCrop = convertToPixelCrop(
-        cropToUse,
-        image.naturalWidth,
-        image.naturalHeight,
+      // Use Expo ImageManipulator to crop the image
+      const result = await ImageManipulator.manipulateAsync(
+        imageUri,
+        [
+          {
+            crop: {
+              originX: Math.max(0, Math.round(cropArea.x)),
+              originY: Math.max(0, Math.round(cropArea.y)),
+              width: Math.round(cropArea.width),
+              height: Math.round(cropArea.height),
+            },
+          },
+        ],
+        {
+          compress: 0.9,
+          format: ImageManipulator.SaveFormat.JPEG,
+        }
       );
 
-      console.log('Converted pixel crop:', pixelCrop);
+      console.log('Image cropped successfully:', result.uri);
 
-      // Validate pixel crop
-      if (pixelCrop.width <= 0 || pixelCrop.height <= 0) {
-        throw new Error('Invalid pixel crop dimensions');
-      }
+      // On web, ImageManipulator returns a file:// URI that browsers can't access
+      // We need to get the image data and create a proper blob URL
+      if (Platform.OS === 'web') {
+        try {
+          // On web, get the base64 data by reading the result with base64 format
+          const base64Result = await ImageManipulator.manipulateAsync(
+            result.uri,
+            [],
+            {
+              compress: 0.9,
+              format: ImageManipulator.SaveFormat.JPEG,
+              base64: true,
+            }
+          );
 
-      // Set canvas size to crop size
-      canvas.width = pixelCrop.width;
-      canvas.height = pixelCrop.height;
+          if (base64Result.base64) {
+            // Convert base64 to blob
+            const byteCharacters = atob(base64Result.base64);
+            const byteNumbers = new Array(byteCharacters.length);
+            for (let i = 0; i < byteCharacters.length; i++) {
+              byteNumbers[i] = byteCharacters.charCodeAt(i);
+            }
+            const byteArray = new Uint8Array(byteNumbers);
+            const blob = new Blob([byteArray], { type: 'image/jpeg' });
 
-      console.log('Canvas size set to:', { width: canvas.width, height: canvas.height });
-
-      // Draw the cropped image
-      ctx.drawImage(
-        image,
-        pixelCrop.x,
-        pixelCrop.y,
-        pixelCrop.width,
-        pixelCrop.height,
-        0,
-        0,
-        pixelCrop.width,
-        pixelCrop.height,
-      );
-
-      console.log('Image drawn on canvas');
-
-      return new Promise<File>((resolve, reject) => {
-        canvas.toBlob((blob) => {
-          if (!blob) {
-            console.error('Failed to create blob from canvas');
-            reject(new Error('Failed to create image blob from canvas'));
-            return;
+            // Create a blob URL that the browser can access
+            const blobUrl = URL.createObjectURL(blob);
+            console.log('Converted to blob URL:', blobUrl);
+            onCropComplete(blobUrl);
+          } else {
+            throw new Error('Failed to get base64 data from ImageManipulator');
           }
-          const file = new File([blob], 'cropped-avatar.jpg', { 
-            type: 'image/jpeg',
-            lastModified: Date.now()
-          });
-          console.log('Created cropped file:', { name: file.name, size: file.size, type: file.type });
-          resolve(file);
-        }, 'image/jpeg', 0.9);
-      });
-    } catch (error) {
+        } catch (blobError: any) {
+          console.error('Error converting to blob:', blobError);
+          onError('Failed to process cropped image. Please try again.');
+          return;
+        }
+      } else {
+        // On native, use the URI directly
+        onCropComplete(result.uri);
+      }
+
+      onClose();
+    } catch (error: any) {
       console.error('Error cropping image:', error);
-      throw error;
+      onError(error.message || 'Failed to crop image');
     } finally {
       setProcessing(false);
     }
-  }, [completedCrop, crop]);
-
-  const handleSave = async () => {
-    console.log('handleSave called', { completedCrop, processing });
-
-    if (processing) {
-      console.log('Already processing, ignoring click');
-      return;
-    }
-
-    // If we don't have a completed crop but we have a current crop, use that
-    let cropToUse = completedCrop;
-    if (!cropToUse && crop) {
-      console.log('No completed crop, using current crop');
-      cropToUse = crop;
-      setCompletedCrop(crop);
-    }
-
-    if (!cropToUse) {
-      console.error('No crop available');
-      onError('Please select a crop area by dragging on the image');
-      return;
-    }
-
-    console.log('Starting crop save process with crop:', cropToUse);
-
-    try {
-      const result = await getCroppedImage();
-      if (result) {
-        console.log('Successfully cropped image, calling onCropComplete');
-        onCropComplete(result);
-        onClose();
-      } else {
-        console.error('getCroppedImage returned null');
-        onError('Failed to crop image - no result returned');
-      }
-    } catch (error: any) {
-      console.error('Error in handleSave:', error);
-      onError(error.message || 'Failed to process image');
-    }
   };
 
-  if (Platform.OS !== 'web' || !ReactCrop) {
-    return null;
-  }
+  // Adjust crop size
+  const adjustCropSize = (delta: number) => {
+    setCropArea((prev) => {
+      const newSize = Math.max(50, Math.min(imageSize.width, imageSize.height, prev.width + delta));
+      const newWidth = aspectRatio >= 1 ? newSize : newSize * aspectRatio;
+      const newHeight = aspectRatio >= 1 ? newSize / aspectRatio : newSize;
+
+      // Keep centered
+      return {
+        ...prev,
+        width: newWidth,
+        height: newHeight,
+        x: Math.max(0, Math.min(prev.x, imageSize.width - newWidth)),
+        y: Math.max(0, Math.min(prev.y, imageSize.height - newHeight)),
+      };
+    });
+  };
 
   if (!visible) return null;
 
   const modalContent = (
-    <div style={{
-      position: 'fixed',
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      backgroundColor: 'rgba(0, 0, 0, 0.8)',
-      display: 'flex',
-      justifyContent: 'center',
-      alignItems: 'center',
-      zIndex: 2147483647
-    }}>
-      <div style={{
-        backgroundColor: colors.background,
-        borderRadius: 16,
-        padding: 20,
-        maxWidth: 600,
-        width: '90%',
-        maxHeight: '90%',
-        overflow: 'auto'
-      }}>
-          <div style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            marginBottom: 20
-          }}>
-            <h2 style={{
-              fontSize: 20,
-              fontWeight: 'bold',
-              color: colors.text,
-              margin: 0
-            }}>
-              Crop Profile Picture
-            </h2>
-            <button
-              onClick={onClose}
-              style={{
-                background: 'none',
-                border: 'none',
-                padding: 8,
-                cursor: 'pointer',
-                color: colors.text,
-                fontSize: 20
-              }}
-            >
-              ✕
-            </button>
-          </div>
+    <View style={[styles.overlay, Platform.OS === 'web' && styles.webOverlay]}>
+      <View style={[styles.container, { backgroundColor: colors.background }]}>
+        <View style={styles.header}>
+          <Text style={[styles.title, { color: colors.text }]}>{title}</Text>
+          <TouchableOpacity onPress={onClose} style={styles.closeButton} disabled={processing}>
+            <Text style={[styles.closeText, { color: colors.text }]}>✕</Text>
+          </TouchableOpacity>
+        </View>
 
-          <p style={{
-            fontSize: 14,
-            color: colors.icon,
-            textAlign: 'center',
-            marginBottom: 16
-          }}>
-            Drag to adjust the crop area. The image will be cropped to a square for your profile picture.
-          </p>
+        <Text style={[styles.description, { color: colors.icon }]}>{description}</Text>
 
-          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 20 }}>
-            {ReactCrop ? (
-              <ReactCrop
-                crop={crop}
-                onChange={(newCrop: any, percentCrop: any) => {
-                  console.log('Crop changed:', { newCrop, percentCrop });
-                  setCrop(percentCrop);
-                }}
-                onComplete={(c: any, percentCrop: any) => {
-                  console.log('Crop completed:', { c, percentCrop });
-                  // Make sure we always have a valid completed crop
-                  if (percentCrop && percentCrop.width > 0 && percentCrop.height > 0) {
-                    setCompletedCrop(percentCrop);
-                  } else if (c && c.width > 0 && c.height > 0) {
-                    setCompletedCrop(c);
-                  }
-                }}
-                aspect={1}
-                minWidth={50}
-                minHeight={50}
-                circularCrop={false}
-                ruleOfThirds={true}
-                style={{
-                  maxWidth: '100%',
-                  maxHeight: '400px',
-                }}
-              >
-                <img
-                  ref={imgRef}
-                  alt="Crop preview"
-                  src={imageUri}
+        <View style={styles.imageContainer}>
+          <Image
+            ref={imageRef}
+            source={{ uri: imageUri }}
+            style={styles.image}
+            onLoad={onImageLoad}
+            resizeMode="contain"
+          />
+
+          {/* Dark overlay outside crop area */}
+          {cropArea.width > 0 && (
+            <View style={styles.overlayContainer} pointerEvents="none">
+              {/* Top dark area */}
+              <View
+                style={[
+                  styles.darkOverlay,
+                  {
+                    height: cropArea.y,
+                    width: '100%',
+                  },
+                ]}
+              />
+
+              {/* Middle row with left, crop area, and right */}
+              <View style={[styles.middleRow, { height: cropArea.height }]}>
+                <View style={[styles.darkOverlay, { width: cropArea.x }]} />
+
+                {/* Crop area with grid */}
+                <View
                   style={{
-                    maxWidth: '100%',
-                    maxHeight: '400px',
-                    display: 'block',
+                    width: cropArea.width,
+                    height: cropArea.height,
                   }}
-                  onLoad={onImageLoad}
-                  onError={(e) => {
-                    console.error('Image failed to load:', e);
-                    onError('Failed to load image for cropping');
-                  }}
-                />
-              </ReactCrop>
-            ) : (
-              <div style={{ 
-                padding: 20, 
-                textAlign: 'center', 
-                color: '#ff0000',
-                border: '2px dashed #ff0000',
-                borderRadius: 8,
-                backgroundColor: '#fff5f5'
-              }}>
-                <p>ReactCrop component not loaded.</p>
-                <p>Make sure react-image-crop is installed:</p>
-                <code>npm install react-image-crop</code>
-              </div>
-            )}
-          </div>
+                >
+                  {/* Rule of thirds grid */}
+                  <View style={styles.gridContainer}>
+                    {/* Vertical lines */}
+                    <View style={[styles.gridLine, styles.gridLineVertical, { left: cropArea.width / 3 }]} />
+                    <View style={[styles.gridLine, styles.gridLineVertical, { left: (cropArea.width * 2) / 3 }]} />
+                    {/* Horizontal lines */}
+                    <View style={[styles.gridLine, styles.gridLineHorizontal, { top: cropArea.height / 3 }]} />
+                    <View style={[styles.gridLine, styles.gridLineHorizontal, { top: (cropArea.height * 2) / 3 }]} />
+                  </View>
 
-          <div style={{
-            display: 'flex',
-            justifyContent: 'flex-end',
-            gap: 12,
-            marginTop: 20
-          }}>
-            <button
-              onClick={onClose}
-              disabled={processing}
-              style={{
-                paddingLeft: 20,
-                paddingRight: 20,
-                paddingTop: 10,
-                paddingBottom: 10,
-                borderRadius: 8,
-                backgroundColor: 'transparent',
-                border: `1px solid ${colors.border}`,
-                color: colors.text,
-                fontSize: 16,
-                fontWeight: '600',
-                cursor: processing ? 'not-allowed' : 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: 8
-              }}
-            >
-              ✕ Cancel
-            </button>
+                  {/* Border */}
+                  <View style={[styles.cropBorder, { borderColor: colors.tint }]} />
 
-            <button
-              onClick={handleSave}
-              disabled={processing || !completedCrop}
-              style={{
-                paddingLeft: 20,
-                paddingRight: 20,
-                paddingTop: 10,
-                paddingBottom: 10,
-                borderRadius: 8,
-                backgroundColor: colors.tint,
-                border: 'none',
-                color: 'white',
-                fontSize: 16,
-                fontWeight: '600',
-                cursor: (processing || !completedCrop) ? 'not-allowed' : 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: 8,
-                opacity: (processing || !completedCrop) ? 0.6 : 1
-              }}
-            >
+                  {/* Interactive corner handles */}
+                  <TouchableOpacity
+                    {...(Platform.OS === 'web' 
+                      ? {
+                          onPointerDown: (e: any) => handleResizeStart(e, 'topLeft'),
+                          onTouchStart: (e: any) => handleResizeStart(e, 'topLeft'),
+                          style: {
+                            ...styles.cornerHandle,
+                            ...styles.topLeft,
+                            borderColor: colors.tint,
+                            touchAction: 'none',
+                            userSelect: 'none',
+                            cursor: 'nw-resize',
+                          } as any,
+                        }
+                      : {
+                          style: [styles.cornerHandle, styles.topLeft, { borderColor: colors.tint }]
+                        }
+                    )}
+                  />
+                  <TouchableOpacity
+                    {...(Platform.OS === 'web' 
+                      ? {
+                          onPointerDown: (e: any) => handleResizeStart(e, 'topRight'),
+                          onTouchStart: (e: any) => handleResizeStart(e, 'topRight'),
+                          style: {
+                            ...styles.cornerHandle,
+                            ...styles.topRight,
+                            borderColor: colors.tint,
+                            touchAction: 'none',
+                            userSelect: 'none',
+                            cursor: 'ne-resize',
+                          } as any,
+                        }
+                      : {
+                          style: [styles.cornerHandle, styles.topRight, { borderColor: colors.tint }]
+                        }
+                    )}
+                  />
+                  <TouchableOpacity
+                    {...(Platform.OS === 'web' 
+                      ? {
+                          onPointerDown: (e: any) => handleResizeStart(e, 'bottomLeft'),
+                          onTouchStart: (e: any) => handleResizeStart(e, 'bottomLeft'),
+                          style: {
+                            ...styles.cornerHandle,
+                            ...styles.bottomLeft,
+                            borderColor: colors.tint,
+                            touchAction: 'none',
+                            userSelect: 'none',
+                            cursor: 'sw-resize',
+                          } as any,
+                        }
+                      : {
+                          style: [styles.cornerHandle, styles.bottomLeft, { borderColor: colors.tint }]
+                        }
+                    )}
+                  />
+                  <TouchableOpacity
+                    {...(Platform.OS === 'web' 
+                      ? {
+                          onPointerDown: (e: any) => handleResizeStart(e, 'bottomRight'),
+                          onTouchStart: (e: any) => handleResizeStart(e, 'bottomRight'),
+                          style: {
+                            ...styles.cornerHandle,
+                            ...styles.bottomRight,
+                            borderColor: colors.tint,
+                            touchAction: 'none',
+                            userSelect: 'none',
+                            cursor: 'se-resize',
+                          } as any,
+                        }
+                      : {
+                          style: [styles.cornerHandle, styles.bottomRight, { borderColor: colors.tint }]
+                        }
+                    )}
+                  />
+
+                  {/* Edge handles for better resizing */}
+                  <TouchableOpacity
+                    {...(Platform.OS === 'web' 
+                      ? {
+                          onPointerDown: (e: any) => handleResizeStart(e, 'top'),
+                          onTouchStart: (e: any) => handleResizeStart(e, 'top'),
+                          style: {
+                            ...styles.edgeHandle,
+                            ...styles.topEdge,
+                            touchAction: 'none',
+                            userSelect: 'none',
+                            cursor: 'n-resize',
+                          } as any,
+                        }
+                      : {
+                          style: [styles.edgeHandle, styles.topEdge]
+                        }
+                    )}
+                  />
+                  <TouchableOpacity
+                    {...(Platform.OS === 'web' 
+                      ? {
+                          onPointerDown: (e: any) => handleResizeStart(e, 'right'),
+                          onTouchStart: (e: any) => handleResizeStart(e, 'right'),
+                          style: {
+                            ...styles.edgeHandle,
+                            ...styles.rightEdge,
+                            touchAction: 'none',
+                            userSelect: 'none',
+                            cursor: 'e-resize',
+                          } as any,
+                        }
+                      : {
+                          style: [styles.edgeHandle, styles.rightEdge]
+                        }
+                    )}
+                  />
+                  <TouchableOpacity
+                    {...(Platform.OS === 'web' 
+                      ? {
+                          onPointerDown: (e: any) => handleResizeStart(e, 'bottom'),
+                          onTouchStart: (e: any) => handleResizeStart(e, 'bottom'),
+                          style: {
+                            ...styles.edgeHandle,
+                            ...styles.bottomEdge,
+                            touchAction: 'none',
+                            userSelect: 'none',
+                            cursor: 's-resize',
+                          } as any,
+                        }
+                      : {
+                          style: [styles.edgeHandle, styles.bottomEdge]
+                        }
+                    )}
+                  />
+                  <TouchableOpacity
+                    {...(Platform.OS === 'web' 
+                      ? {
+                          onPointerDown: (e: any) => handleResizeStart(e, 'left'),
+                          onTouchStart: (e: any) => handleResizeStart(e, 'left'),
+                          style: {
+                            ...styles.edgeHandle,
+                            ...styles.leftEdge,
+                            touchAction: 'none',
+                            userSelect: 'none',
+                            cursor: 'w-resize',
+                          } as any,
+                        }
+                      : {
+                          style: [styles.edgeHandle, styles.leftEdge]
+                        }
+                    )}
+                  />
+                </View>
+
+                <View style={[styles.darkOverlay, { flex: 1 }]} />
+              </View>
+
+              {/* Bottom dark area */}
+              <View style={[styles.darkOverlay, { flex: 1 }]} />
+            </View>
+          )}
+
+          {/* Draggable overlay */}
+          {cropArea.width > 0 && (
+            <View
+              style={[
+                styles.draggableArea,
+                {
+                  left: cropArea.x,
+                  top: cropArea.y,
+                  width: cropArea.width,
+                  height: cropArea.height,
+                },
+              ]}
+              {...(Platform.OS === 'web' 
+                ? {
+                    onPointerDown: handleDragStart,
+                    onTouchStart: handleDragStart,
+                    style: {
+                      touchAction: 'none',
+                      userSelect: 'none',
+                    } as any,
+                  }
+                : panResponder.panHandlers
+              )}
+            />
+          )}
+        </View>
+
+        {/* Controls */}
+        <View style={styles.controls}>
+          <TouchableOpacity
+            onPress={() => adjustCropSize(-20)}
+            style={[styles.controlButton, { backgroundColor: colors.backgroundSecondary }]}
+            disabled={processing}
+          >
+            <Text style={[styles.controlText, { color: colors.text }]}>−</Text>
+          </TouchableOpacity>
+          <Text style={[styles.controlLabel, { color: colors.textSecondary }]}>
+            Drag to move • +/− to resize
+          </Text>
+          <TouchableOpacity
+            onPress={() => adjustCropSize(20)}
+            style={[styles.controlButton, { backgroundColor: colors.backgroundSecondary }]}
+            disabled={processing}
+          >
+            <Text style={[styles.controlText, { color: colors.text }]}>+</Text>
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.actions}>
+          <TouchableOpacity
+            onPress={onClose}
+            disabled={processing}
+            style={[
+              styles.button,
+              styles.cancelButton,
+              { borderColor: colors.border },
+              processing && styles.disabledButton,
+            ]}
+          >
+            <Text style={[styles.buttonText, { color: colors.text }]}>✕ Cancel</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            onPress={handleSave}
+            disabled={processing}
+            style={[
+              styles.button,
+              styles.saveButton,
+              { backgroundColor: colors.tint },
+              processing && styles.disabledButton,
+            ]}
+          >
+            <Text style={[styles.buttonText, styles.saveButtonText]}>
               {processing ? '⏳ Processing...' : '✓ Save'}
-            </button>
-          </div>
-      </div>
-    </div>
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </View>
   );
 
-  // Use createPortal if available to render outside the current component tree
-  if (createPortal && typeof document !== 'undefined') {
+  // On web, use portal if available
+  if (Platform.OS === 'web' && createPortal && typeof document !== 'undefined') {
     return createPortal(modalContent, document.body);
   }
 
-  // Fallback to normal rendering
-  return modalContent;
+  // Fallback
+  return (
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+      {modalContent}
+    </Modal>
+  );
 };
+
+const styles = StyleSheet.create({
+  overlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  webOverlay: {
+    ...(Platform.OS === 'web'
+      ? {
+          position: 'fixed' as any,
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          zIndex: 2147483647,
+        }
+      : {}),
+  },
+  container: {
+    borderRadius: 16,
+    padding: 20,
+    maxWidth: 600,
+    width: '100%',
+    maxHeight: '90%',
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  title: {
+    fontSize: 20,
+    fontWeight: 'bold',
+  },
+  closeButton: {
+    padding: 8,
+  },
+  closeText: {
+    fontSize: 20,
+  },
+  description: {
+    fontSize: 14,
+    textAlign: 'center',
+    marginBottom: 16,
+  },
+  imageContainer: {
+    position: 'relative',
+    width: '100%',
+    height: 300,
+    marginBottom: 16,
+    overflow: 'hidden',
+    borderRadius: 8,
+  },
+  image: {
+    width: '100%',
+    height: '100%',
+  },
+  overlayContainer: {
+    ...StyleSheet.absoluteFillObject,
+    flexDirection: 'column',
+  },
+  middleRow: {
+    flexDirection: 'row',
+  },
+  darkOverlay: {
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+  },
+  gridContainer: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  gridLine: {
+    position: 'absolute',
+    backgroundColor: 'rgba(255, 255, 255, 0.5)',
+  },
+  gridLineVertical: {
+    width: 1,
+    height: '100%',
+  },
+  gridLineHorizontal: {
+    height: 1,
+    width: '100%',
+  },
+  cropBorder: {
+    ...StyleSheet.absoluteFillObject,
+    borderWidth: 2,
+    borderStyle: 'solid',
+  },
+  cornerHandle: {
+    position: 'absolute',
+    width: 20,
+    height: 20,
+    borderWidth: 3,
+    backgroundColor: 'white',
+  },
+  topLeft: {
+    top: -2,
+    left: -2,
+    borderRightWidth: 0,
+    borderBottomWidth: 0,
+  },
+  topRight: {
+    top: -2,
+    right: -2,
+    borderLeftWidth: 0,
+    borderBottomWidth: 0,
+  },
+  bottomLeft: {
+    bottom: -2,
+    left: -2,
+    borderRightWidth: 0,
+    borderTopWidth: 0,
+  },
+  bottomRight: {
+    bottom: -2,
+    right: -2,
+    borderLeftWidth: 0,
+    borderTopWidth: 0,
+  },
+  draggableArea: {
+    position: 'absolute',
+    cursor: 'move' as any,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderWidth: 2,
+    borderColor: 'rgba(255, 255, 255, 0.8)',
+    borderStyle: 'dashed',
+  },
+  controls: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 16,
+    marginBottom: 20,
+  },
+  controlButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  controlText: {
+    fontSize: 24,
+    fontWeight: 'bold',
+  },
+  controlLabel: {
+    fontSize: 14,
+  },
+  actions: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: 12,
+  },
+  button: {
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  cancelButton: {
+    backgroundColor: 'transparent',
+    borderWidth: 1,
+  },
+  saveButton: {
+    borderWidth: 0,
+  },
+  buttonText: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  saveButtonText: {
+    color: 'white',
+  },
+  disabledButton: {
+    opacity: 0.6,
+  },
+  // Edge handle styles for resizing
+  edgeHandle: {
+    position: 'absolute',
+    backgroundColor: 'rgba(255, 255, 255, 0.8)',
+    borderWidth: 1,
+    borderColor: 'rgba(0, 0, 0, 0.3)',
+    borderRadius: 3,
+  },
+  topEdge: {
+    top: -3,
+    left: '50%',
+    marginLeft: -10,
+    width: 20,
+    height: 6,
+  },
+  rightEdge: {
+    right: -3,
+    top: '50%',
+    marginTop: -10,
+    width: 6,
+    height: 20,
+  },
+  bottomEdge: {
+    bottom: -3,
+    left: '50%',
+    marginLeft: -10,
+    width: 20,
+    height: 6,
+  },
+  leftEdge: {
+    left: -3,
+    top: '50%',
+    marginTop: -10,
+    width: 6,
+    height: 20,
+  },
+});

@@ -142,7 +142,7 @@ export default function EditMileageLogScreen() {
       Alert.alert('Success', 'Mileage log updated successfully', [
         {
           text: 'OK',
-          onPress: () => router.back(),
+          onPress: () => router.push('/(tabs)/logs'),
         },
       ]);
     }
