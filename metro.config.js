@@ -11,11 +11,14 @@ if (isWebBuild) {
   // For web builds, skip NativeWind to avoid lightningcss binary issues
   console.log('Building for web - skipping NativeWind metro plugin');
   
-  // Configure resolver to alias global.css to global.web.css for web builds
-  config.resolver.alias = {
-    ...config.resolver.alias,
-    './global.css': './global.web.css',
-    '../global.css': '../global.web.css'
+  // Configure resolver to alias global.css to a safe CSS file for web builds
+  config.resolver = {
+    ...config.resolver,
+    alias: {
+      ...config.resolver.alias,
+      '../global.css': './global.empty.css',
+      './global.css': './global.empty.css'
+    }
   };
   
   module.exports = config;
