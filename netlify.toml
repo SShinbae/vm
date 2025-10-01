@@ -1,5 +1,5 @@
 [build]
-  command = "rm -f package-lock.json && npm install && npm rebuild lightningcss && npm run build"
+  command = "rm -f package-lock.json && npm install && npm rebuild lightningcss && npm run build && npm install --force lightningcss"
   publish = "dist"
 
 [build.environment]
