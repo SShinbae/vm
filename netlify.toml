@@ -1,11 +1,13 @@
 [build]
-  command = "rm -f package-lock.json && npm install && npm rebuild lightningcss && npm run build && npm install --force lightningcss"
+  command = "rm -f package-lock.json && npm install --force lightningcss && npm install && npm run build"
   publish = "dist"
 
 [build.environment]
   NODE_VERSION = "20"
   EXPO_PLATFORM = "web"
   NPM_FLAGS = "--include=optional"
+  EXPO_USE_FAST_RESOLVER = "1"
+  USE_SIMPLE_CSS_MINIFIER = "1"
 
 [[redirects]]
   from = "/*"
