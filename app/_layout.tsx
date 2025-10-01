@@ -1,19 +1,19 @@
 import { DarkTheme, DefaultTheme, ThemeProvider as NavigationThemeProvider } from '@react-navigation/native';
-import { Stack } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
-import * as SplashScreen from 'expo-splash-screen';
 import { useFonts } from 'expo-font';
-import { useEffect, useCallback } from 'react';
+import { Stack } from 'expo-router';
+import * as SplashScreen from 'expo-splash-screen';
+import { StatusBar } from 'expo-status-bar';
+import { useCallback, useEffect } from 'react';
 import 'react-native-reanimated';
 import '../global.css';
 
-import { useColorScheme } from '@/hooks/use-color-scheme';
-import { AuthProvider } from '@/lib/contexts/AuthContext';
-import { ThemeProvider } from '@/lib/contexts/ThemeContext';
-import { NotificationProvider } from '@/lib/contexts/NotificationContext';
-import { DialogProvider } from '@/lib/contexts/DialogContext';
 import { AuthGuard } from '@/components/AuthGuard';
 import { NotificationManager } from '@/components/ui/NotificationManager';
+import { useColorScheme } from '@/hooks/use-color-scheme';
+import { AuthProvider } from '@/lib/contexts/AuthContext';
+import { DialogProvider } from '@/lib/contexts/DialogContext';
+import { NotificationProvider } from '@/lib/contexts/NotificationContext';
+import { ThemeProvider } from '@/lib/contexts/ThemeContext';
 import '@/lib/utils/testSupabase';
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.

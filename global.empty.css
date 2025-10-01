@@ -1,0 +1,40 @@
+/* Empty CSS file for web builds to avoid lightningcss issues */
+/* This file is imported when Platform.OS === 'web' */
+
+/* Theme Variables */
+:root {
+  --background-color: #FFFFFF;
+  --text-color: #1F2937;
+  --border-color: #E5E7EB;
+  --surface-color: #F8F9FA;
+}
+
+:root.dark {
+  --background-color: #222831;
+  --text-color: #F9FAFB;
+  --border-color: #4B5563;
+  --surface-color: #393E46;
+}
+
+/* Global theme support */
+html, body {
+  background-color: var(--background-color);
+  color: var(--text-color);
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+/* Basic utility classes to replace Tailwind */
+.flex { display: flex; }
+.flex-col { flex-direction: column; }
+.flex-row { flex-direction: row; }
+.items-center { align-items: center; }
+.justify-center { justify-content: center; }
+.justify-between { justify-content: space-between; }
+.w-full { width: 100%; }
+.h-full { height: 100%; }
+.p-4 { padding: 1rem; }
+.m-4 { margin: 1rem; }
+.text-center { text-align: center; }
+.rounded { border-radius: 0.25rem; }
+.bg-blue-500 { background-color: #3b82f6; }
+.text-white { color: white; }
