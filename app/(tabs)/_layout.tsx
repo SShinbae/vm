@@ -1,6 +1,6 @@
 import { Tabs } from 'expo-router';
-import React from 'react';
-import { View } from 'react-native';
+import React, { Suspense } from 'react';
+import { View, ActivityIndicator } from 'react-native';
 
 import { HapticTab } from '@/components/haptic-tab';
 import { WebSidebar } from '@/components/navigation/WebSidebar';

@@ -7,9 +7,9 @@ import {
   StyleSheet,
   Alert,
   ActivityIndicator,
-  Image,
   RefreshControl,
 } from 'react-native';
+import { Image } from 'expo-image';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { GroupService, GroupInvitationService } from '@/lib/services/groupService';
@@ -161,6 +161,9 @@ export default function GroupDetailScreen() {
           <Image
             source={{ uri: vehicle.main_image_url }}
             style={styles.vehicleImage}
+            contentFit="cover"
+            cachePolicy="memory-disk"
+            transition={200}
           />
         ) : (
           <View style={styles.vehicleIcon}>
@@ -218,9 +221,19 @@ export default function GroupDetailScreen() {
     return (
       <View style={styles.memberCard}>
         <View style={styles.memberHeader}>
-          <View style={styles.memberIcon}>
-            <IconSymbol name="person.fill" size={20} color="white" />
-          </View>
+          {member.profiles?.avatar_url ? (
+            <Image
+              source={{ uri: member.profiles.avatar_url }}
+              style={styles.memberAvatar}
+              contentFit="cover"
+              cachePolicy="memory-disk"
+              transition={200}
+            />
+          ) : (
+            <View style={styles.memberIcon}>
+              <IconSymbol name="person.fill" size={20} color="white" />
+            </View>
+          )}
           <View style={styles.memberInfo}>
             <View style={styles.memberTitleRow}>
               <Text style={styles.memberName}>
@@ -417,6 +430,13 @@ export default function GroupDetailScreen() {
       alignItems: 'center',
       justifyContent: 'center',
       marginRight: 12,
+    },
+    memberAvatar: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      marginRight: 12,
+      backgroundColor: colors.icon + '20',
     },
     memberInfo: {
       flex: 1,

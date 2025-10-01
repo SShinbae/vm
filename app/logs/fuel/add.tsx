@@ -20,6 +20,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { Image } from 'expo-image';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function AddFuelLogScreen() {
@@ -132,6 +133,7 @@ export default function AddFuelLogScreen() {
   const VehicleSelector = () => {
     const selectedVehicle = vehicles.find(v => v.id === formData.vehicle_id);
     const isLocked = !!vehicleId; // Lock when vehicleId is provided from navigation
+    const [imageError, setImageError] = React.useState(false);
 
     if (isLocked && selectedVehicle) {
       // Show locked single vehicle when navigated from vehicle detail
@@ -142,9 +144,20 @@ export default function AddFuelLogScreen() {
           </Text>
           <View style={styles.lockedVehicleContainer}>
             <View style={styles.lockedVehicle}>
-              <View style={styles.vehicleIcon}>
-                <IconSymbol name="car.fill" size={16} color="white" />
-              </View>
+              {selectedVehicle.main_image_url && !imageError ? (
+                <Image
+                  source={{ uri: selectedVehicle.main_image_url }}
+                  style={styles.vehicleIcon}
+                  contentFit="cover"
+                  cachePolicy="memory-disk"
+                  transition={200}
+                  onError={() => setImageError(true)}
+                />
+              ) : (
+                <View style={styles.vehicleIcon}>
+                  <IconSymbol name="car.fill" size={16} color="white" />
+                </View>
+              )}
               <View style={styles.lockedVehicleInfo}>
                 <Text style={styles.lockedVehicleText}>
                   {selectedVehicle.year} {selectedVehicle.make} {selectedVehicle.model}
@@ -177,32 +190,47 @@ export default function AddFuelLogScreen() {
           style={styles.vehicleSelector}
           contentContainerStyle={styles.vehicleSelectorContent}
         >
-          {vehicles.map((vehicle) => (
-            <TouchableOpacity
-              key={vehicle.id}
-              style={[
-                styles.vehicleOption,
-                formData.vehicle_id === vehicle.id && styles.vehicleOptionSelected,
-              ]}
-              onPress={() => setFormData(prev => ({ ...prev, vehicle_id: vehicle.id }))}
-            >
-              <View style={styles.vehicleIcon}>
-                <IconSymbol name="car.fill" size={16} color="white" />
-              </View>
-              <Text style={[
-                styles.vehicleOptionText,
-                formData.vehicle_id === vehicle.id && styles.vehicleOptionTextSelected,
-              ]}>
-                {vehicle.year} {vehicle.make}
-              </Text>
-              <Text style={[
-                styles.vehiclePlateText,
-                formData.vehicle_id === vehicle.id && styles.vehiclePlateTextSelected,
-              ]}>
-                {vehicle.license_plate}
-              </Text>
-            </TouchableOpacity>
-          ))}
+          {vehicles.map((vehicle) => {
+            const [vehicleImageError, setVehicleImageError] = React.useState(false);
+
+            return (
+              <TouchableOpacity
+                key={vehicle.id}
+                style={[
+                  styles.vehicleOption,
+                  formData.vehicle_id === vehicle.id && styles.vehicleOptionSelected,
+                ]}
+                onPress={() => setFormData(prev => ({ ...prev, vehicle_id: vehicle.id }))}
+              >
+                {vehicle.main_image_url && !vehicleImageError ? (
+                  <Image
+                    source={{ uri: vehicle.main_image_url }}
+                    style={styles.vehicleIcon}
+                    contentFit="cover"
+                    cachePolicy="memory-disk"
+                    transition={200}
+                    onError={() => setVehicleImageError(true)}
+                  />
+                ) : (
+                  <View style={styles.vehicleIcon}>
+                    <IconSymbol name="car.fill" size={16} color="white" />
+                  </View>
+                )}
+                <Text style={[
+                  styles.vehicleOptionText,
+                  formData.vehicle_id === vehicle.id && styles.vehicleOptionTextSelected,
+                ]}>
+                  {vehicle.year} {vehicle.make}
+                </Text>
+                <Text style={[
+                  styles.vehiclePlateText,
+                  formData.vehicle_id === vehicle.id && styles.vehiclePlateTextSelected,
+                ]}>
+                  {vehicle.license_plate}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
         </ScrollView>
       </View>
     );

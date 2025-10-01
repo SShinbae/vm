@@ -15,7 +15,6 @@ import { router } from 'expo-router';
 import React, { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
-  Image,
   RefreshControl,
   ScrollView,
   StyleSheet,
@@ -23,6 +22,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { Image } from 'expo-image';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function DashboardScreen() {
@@ -87,9 +87,11 @@ export default function DashboardScreen() {
             <Image
               source={{ uri: vehicle.main_image_url }}
               style={styles.vehicleImage}
-              resizeMode="cover"
+              contentFit="cover"
+              cachePolicy="memory-disk"
+              transition={200}
               onError={(error) => {
-                console.error('Dashboard - Image load error for vehicle:', vehicle.id, error.nativeEvent);
+                console.error('Dashboard - Image load error for vehicle:', vehicle.id, error);
                 console.log('Dashboard - Failed URL:', vehicle.main_image_url);
                 setImageError(true);
               }}

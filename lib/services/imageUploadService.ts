@@ -51,22 +51,38 @@ export class ImageUploadService {
    */
   static async uploadProfileAvatar(file: File): Promise<ApiResponse<string>> {
     try {
+      console.log('🚀 Starting avatar upload process...');
+      console.log('📄 File details:', {
+        name: file.name,
+        size: file.size,
+        type: file.type,
+        lastModified: file.lastModified
+      });
+
       const { data: { user }, error: userError } = await supabase.auth.getUser();
 
       if (userError || !user) {
+        console.error('❌ User authentication failed:', userError);
         return { data: null, error: 'User not authenticated', loading: false };
       }
+
+      console.log('✅ User authenticated:', user.id);
 
       // Validate file
       const validation = this.validateImageFile(file);
       if (!validation.isValid) {
+        console.error('❌ File validation failed:', validation.error);
         return { data: null, error: validation.error!, loading: false };
       }
 
+      console.log('✅ File validation passed');
+
       // Generate filename
       const fileName = this.generateFileName(user.id, 'avatar', file.name);
+      console.log('📝 Generated filename:', fileName);
 
       // Upload to storage
+      console.log('📤 Uploading to Supabase storage...');
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from('profile-avatars')
         .upload(fileName, file, {
@@ -75,33 +91,43 @@ export class ImageUploadService {
         });
 
       if (uploadError) {
-        console.error('Error uploading avatar:', uploadError);
+        console.error('❌ Storage upload failed:', uploadError);
+        console.error('   Error details:', {
+          message: uploadError.message,
+          statusCode: (uploadError as any).statusCode,
+          error: (uploadError as any).error
+        });
         return { data: null, error: uploadError.message, loading: false };
       }
+
+      console.log('✅ Storage upload successful:', uploadData);
 
       // Get public URL
       const { data: urlData } = supabase.storage
         .from('profile-avatars')
         .getPublicUrl(fileName);
 
+      console.log('🔗 Generated public URL:', urlData.publicUrl);
+
       // Update user profile with new avatar URL
+      console.log('💾 Updating profile in database...');
       const { error: updateError } = await supabase
         .from('profiles')
         .update({ avatar_url: urlData.publicUrl })
         .eq('id', user.id);
 
       if (updateError) {
-        console.error('Error updating profile:', updateError);
+        console.error('❌ Profile update failed:', updateError);
         // Try to cleanup uploaded file
         await supabase.storage.from('profile-avatars').remove([fileName]);
         return { data: null, error: updateError.message, loading: false };
       }
 
-      console.log('✅ Avatar uploaded successfully:', urlData.publicUrl);
+      console.log('✅ Avatar upload complete! URL:', urlData.publicUrl);
       return { data: urlData.publicUrl, error: null, loading: false };
 
     } catch (error) {
-      console.error('Unexpected error uploading avatar:', error);
+      console.error('💥 Unexpected error uploading avatar:', error);
       return { data: null, error: 'Failed to upload avatar', loading: false };
     }
   }

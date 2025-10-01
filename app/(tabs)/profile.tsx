@@ -1,11 +1,11 @@
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { ImageUpload } from '@/components/ui/ImageUpload';
 import { Modal } from '@/components/ui/Modal';
+import { NotificationBell } from '@/components/ui/NotificationBell';
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useAuth } from '@/lib/contexts/AuthContext';
 import { useTheme } from '@/lib/contexts/ThemeContext';
-import { NotificationBell } from '@/components/ui/NotificationBell';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router } from 'expo-router';
 import React, { useEffect, useState } from 'react';
@@ -22,6 +22,7 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { supabase } from '../../services/supabaseClient';
 
 export default function ProfileScreen() {
   const { user, updateProfile, signOut } = useAuth();
@@ -91,7 +92,8 @@ export default function ProfileScreen() {
     setLoading(true);
     const { error } = await updateProfile({
       full_name: fullName.trim(),
-      username: username.trim() || null
+      username: username.trim() || null,
+      avatar_url: avatarUrl
     });
     setLoading(false);
 
@@ -108,8 +110,23 @@ export default function ProfileScreen() {
   };
 
   const handleAvatarUpload = (imageUrl: string) => {
-    setAvatarUrl(imageUrl);
+    console.log('🖼️ handleAvatarUpload called with URL:', imageUrl);
     // Avatar is automatically saved to the database by ImageUpload component
+    // Update local state immediately for instant preview
+    setAvatarUrl(imageUrl);
+
+    // Trigger AuthContext to refresh user profile from database in the background
+    // This ensures the user context has the latest avatar_url
+    console.log('🔄 Updating profile in AuthContext (background)...');
+    updateProfile({
+      full_name: user?.profile?.full_name || '',
+      username: user?.profile?.username || null,
+      avatar_url: imageUrl
+    }).then(result => {
+      console.log('✅ Profile update complete:', result);
+    }).catch(error => {
+      console.error('❌ Profile update failed:', error);
+    });
   };
 
   const handleAvatarError = (error: string) => {

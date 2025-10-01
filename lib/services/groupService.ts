@@ -147,7 +147,7 @@ export class GroupService {
         const memberUserIds = members.map(m => m.user_id);
         const { data: profiles, error: profilesError } = await supabase
           .from('profiles')
-          .select('id, email, full_name')
+          .select('id, email, full_name, avatar_url')
           .in('id', memberUserIds);
 
         if (profilesError) {

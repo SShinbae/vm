@@ -29,8 +29,11 @@ export default {
       favicon: './assets/images/favicon.png',
       bundler: 'metro',
       name: 'Vehicle Management System',
+      shortName: 'Vehicle Manager',
       description: 'Comprehensive vehicle management and maintenance tracking system',
       lang: 'en',
+      themeColor: '#E6F4FE',
+      backgroundColor: '#ffffff',
     },
     plugins: [
       'expo-router',
