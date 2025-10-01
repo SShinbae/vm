@@ -27,7 +27,7 @@ export class MileageLogService {
         .from('mileage_logs')
         .select(`
           *,
-          vehicles!inner(make, model, year, license_plate, user_id)
+          vehicles!inner(make, model, year, license_plate, user_id, main_image_url)
         `)
         .eq('vehicles.user_id', user.id)
         .order('date', { ascending: false });
@@ -70,7 +70,7 @@ export class MileageLogService {
           .from('mileage_logs')
           .select(`
             *,
-            vehicles!inner(make, model, year, license_plate, user_id)
+            vehicles!inner(make, model, year, license_plate, user_id, main_image_url)
           `)
           .in('vehicle_id', sharedVehicleIds)
           .order('date', { ascending: false })
@@ -324,7 +324,7 @@ export class FuelLogService {
         .from('fuel_logs')
         .select(`
           *,
-          vehicles!inner(make, model, year, license_plate, user_id)
+          vehicles!inner(make, model, year, license_plate, user_id, main_image_url)
         `)
         .eq('vehicles.user_id', user.id)
         .order('date', { ascending: false });
@@ -367,7 +367,7 @@ export class FuelLogService {
           .from('fuel_logs')
           .select(`
             *,
-            vehicles!inner(make, model, year, license_plate, user_id)
+            vehicles!inner(make, model, year, license_plate, user_id, main_image_url)
           `)
           .in('vehicle_id', sharedVehicleIds)
           .order('date', { ascending: false })
@@ -610,7 +610,7 @@ export class ServiceLogService {
         .from('service_logs')
         .select(`
           *,
-          vehicles!inner(make, model, year, license_plate, user_id)
+          vehicles!inner(make, model, year, license_plate, user_id, main_image_url)
         `)
         .eq('vehicles.user_id', user.id)
         .order('date', { ascending: false });
@@ -653,7 +653,7 @@ export class ServiceLogService {
           .from('service_logs')
           .select(`
             *,
-            vehicles!inner(make, model, year, license_plate, user_id)
+            vehicles!inner(make, model, year, license_plate, user_id, main_image_url)
           `)
           .in('vehicle_id', sharedVehicleIds)
           .order('date', { ascending: false })

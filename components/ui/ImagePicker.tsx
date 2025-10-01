@@ -1,18 +1,20 @@
-import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  Image,
-  StyleSheet,
-  Platform,
-  Alert,
-  ActivityIndicator,
-} from 'react-native';
-import * as ExpoImagePicker from 'expo-image-picker';
-import { IconSymbol } from './icon-symbol';
+
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import * as ExpoImagePicker from 'expo-image-picker';
+import React, { useState } from 'react';
+import {
+  ActivityIndicator,
+  Alert,
+  Image,
+  Platform,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+import { IconSymbol } from './icon-symbol';
+import { ImageCropModal } from './ImageCropModal';
 
 interface ImagePickerProps {
   onImageSelected: (uri: string) => void;
@@ -23,6 +25,10 @@ interface ImagePickerProps {
   label?: string;
   placeholder?: string;
   onRemove?: () => void; // Optional custom remove handler
+  enableWebCropping?: boolean; // Enable crop modal on web
+  cropAspectRatio?: number; // Aspect ratio for cropping (width/height, e.g., 1 for square)
+  cropTitle?: string; // Title for crop modal
+  cropDescription?: string; // Description for crop modal
 }
 
 export function ImagePicker({
@@ -34,10 +40,19 @@ export function ImagePicker({
   label = 'Vehicle Photo',
   placeholder = 'Add a photo',
   onRemove,
+  enableWebCropping = true, // Enable cropping by default for vehicles
+  cropAspectRatio = 1, // Default to square crop for vehicles
+  cropTitle = 'Crop Vehicle Photo',
+  cropDescription = 'Drag to adjust the crop area. Use the corner handles to resize.',
 }: ImagePickerProps) {
   const [loading, setLoading] = useState(false);
+  const [showCropModal, setShowCropModal] = useState(false);
+  const [tempImageUri, setTempImageUri] = useState<string>('');
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
+  
+  // Ref for hidden file input on web
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   const requestPermissions = async () => {
     if (Platform.OS !== 'web') {
@@ -57,19 +72,29 @@ export function ImagePicker({
 
   const pickImageFromGallery = async () => {
     const hasPermission = await requestPermissions();
-    if (!hasPermission) return;
+    if (!hasPermission && Platform.OS !== 'web') return;
 
     setLoading(true);
     try {
+      if (Platform.OS === 'web') {
+        // On web, trigger file input
+        fileInputRef.current?.click();
+        setLoading(false);
+        return;
+      }
+
+      // On mobile, use expo-image-picker
       const result = await ExpoImagePicker.launchImageLibraryAsync({
         mediaTypes: 'images',
-        allowsEditing,
+        allowsEditing: allowsEditing, // Use editing for mobile
         aspect: aspectRatio,
         quality,
       });
 
       if (!result.canceled && result.assets[0]) {
-        onImageSelected(result.assets[0].uri);
+        const selectedUri = result.assets[0].uri;
+        // On mobile, use the image directly (native editing was already applied)
+        onImageSelected(selectedUri);
       }
     } catch (error) {
       console.error('Error picking image:', error);
@@ -86,13 +111,15 @@ export function ImagePicker({
     setLoading(true);
     try {
       const result = await ExpoImagePicker.launchCameraAsync({
-        allowsEditing,
+        allowsEditing: allowsEditing, // Use editing for mobile
         aspect: aspectRatio,
         quality,
       });
 
       if (!result.canceled && result.assets[0]) {
-        onImageSelected(result.assets[0].uri);
+        const selectedUri = result.assets[0].uri;
+        // On mobile, use the image directly (native editing was already applied)
+        onImageSelected(selectedUri);
       }
     } catch (error) {
       console.error('Error taking photo:', error);
@@ -127,6 +154,43 @@ export function ImagePicker({
         { text: 'Remove', style: 'destructive', onPress: () => onImageSelected('') },
       ]);
     }
+  };
+
+  // Crop modal handlers
+  const handleCropComplete = (croppedImageUri: string) => {
+    onImageSelected(croppedImageUri);
+    setShowCropModal(false);
+    setTempImageUri('');
+  };
+
+  const handleCropCancel = () => {
+    setShowCropModal(false);
+    setTempImageUri('');
+  };
+
+  const handleCropError = (error: string) => {
+    Alert.alert('Crop Error', error);
+    setShowCropModal(false);
+    setTempImageUri('');
+  };
+
+  // Web file input handler
+  const handleFileSelect = (event: any) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      if (enableWebCropping) {
+        // Show crop modal for web
+        const imageUrl = URL.createObjectURL(file);
+        setTempImageUri(imageUrl);
+        setShowCropModal(true);
+      } else {
+        // Directly use the file without cropping
+        const imageUrl = URL.createObjectURL(file);
+        onImageSelected(imageUrl);
+      }
+    }
+    // Reset the file input value to allow selecting the same file again
+    event.target.value = '';
   };
 
   const styles = StyleSheet.create({
@@ -233,7 +297,9 @@ export function ImagePicker({
               <Text style={styles.placeholderText}>{placeholder}</Text>
               <Text style={styles.placeholderHint}>
                 {Platform.OS === 'web'
-                  ? 'Click to upload a photo'
+                  ? enableWebCropping 
+                    ? 'Click to upload and crop photo'
+                    : 'Click to upload a photo'
                   : 'Tap to take a photo or choose from gallery'}
               </Text>
               {loading && <ActivityIndicator size="small" color={colors.tint} />}
@@ -241,6 +307,31 @@ export function ImagePicker({
           )}
         </TouchableOpacity>
       </View>
+
+      {/* Hidden file input for web */}
+      {Platform.OS === 'web' && (
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          onChange={handleFileSelect}
+          style={{ display: 'none' }}
+        />
+      )}
+
+      {/* Image Crop Modal for Web */}
+      {Platform.OS === 'web' && enableWebCropping && (
+        <ImageCropModal
+          visible={showCropModal}
+          imageUri={tempImageUri}
+          onClose={handleCropCancel}
+          onCropComplete={handleCropComplete}
+          onError={handleCropError}
+          title={cropTitle}
+          description={cropDescription}
+          aspectRatio={cropAspectRatio}
+        />
+      )}
     </>
   );
 }

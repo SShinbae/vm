@@ -18,6 +18,7 @@ import {
 let ImageEditor: any = null;
 if (Platform.OS !== 'web') {
   try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const expoCropImage = require('expo-crop-image');
     ImageEditor = expoCropImage.ImageEditor;
   } catch (error) {
@@ -29,6 +30,7 @@ if (Platform.OS !== 'web') {
 let createPortal: any = null;
 if (Platform.OS === 'web') {
   try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const reactDom = require('react-dom');
     createPortal = reactDom.createPortal;
   } catch (error) {
@@ -40,7 +42,7 @@ interface ImageCropModalProps {
   visible: boolean;
   imageUri: string;
   onClose: () => void;
-  onCropComplete: (croppedImageUri: string) => void;
+  onCropComplete: (croppedFile: File) => void;
   onError: (error: string) => void;
   title?: string;
   description?: string;
@@ -89,7 +91,13 @@ export const ImageCropModal: React.FC<ImageCropModalProps> = ({
           onEditingCancel={onClose}
           onEditingComplete={async (result: { uri: string }) => {
             try {
-              onCropComplete(result.uri);
+              // Convert URI to File object for consistency
+              const response = await fetch(result.uri);
+              const blob = await response.blob();
+              const fileName = `cropped_image_${Date.now()}.jpg`;
+              const file = new File([blob], fileName, { type: 'image/jpeg' });
+              console.log('Mobile crop - Created File object:', file);
+              onCropComplete(file);
               onClose();
             } catch (error: any) {
               console.error('Error completing crop:', error);
@@ -124,7 +132,7 @@ const WebCropModal: React.FC<{
   visible: boolean;
   imageUri: string;
   onClose: () => void;
-  onCropComplete: (uri: string) => void;
+  onCropComplete: (file: File) => void;
   onError: (error: string) => void;
   title: string;
   description: string;
@@ -156,7 +164,7 @@ const WebCropModal: React.FC<{
   // Initialize crop area when image loads
   const onImageLoad = useCallback(
     (event: any) => {
-      let width, height;
+      let naturalWidth, naturalHeight;
 
       // Handle different event formats for web vs mobile
       if (Platform.OS === 'web') {
@@ -166,48 +174,72 @@ const WebCropModal: React.FC<{
 
         // Method 1: Use the ref (most reliable on web)
         if (imageRef.current && typeof imageRef.current.naturalWidth !== 'undefined') {
-          width = imageRef.current.naturalWidth;
-          height = imageRef.current.naturalHeight;
+          naturalWidth = imageRef.current.naturalWidth;
+          naturalHeight = imageRef.current.naturalHeight;
           console.log('Got dimensions from ref.naturalWidth/Height');
         }
         // Method 2: Try event.target
         else if (event.target) {
-          width = event.target.naturalWidth || event.target.width;
-          height = event.target.naturalHeight || event.target.height;
+          naturalWidth = event.target.naturalWidth || event.target.width;
+          naturalHeight = event.target.naturalHeight || event.target.height;
           console.log('Got dimensions from event.target');
         }
         // Method 3: Try nativeEvent (might work in some cases)
         else if (event.nativeEvent?.target) {
-          width = event.nativeEvent.target.naturalWidth || event.nativeEvent.target.width;
-          height = event.nativeEvent.target.naturalHeight || event.nativeEvent.target.height;
+          naturalWidth = event.nativeEvent.target.naturalWidth || event.nativeEvent.target.width;
+          naturalHeight = event.nativeEvent.target.naturalHeight || event.nativeEvent.target.height;
           console.log('Got dimensions from event.nativeEvent.target');
         }
       } else {
         // On mobile, use event.nativeEvent
         if (event.nativeEvent) {
           const source = event.nativeEvent.source;
-          width = source?.width;
-          height = source?.height;
+          naturalWidth = source?.width;
+          naturalHeight = source?.height;
         }
       }
 
-      console.log('Image loaded, dimensions:', { width, height, platform: Platform.OS });
+      console.log('Image loaded, natural dimensions:', { naturalWidth, naturalHeight, platform: Platform.OS });
 
-      if (!width || !height || width === 0 || height === 0) {
-        console.error('Invalid image dimensions:', { width, height });
+      if (!naturalWidth || !naturalHeight || naturalWidth === 0 || naturalHeight === 0) {
+        console.error('Invalid image dimensions:', { naturalWidth, naturalHeight });
         return;
       }
 
-      setImageSize({ width, height });
+      // Calculate displayed image dimensions considering resizeMode="contain"
+      const containerWidth = 300; // From styles.imageContainer height
+      const containerHeight = 300;
+      
+      const imageAspectRatio = naturalWidth / naturalHeight;
+      const containerAspectRatio = containerWidth / containerHeight;
+      
+      let displayWidth, displayHeight;
+      if (imageAspectRatio > containerAspectRatio) {
+        // Image is wider - fit by width
+        displayWidth = containerWidth;
+        displayHeight = containerWidth / imageAspectRatio;
+      } else {
+        // Image is taller - fit by height
+        displayHeight = containerHeight;
+        displayWidth = containerHeight * imageAspectRatio;
+      }
 
-      // Calculate initial crop area (80% of image, centered, maintaining aspect ratio)
-      const cropSize = Math.min(width, height) * 0.8;
+      // Calculate offset to center the image in the container
+      const offsetX = (containerWidth - displayWidth) / 2;
+      const offsetY = (containerHeight - displayHeight) / 2;
+
+      console.log('Display dimensions:', { displayWidth, displayHeight, offsetX, offsetY });
+
+      setImageSize({ width: displayWidth, height: displayHeight });
+
+      // Calculate initial crop area (80% of displayed image, centered, maintaining aspect ratio)
+      const cropSize = Math.min(displayWidth, displayHeight) * 0.6;
       const cropWidth = aspectRatio >= 1 ? cropSize : cropSize * aspectRatio;
       const cropHeight = aspectRatio >= 1 ? cropSize / aspectRatio : cropSize;
 
       const initialCropArea = {
-        x: (width - cropWidth) / 2,
-        y: (height - cropHeight) / 2,
+        x: offsetX + (displayWidth - cropWidth) / 2,
+        y: offsetY + (displayHeight - cropHeight) / 2,
         width: cropWidth,
         height: cropHeight,
       };
@@ -250,12 +282,33 @@ const WebCropModal: React.FC<{
       const deltaY = clientY - dragStart.y;
       
       // Calculate new position
-      const newX = cropArea.x + deltaX;
-      const newY = cropArea.y + deltaY;
+      const newX = dragStart.cropX + deltaX;
+      const newY = dragStart.cropY + deltaY;
+
+      // Get container bounds (300x300 from styles)
+      const containerWidth = 300;
+      const containerHeight = 300;
+      
+      // Calculate displayed image bounds considering resizeMode="contain"
+      const imageAspectRatio = imageSize.width / imageSize.height;
+      const containerAspectRatio = containerWidth / containerHeight;
+      
+      let displayWidth, displayHeight, offsetX, offsetY;
+      if (imageAspectRatio > containerAspectRatio) {
+        displayWidth = containerWidth;
+        displayHeight = containerWidth / imageAspectRatio;
+        offsetX = 0;
+        offsetY = (containerHeight - displayHeight) / 2;
+      } else {
+        displayHeight = containerHeight;
+        displayWidth = containerHeight * imageAspectRatio;
+        offsetX = (containerWidth - displayWidth) / 2;
+        offsetY = 0;
+      }
 
       // Constrain to image bounds
-      const constrainedX = Math.max(0, Math.min(newX, imageSize.width - cropArea.width));
-      const constrainedY = Math.max(0, Math.min(newY, imageSize.height - cropArea.height));
+      const constrainedX = Math.max(offsetX, Math.min(newX, offsetX + displayWidth - cropArea.width));
+      const constrainedY = Math.max(offsetY, Math.min(newY, offsetY + displayHeight - cropArea.height));
 
       setCropArea((prev) => ({
         ...prev,
@@ -263,14 +316,6 @@ const WebCropModal: React.FC<{
         y: constrainedY,
       }));
       
-      setDragStart({ 
-        x: clientX, 
-        y: clientY, 
-        cropX: constrainedX, 
-        cropY: constrainedY, 
-        cropWidth: cropArea.width, 
-        cropHeight: cropArea.height 
-      });
       if (event.preventDefault) event.preventDefault();
     }
   }, [isDragging, dragStart, cropArea, imageSize]);
@@ -314,23 +359,44 @@ const WebCropModal: React.FC<{
       const deltaX = clientX - dragStart.x;
       const deltaY = clientY - dragStart.y;
       
+      // Get container bounds (300x300 from styles)
+      const containerWidth = 300;
+      const containerHeight = 300;
+      
+      // Calculate displayed image bounds considering resizeMode="contain"
+      const imageAspectRatio = imageSize.width / imageSize.height;
+      const containerAspectRatio = containerWidth / containerHeight;
+      
+      let displayWidth, displayHeight, offsetX, offsetY;
+      if (imageAspectRatio > containerAspectRatio) {
+        displayWidth = containerWidth;
+        displayHeight = containerWidth / imageAspectRatio;
+        offsetX = 0;
+        offsetY = (containerHeight - displayHeight) / 2;
+      } else {
+        displayHeight = containerHeight;
+        displayWidth = containerHeight * imageAspectRatio;
+        offsetX = (containerWidth - displayWidth) / 2;
+        offsetY = 0;
+      }
+      
       let newCropArea = { ...cropArea };
       
       // Handle different resize directions
       switch (activeResizeHandle) {
         case 'topLeft':
-          newCropArea.x = Math.max(0, dragStart.cropX + deltaX);
-          newCropArea.y = Math.max(0, dragStart.cropY + deltaY);
+          newCropArea.x = Math.max(offsetX, dragStart.cropX + deltaX);
+          newCropArea.y = Math.max(offsetY, dragStart.cropY + deltaY);
           newCropArea.width = Math.max(50, dragStart.cropWidth - deltaX);
           newCropArea.height = Math.max(50, dragStart.cropHeight - deltaY);
           break;
         case 'topRight':
-          newCropArea.y = Math.max(0, dragStart.cropY + deltaY);
+          newCropArea.y = Math.max(offsetY, dragStart.cropY + deltaY);
           newCropArea.width = Math.max(50, dragStart.cropWidth + deltaX);
           newCropArea.height = Math.max(50, dragStart.cropHeight - deltaY);
           break;
         case 'bottomLeft':
-          newCropArea.x = Math.max(0, dragStart.cropX + deltaX);
+          newCropArea.x = Math.max(offsetX, dragStart.cropX + deltaX);
           newCropArea.width = Math.max(50, dragStart.cropWidth - deltaX);
           newCropArea.height = Math.max(50, dragStart.cropHeight + deltaY);
           break;
@@ -339,14 +405,14 @@ const WebCropModal: React.FC<{
           newCropArea.height = Math.max(50, dragStart.cropHeight + deltaY);
           break;
         case 'top':
-          newCropArea.y = Math.max(0, dragStart.cropY + deltaY);
+          newCropArea.y = Math.max(offsetY, dragStart.cropY + deltaY);
           newCropArea.height = Math.max(50, dragStart.cropHeight - deltaY);
           break;
         case 'bottom':
           newCropArea.height = Math.max(50, dragStart.cropHeight + deltaY);
           break;
         case 'left':
-          newCropArea.x = Math.max(0, dragStart.cropX + deltaX);
+          newCropArea.x = Math.max(offsetX, dragStart.cropX + deltaX);
           newCropArea.width = Math.max(50, dragStart.cropWidth - deltaX);
           break;
         case 'right':
@@ -363,16 +429,16 @@ const WebCropModal: React.FC<{
           
           // Adjust position if needed for top handles
           if (activeResizeHandle === 'topLeft' || activeResizeHandle === 'topRight') {
-            newCropArea.y = Math.max(0, dragStart.cropY + dragStart.cropHeight - newHeight);
+            newCropArea.y = Math.max(offsetY, dragStart.cropY + dragStart.cropHeight - newHeight);
           }
         }
       }
       
       // Constrain to image bounds
-      newCropArea.x = Math.max(0, Math.min(newCropArea.x, imageSize.width - newCropArea.width));
-      newCropArea.y = Math.max(0, Math.min(newCropArea.y, imageSize.height - newCropArea.height));
-      newCropArea.width = Math.min(newCropArea.width, imageSize.width - newCropArea.x);
-      newCropArea.height = Math.min(newCropArea.height, imageSize.height - newCropArea.y);
+      newCropArea.x = Math.max(offsetX, Math.min(newCropArea.x, offsetX + displayWidth - newCropArea.width));
+      newCropArea.y = Math.max(offsetY, Math.min(newCropArea.y, offsetY + displayHeight - newCropArea.height));
+      newCropArea.width = Math.min(newCropArea.width, offsetX + displayWidth - newCropArea.x);
+      newCropArea.height = Math.min(newCropArea.height, offsetY + displayHeight - newCropArea.y);
       
       setCropArea(newCropArea);
       
@@ -455,19 +521,64 @@ const WebCropModal: React.FC<{
     setProcessing(true);
 
     try {
-      console.log('Cropping image with area:', cropArea);
+      console.log('Cropping image with displayed area:', cropArea);
+
+      // Convert displayed crop area to original image coordinates
+      // Get container bounds (300x300 from styles)
+      const containerWidth = 300;
+      const containerHeight = 300;
+      
+      // Get original image dimensions from the image element
+      let originalWidth, originalHeight;
+      if (Platform.OS === 'web' && imageRef.current) {
+        originalWidth = imageRef.current.naturalWidth;
+        originalHeight = imageRef.current.naturalHeight;
+      } else {
+        // Fallback - we need the original dimensions
+        originalWidth = imageSize.width;
+        originalHeight = imageSize.height;
+      }
+
+      // Calculate displayed image bounds considering resizeMode="contain"
+      const imageAspectRatio = originalWidth / originalHeight;
+      const containerAspectRatio = containerWidth / containerHeight;
+      
+      let displayWidth, displayHeight, offsetX, offsetY;
+      if (imageAspectRatio > containerAspectRatio) {
+        displayWidth = containerWidth;
+        displayHeight = containerWidth / imageAspectRatio;
+        offsetX = 0;
+        offsetY = (containerHeight - displayHeight) / 2;
+      } else {
+        displayHeight = containerHeight;
+        displayWidth = containerHeight * imageAspectRatio;
+        offsetX = (containerWidth - displayWidth) / 2;
+        offsetY = 0;
+      }
+
+      // Calculate scale factor from displayed to original
+      const scaleX = originalWidth / displayWidth;
+      const scaleY = originalHeight / displayHeight;
+
+      // Convert crop area to original image coordinates
+      const originalCropArea = {
+        originX: Math.max(0, Math.round((cropArea.x - offsetX) * scaleX)),
+        originY: Math.max(0, Math.round((cropArea.y - offsetY) * scaleY)),
+        width: Math.round(cropArea.width * scaleX),
+        height: Math.round(cropArea.height * scaleY),
+      };
+
+      console.log('Original image dimensions:', { originalWidth, originalHeight });
+      console.log('Display dimensions:', { displayWidth, displayHeight, offsetX, offsetY });
+      console.log('Scale factors:', { scaleX, scaleY });
+      console.log('Original crop area:', originalCropArea);
 
       // Use Expo ImageManipulator to crop the image
       const result = await ImageManipulator.manipulateAsync(
         imageUri,
         [
           {
-            crop: {
-              originX: Math.max(0, Math.round(cropArea.x)),
-              originY: Math.max(0, Math.round(cropArea.y)),
-              width: Math.round(cropArea.width),
-              height: Math.round(cropArea.height),
-            },
+            crop: originalCropArea,
           },
         ],
         {
@@ -503,10 +614,11 @@ const WebCropModal: React.FC<{
             const byteArray = new Uint8Array(byteNumbers);
             const blob = new Blob([byteArray], { type: 'image/jpeg' });
 
-            // Create a blob URL that the browser can access
-            const blobUrl = URL.createObjectURL(blob);
-            console.log('Converted to blob URL:', blobUrl);
-            onCropComplete(blobUrl);
+            // Create a File object from the blob
+            const fileName = `cropped_image_${Date.now()}.jpg`;
+            const file = new File([blob], fileName, { type: 'image/jpeg' });
+            console.log('Created File object:', file);
+            onCropComplete(file);
           } else {
             throw new Error('Failed to get base64 data from ImageManipulator');
           }
@@ -516,8 +628,19 @@ const WebCropModal: React.FC<{
           return;
         }
       } else {
-        // On native, use the URI directly
-        onCropComplete(result.uri);
+        // On native, convert URI to File object
+        try {
+          const response = await fetch(result.uri);
+          const blob = await response.blob();
+          const fileName = `cropped_image_${Date.now()}.jpg`;
+          const file = new File([blob], fileName, { type: 'image/jpeg' });
+          console.log('Created File object from native URI:', file);
+          onCropComplete(file);
+        } catch (nativeError: any) {
+          console.error('Error converting native URI to File:', nativeError);
+          onError('Failed to process cropped image. Please try again.');
+          return;
+        }
       }
 
       onClose();
@@ -532,17 +655,38 @@ const WebCropModal: React.FC<{
   // Adjust crop size
   const adjustCropSize = (delta: number) => {
     setCropArea((prev) => {
-      const newSize = Math.max(50, Math.min(imageSize.width, imageSize.height, prev.width + delta));
+      // Get container bounds (300x300 from styles)
+      const containerWidth = 300;
+      const containerHeight = 300;
+      
+      // Calculate displayed image bounds considering resizeMode="contain"
+      const imageAspectRatio = imageSize.width / imageSize.height;
+      const containerAspectRatio = containerWidth / containerHeight;
+      
+      let displayWidth, displayHeight, offsetX, offsetY;
+      if (imageAspectRatio > containerAspectRatio) {
+        displayWidth = containerWidth;
+        displayHeight = containerWidth / imageAspectRatio;
+        offsetX = 0;
+        offsetY = (containerHeight - displayHeight) / 2;
+      } else {
+        displayHeight = containerHeight;
+        displayWidth = containerHeight * imageAspectRatio;
+        offsetX = (containerWidth - displayWidth) / 2;
+        offsetY = 0;
+      }
+
+      const newSize = Math.max(50, Math.min(displayWidth, displayHeight, prev.width + delta));
       const newWidth = aspectRatio >= 1 ? newSize : newSize * aspectRatio;
       const newHeight = aspectRatio >= 1 ? newSize / aspectRatio : newSize;
 
-      // Keep centered
+      // Keep centered within image bounds
       return {
         ...prev,
         width: newWidth,
         height: newHeight,
-        x: Math.max(0, Math.min(prev.x, imageSize.width - newWidth)),
-        y: Math.max(0, Math.min(prev.y, imageSize.height - newHeight)),
+        x: Math.max(offsetX, Math.min(prev.x, offsetX + displayWidth - newWidth)),
+        y: Math.max(offsetY, Math.min(prev.y, offsetY + displayHeight - newHeight)),
       };
     });
   };
@@ -621,6 +765,7 @@ const WebCropModal: React.FC<{
                             touchAction: 'none',
                             userSelect: 'none',
                             cursor: 'nw-resize',
+                            zIndex: 10, // Above draggable area
                           } as any,
                         }
                       : {
@@ -640,6 +785,7 @@ const WebCropModal: React.FC<{
                             touchAction: 'none',
                             userSelect: 'none',
                             cursor: 'ne-resize',
+                            zIndex: 10, // Above draggable area
                           } as any,
                         }
                       : {
@@ -659,6 +805,7 @@ const WebCropModal: React.FC<{
                             touchAction: 'none',
                             userSelect: 'none',
                             cursor: 'sw-resize',
+                            zIndex: 10, // Above draggable area
                           } as any,
                         }
                       : {
@@ -678,6 +825,7 @@ const WebCropModal: React.FC<{
                             touchAction: 'none',
                             userSelect: 'none',
                             cursor: 'se-resize',
+                            zIndex: 10, // Above draggable area
                           } as any,
                         }
                       : {
@@ -698,6 +846,7 @@ const WebCropModal: React.FC<{
                             touchAction: 'none',
                             userSelect: 'none',
                             cursor: 'n-resize',
+                            zIndex: 10, // Above draggable area
                           } as any,
                         }
                       : {
@@ -716,6 +865,7 @@ const WebCropModal: React.FC<{
                             touchAction: 'none',
                             userSelect: 'none',
                             cursor: 'e-resize',
+                            zIndex: 10, // Above draggable area
                           } as any,
                         }
                       : {
@@ -734,6 +884,7 @@ const WebCropModal: React.FC<{
                             touchAction: 'none',
                             userSelect: 'none',
                             cursor: 's-resize',
+                            zIndex: 10, // Above draggable area
                           } as any,
                         }
                       : {
@@ -752,6 +903,7 @@ const WebCropModal: React.FC<{
                             touchAction: 'none',
                             userSelect: 'none',
                             cursor: 'w-resize',
+                            zIndex: 10, // Above draggable area
                           } as any,
                         }
                       : {
@@ -769,7 +921,7 @@ const WebCropModal: React.FC<{
             </View>
           )}
 
-          {/* Draggable overlay */}
+          {/* Draggable overlay - invisible but captures drag events */}
           {cropArea.width > 0 && (
             <View
               style={[
@@ -788,6 +940,8 @@ const WebCropModal: React.FC<{
                     style: {
                       touchAction: 'none',
                       userSelect: 'none',
+                      cursor: 'move',
+                      zIndex: 1, // Lower than resize handles
                     } as any,
                   }
                 : panResponder.panHandlers
@@ -959,6 +1113,7 @@ const styles = StyleSheet.create({
     height: 20,
     borderWidth: 3,
     backgroundColor: 'white',
+    zIndex: 10, // Ensure handles are above draggable area
   },
   topLeft: {
     top: -2,
@@ -986,11 +1141,8 @@ const styles = StyleSheet.create({
   },
   draggableArea: {
     position: 'absolute',
-    cursor: 'move' as any,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    borderWidth: 2,
-    borderColor: 'rgba(255, 255, 255, 0.8)',
-    borderStyle: 'dashed',
+    backgroundColor: 'transparent', // Invisible but still captures events
+    // Remove borders that were interfering with resize handles
   },
   controls: {
     flexDirection: 'row',
@@ -1049,6 +1201,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(0, 0, 0, 0.3)',
     borderRadius: 3,
+    zIndex: 10, // Ensure handles are above draggable area
   },
   topEdge: {
     top: -3,

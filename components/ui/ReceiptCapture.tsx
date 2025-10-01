@@ -6,9 +6,9 @@ import {
   StyleSheet,
   Alert,
   ActivityIndicator,
-  Image,
   Modal,
 } from 'react-native';
+import { Image } from 'expo-image';
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { IconSymbol } from '@/components/ui/icon-symbol';
@@ -378,7 +378,9 @@ export function ReceiptCapture({ onReceiptProcessed, onPictureOnly, onCancel, di
               <Image
                 source={{ uri: previewImage }}
                 style={styles.previewImage}
-                resizeMode="contain"
+                contentFit="contain"
+                cachePolicy="memory-disk"
+                transition={200}
               />
               <View style={styles.previewControls}>
                 <TouchableOpacity

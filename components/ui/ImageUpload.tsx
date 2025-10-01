@@ -3,12 +3,12 @@ import {
   View,
   Text,
   TouchableOpacity,
-  Image,
   StyleSheet,
   Alert,
   ActivityIndicator,
   Platform,
 } from 'react-native';
+import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import { IconSymbol } from './icon-symbol';
 import { Colors } from '@/constants/theme';
@@ -178,6 +178,13 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
   };
 
   const handleCropComplete = (croppedFile: File) => {
+    console.log('🎯 Crop complete, received file:', croppedFile);
+    console.log('   File details:', {
+      name: croppedFile.name,
+      size: croppedFile.size,
+      type: croppedFile.type,
+      lastModified: croppedFile.lastModified
+    });
     setShowCropModal(false);
     if (selectedImageUri) {
       URL.revokeObjectURL(selectedImageUri);
@@ -206,24 +213,30 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
 
   const processImageFile = async (file: File) => {
     try {
+      console.log('📤 Starting upload process for file:', file.name, file.size, file.type);
+
       // Validate file
       const validation = ImageUploadService.validateImageFile(file);
       if (!validation.isValid) {
+        console.error('❌ Validation failed:', validation.error);
         onUploadError?.(validation.error!);
         Alert.alert('Invalid File', validation.error!);
         return;
       }
 
+      console.log('✅ Validation passed, starting upload...');
       setUploading(true);
       setLocalImageUri(URL.createObjectURL(file));
 
       let result;
       if (type === 'avatar') {
+        console.log('📸 Uploading avatar...');
         result = await ImageUploadService.uploadProfileAvatar(file);
       } else {
         if (!vehicleId) {
           throw new Error('Vehicle ID is required for vehicle images');
         }
+        console.log('🚗 Uploading vehicle image...');
         result = await ImageUploadService.uploadVehicleImage(
           vehicleId,
           file,
@@ -231,20 +244,26 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
         );
       }
 
+      console.log('📦 Upload result:', result);
+
       if (result.error) {
+        console.error('❌ Upload failed:', result.error);
         onUploadError?.(result.error);
         Alert.alert('Upload Failed', result.error);
         setLocalImageUri(null);
       } else {
         const imageUrl = type === 'avatar' ? result.data! : result.data!.image_url;
+        console.log('✅ Upload successful! Image URL:', imageUrl);
         onUploadComplete?.(imageUrl);
         Alert.alert('Success', 'Image uploaded successfully!');
       }
     } catch (error: any) {
+      console.error('❌ Upload error:', error);
       onUploadError?.(error.message);
       Alert.alert('Upload Error', error.message);
       setLocalImageUri(null);
     } finally {
+      console.log('🏁 Upload process complete, resetting uploading state');
       setUploading(false);
     }
   };
@@ -336,7 +355,6 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
     image: {
       width: '100%',
       height: '100%',
-      resizeMode: 'cover',
     },
     placeholder: {
       alignItems: 'center',
@@ -400,7 +418,13 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
       >
         {imageSource ? (
           <>
-            <Image source={{ uri: imageSource }} style={styles.image} />
+            <Image
+              source={{ uri: imageSource }}
+              style={styles.image}
+              contentFit="cover"
+              cachePolicy="memory-disk"
+              transition={200}
+            />
             {!uploading && (
               <TouchableOpacity
                 style={styles.deleteButton}
@@ -533,6 +557,9 @@ export const ImageGallery: React.FC<ImageGalleryProps> = ({
             <Image
               source={{ uri: image.image_url }}
               style={{ width: 100, height: 100, borderRadius: 8 }}
+              contentFit="cover"
+              cachePolicy="memory-disk"
+              transition={200}
             />
             {editable && (
               <TouchableOpacity

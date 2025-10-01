@@ -2,7 +2,8 @@ import { DarkTheme, DefaultTheme, ThemeProvider as NavigationThemeProvider } fro
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
-import { useEffect } from 'react';
+import { useFonts } from 'expo-font';
+import { useEffect, useCallback } from 'react';
 import 'react-native-reanimated';
 import '../global.css';
 
@@ -33,20 +34,29 @@ export default function RootLayout() {
 function RootLayoutContent() {
   const colorScheme = useColorScheme();
 
-  useEffect(() => {
-    // Hide the splash screen after the app has mounted
-    const hideSplashScreen = async () => {
-      try {
-        await SplashScreen.hideAsync();
-      } catch (error) {
-        console.warn('Error hiding splash screen:', error);
-      }
-    };
+  // Preload fonts (if you add custom fonts, they'll be loaded here)
+  const [fontsLoaded, fontError] = useFonts({
+    // Add custom fonts here if needed
+    // 'CustomFont': require('../assets/fonts/CustomFont.ttf'),
+  });
 
-    // Add a small delay to ensure smooth transition
-    const timer = setTimeout(hideSplashScreen, 1000);
-    return () => clearTimeout(timer);
-  }, []);
+  const onLayoutRootView = useCallback(async () => {
+    if (fontsLoaded || fontError) {
+      // Hide splash screen once fonts are loaded or if there's an error
+      await SplashScreen.hideAsync();
+    }
+  }, [fontsLoaded, fontError]);
+
+  useEffect(() => {
+    if (fontsLoaded || fontError) {
+      onLayoutRootView();
+    }
+  }, [fontsLoaded, fontError, onLayoutRootView]);
+
+  // Don't render anything until fonts are loaded
+  if (!fontsLoaded && !fontError) {
+    return null;
+  }
 
   return (
     <NavigationThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>

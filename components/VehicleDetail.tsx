@@ -4,6 +4,7 @@ import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { formatDate } from '@/lib/utils/dateUtils';
 import { VehicleWithDetails } from '@/types/database-v2';
+import { Image } from 'expo-image';
 import React, { useState } from 'react';
 import {
     Modal,
@@ -24,6 +25,7 @@ export const VehicleDetail: React.FC<VehicleDetailProps> = ({
   onVehicleUpdate,
 }) => {
   const [showSharingModal, setShowSharingModal] = useState(false);
+  const [imageError, setImageError] = useState(false);
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
 
@@ -120,10 +122,23 @@ export const VehicleDetail: React.FC<VehicleDetailProps> = ({
       alignItems: 'center',
       paddingVertical: 6,
     },
+    groupAvatar: {
+      width: 32,
+      height: 32,
+      borderRadius: 16,
+      backgroundColor: colors.tint + '20',
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginRight: 8,
+    },
+    groupAvatarImage: {
+      width: 32,
+      height: 32,
+      borderRadius: 16,
+    },
     sharedGroupText: {
       fontSize: 14,
       color: colors.icon,
-      marginLeft: 8,
     },
     emptySharing: {
       textAlign: 'center',
@@ -200,13 +215,24 @@ export const VehicleDetail: React.FC<VehicleDetailProps> = ({
     <ScrollView style={styles.container}>
       {/* Vehicle Header */}
       <View style={styles.header}>
-        <View style={styles.vehicleIcon}>
-          <IconSymbol 
-            name={vehicle.is_own_vehicle ? "car.fill" : "person.3.fill"} 
-            size={30} 
-            color="white" 
+        {vehicle.main_image_url && !imageError ? (
+          <Image
+            source={{ uri: vehicle.main_image_url }}
+            style={styles.vehicleIcon}
+            contentFit="cover"
+            cachePolicy="memory-disk"
+            transition={200}
+            onError={() => setImageError(true)}
           />
-        </View>
+        ) : (
+          <View style={styles.vehicleIcon}>
+            <IconSymbol
+              name={vehicle.is_own_vehicle ? "car.fill" : "person.3.fill"}
+              size={30}
+              color="white"
+            />
+          </View>
+        )}
         <View style={styles.vehicleInfo}>
           <Text style={styles.vehicleName}>
             {vehicle.year} {vehicle.make} {vehicle.model}
@@ -339,7 +365,19 @@ export const VehicleDetail: React.FC<VehicleDetailProps> = ({
               <View style={styles.sharedGroupsList}>
                 {vehicle.shared_groups.map(group => (
                   <View key={group.id} style={styles.sharedGroupItem}>
-                    <IconSymbol name="checkmark.circle.fill" size={16} color="#4CAF50" />
+                    {group.group_image_url ? (
+                      <Image
+                        source={{ uri: group.group_image_url }}
+                        style={styles.groupAvatarImage}
+                        contentFit="cover"
+                        cachePolicy="memory-disk"
+                        transition={200}
+                      />
+                    ) : (
+                      <View style={styles.groupAvatar}>
+                        <IconSymbol name="person.3.fill" size={16} color={colors.tint} />
+                      </View>
+                    )}
                     <Text style={styles.sharedGroupText}>{group.name}</Text>
                   </View>
                 ))}

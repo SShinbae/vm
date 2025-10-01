@@ -1,26 +1,27 @@
-import React, { useState, useEffect } from 'react';
-import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  ScrollView,
-  KeyboardAvoidingView,
-  Platform,
-  StyleSheet,
-  Alert,
-  ActivityIndicator,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { router, useLocalSearchParams } from 'expo-router';
-import { VehicleService } from '@/lib/services/vehicleService';
-import { Vehicle, VehicleFormData } from '@/types';
-import { Colors } from '@/constants/theme';
-import { useColorScheme } from '@/hooks/use-color-scheme';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { ImagePicker } from '@/components/ui/ImagePicker';
-import { updateVehicleImage } from '@/lib/utils/imageUpload';
+import { Colors } from '@/constants/theme';
+import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useDialog } from '@/lib/contexts/DialogContext';
+import { VehicleService } from '@/lib/services/vehicleService';
+import { updateVehicleImage } from '@/lib/utils/imageUpload';
+import { VehicleFormData } from '@/types';
+import { Vehicle } from '@/types/database-v2';
+import { router, useLocalSearchParams } from 'expo-router';
+import React, { useEffect, useState } from 'react';
+import {
+    ActivityIndicator,
+    Alert,
+    KeyboardAvoidingView,
+    Platform,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function EditVehicleScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -218,6 +219,8 @@ export default function EditVehicleScreen() {
   };
 
   const saveVehicleUpdates = async (imageUrl: string | null) => {
+    if (!vehicle) return;
+
     const updates = {
       make: formData.make.trim(),
       model: formData.model.trim(),
@@ -492,6 +495,10 @@ export default function EditVehicleScreen() {
                   aspectRatio={[1, 1]}
                   allowsEditing={true}
                   onRemove={handleRemoveImage}
+                  enableWebCropping={true}
+                  cropAspectRatio={1}
+                  cropTitle="Crop Vehicle Photo"
+                  cropDescription="Drag to adjust the crop area. Use the corner handles to resize. The grid lines help you align your photo for best results."
                 />
               )}
 

@@ -5,10 +5,10 @@ import {
   TouchableOpacity,
   StyleSheet,
   Modal,
-  Image,
   Alert,
   ActivityIndicator,
 } from 'react-native';
+import { Image } from 'expo-image';
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { IconSymbol } from '@/components/ui/icon-symbol';
@@ -241,7 +241,9 @@ export function ReceiptViewer({
             <Image
               source={{ uri: receiptImageUrl }}
               style={styles.receiptImage}
-              resizeMode="cover"
+              contentFit="cover"
+              cachePolicy="memory-disk"
+              transition={200}
               onLoad={() => setImageLoading(false)}
               onError={() => {
                 setImageLoading(false);
@@ -316,7 +318,9 @@ export function ReceiptViewer({
           <Image
             source={{ uri: receiptImageUrl }}
             style={styles.fullscreenImage}
-            resizeMode="contain"
+            contentFit="contain"
+            cachePolicy="memory-disk"
+            transition={200}
           />
           <View style={styles.fullscreenControls}>
             <TouchableOpacity
@@ -408,7 +412,9 @@ export function ReceiptList({ receipts, onReceiptPress, onReceiptDelete }: Recei
           <Image
             source={{ uri: receipt.imageUrl }}
             style={styles.thumbnail}
-            resizeMode="cover"
+            contentFit="cover"
+            cachePolicy="memory-disk"
+            transition={200}
           />
           <View style={styles.receiptInfo}>
             <Text style={styles.receiptTitle}>

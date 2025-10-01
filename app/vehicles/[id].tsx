@@ -20,6 +20,7 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
+import { Image } from 'expo-image';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function VehicleDetailScreen() {
@@ -28,6 +29,7 @@ export default function VehicleDetailScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [sharingLoading, setSharingLoading] = useState(false);
+  const [imageError, setImageError] = useState(false);
 
   // Modal states
   const [deleteModalVisible, setDeleteModalVisible] = useState(false);
@@ -585,9 +587,20 @@ export default function VehicleDetailScreen() {
       >
         <View style={styles.vehicleCard}>
           <View style={styles.vehicleHeader}>
-            <View style={styles.vehicleIcon}>
-              <IconSymbol name="car.fill" size={28} color="white" />
-            </View>
+            {vehicle.main_image_url && !imageError ? (
+              <Image
+                source={{ uri: vehicle.main_image_url }}
+                style={styles.vehicleIcon}
+                contentFit="cover"
+                cachePolicy="memory-disk"
+                transition={200}
+                onError={() => setImageError(true)}
+              />
+            ) : (
+              <View style={styles.vehicleIcon}>
+                <IconSymbol name="car.fill" size={28} color="white" />
+              </View>
+            )}
             <View style={styles.vehicleInfo}>
               <Text style={styles.vehicleName}>
                 {vehicle.year} {vehicle.make} {vehicle.model}

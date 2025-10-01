@@ -14,7 +14,6 @@ import { router } from 'expo-router';
 import React, { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
-  Image,
   RefreshControl,
   ScrollView,
   StyleSheet,
@@ -22,6 +21,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { Image } from 'expo-image';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 type LogType = 'mileage' | 'fuel' | 'service';
@@ -226,40 +226,55 @@ export default function LogsScreen() {
     </TouchableOpacity>
   );
 
-  const VehicleHeader = ({ vehicle, isSharedVehicle }: { vehicle: any; isSharedVehicle: boolean }) => (
-    <View style={styles.vehicleHeader}>
-      {vehicle?.main_image_url ? (
-        <Image
-          source={{ uri: vehicle.main_image_url }}
-          style={[styles.vehicleHeaderImage, isSharedVehicle && styles.sharedVehicleHeaderImage]}
-        />
-      ) : (
-        <View style={[styles.vehicleHeaderIcon, isSharedVehicle && styles.sharedVehicleHeaderIcon]}>
-          <IconSymbol
-            name={isSharedVehicle ? "person.2.fill" : "car.fill"}
-            size={20}
-            color="white"
+  const VehicleHeader = ({ vehicle, isSharedVehicle }: { vehicle: any; isSharedVehicle: boolean }) => {
+    const [imageError, setImageError] = useState(false);
+
+    return (
+      <View style={styles.vehicleHeader}>
+        {vehicle?.main_image_url && !imageError ? (
+          <Image
+            source={{ uri: vehicle.main_image_url }}
+            style={[styles.vehicleHeaderImage, isSharedVehicle && styles.sharedVehicleHeaderImage]}
+            contentFit="cover"
+            cachePolicy="memory-disk"
+            transition={200}
+            onError={(error) => {
+              console.error('Logs - Image load error for vehicle:', vehicle?.id, error);
+              console.log('Logs - Failed URL:', vehicle?.main_image_url);
+              setImageError(true);
+            }}
+            onLoad={() => {
+              console.log('Logs - Image loaded successfully for vehicle:', vehicle?.id);
+            }}
           />
-        </View>
-      )}
-      <View style={styles.vehicleHeaderInfo}>
-        <View style={styles.vehicleHeaderTitleRow}>
-          <Text style={styles.vehicleHeaderTitle}>
-            {vehicle?.year} {vehicle?.make} {vehicle?.model}
-          </Text>
-          {isSharedVehicle && (
-            <View style={styles.sharedVehicleBadge}>
-              <IconSymbol name="person.2.fill" size={12} color={colors.tint} />
-              <Text style={styles.sharedVehicleBadgeText}>Shared</Text>
-            </View>
+        ) : (
+          <View style={[styles.vehicleHeaderIcon, isSharedVehicle && styles.sharedVehicleHeaderIcon]}>
+            <IconSymbol
+              name={isSharedVehicle ? "person.2.fill" : "car.fill"}
+              size={20}
+              color="white"
+            />
+          </View>
+        )}
+        <View style={styles.vehicleHeaderInfo}>
+          <View style={styles.vehicleHeaderTitleRow}>
+            <Text style={styles.vehicleHeaderTitle}>
+              {vehicle?.year} {vehicle?.make} {vehicle?.model}
+            </Text>
+            {isSharedVehicle && (
+              <View style={styles.sharedVehicleBadge}>
+                <IconSymbol name="person.2.fill" size={12} color={colors.tint} />
+                <Text style={styles.sharedVehicleBadgeText}>Shared</Text>
+              </View>
+            )}
+          </View>
+          {vehicle?.license_plate && (
+            <Text style={styles.vehicleHeaderPlate}>{vehicle.license_plate}</Text>
           )}
         </View>
-        {vehicle?.license_plate && (
-          <Text style={styles.vehicleHeaderPlate}>{vehicle.license_plate}</Text>
-        )}
       </View>
-    </View>
-  );
+    );
+  };
 
   const LogCard = ({ log, type }: { log: any; type: LogType }) => {
     const [canModify, setCanModify] = useState<boolean | null>(null);
@@ -678,6 +693,7 @@ export default function LogsScreen() {
       borderRadius: 18,
       marginRight: 12,
       backgroundColor: colors.icon + '20',
+      overflow: 'hidden',
     },
     sharedVehicleHeaderIcon: {
       backgroundColor: '#4CAF50',

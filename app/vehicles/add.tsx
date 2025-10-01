@@ -77,7 +77,7 @@ export default function AddVehicleScreen() {
       vin: formData.vin?.trim() || undefined,
     };
 
-    const { data, error } = await VehicleService.createVehicle(
+    const { error } = await VehicleService.createVehicle(
       vehicleData,
       undefined, // sharedGroupIds
       imageUri || undefined // imageUri
@@ -286,6 +286,10 @@ export default function AddVehicleScreen() {
                   placeholder="Add a vehicle photo"
                   aspectRatio={[1, 1]}
                   allowsEditing={true}
+                  enableWebCropping={true}
+                  cropAspectRatio={1}
+                  cropTitle="Crop Vehicle Photo"
+                  cropDescription="Drag to adjust the crop area. Use the corner handles to resize. The grid lines help you align your photo for best results."
                 />
 
                 <View style={styles.row}>
