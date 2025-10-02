@@ -22,9 +22,17 @@ export function SidebarProvider({ children }: SidebarProviderProps) {
   // Load saved preference from localStorage on web
   useEffect(() => {
     if (Platform.OS === 'web') {
-      const saved = localStorage.getItem('sidebar-state');
-      if (saved !== null) {
-        setIsOpen(saved === 'open');
+      try {
+        // Check if localStorage is available (web only)
+        if (typeof window !== 'undefined' && window.localStorage) {
+          const saved = window.localStorage.getItem('sidebar-state');
+          if (saved !== null) {
+            setIsOpen(saved === 'open');
+          }
+        }
+      } catch (error) {
+        // Silently fail if localStorage is not available
+        console.warn('localStorage not available:', error);
       }
     }
   }, []);
@@ -32,7 +40,15 @@ export function SidebarProvider({ children }: SidebarProviderProps) {
   // Save preference to localStorage on web
   useEffect(() => {
     if (Platform.OS === 'web') {
-      localStorage.setItem('sidebar-state', isOpen ? 'open' : 'closed');
+      try {
+        // Check if localStorage is available (web only)
+        if (typeof window !== 'undefined' && window.localStorage) {
+          window.localStorage.setItem('sidebar-state', isOpen ? 'open' : 'closed');
+        }
+      } catch (error) {
+        // Silently fail if localStorage is not available
+        console.warn('localStorage not available:', error);
+      }
     }
   }, [isOpen]);
 

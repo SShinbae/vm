@@ -61,33 +61,7 @@ html, body {
   transform: scale(1.05);
 }
 
-/* React Image Crop styles - React Native compatible */
-@import 'react-image-crop/dist/ReactCrop.css';
-
-/* Custom styles for React Native compatibility */
-.ReactCrop {
-  position: relative;
-  display: flex;
-}
-
-.ReactCrop__crop-selection {
-  position: absolute;
-  border-width: 3px;
-  border-color: #1877F2;
-  background-color: rgba(24, 119, 242, 0.15);
-  z-index: 10;
-}
-
-.ReactCrop__drag-handle {
-  position: absolute;
-  background-color: #1877F2;
-  border-width: 3px;
-  border-color: #ffffff;
-  border-radius: 50%;
-  width: 14px;
-  height: 14px;
-  z-index: 20;
-}
+/* Web-only styles - removed react-image-crop import to fix React Native compatibility */
 
 /* Web Modal Styles */
 .web-modal-overlay {
