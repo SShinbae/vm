@@ -1,23 +1,22 @@
+import { Button } from '@/components/ui/Button';
 import { IconSymbol } from '@/components/ui/icon-symbol';
-import { ImagePicker } from '@/components/ui/ImagePicker';
+import { ImageUpload } from '@/components/ui/ImageUpload';
+import { Input } from '@/components/ui/Input';
+import { AlertModal } from '@/components/ui/Modal';
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
-import { useDialog } from '@/lib/contexts/DialogContext';
 import { VehicleService } from '@/lib/services/vehicleService';
-import { updateVehicleImage } from '@/lib/utils/imageUpload';
 import { VehicleFormData } from '@/types';
 import { Vehicle } from '@/types/database-v2';
 import { router, useLocalSearchParams } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
     ActivityIndicator,
-    Alert,
     KeyboardAvoidingView,
     Platform,
     ScrollView,
     StyleSheet,
     Text,
-    TextInput,
     TouchableOpacity,
     View,
 } from 'react-native';
@@ -37,9 +36,12 @@ export default function EditVehicleScreen() {
   const [imageUri, setImageUri] = useState<string>('');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [showErrorModal, setShowErrorModal] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
-  const dialog = useDialog();
+  const isWeb = Platform.OS === 'web';
 
   useEffect(() => {
     const fetchVehicle = async () => {
@@ -48,11 +50,12 @@ export default function EditVehicleScreen() {
       const { data, error } = await VehicleService.getVehicleById(id);
 
       if (error) {
-        let errorMessage = 'Failed to load vehicle details';
+        let errorMsg = 'Failed to load vehicle details';
         if (error.includes('not found') || error.includes('access denied')) {
-          errorMessage = 'Vehicle not found or you do not have permission to access it.';
+          errorMsg = 'Vehicle not found or you do not have permission to access it.';
         }
-        Alert.alert('Error', errorMessage);
+        setErrorMessage(errorMsg);
+        setShowErrorModal(true);
         router.back();
       } else if (data) {
         setVehicle(data);
@@ -73,153 +76,39 @@ export default function EditVehicleScreen() {
     fetchVehicle();
   }, [id]);
 
-  const performSave = async () => {
-    if (!vehicle) return;
-
-    setSaving(true);
-
-    let finalImageUrl = vehicle.main_image_url; // Keep existing image by default
-
-    // Handle image changes (upload new image or remove existing one)
-    if (imageUri !== vehicle.main_image_url) {
-      // If imageUri is empty, user wants to remove the image
-      if (!imageUri) {
-        finalImageUrl = null;
-      } else {
-        // User wants to upload a new image
-        // Validate that it's not an invalid file:// URI
-        if (imageUri.startsWith('file://')) {
-          if (Platform.OS === 'web') {
-            dialog.alert('Error', 'Invalid image format. Please try selecting the image again.');
-          } else {
-            Alert.alert('Error', 'Invalid image format. Please try selecting the image again.');
-          }
-          setSaving(false);
-          return;
-        }
-
-        const uploadResult = await updateVehicleImage(
-          imageUri,
-          vehicle.main_image_url,
-          vehicle.id
-        );
-
-        if (uploadResult.success && uploadResult.url) {
-          finalImageUrl = uploadResult.url;
-        } else {
-          console.error('Failed to upload vehicle image:', uploadResult.error);
-          if (Platform.OS === 'web') {
-            dialog.showConfirm(
-              'Image Upload Failed',
-              'Failed to upload the vehicle image. Would you like to continue without updating the image?',
-              () => {
-                saveVehicleUpdates(vehicle.main_image_url);
-              },
-              () => {
-                setSaving(false);
-                dialog.hideConfirm();
-              },
-              'Continue',
-              'Cancel'
-            );
-          } else {
-            Alert.alert(
-              'Image Upload Failed',
-              'Failed to upload the vehicle image. Would you like to continue without updating the image?',
-              [
-                { text: 'Cancel', style: 'cancel', onPress: () => { setSaving(false); } },
-                {
-                  text: 'Continue',
-                  onPress: () => {
-                    // Continue with the rest of the save logic
-                    saveVehicleUpdates(vehicle.main_image_url);
-                  }
-                }
-              ]
-            );
-          }
-          return;
-        }
-      }
-    }
-
-    saveVehicleUpdates(finalImageUrl);
-  };
-
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!vehicle) return;
 
     // Check if this is a shared vehicle - only owners can edit vehicle details
     if (isSharedVehicle) {
-      if (Platform.OS === 'web') {
-        dialog.alert(
-          'Cannot Edit Vehicle',
-          'Only the vehicle owner can edit vehicle details. You have read-only access to this shared vehicle.'
-        );
-      } else {
-        Alert.alert(
-          'Cannot Edit Vehicle',
-          'Only the vehicle owner can edit vehicle details. You have read-only access to this shared vehicle.',
-          [{ text: 'OK' }]
-        );
-      }
+      setErrorMessage('Only the vehicle owner can edit vehicle details. You have read-only access to this shared vehicle.');
+      setShowErrorModal(true);
       return;
     }
 
     // Validation
     if (!formData.make.trim()) {
-      if (Platform.OS === 'web') {
-        dialog.alert('Error', 'Please enter the vehicle make');
-      } else {
-        Alert.alert('Error', 'Please enter the vehicle make');
-      }
+      setErrorMessage('Please enter the vehicle make');
+      setShowErrorModal(true);
       return;
     }
     if (!formData.model.trim()) {
-      if (Platform.OS === 'web') {
-        dialog.alert('Error', 'Please enter the vehicle model');
-      } else {
-        Alert.alert('Error', 'Please enter the vehicle model');
-      }
+      setErrorMessage('Please enter the vehicle model');
+      setShowErrorModal(true);
       return;
     }
     if (!formData.license_plate.trim()) {
-      if (Platform.OS === 'web') {
-        dialog.alert('Error', 'Please enter the license plate');
-      } else {
-        Alert.alert('Error', 'Please enter the license plate');
-      }
+      setErrorMessage('Please enter the license plate');
+      setShowErrorModal(true);
       return;
     }
     if (formData.year < 1900 || formData.year > new Date().getFullYear() + 2) {
-      if (Platform.OS === 'web') {
-        dialog.alert('Error', 'Please enter a valid year');
-      } else {
-        Alert.alert('Error', 'Please enter a valid year');
-      }
+      setErrorMessage('Please enter a valid year');
+      setShowErrorModal(true);
       return;
     }
 
-    // Show confirmation modal on web, proceed directly on mobile
-    if (Platform.OS === 'web') {
-      dialog.showConfirm(
-        'Update Vehicle',
-        'Are you sure you want to save these changes?',
-        async () => {
-          await performSave();
-          dialog.hideConfirm();
-        },
-        undefined,
-        'Update',
-        'Cancel'
-      );
-    } else {
-      performSave();
-    }
-  };
-
-  const saveVehicleUpdates = async (imageUrl: string | null) => {
-    if (!vehicle) return;
+    setSaving(true);
 
     const updates = {
       make: formData.make.trim(),
@@ -227,56 +116,66 @@ export default function EditVehicleScreen() {
       year: formData.year,
       license_plate: formData.license_plate.trim().toUpperCase(),
       vin: formData.vin?.trim() || null,
-      main_image_url: imageUrl || null,
+      main_image_url: imageUri || null,
     };
 
     const { error } = await VehicleService.updateVehicle(vehicle.id, updates);
     setSaving(false);
 
     if (error) {
-      let errorMessage = error;
+      let errorMsg = error;
       if (error.includes('permission') || error.includes('access denied')) {
-        errorMessage = 'You do not have permission to edit this vehicle. Only the owner can modify vehicle details.';
+        errorMsg = 'You do not have permission to edit this vehicle. Only the owner can modify vehicle details.';
       }
-      Alert.alert('Error', errorMessage);
+      setErrorMessage(errorMsg);
+      setShowErrorModal(true);
     } else {
-      if (Platform.OS === 'web') {
-        dialog.showSuccess('Success', 'Vehicle updated successfully', () => {
-          router.push('/(tabs)/vehicles');
-        });
-      } else {
-        Alert.alert('Success', 'Vehicle updated successfully', [
-          {
-            text: 'OK',
-            onPress: () => router.push('/(tabs)/vehicles'),
-          },
-        ]);
-      }
+      setShowSuccessModal(true);
     }
   };
 
-  const handleRemoveImage = () => {
-    if (Platform.OS === 'web') {
-      // Use custom dialog on web
-      dialog.showConfirm(
-        'Remove Photo',
-        'Are you sure you want to remove this photo?',
-        () => {
-          setImageUri('');
-          dialog.hideConfirm();
-        },
-        undefined,
-        'Remove',
-        'Cancel',
-        true
-      );
-    } else {
-      // Use native Alert on mobile
-      Alert.alert('Remove Photo', 'Are you sure you want to remove this photo?', [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Remove', style: 'destructive', onPress: () => setImageUri('') },
-      ]);
+  const handleSuccessModalClose = () => {
+    setShowSuccessModal(false);
+    router.push('/(tabs)/vehicles');
+  };
+
+  const handleImageUpload = (url: string) => {
+    setImageUri(url);
+  };
+
+  const handleImageError = (error: string) => {
+    setErrorMessage(error);
+    setShowErrorModal(true);
+  };
+
+  const validateMake = (value: string) => {
+    if (!value.trim()) return 'Make is required';
+    return undefined;
+  };
+
+  const validateModel = (value: string) => {
+    if (!value.trim()) return 'Model is required';
+    return undefined;
+  };
+
+  const validateYear = (value: string) => {
+    const year = parseInt(value);
+    if (isNaN(year) || year < 1900 || year > new Date().getFullYear() + 2) {
+      return 'Please enter a valid year';
     }
+    return undefined;
+  };
+
+  const validateLicensePlate = (value: string) => {
+    if (!value.trim()) return 'License plate is required';
+    return undefined;
+  };
+
+  const validateVin = (value: string) => {
+    if (value && value.length !== 17) {
+      return 'VIN must be exactly 17 characters';
+    }
+    return undefined;
   };
 
   const isFormValid = () => {
@@ -304,7 +203,7 @@ export default function EditVehicleScreen() {
   const styles = StyleSheet.create({
     container: {
       flex: 1,
-      backgroundColor: colors.background,
+      backgroundColor: isWeb ? colors.icon + '08' : colors.background,
     },
     header: {
       flexDirection: 'row',
@@ -313,42 +212,60 @@ export default function EditVehicleScreen() {
       paddingVertical: 16,
       borderBottomWidth: 1,
       borderBottomColor: colors.icon + '20',
+      backgroundColor: colors.background,
     },
     backButton: {
       marginRight: 16,
       padding: 4,
     },
-    title: {
+    headerTitle: {
       fontSize: 24,
       fontWeight: 'bold',
       color: colors.text,
       flex: 1,
     },
-    saveButton: {
-      backgroundColor: colors.tint,
-      paddingHorizontal: 16,
-      paddingVertical: 8,
-      borderRadius: 8,
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 6,
-    },
-    saveButtonDisabled: {
-      opacity: 0.6,
-    },
-    saveButtonText: {
-      color: 'white',
-      fontSize: 14,
-      fontWeight: '600',
-    },
     content: {
       flex: 1,
     },
     scrollContent: {
-      padding: 20,
+      padding: isWeb ? 40 : 20,
+      paddingBottom: 100,
+      ...(isWeb && {
+        maxWidth: 600,
+        width: '100%',
+        alignSelf: 'center',
+      }),
+    },
+    title: {
+      fontSize: 32,
+      fontWeight: 'bold',
+      color: colors.text,
+      marginBottom: 8,
+      textAlign: isWeb ? 'center' : 'left',
+    },
+    subtitle: {
+      fontSize: 16,
+      color: colors.icon,
+      marginBottom: 32,
+      textAlign: isWeb ? 'center' : 'left',
+    },
+    avatarContainer: {
+      alignItems: 'center',
+      marginBottom: 32,
+    },
+    avatarUpload: {
+      width: 120,
+      height: 120,
+      borderRadius: 60,
+    },
+    avatarLabel: {
+      fontSize: 14,
+      color: colors.icon,
+      marginTop: 12,
+      textAlign: 'center',
     },
     section: {
-      marginBottom: 32,
+      marginBottom: 24,
     },
     sectionTitle: {
       fontSize: 18,
@@ -356,47 +273,38 @@ export default function EditVehicleScreen() {
       color: colors.text,
       marginBottom: 16,
     },
-    inputContainer: {
-      marginBottom: 20,
-    },
-    label: {
-      fontSize: 16,
-      fontWeight: '500',
-      color: colors.text,
-      marginBottom: 8,
-    },
-    requiredLabel: {
-      color: '#ff4444',
-    },
-    input: {
-      backgroundColor: colors.background,
-      borderWidth: 1,
-      borderColor: colors.icon,
-      borderRadius: 8,
-      paddingHorizontal: 16,
-      paddingVertical: 12,
-      fontSize: 16,
-      color: colors.text,
-    },
     row: {
-      flexDirection: 'row',
+      flexDirection: isWeb ? 'row' : 'column',
       gap: 16,
     },
     flex1: {
       flex: 1,
     },
-    helpText: {
-      fontSize: 12,
-      color: colors.icon,
-      marginTop: 4,
-      lineHeight: 16,
-    },
-    formCard: {
+    card: {
       backgroundColor: colors.background,
-      borderRadius: 12,
-      padding: 20,
-      borderWidth: 1,
-      borderColor: colors.icon + '20',
+      borderRadius: isWeb ? 16 : 12,
+      padding: isWeb ? 32 : 20,
+      ...(isWeb && {
+        shadowColor: colorScheme === 'dark' ? '#ffffff' : '#000000',
+        shadowOffset: {
+          width: 0,
+          height: 4,
+        },
+        shadowOpacity: colorScheme === 'dark' ? 0.1 : 0.08,
+        shadowRadius: 12,
+        elevation: 4,
+      }),
+    },
+    buttonContainer: {
+      flexDirection: 'row',
+      gap: 12,
+      marginTop: 32,
+    },
+    cancelButton: {
+      flex: 1,
+    },
+    saveButton: {
+      flex: 2,
     },
     loadingContainer: {
       flex: 1,
@@ -423,12 +331,14 @@ export default function EditVehicleScreen() {
   if (loading) {
     return (
       <SafeAreaView style={styles.container}>
-        <View style={styles.header}>
-          <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-            <IconSymbol name="chevron.left" size={24} color={colors.text} />
-          </TouchableOpacity>
-          <Text style={styles.title}>Edit Vehicle</Text>
-        </View>
+        {!isWeb && (
+          <View style={styles.header}>
+            <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+              <IconSymbol name="chevron.left" size={24} color={colors.text} />
+            </TouchableOpacity>
+            <Text style={styles.headerTitle}>Edit Vehicle</Text>
+          </View>
+        )}
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={colors.tint} />
         </View>
@@ -438,31 +348,19 @@ export default function EditVehicleScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-          <IconSymbol name="chevron.left" size={24} color={colors.text} />
-        </TouchableOpacity>
-        <Text style={styles.title}>
-          Edit Vehicle {isSharedVehicle && '(Shared)'}
-        </Text>
-        <TouchableOpacity
-          style={[
-            styles.saveButton,
-            (!isFormValid() || !hasChanges() || saving || isSharedVehicle) && styles.saveButtonDisabled,
-          ]}
-          onPress={handleSave}
-          disabled={!isFormValid() || !hasChanges() || saving || isSharedVehicle}
-        >
-          {saving ? (
-            <ActivityIndicator color="white" size="small" />
-          ) : (
-            <>
-              <IconSymbol name="checkmark" size={14} color="white" />
-              <Text style={styles.saveButtonText}>Save</Text>
-            </>
-          )}
-        </TouchableOpacity>
-      </View>
+      {!isWeb && (
+        <View style={styles.header}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => router.back()}
+          >
+            <IconSymbol name="chevron.left" size={24} color={colors.text} />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>
+            Edit Vehicle {isSharedVehicle && '(Shared)'}
+          </Text>
+        </View>
+      )}
 
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -473,7 +371,16 @@ export default function EditVehicleScreen() {
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
-          <View style={styles.formCard}>
+          {isWeb && (
+            <>
+              <Text style={styles.title}>
+                Edit Vehicle {isSharedVehicle && '(Shared)'}
+              </Text>
+              <Text style={styles.subtitle}>Update vehicle information</Text>
+            </>
+          )}
+
+          <View style={styles.card}>
             {isSharedVehicle && (
               <View style={styles.sharedNotice}>
                 <IconSymbol name="person.2.fill" size={16} color={colors.icon} />
@@ -483,125 +390,147 @@ export default function EditVehicleScreen() {
               </View>
             )}
 
+            {/* Circular Vehicle Photo */}
+            <View style={styles.avatarContainer}>
+              <ImageUpload
+                type="avatar"
+                currentImageUrl={imageUri}
+                onUploadComplete={handleImageUpload}
+                onUploadError={handleImageError}
+                placeholder="Add Vehicle Photo"
+                style={styles.avatarUpload}
+                disabled={isSharedVehicle}
+              />
+              <Text style={styles.avatarLabel}>Vehicle Photo (Optional)</Text>
+            </View>
+
+            {/* Basic Information */}
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Basic Information</Text>
 
-              {!isSharedVehicle && (
-                <ImagePicker
-                  onImageSelected={setImageUri}
-                  currentImage={imageUri}
-                  label="Vehicle Photo (Optional)"
-                  placeholder="Add a vehicle photo"
-                  aspectRatio={[1, 1]}
-                  allowsEditing={true}
-                  onRemove={handleRemoveImage}
-                  enableWebCropping={true}
-                  cropAspectRatio={1}
-                  cropTitle="Crop Vehicle Photo"
-                  cropDescription="Drag to adjust the crop area. Use the corner handles to resize. The grid lines help you align your photo for best results."
-                />
-              )}
-
               <View style={styles.row}>
                 <View style={styles.flex1}>
-                  <View style={styles.inputContainer}>
-                    <Text style={styles.label}>
-                      Make <Text style={styles.requiredLabel}>*</Text>
-                    </Text>
-                    <TextInput
-                      style={styles.input}
-                      value={formData.make}
-                      onChangeText={(text) =>
-                        setFormData(prev => ({ ...prev, make: text }))
-                      }
-                      placeholder="Toyota"
-                      placeholderTextColor={colors.icon}
-                      autoCapitalize="words"
-                      autoCorrect={false}
-                    />
-                  </View>
+                  <Input
+                    label="Make"
+                    value={formData.make}
+                    onChangeText={(text) =>
+                      setFormData(prev => ({ ...prev, make: text }))
+                    }
+                    placeholder="Toyota"
+                    autoCapitalize="words"
+                    autoCorrect={false}
+                    required
+                    error={formData.make ? validateMake(formData.make) : undefined}
+                    leftIcon="car"
+                    editable={!isSharedVehicle}
+                  />
                 </View>
 
                 <View style={styles.flex1}>
-                  <View style={styles.inputContainer}>
-                    <Text style={styles.label}>
-                      Model <Text style={styles.requiredLabel}>*</Text>
-                    </Text>
-                    <TextInput
-                      style={styles.input}
-                      value={formData.model}
-                      onChangeText={(text) =>
-                        setFormData(prev => ({ ...prev, model: text }))
-                      }
-                      placeholder="Camry"
-                      placeholderTextColor={colors.icon}
-                      autoCapitalize="words"
-                      autoCorrect={false}
-                    />
-                  </View>
+                  <Input
+                    label="Model"
+                    value={formData.model}
+                    onChangeText={(text) =>
+                      setFormData(prev => ({ ...prev, model: text }))
+                    }
+                    placeholder="Camry"
+                    autoCapitalize="words"
+                    autoCorrect={false}
+                    required
+                    error={formData.model ? validateModel(formData.model) : undefined}
+                    editable={!isSharedVehicle}
+                  />
                 </View>
               </View>
 
-              <View style={styles.inputContainer}>
-                <Text style={styles.label}>
-                  Year <Text style={styles.requiredLabel}>*</Text>
-                </Text>
-                <TextInput
-                  style={styles.input}
-                  value={formData.year.toString()}
-                  onChangeText={(text) => {
-                    const year = parseInt(text) || new Date().getFullYear();
-                    setFormData(prev => ({ ...prev, year }));
-                  }}
-                  placeholder="2024"
-                  placeholderTextColor={colors.icon}
-                  keyboardType="numeric"
-                  maxLength={4}
-                />
-              </View>
+              <Input
+                label="Year"
+                value={formData.year.toString()}
+                onChangeText={(text) => {
+                  const year = parseInt(text) || new Date().getFullYear();
+                  setFormData(prev => ({ ...prev, year }));
+                }}
+                placeholder="2024"
+                keyboardType="numeric"
+                maxLength={4}
+                required
+                error={formData.year ? validateYear(formData.year.toString()) : undefined}
+                leftIcon="calendar"
+                editable={!isSharedVehicle}
+              />
 
-              <View style={styles.inputContainer}>
-                <Text style={styles.label}>
-                  License Plate <Text style={styles.requiredLabel}>*</Text>
-                </Text>
-                <TextInput
-                  style={styles.input}
-                  value={formData.license_plate}
-                  onChangeText={(text) =>
-                    setFormData(prev => ({ ...prev, license_plate: text.toUpperCase() }))
-                  }
-                  placeholder="ABC123"
-                  placeholderTextColor={colors.icon}
-                  autoCapitalize="characters"
-                  autoCorrect={false}
-                />
-                <Text style={styles.helpText}>
-                  Enter the license plate number as shown on your vehicle
-                </Text>
-              </View>
+              <Input
+                label="License Plate"
+                value={formData.license_plate}
+                onChangeText={(text) =>
+                  setFormData(prev => ({ ...prev, license_plate: text.toUpperCase() }))
+                }
+                placeholder="ABC123"
+                autoCapitalize="characters"
+                autoCorrect={false}
+                required
+                error={formData.license_plate ? validateLicensePlate(formData.license_plate) : undefined}
+                helperText="Enter the license plate number as shown on your vehicle"
+                leftIcon="number"
+                editable={!isSharedVehicle}
+              />
 
-              <View style={styles.inputContainer}>
-                <Text style={styles.label}>VIN (Optional)</Text>
-                <TextInput
-                  style={styles.input}
-                  value={formData.vin}
-                  onChangeText={(text) =>
-                    setFormData(prev => ({ ...prev, vin: text.toUpperCase() }))
-                  }
-                  placeholder="1HGBH41JXMN109186"
-                  placeholderTextColor={colors.icon}
-                  autoCapitalize="characters"
-                  autoCorrect={false}
-                  maxLength={17}
-                />
-                <Text style={styles.helpText}>
-                  Vehicle Identification Number (17 characters)
-                </Text>
-              </View>
+              <Input
+                label="VIN (Optional)"
+                value={formData.vin || ''}
+                onChangeText={(text) =>
+                  setFormData(prev => ({ ...prev, vin: text.toUpperCase() }))
+                }
+                placeholder="1HGBH41JXMN109186"
+                autoCapitalize="characters"
+                autoCorrect={false}
+                maxLength={17}
+                showCharacterCount
+                error={formData.vin ? validateVin(formData.vin) : undefined}
+                helperText="Vehicle Identification Number (17 characters)"
+                leftIcon="barcode"
+                editable={!isSharedVehicle}
+              />
+            </View>
+
+            {/* Action Buttons */}
+            <View style={styles.buttonContainer}>
+              <Button
+                title="Cancel"
+                onPress={() => router.back()}
+                variant="outline"
+                icon="xmark"
+                style={styles.cancelButton}
+              />
+              <Button
+                title="Update Vehicle"
+                onPress={handleSave}
+                disabled={!isFormValid() || !hasChanges() || isSharedVehicle}
+                loading={saving}
+                icon="checkmark"
+                style={styles.saveButton}
+              />
             </View>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
+
+      <AlertModal
+        visible={showSuccessModal}
+        onClose={handleSuccessModalClose}
+        title="Success"
+        message="Vehicle updated successfully!"
+        variant="success"
+        buttonText="Done"
+      />
+
+      <AlertModal
+        visible={showErrorModal}
+        onClose={() => setShowErrorModal(false)}
+        title="Error"
+        message={errorMessage}
+        variant="error"
+      />
     </SafeAreaView>
   );
 }

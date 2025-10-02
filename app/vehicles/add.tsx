@@ -1,7 +1,7 @@
 import { Button } from '@/components/ui/Button';
 import { Card, CardContent } from '@/components/ui/Card';
 import { IconSymbol } from '@/components/ui/icon-symbol';
-import { ImagePicker } from '@/components/ui/ImagePicker';
+import { ImageUpload } from '@/components/ui/ImageUpload';
 import { Input } from '@/components/ui/Input';
 import { AlertModal } from '@/components/ui/Modal';
 import { Colors } from '@/constants/theme';
@@ -30,12 +30,14 @@ export default function AddVehicleScreen() {
     vin: '',
   });
   const [imageUri, setImageUri] = useState<string>('');
+  const [vehicleId, setVehicleId] = useState<string>('');
   const [loading, setLoading] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [showErrorModal, setShowErrorModal] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
+  const isWeb = Platform.OS === 'web';
 
   const handleSave = async () => {
     // Validation
@@ -56,13 +58,6 @@ export default function AddVehicleScreen() {
     }
     if (formData.year < 1900 || formData.year > new Date().getFullYear() + 2) {
       setErrorMessage('Please enter a valid year');
-      setShowErrorModal(true);
-      return;
-    }
-
-    // Validate image URI if provided
-    if (imageUri && imageUri.startsWith('file://')) {
-      setErrorMessage('Invalid image format. Please try selecting the image again.');
       setShowErrorModal(true);
       return;
     }
@@ -95,6 +90,15 @@ export default function AddVehicleScreen() {
   const handleSuccessModalClose = () => {
     setShowSuccessModal(false);
     router.push('/(tabs)/vehicles');
+  };
+
+  const handleImageUpload = (url: string) => {
+    setImageUri(url);
+  };
+
+  const handleImageError = (error: string) => {
+    setErrorMessage(error);
+    setShowErrorModal(true);
   };
 
   const validateMake = (value: string) => {
@@ -140,7 +144,7 @@ export default function AddVehicleScreen() {
   const styles = StyleSheet.create({
     container: {
       flex: 1,
-      backgroundColor: colors.background,
+      backgroundColor: isWeb ? colors.icon + '08' : colors.background,
     },
     header: {
       flexDirection: 'row',
@@ -149,12 +153,13 @@ export default function AddVehicleScreen() {
       paddingVertical: 16,
       borderBottomWidth: 1,
       borderBottomColor: colors.icon + '20',
+      backgroundColor: colors.background,
     },
     backButton: {
       marginRight: 16,
       padding: 4,
     },
-    title: {
+    headerTitle: {
       fontSize: 24,
       fontWeight: 'bold',
       color: colors.text,
@@ -164,10 +169,44 @@ export default function AddVehicleScreen() {
       flex: 1,
     },
     scrollContent: {
-      padding: 20,
+      padding: isWeb ? 40 : 20,
+      paddingBottom: 100,
+      ...(isWeb && {
+        maxWidth: 600,
+        width: '100%',
+        alignSelf: 'center',
+      }),
+    },
+    title: {
+      fontSize: 32,
+      fontWeight: 'bold',
+      color: colors.text,
+      marginBottom: 8,
+      textAlign: isWeb ? 'center' : 'left',
+    },
+    subtitle: {
+      fontSize: 16,
+      color: colors.icon,
+      marginBottom: 32,
+      textAlign: isWeb ? 'center' : 'left',
+    },
+    avatarContainer: {
+      alignItems: 'center',
+      marginBottom: 32,
+    },
+    avatarUpload: {
+      width: 120,
+      height: 120,
+      borderRadius: 60,
+    },
+    avatarLabel: {
+      fontSize: 14,
+      color: colors.icon,
+      marginTop: 12,
+      textAlign: 'center',
     },
     section: {
-      marginBottom: 32,
+      marginBottom: 24,
     },
     sectionTitle: {
       fontSize: 18,
@@ -176,94 +215,53 @@ export default function AddVehicleScreen() {
       marginBottom: 16,
     },
     row: {
-      flexDirection: 'row',
+      flexDirection: isWeb ? 'row' : 'column',
       gap: 16,
     },
     flex1: {
       flex: 1,
     },
-    sharingSection: {
-      marginTop: 24,
-      paddingTop: 24,
-      borderTopWidth: 1,
-      borderTopColor: colors.icon + '20',
+    card: {
+      backgroundColor: colors.background,
+      borderRadius: isWeb ? 16 : 12,
+      padding: isWeb ? 32 : 20,
+      ...(isWeb && {
+        shadowColor: colorScheme === 'dark' ? '#ffffff' : '#000000',
+        shadowOffset: {
+          width: 0,
+          height: 4,
+        },
+        shadowOpacity: colorScheme === 'dark' ? 0.1 : 0.08,
+        shadowRadius: 12,
+        elevation: 4,
+      }),
     },
-    sharingToggle: {
+    buttonContainer: {
       flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      paddingVertical: 8,
+      gap: 12,
+      marginTop: 32,
     },
-    sharingInfo: {
-      flex: 1,
-      marginRight: 16,
-    },
-    sharingTitle: {
-      fontSize: 16,
-      fontWeight: '600',
-      color: colors.text,
-      marginBottom: 4,
-    },
-    sharingDescription: {
-      fontSize: 14,
-      color: colors.icon,
-      lineHeight: 20,
-    },
-    sharingNote: {
-      fontSize: 12,
-      color: colors.tint,
-      marginTop: 6,
-      fontStyle: 'italic',
-    },
-    sharingHelpCard: {
-      backgroundColor: colors.tint + '10',
-      borderRadius: 8,
-      padding: 12,
-      marginTop: 16,
-      flexDirection: 'row',
-      alignItems: 'flex-start',
-      borderWidth: 1,
-      borderColor: colors.tint + '20',
-    },
-    sharingHelpIcon: {
-      marginRight: 8,
-      marginTop: 2,
-    },
-    sharingHelpContent: {
+    cancelButton: {
       flex: 1,
     },
-    sharingHelpTitle: {
-      fontSize: 14,
-      fontWeight: '600',
-      color: colors.text,
-      marginBottom: 6,
-    },
-    sharingHelpText: {
-      fontSize: 13,
-      color: colors.text,
-      lineHeight: 18,
+    saveButton: {
+      flex: 2,
     },
   });
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => router.back()}
-        >
-          <IconSymbol name="chevron.left" size={24} color={colors.text} />
-        </TouchableOpacity>
-        <Text style={styles.title}>Add Vehicle</Text>
-        <Button
-          title="Save"
-          onPress={handleSave}
-          disabled={!isFormValid()}
-          loading={loading}
-          icon="checkmark"
-          size="small"
-        />
-      </View>
+      {!isWeb && (
+        <View style={styles.header}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => router.back()}
+          >
+            <IconSymbol name="chevron.left" size={24} color={colors.text} />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Add Vehicle</Text>
+        </View>
+      )}
 
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -274,105 +272,130 @@ export default function AddVehicleScreen() {
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
-          <Card variant="default" padding="large">
-            <CardContent>
-              <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Basic Information</Text>
+          {isWeb && (
+            <>
+              <Text style={styles.title}>Add Vehicle</Text>
+              <Text style={styles.subtitle}>Add a new vehicle to your fleet</Text>
+            </>
+          )}
 
-                <ImagePicker
-                  onImageSelected={setImageUri}
-                  currentImage={imageUri}
-                  label="Vehicle Photo (Optional)"
-                  placeholder="Add a vehicle photo"
-                  aspectRatio={[1, 1]}
-                  allowsEditing={true}
-                  enableWebCropping={true}
-                  cropAspectRatio={1}
-                  cropTitle="Crop Vehicle Photo"
-                  cropDescription="Drag to adjust the crop area. Use the corner handles to resize. The grid lines help you align your photo for best results."
-                />
+          <View style={styles.card}>
+            {/* Circular Vehicle Photo */}
+            <View style={styles.avatarContainer}>
+              <ImageUpload
+                type="avatar"
+                currentImageUrl={imageUri}
+                onUploadComplete={handleImageUpload}
+                onUploadError={handleImageError}
+                placeholder="Add Vehicle Photo"
+                style={styles.avatarUpload}
+              />
+              <Text style={styles.avatarLabel}>Vehicle Photo (Optional)</Text>
+            </View>
 
-                <View style={styles.row}>
-                  <View style={styles.flex1}>
-                    <Input
-                      label="Make"
-                      value={formData.make}
-                      onChangeText={(text) =>
-                        setFormData(prev => ({ ...prev, make: text }))
-                      }
-                      placeholder="Toyota"
-                      autoCapitalize="words"
-                      autoCorrect={false}
-                      required
-                      error={validateMake(formData.make)}
-                      leftIcon="car"
-                    />
-                  </View>
+            {/* Basic Information */}
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Basic Information</Text>
 
-                  <View style={styles.flex1}>
-                    <Input
-                      label="Model"
-                      value={formData.model}
-                      onChangeText={(text) =>
-                        setFormData(prev => ({ ...prev, model: text }))
-                      }
-                      placeholder="Camry"
-                      autoCapitalize="words"
-                      autoCorrect={false}
-                      required
-                      error={validateModel(formData.model)}
-                    />
-                  </View>
+              <View style={styles.row}>
+                <View style={styles.flex1}>
+                  <Input
+                    label="Make"
+                    value={formData.make}
+                    onChangeText={(text) =>
+                      setFormData(prev => ({ ...prev, make: text }))
+                    }
+                    placeholder="Toyota"
+                    autoCapitalize="words"
+                    autoCorrect={false}
+                    required
+                    error={formData.make ? validateMake(formData.make) : undefined}
+                    leftIcon="car"
+                  />
                 </View>
 
-                <Input
-                  label="Year"
-                  value={formData.year.toString()}
-                  onChangeText={(text) => {
-                    const year = parseInt(text) || new Date().getFullYear();
-                    setFormData(prev => ({ ...prev, year }));
-                  }}
-                  placeholder="2024"
-                  keyboardType="numeric"
-                  maxLength={4}
-                  required
-                  error={validateYear(formData.year.toString())}
-                  leftIcon="calendar"
-                />
-
-                <Input
-                  label="License Plate"
-                  value={formData.license_plate}
-                  onChangeText={(text) =>
-                    setFormData(prev => ({ ...prev, license_plate: text.toUpperCase() }))
-                  }
-                  placeholder="ABC123"
-                  autoCapitalize="characters"
-                  autoCorrect={false}
-                  required
-                  error={validateLicensePlate(formData.license_plate)}
-                  helperText="Enter the license plate number as shown on your vehicle"
-                  leftIcon="number"
-                />
-
-                <Input
-                  label="VIN (Optional)"
-                  value={formData.vin || ''}
-                  onChangeText={(text) =>
-                    setFormData(prev => ({ ...prev, vin: text.toUpperCase() }))
-                  }
-                  placeholder="1HGBH41JXMN109186"
-                  autoCapitalize="characters"
-                  autoCorrect={false}
-                  maxLength={17}
-                  showCharacterCount
-                  error={validateVin(formData.vin || '')}
-                  helperText="Vehicle Identification Number (17 characters)"
-                  leftIcon="barcode"
-                />
+                <View style={styles.flex1}>
+                  <Input
+                    label="Model"
+                    value={formData.model}
+                    onChangeText={(text) =>
+                      setFormData(prev => ({ ...prev, model: text }))
+                    }
+                    placeholder="Camry"
+                    autoCapitalize="words"
+                    autoCorrect={false}
+                    required
+                    error={formData.model ? validateModel(formData.model) : undefined}
+                  />
+                </View>
               </View>
-            </CardContent>
-          </Card>
+
+              <Input
+                label="Year"
+                value={formData.year.toString()}
+                onChangeText={(text) => {
+                  const year = parseInt(text) || new Date().getFullYear();
+                  setFormData(prev => ({ ...prev, year }));
+                }}
+                placeholder="2024"
+                keyboardType="numeric"
+                maxLength={4}
+                required
+                error={formData.year ? validateYear(formData.year.toString()) : undefined}
+                leftIcon="calendar"
+              />
+
+              <Input
+                label="License Plate"
+                value={formData.license_plate}
+                onChangeText={(text) =>
+                  setFormData(prev => ({ ...prev, license_plate: text.toUpperCase() }))
+                }
+                placeholder="ABC123"
+                autoCapitalize="characters"
+                autoCorrect={false}
+                required
+                error={formData.license_plate ? validateLicensePlate(formData.license_plate) : undefined}
+                helperText="Enter the license plate number as shown on your vehicle"
+                leftIcon="number"
+              />
+
+              <Input
+                label="VIN (Optional)"
+                value={formData.vin || ''}
+                onChangeText={(text) =>
+                  setFormData(prev => ({ ...prev, vin: text.toUpperCase() }))
+                }
+                placeholder="1HGBH41JXMN109186"
+                autoCapitalize="characters"
+                autoCorrect={false}
+                maxLength={17}
+                showCharacterCount
+                error={formData.vin ? validateVin(formData.vin) : undefined}
+                helperText="Vehicle Identification Number (17 characters)"
+                leftIcon="barcode"
+              />
+            </View>
+
+            {/* Action Buttons */}
+            <View style={styles.buttonContainer}>
+              <Button
+                title="Cancel"
+                onPress={() => router.back()}
+                variant="outline"
+                icon="xmark"
+                style={styles.cancelButton}
+              />
+              <Button
+                title="Save Vehicle"
+                onPress={handleSave}
+                disabled={!isFormValid()}
+                loading={loading}
+                icon="checkmark"
+                style={styles.saveButton}
+              />
+            </View>
+          </View>
         </ScrollView>
       </KeyboardAvoidingView>
 

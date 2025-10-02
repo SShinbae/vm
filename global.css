@@ -24,6 +24,43 @@ html, body {
   transition: background-color 0.2s ease, color 0.2s ease;
 }
 
+/* Sidebar transition styles */
+.sidebar-transition {
+  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1), 
+              padding 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+              margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Content area transition for sidebar */
+.content-transition {
+  transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Text fade transition */
+.text-fade-transition {
+  transition: opacity 0.2s ease-in-out;
+}
+
+/* Navigation item transitions */
+.nav-item-transition {
+  transition: all 0.2s ease;
+}
+
+.nav-item-transition:hover {
+  transform: translateX(4px);
+}
+
+/* Sign out button hover effect */
+.toggle-button-transition {
+  transition: all 0.2s ease, 
+              box-shadow 0.2s ease;
+}
+
+.toggle-button-transition:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  transform: scale(1.05);
+}
+
 /* React Image Crop styles - React Native compatible */
 @import 'react-image-crop/dist/ReactCrop.css';
 

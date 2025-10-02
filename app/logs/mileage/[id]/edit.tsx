@@ -1,24 +1,25 @@
-import React, { useState, useEffect } from 'react';
-import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  ScrollView,
-  KeyboardAvoidingView,
-  Platform,
-  StyleSheet,
-  Alert,
-  ActivityIndicator,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { router, useLocalSearchParams } from 'expo-router';
-import { MileageLogService } from '@/lib/services/loggingService';
-import { MileageLogFormData, MileageLog } from '@/types';
+import { Button } from '@/components/ui/Button';
+import { DatePicker } from '@/components/ui/DatePicker';
+import { IconSymbol } from '@/components/ui/icon-symbol';
+import { Input } from '@/components/ui/Input';
+import { AlertModal } from '@/components/ui/Modal';
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
-import { IconSymbol } from '@/components/ui/icon-symbol';
-import { DatePicker } from '@/components/ui/DatePicker';
+import { MileageLogService } from '@/lib/services/loggingService';
+import { MileageLog, MileageLogFormData } from '@/types';
+import { router, useLocalSearchParams } from 'expo-router';
+import React, { useEffect, useState } from 'react';
+import {
+  ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function EditMileageLogScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -31,13 +32,18 @@ export default function EditMileageLogScreen() {
   });
   const [loading, setLoading] = useState(false);
   const [dataLoading, setDataLoading] = useState(true);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [showErrorModal, setShowErrorModal] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
+  const isWeb = Platform.OS === 'web';
 
   useEffect(() => {
     const fetchMileageLog = async () => {
       if (!id) {
-        Alert.alert('Error', 'Invalid mileage log ID');
+        setErrorMessage('Invalid mileage log ID');
+        setShowErrorModal(true);
         router.back();
         return;
       }
@@ -46,13 +52,14 @@ export default function EditMileageLogScreen() {
         const { data: logs, error } = await MileageLogService.getMileageLogs();
         if (error) {
           console.error('Error fetching mileage logs:', error);
-          let errorMessage = 'Failed to load mileage log';
+          let errorMsg = 'Failed to load mileage log';
           if (error.includes('User not authenticated')) {
-            errorMessage = 'Your session has expired. Please log in again.';
+            errorMsg = 'Your session has expired. Please log in again.';
           } else if (error.includes('Failed to fetch')) {
-            errorMessage = 'Unable to load mileage log. Please check your internet connection.';
+            errorMsg = 'Unable to load mileage log. Please check your internet connection.';
           }
-          Alert.alert('Error', errorMessage);
+          setErrorMessage(errorMsg);
+          setShowErrorModal(true);
           router.back();
           return;
         }
@@ -60,12 +67,8 @@ export default function EditMileageLogScreen() {
         const log = logs?.find(l => l.id === id);
         if (!log) {
           console.error('No mileage log found with ID:', id);
-          Alert.alert('Error', 'This mileage log no longer exists. It may have been deleted.', [
-            {
-              text: 'OK',
-              onPress: () => router.back(),
-            },
-          ]);
+          setErrorMessage('This mileage log no longer exists. It may have been deleted.');
+          setShowErrorModal(true);
           router.back();
           return;
         }
@@ -79,7 +82,8 @@ export default function EditMileageLogScreen() {
         });
       } catch (error) {
         console.error('Error fetching mileage log:', error);
-        Alert.alert('Error', 'Failed to load mileage log');
+        setErrorMessage('Failed to load mileage log');
+        setShowErrorModal(true);
         router.back();
       }
 
@@ -90,13 +94,14 @@ export default function EditMileageLogScreen() {
   }, [id]);
 
   const handleSave = async () => {
-    // Validation
     if (formData.odometer_reading <= 0) {
-      Alert.alert('Error', 'Please enter a valid odometer reading');
+      setErrorMessage('Please enter a valid odometer reading');
+      setShowErrorModal(true);
       return;
     }
     if (!formData.date) {
-      Alert.alert('Error', 'Please select a date');
+      setErrorMessage('Please select a date');
+      setShowErrorModal(true);
       return;
     }
 
@@ -114,38 +119,40 @@ export default function EditMileageLogScreen() {
     if (error) {
       console.error('Error updating mileage log:', error);
 
-      // Provide more specific error messages based on the error content
-      let errorMessage = error;
+      let errorMsg = error;
       if (error.includes('not found') || error.includes('no longer exists')) {
-        errorMessage = 'This mileage log no longer exists. It may have been deleted by another user.';
+        errorMsg = 'This mileage log no longer exists. It may have been deleted by another user.';
       } else if (error.includes('Access denied') || error.includes('permission')) {
-        errorMessage = 'You do not have permission to edit this mileage log. Please contact the vehicle owner if this is a shared vehicle.';
+        errorMsg = 'You do not have permission to edit this mileage log. Please contact the vehicle owner if this is a shared vehicle.';
       } else if (error.includes('User not authenticated')) {
-        errorMessage = 'Your session has expired. Please log in again.';
+        errorMsg = 'Your session has expired. Please log in again.';
       } else if (error.includes('Failed to update mileage log')) {
-        errorMessage = 'Unable to save changes. Please check your internet connection and try again.';
+        errorMsg = 'Unable to save changes. Please check your internet connection and try again.';
       } else if (error.includes('could not be updated')) {
-        errorMessage = 'The mileage log could not be updated. It may have been deleted or you may not have sufficient permissions.';
+        errorMsg = 'The mileage log could not be updated. It may have been deleted or you may not have sufficient permissions.';
       }
 
-      Alert.alert('Error', errorMessage, [
-        {
-          text: 'OK',
-          style: 'default',
-        },
-        ...(error.includes('no longer exists') ? [{
-          text: 'Go Back',
-          onPress: () => router.back(),
-        }] : [])
-      ]);
+      setErrorMessage(errorMsg);
+      setShowErrorModal(true);
     } else {
-      Alert.alert('Success', 'Mileage log updated successfully', [
-        {
-          text: 'OK',
-          onPress: () => router.push('/(tabs)/logs'),
-        },
-      ]);
+      setShowSuccessModal(true);
     }
+  };
+
+  const handleSuccessModalClose = () => {
+    setShowSuccessModal(false);
+    router.push('/(tabs)/logs');
+  };
+
+  const validateOdometer = (value: string) => {
+    const num = parseInt(value.replace(/,/g, ''));
+    if (isNaN(num) || num <= 0) return 'Please enter a valid odometer reading';
+    return undefined;
+  };
+
+  const validateDate = (value: string) => {
+    if (!value.trim()) return 'Date is required';
+    return undefined;
   };
 
   const isFormValid = () => {
@@ -155,7 +162,7 @@ export default function EditMileageLogScreen() {
   const styles = StyleSheet.create({
     container: {
       flex: 1,
-      backgroundColor: colors.background,
+      backgroundColor: isWeb ? colors.icon + '08' : colors.background,
     },
     header: {
       flexDirection: 'row',
@@ -164,46 +171,73 @@ export default function EditMileageLogScreen() {
       paddingVertical: 16,
       borderBottomWidth: 1,
       borderBottomColor: colors.icon + '20',
+      backgroundColor: colors.background,
     },
     backButton: {
       marginRight: 16,
       padding: 4,
     },
-    title: {
+    headerTitle: {
       fontSize: 24,
       fontWeight: 'bold',
       color: colors.text,
       flex: 1,
     },
-    saveButton: {
-      backgroundColor: colors.tint,
-      paddingHorizontal: 16,
-      paddingVertical: 8,
-      borderRadius: 8,
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 6,
-    },
-    saveButtonDisabled: {
-      opacity: 0.6,
-    },
-    saveButtonText: {
-      color: 'white',
-      fontSize: 14,
-      fontWeight: '600',
-    },
     content: {
       flex: 1,
     },
     scrollContent: {
-      padding: 20,
+      padding: isWeb ? 40 : 20,
+      paddingBottom: 100,
+      ...(isWeb && {
+        maxWidth: 600,
+        width: '100%',
+        alignSelf: 'center',
+      }),
     },
-    formCard: {
+    title: {
+      fontSize: 32,
+      fontWeight: 'bold',
+      color: colors.text,
+      marginBottom: 8,
+      textAlign: isWeb ? 'center' : 'left',
+    },
+    subtitle: {
+      fontSize: 16,
+      color: colors.icon,
+      marginBottom: 32,
+      textAlign: isWeb ? 'center' : 'left',
+    },
+    card: {
       backgroundColor: colors.background,
-      borderRadius: 12,
-      padding: 20,
-      borderWidth: 1,
-      borderColor: colors.icon + '20',
+      borderRadius: isWeb ? 16 : 12,
+      padding: isWeb ? 32 : 20,
+      ...(isWeb && {
+        shadowColor: colorScheme === 'dark' ? '#ffffff' : '#000000',
+        shadowOffset: {
+          width: 0,
+          height: 4,
+        },
+        shadowOpacity: colorScheme === 'dark' ? 0.1 : 0.08,
+        shadowRadius: 12,
+        elevation: 4,
+      }),
+    },
+    buttonContainer: {
+      flexDirection: 'row',
+      gap: 12,
+      marginTop: 32,
+    },
+    cancelButton: {
+      flex: 1,
+    },
+    saveButton: {
+      flex: 2,
+    },
+    loadingContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
     },
     inputContainer: {
       marginBottom: 20,
@@ -213,28 +247,6 @@ export default function EditMileageLogScreen() {
       fontWeight: '500',
       color: colors.text,
       marginBottom: 8,
-    },
-    requiredLabel: {
-      color: '#ff4444',
-    },
-    input: {
-      backgroundColor: colors.background,
-      borderWidth: 1,
-      borderColor: colors.icon,
-      borderRadius: 8,
-      paddingHorizontal: 16,
-      paddingVertical: 12,
-      fontSize: 16,
-      color: colors.text,
-    },
-    textArea: {
-      height: 80,
-      textAlignVertical: 'top',
-    },
-    loadingContainer: {
-      flex: 1,
-      justifyContent: 'center',
-      alignItems: 'center',
     },
     vehicleInfo: {
       backgroundColor: colors.icon + '10',
@@ -267,12 +279,14 @@ export default function EditMileageLogScreen() {
   if (dataLoading) {
     return (
       <SafeAreaView style={styles.container}>
-        <View style={styles.header}>
-          <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-            <IconSymbol name="chevron.left" size={24} color={colors.text} />
-          </TouchableOpacity>
-          <Text style={styles.title}>Edit Mileage Log</Text>
-        </View>
+        {!isWeb && (
+          <View style={styles.header}>
+            <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+              <IconSymbol name="chevron.left" size={24} color={colors.text} />
+            </TouchableOpacity>
+            <Text style={styles.headerTitle}>Edit Mileage Log</Text>
+          </View>
+        )}
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={colors.tint} />
         </View>
@@ -282,26 +296,14 @@ export default function EditMileageLogScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-          <IconSymbol name="chevron.left" size={24} color={colors.text} />
-        </TouchableOpacity>
-        <Text style={styles.title}>Edit Mileage Log</Text>
-        <TouchableOpacity
-          style={[styles.saveButton, (!isFormValid() || loading) && styles.saveButtonDisabled]}
-          onPress={handleSave}
-          disabled={!isFormValid() || loading}
-        >
-          {loading ? (
-            <ActivityIndicator color="white" size="small" />
-          ) : (
-            <>
-              <IconSymbol name="checkmark" size={14} color="white" />
-              <Text style={styles.saveButtonText}>Save</Text>
-            </>
-          )}
-        </TouchableOpacity>
-      </View>
+      {!isWeb && (
+        <View style={styles.header}>
+          <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+            <IconSymbol name="chevron.left" size={24} color={colors.text} />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Edit Mileage Log</Text>
+        </View>
+      )}
 
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -312,7 +314,14 @@ export default function EditMileageLogScreen() {
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
-          <View style={styles.formCard}>
+          {isWeb && (
+            <>
+              <Text style={styles.title}>Edit Mileage Log</Text>
+              <Text style={styles.subtitle}>Update mileage information</Text>
+            </>
+          )}
+
+          <View style={styles.card}>
             <View style={styles.inputContainer}>
               <Text style={styles.label}>Vehicle</Text>
               {mileageLog?.vehicles && (
@@ -330,22 +339,20 @@ export default function EditMileageLogScreen() {
               )}
             </View>
 
-            <View style={styles.inputContainer}>
-              <Text style={styles.label}>
-                Odometer Reading (km) <Text style={styles.requiredLabel}>*</Text>
-              </Text>
-              <TextInput
-                style={styles.input}
-                value={formData.odometer_reading.toString()}
-                onChangeText={(text) => {
-                  const reading = parseInt(text.replace(/,/g, '')) || 0;
-                  setFormData(prev => ({ ...prev, odometer_reading: reading }));
-                }}
-                placeholder="150,000"
-                placeholderTextColor={colors.icon}
-                keyboardType="numeric"
-              />
-            </View>
+            <Input
+              label="Odometer Reading (km)"
+              value={formData.odometer_reading > 0 ? formData.odometer_reading.toString() : ''}
+              onChangeText={(text) => {
+                const reading = parseInt(text.replace(/,/g, '')) || 0;
+                setFormData(prev => ({ ...prev, odometer_reading: reading }));
+              }}
+              placeholder="150,000"
+              keyboardType="numeric"
+              required
+              error={formData.odometer_reading ? validateOdometer(formData.odometer_reading.toString()) : undefined}
+              helperText="Enter the current odometer reading in kilometers"
+              leftIcon="speedometer"
+            />
 
             <DatePicker
               label="Date"
@@ -355,21 +362,52 @@ export default function EditMileageLogScreen() {
               required={true}
             />
 
-            <View style={styles.inputContainer}>
-              <Text style={styles.label}>Notes (Optional)</Text>
-              <TextInput
-                style={[styles.input, styles.textArea]}
-                value={formData.notes}
-                onChangeText={(text) => setFormData(prev => ({ ...prev, notes: text }))}
-                placeholder="Add any notes about this mileage reading..."
-                placeholderTextColor={colors.icon}
-                multiline
-                textAlignVertical="top"
+            <Input
+              label="Notes (Optional)"
+              value={formData.notes || ''}
+              onChangeText={(text) => setFormData(prev => ({ ...prev, notes: text }))}
+              placeholder="Add any notes about this mileage reading..."
+              multiline
+              numberOfLines={3}
+            />
+
+            <View style={styles.buttonContainer}>
+              <Button
+                title="Cancel"
+                onPress={() => router.back()}
+                variant="outline"
+                icon="xmark"
+                style={styles.cancelButton}
+              />
+              <Button
+                title="Update Log"
+                onPress={handleSave}
+                disabled={!isFormValid()}
+                loading={loading}
+                icon="checkmark"
+                style={styles.saveButton}
               />
             </View>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
+
+      <AlertModal
+        visible={showSuccessModal}
+        onClose={handleSuccessModalClose}
+        title="Success"
+        message="Mileage log updated successfully!"
+        variant="success"
+        buttonText="Done"
+      />
+
+      <AlertModal
+        visible={showErrorModal}
+        onClose={() => setShowErrorModal(false)}
+        title="Error"
+        message={errorMessage}
+        variant="error"
+      />
     </SafeAreaView>
   );
 }

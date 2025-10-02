@@ -1,12 +1,15 @@
-import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Platform } from 'react-native';
-import { router, usePathname } from 'expo-router';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { ConfirmModal } from '@/components/ui/Modal';
-import { useAuth } from '@/lib/contexts/AuthContext';
-import { useResponsiveLayout } from '@/hooks/use-responsive-layout';
+import { Tooltip } from '@/components/ui/Tooltip';
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import { useResponsiveLayout } from '@/hooks/use-responsive-layout';
+import { useAuth } from '@/lib/contexts/AuthContext';
+import { useSidebar } from '@/lib/contexts/SidebarContext';
+import { Image } from 'expo-image';
+import { router, usePathname } from 'expo-router';
+import React, { useState } from 'react';
+import { Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 interface NavItem {
   name: string;
@@ -21,7 +24,6 @@ const NAV_ITEMS: NavItem[] = [
   { name: 'analytics', icon: 'chart.line.uptrend.xyaxis', path: '/analytics', label: 'Analytics' },
   { name: 'logs', icon: 'doc.text.fill', path: '/logs', label: 'Logs' },
   { name: 'groups', icon: 'person.3.fill', path: '/groups', label: 'Groups' },
-  { name: 'profile', icon: 'person.fill', path: '/profile', label: 'Profile' },
 ];
 
 export function WebSidebar() {
@@ -30,10 +32,14 @@ export function WebSidebar() {
   const colors = Colors[colorScheme ?? 'light'];
   const pathname = usePathname();
   const { user, signOut } = useAuth();
+  const { isOpen, toggle } = useSidebar();
   const [showLogoutModal, setShowLogoutModal] = useState(false);
 
-  // Only render on web and larger screens
-  if (!layout.isWeb || layout.isMobile) {
+  // Hide sidebar on auth pages (login, register)
+  const isAuthPage = pathname === '/login' || pathname === '/register' || pathname.startsWith('/(auth)');
+
+  // Only render on web and larger screens, and not on auth pages
+  if (!layout.isWeb || layout.isMobile || isAuthPage) {
     return null;
   }
 
@@ -51,49 +57,89 @@ export function WebSidebar() {
     const isActive = pathname === item.path || pathname.startsWith(item.path + '/');
 
     return (
-      <TouchableOpacity
-        style={[
-          styles.navButton,
-          {
-            backgroundColor: isActive ? colors.tint : 'transparent',
-          }
-        ]}
-        onPress={() => router.push(item.path as any)}
+      <Tooltip 
+        content={item.label} 
+        position="right" 
+        disabled={isOpen} // Only show tooltip when sidebar is collapsed
       >
-        <IconSymbol
-          name={item.icon}
-          size={20}
-          color={isActive ? 'white' : colors.text}
-        />
-        <Text
+        <TouchableOpacity
           style={[
-            styles.navButtonText,
+            styles.navButton,
             {
-              color: isActive ? 'white' : colors.text,
+              backgroundColor: isActive ? colors.tint : 'transparent',
+              justifyContent: isOpen ? 'flex-start' : 'center',
+              paddingHorizontal: isOpen ? 16 : 12,
+            },
+            Platform.OS === 'web' && {
+              // @ts-ignore - web-specific class
+              className: 'nav-item-transition',
             }
           ]}
+          onPress={() => router.push(item.path as any)}
         >
-          {item.label}
-        </Text>
-      </TouchableOpacity>
+          <IconSymbol
+            name={item.icon as any}
+            size={20}
+            color={isActive ? 'white' : colors.text}
+          />
+          {isOpen && (
+            <Text
+              style={[
+                styles.navButtonText,
+                {
+                  color: isActive ? 'white' : colors.text,
+                },
+                Platform.OS === 'web' && {
+                  // @ts-ignore - web-specific class
+                  className: 'text-fade-transition',
+                }
+              ]}
+            >
+              {item.label}
+            </Text>
+          )}
+        </TouchableOpacity>
+      </Tooltip>
     );
   };
 
   const styles = StyleSheet.create({
     sidebar: {
-      width: 240,
+      width: isOpen ? 240 : 60,
       height: '100%',
       backgroundColor: colors.background,
       borderRightWidth: 1,
       borderRightColor: colors.icon + '20',
       paddingVertical: 24,
-      paddingHorizontal: 16,
+      paddingHorizontal: isOpen ? 16 : 8,
       ...Platform.select({
         web: {
           position: 'fixed' as any,
           left: 0,
           top: 0,
           zIndex: 100,
+          // @ts-ignore - web-specific class
+          className: 'sidebar-transition',
+        },
+      }),
+    },
+    toggleButton: {
+      position: 'absolute',
+      top: 36, // Align with "Vehicle Manager" text
+      right: -15,
+      width: 30,
+      height: 30,
+      borderRadius: 15,
+      backgroundColor: colors.background,
+      borderWidth: 1,
+      borderColor: colors.icon + '20',
+      alignItems: 'center',
+      justifyContent: 'center',
+      ...Platform.select({
+        web: {
+          zIndex: 101,
+          // @ts-ignore - web-specific class
+          className: 'toggle-button-transition',
         },
       }),
     },
@@ -101,7 +147,16 @@ export function WebSidebar() {
       flexDirection: 'row',
       alignItems: 'center',
       marginBottom: 32,
-      paddingHorizontal: 8,
+      paddingHorizontal: isOpen ? 8 : 0,
+      justifyContent: isOpen ? 'flex-start' : 'center',
+      paddingVertical: 8,
+      borderRadius: 8,
+      ...Platform.select({
+        web: {
+          // @ts-ignore - web-specific class
+          className: 'nav-item-transition',
+        },
+      }),
     },
     brandText: {
       fontSize: 18,
@@ -116,7 +171,6 @@ export function WebSidebar() {
     navButton: {
       flexDirection: 'row',
       alignItems: 'center',
-      paddingHorizontal: 16,
       paddingVertical: 12,
       borderRadius: 8,
       gap: 12,
@@ -129,66 +183,222 @@ export function WebSidebar() {
       borderTopWidth: 1,
       borderTopColor: colors.icon + '20',
       paddingTop: 16,
-      gap: 16,
+      gap: 12,
     },
-    userInfo: {
-      paddingHorizontal: 8,
-      flexDirection: 'row',
+    signOutButtonContainer: {
+      paddingHorizontal: isOpen ? 8 : 0,
       alignItems: 'center',
-      justifyContent: 'space-between',
-    },
-    userDetails: {
-      flex: 1,
-    },
-    userName: {
-      fontSize: 14,
-      fontWeight: '600',
-      color: colors.text,
-      marginBottom: 2,
-    },
-    userEmail: {
-      fontSize: 12,
-      color: colors.icon,
     },
     signOutButton: {
-      width: 32,
+      width: isOpen ? '100%' : 32,
       height: 32,
       borderRadius: 16,
       backgroundColor: '#ff4444',
+      flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'center',
-      marginLeft: 8,
+      gap: 8,
+      ...Platform.select({
+        web: {
+          // @ts-ignore - web-specific class
+          className: 'toggle-button-transition',
+        },
+      }),
     },
     signOutText: {
       color: 'white',
       fontSize: 14,
       fontWeight: '500',
     },
+    userInfo: {
+      paddingHorizontal: isOpen ? 8 : 0,
+      flexDirection: 'column',
+      alignItems: 'center',
+      gap: 8,
+    },
+    userAvatarRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
+      width: isOpen ? '100%' : undefined,
+      justifyContent: 'center',
+    },
+    avatar: {
+      width: 32,
+      height: 32,
+      borderRadius: 16,
+      backgroundColor: colors.background,
+      borderWidth: 2,
+      borderColor: colors.tint,
+      alignItems: 'center',
+      justifyContent: 'center',
+      overflow: 'hidden',
+      flexShrink: 0,
+    },
+    avatarImage: {
+      width: '100%',
+      height: '100%',
+    },
+    userDetails: {
+      flex: 1,
+      minWidth: 0,
+      alignItems: isOpen ? 'flex-start' : 'center',
+    },
+    userName: {
+      fontSize: 14,
+      fontWeight: '600',
+      color: colors.text,
+      marginBottom: 2,
+      ...Platform.select({
+        web: {
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          whiteSpace: 'nowrap',
+          width: '100%',
+        },
+      }),
+    },
+    userEmail: {
+      fontSize: 12,
+      color: colors.icon,
+      ...Platform.select({
+        web: {
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          whiteSpace: 'nowrap',
+          width: '100%',
+        },
+      }),
+    },
   });
 
   return (
     <View style={styles.sidebar}>
-      <View style={styles.brand}>
-        <IconSymbol name="car.fill" size={24} color={colors.tint} />
-        <Text style={styles.brandText}>Vehicle Manager</Text>
-      </View>
+      {/* Toggle Button */}
+      <Tooltip 
+        content={`${isOpen ? 'Collapse' : 'Expand'} sidebar (Ctrl+B)`} 
+        position="right"
+      >
+        <TouchableOpacity 
+          style={styles.toggleButton} 
+          onPress={toggle}
+          activeOpacity={0.7}
+        >
+          <IconSymbol 
+            name={isOpen ? "chevron.left" : "chevron.right"} 
+            size={16} 
+            color={colors.text} 
+          />
+        </TouchableOpacity>
+      </Tooltip>
 
+      {/* Brand Section */}
+      <Tooltip 
+        content="Vehicle Manager" 
+        position="right" 
+        disabled={isOpen}
+      >
+        <View style={styles.brand}>
+          <IconSymbol name="car.fill" size={24} color={colors.tint} />
+          {isOpen && (
+            <Text 
+              style={[
+                styles.brandText,
+                Platform.OS === 'web' && {
+                  // @ts-ignore - web-specific class
+                  className: 'text-fade-transition',
+                }
+              ]}
+            >
+              Vehicle Manager
+            </Text>
+          )}
+        </View>
+      </Tooltip>
+
+      {/* Navigation */}
       <View style={styles.nav}>
         {NAV_ITEMS.map((item) => (
           <NavButton key={item.name} item={item} />
         ))}
       </View>
 
+      {/* User Section */}
       <View style={styles.userSection}>
-        <View style={styles.userInfo}>
-          <View style={styles.userDetails}>
-            <Text style={styles.userName}>{user?.email?.split('@')[0]}</Text>
-            <Text style={styles.userEmail}>{user?.email}</Text>
-          </View>
-          <TouchableOpacity style={styles.signOutButton} onPress={handleSignOutClick}>
-            <IconSymbol name="arrow.right.square" size={14} color="white" />
-          </TouchableOpacity>
+        {/* Sign Out Button */}
+        <View style={styles.signOutButtonContainer}>
+          <Tooltip
+            content="Sign Out"
+            position="right"
+            disabled={isOpen}
+          >
+            <TouchableOpacity
+              style={styles.signOutButton}
+              onPress={handleSignOutClick}
+              activeOpacity={0.8}
+            >
+              <IconSymbol name="arrow.right.square" size={14} color="white" />
+              {isOpen && (
+                <Text
+                  style={[
+                    styles.signOutText,
+                    Platform.OS === 'web' && {
+                      // @ts-ignore - web-specific class
+                      className: 'text-fade-transition',
+                    }
+                  ]}
+                >
+                  Sign Out
+                </Text>
+              )}
+            </TouchableOpacity>
+          </Tooltip>
         </View>
+
+        {/* User Info */}
+        <Tooltip
+          content="Profile"
+          position="right"
+          disabled={isOpen}
+        >
+          <TouchableOpacity
+            style={styles.userInfo}
+            onPress={() => router.push('/profile' as any)}
+            activeOpacity={0.7}
+          >
+            <View style={styles.userAvatarRow}>
+              {/* Avatar */}
+              <View style={styles.avatar}>
+                {user?.profile?.avatar_url ? (
+                  <Image
+                    source={{ uri: user.profile.avatar_url }}
+                    style={styles.avatarImage}
+                    contentFit="cover"
+                    cachePolicy="memory-disk"
+                  />
+                ) : (
+                  <IconSymbol name="person.fill" size={16} color={colors.tint} />
+                )}
+              </View>
+
+              {/* User Details - only show when expanded */}
+              {isOpen && (
+                <View
+                  style={[
+                    styles.userDetails,
+                    Platform.OS === 'web' && {
+                      // @ts-ignore - web-specific class
+                      className: 'text-fade-transition',
+                    }
+                  ]}
+                >
+                  <Text style={styles.userName}>{user?.profile?.username || user?.email?.split('@')[0]}</Text>
+                  <Text style={styles.userEmail}>{user?.email}</Text>
+                </View>
+              )}
+            </View>
+          </TouchableOpacity>
+        </Tooltip>
       </View>
 
       <ConfirmModal

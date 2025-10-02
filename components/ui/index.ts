@@ -7,6 +7,7 @@ export { DatePicker } from './DatePicker';
 export { IconSymbol } from './icon-symbol';
 export { Input } from './Input';
 export { AlertModal, ConfirmModal, Modal } from './Modal';
+export { Tooltip } from './Tooltip';
 export { WebAlertProvider, useAlert, withWebAlert } from './WebAlertProvider';
 
 // Loading & State Components

@@ -36,6 +36,7 @@ export default function GroupDetailScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
+  const isWeb = Platform.OS === 'web';
 
   const fetchGroupData = useCallback(async () => {
     if (!id) return;
@@ -634,12 +635,14 @@ export default function GroupDetailScreen() {
   if (!group) {
     return (
       <SafeAreaView style={styles.container}>
-        <View style={styles.header}>
-          <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-            <IconSymbol name="chevron.left" size={24} color={colors.text} />
-          </TouchableOpacity>
-          <Text style={styles.title}>Group Not Found</Text>
-        </View>
+        {!isWeb && (
+          <View style={styles.header}>
+            <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+              <IconSymbol name="chevron.left" size={24} color={colors.text} />
+            </TouchableOpacity>
+            <Text style={styles.title}>Group Not Found</Text>
+          </View>
+        )}
       </SafeAreaView>
     );
   }
@@ -648,35 +651,37 @@ export default function GroupDetailScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-          <IconSymbol name="chevron.left" size={24} color={colors.text} />
-        </TouchableOpacity>
-        <Text style={styles.title} numberOfLines={1}>
-          {group.name}
-        </Text>
-        {isOwner ? (
-          <View style={styles.headerButtons}>
-            <TouchableOpacity
-              style={styles.headerButton}
-              onPress={() => router.push(`/groups/${group.id}/invite` as any)}
-            >
-              <IconSymbol name="plus" size={12} color="white" />
-              <Text style={styles.headerButtonText}>Invite</Text>
-            </TouchableOpacity>
-          </View>
-        ) : (
-          <View style={styles.headerButtons}>
-            <TouchableOpacity
-              style={[styles.headerButton, styles.leaveButton]}
-              onPress={handleLeaveGroup}
-            >
-              <IconSymbol name="minus" size={12} color="#ff4444" />
-              <Text style={[styles.headerButtonText, styles.leaveButtonText]}>Leave</Text>
-            </TouchableOpacity>
-          </View>
-        )}
-      </View>
+      {!isWeb && (
+        <View style={styles.header}>
+          <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+            <IconSymbol name="chevron.left" size={24} color={colors.text} />
+          </TouchableOpacity>
+          <Text style={styles.title} numberOfLines={1}>
+            {group.name}
+          </Text>
+          {isOwner ? (
+            <View style={styles.headerButtons}>
+              <TouchableOpacity
+                style={styles.headerButton}
+                onPress={() => router.push(`/groups/${group.id}/invite` as any)}
+              >
+                <IconSymbol name="plus" size={12} color="white" />
+                <Text style={styles.headerButtonText}>Invite</Text>
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <View style={styles.headerButtons}>
+              <TouchableOpacity
+                style={[styles.headerButton, styles.leaveButton]}
+                onPress={handleLeaveGroup}
+              >
+                <IconSymbol name="minus" size={12} color="#ff4444" />
+                <Text style={[styles.headerButtonText, styles.leaveButtonText]}>Leave</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+        </View>
+      )}
 
       {group.description && (
         <View style={styles.groupInfo}>
