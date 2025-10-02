@@ -6,6 +6,7 @@ import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useAuth } from '@/lib/contexts/AuthContext';
 import { useTheme } from '@/lib/contexts/ThemeContext';
+import { useDialog } from '@/lib/contexts/DialogContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router } from 'expo-router';
 import React, { useEffect, useState } from 'react';
@@ -27,6 +28,7 @@ import { supabase } from '../../services/supabaseClient';
 export default function ProfileScreen() {
   const { user, updateProfile, signOut } = useAuth();
   const { themeMode, setThemeMode } = useTheme();
+  const { showConfirm, hideConfirm } = useDialog();
   const [fullName, setFullName] = useState(user?.profile?.full_name || '');
   const [username, setUsername] = useState(user?.profile?.username || '');
   const [avatarUrl, setAvatarUrl] = useState(user?.profile?.avatar_url || null);
@@ -149,23 +151,23 @@ export default function ProfileScreen() {
   };
 
   const handleSignOut = async () => {
-    Alert.alert(
+    showConfirm(
       'Sign Out',
       'Are you sure you want to sign out?',
-      [
-        {
-          text: 'Cancel',
-          style: 'cancel',
-        },
-        {
-          text: 'Sign Out',
-          style: 'destructive',
-          onPress: async () => {
-            await signOut();
-            router.replace('/login');
-          },
-        },
-      ]
+      async () => {
+        try {
+          await signOut();
+          hideConfirm();
+          router.replace('/(auth)/login');
+        } catch (error) {
+          console.error('Error signing out:', error);
+          hideConfirm();
+        }
+      },
+      undefined,
+      'Sign Out',
+      'Cancel',
+      true
     );
   };
 

@@ -1,5 +1,8 @@
+import { Button } from '@/components/ui/Button';
 import { DatePicker } from '@/components/ui/DatePicker';
 import { IconSymbol } from '@/components/ui/icon-symbol';
+import { Input } from '@/components/ui/Input';
+import { AlertModal } from '@/components/ui/Modal';
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { FuelLogService } from '@/lib/services/loggingService';
@@ -8,13 +11,11 @@ import { router, useLocalSearchParams } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
     ActivityIndicator,
-    Alert,
     KeyboardAvoidingView,
     Platform,
     ScrollView,
     StyleSheet,
     Text,
-    TextInput,
     TouchableOpacity,
     View,
 } from 'react-native';
@@ -34,8 +35,12 @@ export default function EditFuelLogScreen() {
   });
   const [loading, setLoading] = useState(false);
   const [dataLoading, setDataLoading] = useState(true);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [showErrorModal, setShowErrorModal] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
+  const isWeb = Platform.OS === 'web';
 
   // Auto-calculate liters based on cost and fuel price (only this direction)
   const calculateLiters = (cost: number, fuelPrice: number) => {
@@ -48,7 +53,8 @@ export default function EditFuelLogScreen() {
   useEffect(() => {
     const fetchFuelLog = async () => {
       if (!id) {
-        Alert.alert('Error', 'Invalid fuel log ID');
+        setErrorMessage('Invalid fuel log ID');
+        setShowErrorModal(true);
         router.back();
         return;
       }
@@ -57,13 +63,14 @@ export default function EditFuelLogScreen() {
         const { data: logs, error } = await FuelLogService.getFuelLogs();
         if (error) {
           console.error('Error fetching fuel logs:', error);
-          let errorMessage = 'Failed to load fuel log';
+          let errorMsg = 'Failed to load fuel log';
           if (error.includes('User not authenticated')) {
-            errorMessage = 'Your session has expired. Please log in again.';
+            errorMsg = 'Your session has expired. Please log in again.';
           } else if (error.includes('Failed to fetch')) {
-            errorMessage = 'Unable to load fuel log. Please check your internet connection.';
+            errorMsg = 'Unable to load fuel log. Please check your internet connection.';
           }
-          Alert.alert('Error', errorMessage);
+          setErrorMessage(errorMsg);
+          setShowErrorModal(true);
           router.back();
           return;
         }
@@ -71,12 +78,8 @@ export default function EditFuelLogScreen() {
         const log = logs?.find(l => l.id === id);
         if (!log) {
           console.error('No fuel log found with ID:', id);
-          Alert.alert('Error', 'This fuel log no longer exists. It may have been deleted.', [
-            {
-              text: 'OK',
-              onPress: () => router.back(),
-            },
-          ]);
+          setErrorMessage('This fuel log no longer exists. It may have been deleted.');
+          setShowErrorModal(true);
           router.back();
           return;
         }
@@ -93,7 +96,8 @@ export default function EditFuelLogScreen() {
         });
       } catch (error) {
         console.error('Error fetching fuel log:', error);
-        Alert.alert('Error', 'Failed to load fuel log');
+        setErrorMessage('Failed to load fuel log');
+        setShowErrorModal(true);
         router.back();
       }
 
@@ -106,19 +110,23 @@ export default function EditFuelLogScreen() {
   const handleSave = async () => {
     // Validation
     if (!formData.cost || formData.cost <= 0) {
-      Alert.alert('Error', 'Please enter a valid cost amount');
+      setErrorMessage('Please enter a valid cost amount');
+      setShowErrorModal(true);
       return;
     }
     if (!formData.fuel_price || formData.fuel_price <= 0) {
-      Alert.alert('Error', 'Please select a fuel price');
+      setErrorMessage('Please select a fuel price');
+      setShowErrorModal(true);
       return;
     }
     if (formData.odometer_reading <= 0) {
-      Alert.alert('Error', 'Please enter a valid odometer reading');
+      setErrorMessage('Please enter a valid odometer reading');
+      setShowErrorModal(true);
       return;
     }
     if (!formData.date) {
-      Alert.alert('Error', 'Please select a date');
+      setErrorMessage('Please select a date');
+      setShowErrorModal(true);
       return;
     }
 
@@ -140,37 +148,45 @@ export default function EditFuelLogScreen() {
       console.error('Error updating fuel log:', error);
 
       // Provide more specific error messages based on the error content
-      let errorMessage = error;
+      let errorMsg = error;
       if (error.includes('not found') || error.includes('no longer exists')) {
-        errorMessage = 'This fuel log no longer exists. It may have been deleted by another user.';
+        errorMsg = 'This fuel log no longer exists. It may have been deleted by another user.';
       } else if (error.includes('Access denied') || error.includes('permission')) {
-        errorMessage = 'You do not have permission to edit this fuel log. Please contact the vehicle owner if this is a shared vehicle.';
+        errorMsg = 'You do not have permission to edit this fuel log. Please contact the vehicle owner if this is a shared vehicle.';
       } else if (error.includes('User not authenticated')) {
-        errorMessage = 'Your session has expired. Please log in again.';
+        errorMsg = 'Your session has expired. Please log in again.';
       } else if (error.includes('Failed to update fuel log')) {
-        errorMessage = 'Unable to save changes. Please check your internet connection and try again.';
+        errorMsg = 'Unable to save changes. Please check your internet connection and try again.';
       } else if (error.includes('could not be updated')) {
-        errorMessage = 'The fuel log could not be updated. It may have been deleted or you may not have sufficient permissions.';
+        errorMsg = 'The fuel log could not be updated. It may have been deleted or you may not have sufficient permissions.';
       }
 
-      Alert.alert('Error', errorMessage, [
-        {
-          text: 'OK',
-          style: 'default',
-        },
-        ...(error.includes('no longer exists') ? [{
-          text: 'Go Back',
-          onPress: () => router.back(),
-        }] : [])
-      ]);
+      setErrorMessage(errorMsg);
+      setShowErrorModal(true);
     } else {
-      Alert.alert('Success', 'Fuel log updated successfully', [
-        {
-          text: 'OK',
-          onPress: () => router.push('/(tabs)/logs'),
-        },
-      ]);
+      setShowSuccessModal(true);
     }
+  };
+
+  const handleSuccessModalClose = () => {
+    setShowSuccessModal(false);
+    router.push('/(tabs)/logs');
+  };
+
+  const validateCost = (value: string) => {
+    const cost = parseFloat(value);
+    if (isNaN(cost) || cost <= 0) {
+      return 'Please enter a valid cost amount';
+    }
+    return undefined;
+  };
+
+  const validateOdometer = (value: string) => {
+    const reading = parseInt(value.replace(/,/g, ''));
+    if (isNaN(reading) || reading <= 0) {
+      return 'Please enter a valid odometer reading';
+    }
+    return undefined;
   };
 
   const isFormValid = () => {
@@ -185,7 +201,7 @@ export default function EditFuelLogScreen() {
   const styles = StyleSheet.create({
     container: {
       flex: 1,
-      backgroundColor: colors.background,
+      backgroundColor: isWeb ? colors.icon + '08' : colors.background,
     },
     header: {
       flexDirection: 'row',
@@ -194,46 +210,66 @@ export default function EditFuelLogScreen() {
       paddingVertical: 16,
       borderBottomWidth: 1,
       borderBottomColor: colors.icon + '20',
+      backgroundColor: colors.background,
     },
     backButton: {
       marginRight: 16,
       padding: 4,
     },
-    title: {
+    headerTitle: {
       fontSize: 24,
       fontWeight: 'bold',
       color: colors.text,
       flex: 1,
     },
-    saveButton: {
-      backgroundColor: colors.tint,
-      paddingHorizontal: 16,
-      paddingVertical: 8,
-      borderRadius: 8,
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 6,
-    },
-    saveButtonDisabled: {
-      opacity: 0.6,
-    },
-    saveButtonText: {
-      color: 'white',
-      fontSize: 14,
-      fontWeight: '600',
-    },
     content: {
       flex: 1,
     },
     scrollContent: {
-      padding: 20,
+      padding: isWeb ? 40 : 20,
+      paddingBottom: 100,
+      ...(isWeb && {
+        maxWidth: 600,
+        width: '100%',
+        alignSelf: 'center',
+      }),
     },
-    formCard: {
+    title: {
+      fontSize: 32,
+      fontWeight: 'bold',
+      color: colors.text,
+      marginBottom: 8,
+      textAlign: isWeb ? 'center' : 'left',
+    },
+    subtitle: {
+      fontSize: 16,
+      color: colors.icon,
+      marginBottom: 32,
+      textAlign: isWeb ? 'center' : 'left',
+    },
+    card: {
       backgroundColor: colors.background,
-      borderRadius: 12,
-      padding: 20,
-      borderWidth: 1,
-      borderColor: colors.icon + '20',
+      borderRadius: isWeb ? 16 : 12,
+      padding: isWeb ? 32 : 20,
+      ...(isWeb && {
+        shadowColor: colorScheme === 'dark' ? '#ffffff' : '#000000',
+        shadowOffset: {
+          width: 0,
+          height: 4,
+        },
+        shadowOpacity: colorScheme === 'dark' ? 0.1 : 0.08,
+        shadowRadius: 12,
+        elevation: 4,
+      }),
+    },
+    section: {
+      marginBottom: 24,
+    },
+    sectionTitle: {
+      fontSize: 18,
+      fontWeight: '600',
+      color: colors.text,
+      marginBottom: 16,
     },
     inputContainer: {
       marginBottom: 20,
@@ -247,18 +283,8 @@ export default function EditFuelLogScreen() {
     requiredLabel: {
       color: '#ff4444',
     },
-    input: {
-      backgroundColor: colors.background,
-      borderWidth: 1,
-      borderColor: colors.icon,
-      borderRadius: 8,
-      paddingHorizontal: 16,
-      paddingVertical: 12,
-      fontSize: 16,
-      color: colors.text,
-    },
     row: {
-      flexDirection: 'row',
+      flexDirection: isWeb ? 'row' : 'column',
       gap: 16,
     },
     flex1: {
@@ -325,17 +351,30 @@ export default function EditFuelLogScreen() {
       backgroundColor: colors.icon + '10',
       color: colors.icon,
     },
+    buttonContainer: {
+      flexDirection: 'row',
+      gap: 12,
+      marginTop: 32,
+    },
+    cancelButton: {
+      flex: 1,
+    },
+    saveButton: {
+      flex: 2,
+    },
   });
 
   if (dataLoading) {
     return (
       <SafeAreaView style={styles.container}>
-        <View style={styles.header}>
-          <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-            <IconSymbol name="chevron.left" size={24} color={colors.text} />
-          </TouchableOpacity>
-          <Text style={styles.title}>Edit Fuel Log</Text>
-        </View>
+        {!isWeb && (
+          <View style={styles.header}>
+            <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+              <IconSymbol name="chevron.left" size={24} color={colors.text} />
+            </TouchableOpacity>
+            <Text style={styles.headerTitle}>Edit Fuel Log</Text>
+          </View>
+        )}
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={colors.tint} />
         </View>
@@ -345,26 +384,14 @@ export default function EditFuelLogScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-          <IconSymbol name="chevron.left" size={24} color={colors.text} />
-        </TouchableOpacity>
-        <Text style={styles.title}>Edit Fuel Log</Text>
-        <TouchableOpacity
-          style={[styles.saveButton, (!isFormValid() || loading) && styles.saveButtonDisabled]}
-          onPress={handleSave}
-          disabled={!isFormValid() || loading}
-        >
-          {loading ? (
-            <ActivityIndicator color="white" size="small" />
-          ) : (
-            <>
-              <IconSymbol name="checkmark" size={14} color="white" />
-              <Text style={styles.saveButtonText}>Save</Text>
-            </>
-          )}
-        </TouchableOpacity>
-      </View>
+      {!isWeb && (
+        <View style={styles.header}>
+          <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+            <IconSymbol name="chevron.left" size={24} color={colors.text} />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Edit Fuel Log</Text>
+        </View>
+      )}
 
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -375,7 +402,14 @@ export default function EditFuelLogScreen() {
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
-          <View style={styles.formCard}>
+          {isWeb && (
+            <>
+              <Text style={styles.title}>Edit Fuel Log</Text>
+              <Text style={styles.subtitle}>Update your fuel log details</Text>
+            </>
+          )}
+
+          <View style={styles.card}>
             <View style={styles.inputContainer}>
               <Text style={styles.label}>Vehicle</Text>
               {(fuelLog as any)?.vehicles && (
@@ -393,129 +427,159 @@ export default function EditFuelLogScreen() {
               )}
             </View>
 
-            <View style={styles.inputContainer}>
-              <Text style={styles.label}>
-                Fuel Price (RM per liter) <Text style={styles.requiredLabel}>*</Text>
-              </Text>
-              <View style={styles.fuelPriceSelector}>
-                {[1.99, 2.60, 3.21].map((price) => (
-                  <TouchableOpacity
-                    key={price}
-                    style={[
-                      styles.fuelPriceOption,
-                      formData.fuel_price === price && styles.fuelPriceOptionSelected,
-                    ]}
-                    onPress={() => {
-                      setFormData(prev => {
-                        const newData = { ...prev, fuel_price: price };
-                        
-                        // Auto-calculate liters if cost is entered
-                        if (prev.cost && prev.cost > 0) {
-                          newData.liters_filled = calculateLiters(prev.cost, price);
-                        }
-                        
-                        return newData;
-                      });
-                    }}
-                  >
-                    <Text style={[
-                      styles.fuelPriceOptionText,
-                      formData.fuel_price === price && styles.fuelPriceOptionTextSelected,
-                    ]}>
-                      RM{price.toFixed(2)}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </View>
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Fuel Details</Text>
 
-            <View style={styles.row}>
-              <View style={styles.flex1}>
-                <View style={styles.inputContainer}>
-                  <Text style={styles.label}>
-                    Cost (RM) <Text style={styles.requiredLabel}>*</Text>
-                  </Text>
-                  <TextInput
-                    style={styles.input}
+              <View style={styles.inputContainer}>
+                <Text style={styles.label}>
+                  Fuel Price (RM per liter) <Text style={styles.requiredLabel}>*</Text>
+                </Text>
+                <View style={styles.fuelPriceSelector}>
+                  {[1.99, 2.60, 3.21].map((price) => (
+                    <TouchableOpacity
+                      key={price}
+                      style={[
+                        styles.fuelPriceOption,
+                        formData.fuel_price === price && styles.fuelPriceOptionSelected,
+                      ]}
+                      onPress={() => {
+                        setFormData(prev => {
+                          const newData = { ...prev, fuel_price: price };
+
+                          // Auto-calculate liters if cost is entered
+                          if (prev.cost && prev.cost > 0) {
+                            newData.liters_filled = calculateLiters(prev.cost, price);
+                          }
+
+                          return newData;
+                        });
+                      }}
+                    >
+                      <Text style={[
+                        styles.fuelPriceOptionText,
+                        formData.fuel_price === price && styles.fuelPriceOptionTextSelected,
+                      ]}>
+                        RM{price.toFixed(2)}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </View>
+
+              <View style={styles.row}>
+                <View style={styles.flex1}>
+                  <Input
+                    label="Cost (RM)"
                     value={formData.cost?.toString() || ''}
                     onChangeText={(text) => {
                       const cost = parseFloat(text) || 0;
                       setFormData(prev => {
                         const newData = { ...prev, cost };
-                        
+
                         // Auto-calculate liters if fuel price is selected
                         if (prev.fuel_price && prev.fuel_price > 0 && cost > 0) {
                           newData.liters_filled = calculateLiters(cost, prev.fuel_price);
                         }
-                        
+
                         return newData;
                       });
                     }}
                     placeholder="65.00"
-                    placeholderTextColor={colors.icon}
                     keyboardType="numeric"
+                    required
+                    error={formData.cost ? validateCost(formData.cost.toString()) : undefined}
+                    leftIcon="dollarsign"
                   />
                 </View>
-              </View>
 
-              <View style={styles.flex1}>
-                <View style={styles.inputContainer}>
-                  <Text style={styles.label}>Liters Filled</Text>
-                  <TextInput
-                    style={[styles.input, styles.inputReadOnly]}
+                <View style={styles.flex1}>
+                  <Input
+                    label="Liters Filled"
                     value={formData.liters_filled.toString()}
                     placeholder="Auto-calculated"
-                    placeholderTextColor={colors.icon}
                     editable={false}
+                    helperText="Calculated from cost and fuel price"
+                    leftIcon="drop"
                   />
                 </View>
               </View>
-            </View>
 
-            <View style={styles.row}>
-              <View style={styles.flex1}>
-                <View style={styles.inputContainer}>
-                  <Text style={styles.label}>
-                    Odometer (km) <Text style={styles.requiredLabel}>*</Text>
-                  </Text>
-                  <TextInput
-                    style={styles.input}
+              <View style={styles.row}>
+                <View style={styles.flex1}>
+                  <Input
+                    label="Odometer (km)"
                     value={formData.odometer_reading.toString()}
                     onChangeText={(text) => {
                       const reading = parseInt(text.replace(/,/g, '')) || 0;
                       setFormData(prev => ({ ...prev, odometer_reading: reading }));
                     }}
                     placeholder="150,000"
-                    placeholderTextColor={colors.icon}
                     keyboardType="numeric"
+                    required
+                    error={formData.odometer_reading ? validateOdometer(formData.odometer_reading.toString()) : undefined}
+                    leftIcon="speedometer"
+                  />
+                </View>
+
+                <View style={styles.flex1}>
+                  <DatePicker
+                    label="Date"
+                    value={formData.date}
+                    onDateChange={(date) => setFormData(prev => ({ ...prev, date }))}
+                    placeholder="Select date"
+                    required
+                    style={{ marginBottom: 0 }}
                   />
                 </View>
               </View>
 
-              <View style={styles.flex1}>
-                <DatePicker
-                  label="Date"
-                  value={formData.date}
-                  onDateChange={(date) => setFormData(prev => ({ ...prev, date }))}
-                  placeholder="Select date"
-                  required={true}
-                />
-              </View>
-            </View>
-
-            <View style={styles.inputContainer}>
-              <Text style={styles.label}>Location (Optional)</Text>
-              <TextInput
-                style={styles.input}
+              <Input
+                label="Location (Optional)"
                 value={formData.location}
                 onChangeText={(text) => setFormData(prev => ({ ...prev, location: text }))}
                 placeholder="Petrol station name or location..."
-                placeholderTextColor={colors.icon}
+                leftIcon="location"
+              />
+            </View>
+
+            {/* Action Buttons */}
+            <View style={styles.buttonContainer}>
+              <Button
+                title="Cancel"
+                onPress={() => router.back()}
+                variant="outline"
+                icon="xmark"
+                style={styles.cancelButton}
+              />
+              <Button
+                title="Save Changes"
+                onPress={handleSave}
+                disabled={!isFormValid()}
+                loading={loading}
+                icon="checkmark"
+                style={styles.saveButton}
               />
             </View>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
+
+      <AlertModal
+        visible={showSuccessModal}
+        onClose={handleSuccessModalClose}
+        title="Success"
+        message="Fuel log updated successfully!"
+        variant="success"
+        buttonText="Done"
+      />
+
+      <AlertModal
+        visible={showErrorModal}
+        onClose={() => setShowErrorModal(false)}
+        title="Error"
+        message={errorMessage}
+        variant="error"
+      />
     </SafeAreaView>
   );
 }

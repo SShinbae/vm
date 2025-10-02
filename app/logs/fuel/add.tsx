@@ -1,4 +1,6 @@
+import { Button } from '@/components/ui/Button';
 import { IconSymbol } from '@/components/ui/icon-symbol';
+import { Input } from '@/components/ui/Input';
 import { AlertModal } from '@/components/ui/Modal';
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
@@ -6,21 +8,19 @@ import { FuelLogService } from '@/lib/services/loggingService';
 import { VehicleService } from '@/lib/services/vehicleService';
 import { FuelLogFormData } from '@/types';
 import { VehicleWithDetails } from '@/types/database-v2';
+import { Image } from 'expo-image';
 import { router, useLocalSearchParams } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
-import { Image } from 'expo-image';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function AddFuelLogScreen() {
@@ -30,7 +30,7 @@ export default function AddFuelLogScreen() {
     vehicle_id: vehicleId || '',
     liters_filled: 0,
     cost: 0,
-    fuel_price: 1.99, // Default to first option
+    fuel_price: 1.99,
     date: new Date().toISOString().split('T')[0],
     odometer_reading: 0,
     location: '',
@@ -38,14 +38,16 @@ export default function AddFuelLogScreen() {
   const [loading, setLoading] = useState(false);
   const [vehiclesLoading, setVehiclesLoading] = useState(true);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [showErrorModal, setShowErrorModal] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
+  const isWeb = Platform.OS === 'web';
 
   useEffect(() => {
     const fetchVehicles = async () => {
       const { data, error } = await VehicleService.getVehiclesSeparated();
       if (!error && data) {
-        // Combine both owned and shared vehicles for the dropdown
         const allVehicles = [...data.ownVehicles, ...data.sharedVehicles];
         setVehicles(allVehicles);
         if (!vehicleId && allVehicles.length > 0) {
@@ -58,34 +60,37 @@ export default function AddFuelLogScreen() {
     fetchVehicles();
   }, [vehicleId]);
 
-  // Auto-calculate liters based on cost and fuel price (only this direction)
   const calculateLiters = (cost: number, fuelPrice: number) => {
     if (fuelPrice > 0 && cost > 0) {
-      return Math.round((cost / fuelPrice) * 1000) / 1000; // Round to 3 decimal places
+      return Math.round((cost / fuelPrice) * 1000) / 1000;
     }
     return 0;
   };
 
   const handleSave = async () => {
-    // Validation
     if (!formData.vehicle_id) {
-      Alert.alert('Error', 'Please select a vehicle');
+      setErrorMessage('Please select a vehicle');
+      setShowErrorModal(true);
       return;
     }
     if (!formData.cost || formData.cost <= 0) {
-      Alert.alert('Error', 'Please enter a valid cost amount');
+      setErrorMessage('Please enter a valid cost amount');
+      setShowErrorModal(true);
       return;
     }
     if (!formData.fuel_price || formData.fuel_price <= 0) {
-      Alert.alert('Error', 'Please select a fuel price');
+      setErrorMessage('Please select a fuel price');
+      setShowErrorModal(true);
       return;
     }
     if (formData.odometer_reading <= 0) {
-      Alert.alert('Error', 'Please enter a valid odometer reading');
+      setErrorMessage('Please enter a valid odometer reading');
+      setShowErrorModal(true);
       return;
     }
     if (!formData.date) {
-      Alert.alert('Error', 'Please select a date');
+      setErrorMessage('Please select a date');
+      setShowErrorModal(true);
       return;
     }
 
@@ -105,19 +110,28 @@ export default function AddFuelLogScreen() {
     setLoading(false);
 
     if (error) {
-      Alert.alert('Error', error);
+      setErrorMessage(error);
+      setShowErrorModal(true);
     } else {
-      if (Platform.OS === 'web') {
-        setShowSuccessModal(true);
-      } else {
-        Alert.alert('Success', 'Fuel log added successfully', [
-          {
-            text: 'OK',
-            onPress: () => router.push('/(tabs)/logs'),
-          },
-        ]);
-      }
+      setShowSuccessModal(true);
     }
+  };
+
+  const handleSuccessModalClose = () => {
+    setShowSuccessModal(false);
+    router.push('/(tabs)/logs');
+  };
+
+  const validateCost = (value: string) => {
+    const num = parseFloat(value);
+    if (isNaN(num) || num <= 0) return 'Please enter a valid cost';
+    return undefined;
+  };
+
+  const validateOdometer = (value: string) => {
+    const num = parseInt(value.replace(/,/g, ''));
+    if (isNaN(num) || num <= 0) return 'Please enter a valid odometer reading';
+    return undefined;
   };
 
   const isFormValid = () => {
@@ -132,11 +146,10 @@ export default function AddFuelLogScreen() {
 
   const VehicleSelector = () => {
     const selectedVehicle = vehicles.find(v => v.id === formData.vehicle_id);
-    const isLocked = !!vehicleId; // Lock when vehicleId is provided from navigation
+    const isLocked = !!vehicleId;
     const [imageError, setImageError] = React.useState(false);
 
     if (isLocked && selectedVehicle) {
-      // Show locked single vehicle when navigated from vehicle detail
       return (
         <View style={styles.inputContainer}>
           <Text style={styles.label}>
@@ -178,7 +191,6 @@ export default function AddFuelLogScreen() {
       );
     }
 
-    // Show full vehicle selector when accessed from logs tab
     return (
       <View style={styles.inputContainer}>
         <Text style={styles.label}>
@@ -239,7 +251,7 @@ export default function AddFuelLogScreen() {
   const styles = StyleSheet.create({
     container: {
       flex: 1,
-      backgroundColor: colors.background,
+      backgroundColor: isWeb ? colors.icon + '08' : colors.background,
     },
     header: {
       flexDirection: 'row',
@@ -248,46 +260,80 @@ export default function AddFuelLogScreen() {
       paddingVertical: 16,
       borderBottomWidth: 1,
       borderBottomColor: colors.icon + '20',
+      backgroundColor: colors.background,
     },
     backButton: {
       marginRight: 16,
       padding: 4,
     },
-    title: {
+    headerTitle: {
       fontSize: 24,
       fontWeight: 'bold',
       color: colors.text,
       flex: 1,
     },
-    saveButton: {
-      backgroundColor: colors.tint,
-      paddingHorizontal: 16,
-      paddingVertical: 8,
-      borderRadius: 8,
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 6,
-    },
-    saveButtonDisabled: {
-      opacity: 0.6,
-    },
-    saveButtonText: {
-      color: 'white',
-      fontSize: 14,
-      fontWeight: '600',
-    },
     content: {
       flex: 1,
     },
     scrollContent: {
-      padding: 20,
+      padding: isWeb ? 40 : 20,
+      paddingBottom: 100,
+      ...(isWeb && {
+        maxWidth: 600,
+        width: '100%',
+        alignSelf: 'center',
+      }),
     },
-    formCard: {
+    title: {
+      fontSize: 32,
+      fontWeight: 'bold',
+      color: colors.text,
+      marginBottom: 8,
+      textAlign: isWeb ? 'center' : 'left',
+    },
+    subtitle: {
+      fontSize: 16,
+      color: colors.icon,
+      marginBottom: 32,
+      textAlign: isWeb ? 'center' : 'left',
+    },
+    card: {
       backgroundColor: colors.background,
-      borderRadius: 12,
-      padding: 20,
-      borderWidth: 1,
-      borderColor: colors.icon + '20',
+      borderRadius: isWeb ? 16 : 12,
+      padding: isWeb ? 32 : 20,
+      ...(isWeb && {
+        shadowColor: colorScheme === 'dark' ? '#ffffff' : '#000000',
+        shadowOffset: {
+          width: 0,
+          height: 4,
+        },
+        shadowOpacity: colorScheme === 'dark' ? 0.1 : 0.08,
+        shadowRadius: 12,
+        elevation: 4,
+      }),
+    },
+    row: {
+      flexDirection: isWeb ? 'row' : 'column',
+      gap: 16,
+    },
+    flex1: {
+      flex: 1,
+    },
+    buttonContainer: {
+      flexDirection: 'row',
+      gap: 12,
+      marginTop: 32,
+    },
+    cancelButton: {
+      flex: 1,
+    },
+    saveButton: {
+      flex: 2,
+    },
+    loadingContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
     },
     inputContainer: {
       marginBottom: 20,
@@ -300,23 +346,6 @@ export default function AddFuelLogScreen() {
     },
     requiredLabel: {
       color: '#ff4444',
-    },
-    input: {
-      backgroundColor: colors.background,
-      borderWidth: 1,
-      borderColor: colors.icon,
-      borderRadius: 8,
-      paddingHorizontal: 16,
-      paddingVertical: 12,
-      fontSize: 16,
-      color: colors.text,
-    },
-    row: {
-      flexDirection: 'row',
-      gap: 16,
-    },
-    flex1: {
-      flex: 1,
     },
     vehicleSelector: {
       maxHeight: 120,
@@ -397,17 +426,6 @@ export default function AddFuelLogScreen() {
       color: colors.icon,
       fontStyle: 'italic',
     },
-    helpText: {
-      fontSize: 12,
-      color: colors.icon,
-      marginTop: 4,
-      lineHeight: 16,
-    },
-    loadingContainer: {
-      flex: 1,
-      justifyContent: 'center',
-      alignItems: 'center',
-    },
     fuelPriceSelector: {
       flexDirection: 'row',
       gap: 8,
@@ -434,21 +452,19 @@ export default function AddFuelLogScreen() {
     fuelPriceOptionTextSelected: {
       color: colors.tint,
     },
-    inputReadOnly: {
-      backgroundColor: colors.icon + '10',
-      color: colors.icon,
-    },
   });
 
   if (vehiclesLoading) {
     return (
       <SafeAreaView style={styles.container}>
-        <View style={styles.header}>
-          <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-            <IconSymbol name="chevron.left" size={24} color={colors.text} />
-          </TouchableOpacity>
-          <Text style={styles.title}>Add Fuel Log</Text>
-        </View>
+        {!isWeb && (
+          <View style={styles.header}>
+            <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+              <IconSymbol name="chevron.left" size={24} color={colors.text} />
+            </TouchableOpacity>
+            <Text style={styles.headerTitle}>Add Fuel Log</Text>
+          </View>
+        )}
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={colors.tint} />
         </View>
@@ -459,23 +475,24 @@ export default function AddFuelLogScreen() {
   if (vehicles.length === 0) {
     return (
       <SafeAreaView style={styles.container}>
-        <View style={styles.header}>
-          <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-            <IconSymbol name="chevron.left" size={24} color={colors.text} />
-          </TouchableOpacity>
-          <Text style={styles.title}>Add Fuel Log</Text>
-        </View>
+        {!isWeb && (
+          <View style={styles.header}>
+            <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+              <IconSymbol name="chevron.left" size={24} color={colors.text} />
+            </TouchableOpacity>
+            <Text style={styles.headerTitle}>Add Fuel Log</Text>
+          </View>
+        )}
         <View style={styles.loadingContainer}>
           <Text style={[styles.label, { textAlign: 'center' }]}>
             No vehicles found. Please add a vehicle first.
           </Text>
-          <TouchableOpacity
-            style={[styles.saveButton, { marginTop: 20 }]}
+          <Button
+            title="Add Vehicle"
             onPress={() => router.push('/vehicles/add' as any)}
-          >
-            <IconSymbol name="plus" size={16} color="white" />
-            <Text style={styles.saveButtonText}>Add Vehicle</Text>
-          </TouchableOpacity>
+            icon="plus"
+            style={{ marginTop: 20 }}
+          />
         </View>
       </SafeAreaView>
     );
@@ -483,42 +500,22 @@ export default function AddFuelLogScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <AlertModal
-        visible={showSuccessModal}
-        onClose={() => {
-          setShowSuccessModal(false);
-          router.push('/(tabs)/logs');
-        }}
-        title="Success"
-        message="Fuel log added successfully!"
-        variant="success"
-        buttonText="OK"
-      />
-      <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-          <IconSymbol name="chevron.left" size={24} color={colors.text} />
-        </TouchableOpacity>
-        <Text style={styles.title}>
-          {vehicleId && vehicles.find(v => v.id === vehicleId)
-            ? `Add Fuel - ${vehicles.find(v => v.id === vehicleId)?.year} ${vehicles.find(v => v.id === vehicleId)?.make}`
-            : 'Add Fuel Log'
-          }
-        </Text>
-        <TouchableOpacity
-          style={[styles.saveButton, (!isFormValid() || loading) && styles.saveButtonDisabled]}
-          onPress={handleSave}
-          disabled={!isFormValid() || loading}
-        >
-          {loading ? (
-            <ActivityIndicator color="white" size="small" />
-          ) : (
-            <>
-              <IconSymbol name="checkmark" size={14} color="white" />
-              <Text style={styles.saveButtonText}>Save</Text>
-            </>
-          )}
-        </TouchableOpacity>
-      </View>
+      {!isWeb && (
+        <View style={styles.header}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => router.back()}
+          >
+            <IconSymbol name="chevron.left" size={24} color={colors.text} />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>
+            {vehicleId && vehicles.find(v => v.id === vehicleId)
+              ? `Add Fuel - ${vehicles.find(v => v.id === vehicleId)?.year} ${vehicles.find(v => v.id === vehicleId)?.make}`
+              : 'Add Fuel Log'
+            }
+          </Text>
+        </View>
+      )}
 
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -529,7 +526,14 @@ export default function AddFuelLogScreen() {
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
-          <View style={styles.formCard}>
+          {isWeb && (
+            <>
+              <Text style={styles.title}>Add Fuel Log</Text>
+              <Text style={styles.subtitle}>Record your fuel fill-up</Text>
+            </>
+          )}
+
+          <View style={styles.card}>
             <VehicleSelector />
 
             <View style={styles.inputContainer}>
@@ -547,12 +551,9 @@ export default function AddFuelLogScreen() {
                     onPress={() => {
                       setFormData(prev => {
                         const newData = { ...prev, fuel_price: price };
-                        
-                        // Auto-calculate liters if cost is entered
                         if (prev.cost && prev.cost > 0) {
                           newData.liters_filled = calculateLiters(prev.cost, price);
                         }
-                        
                         return newData;
                       });
                     }}
@@ -570,102 +571,110 @@ export default function AddFuelLogScreen() {
 
             <View style={styles.row}>
               <View style={styles.flex1}>
-                <View style={styles.inputContainer}>
-                  <Text style={styles.label}>
-                    Cost (RM) <Text style={styles.requiredLabel}>*</Text>
-                  </Text>
-                  <TextInput
-                    style={styles.input}
-                    value={formData.cost?.toString() || ''}
-                    onChangeText={(text) => {
-                      const cost = parseFloat(text) || 0;
-                      setFormData(prev => {
-                        const newData = { ...prev, cost };
-                        
-                        // Auto-calculate liters if fuel price is selected
-                        if (prev.fuel_price && prev.fuel_price > 0 && cost > 0) {
-                          newData.liters_filled = calculateLiters(cost, prev.fuel_price);
-                        }
-                        
-                        return newData;
-                      });
-                    }}
-                    placeholder="65.00"
-                    placeholderTextColor={colors.icon}
-                    keyboardType="numeric"
-                  />
-                </View>
+                <Input
+                  label="Cost (RM)"
+                  value={formData.cost > 0 ? formData.cost.toString() : ''}
+                  onChangeText={(text) => {
+                    const cost = parseFloat(text) || 0;
+                    setFormData(prev => {
+                      const newData = { ...prev, cost };
+                      if (prev.fuel_price && prev.fuel_price > 0 && cost > 0) {
+                        newData.liters_filled = calculateLiters(cost, prev.fuel_price);
+                      }
+                      return newData;
+                    });
+                  }}
+                  placeholder="65.00"
+                  keyboardType="numeric"
+                  required
+                  error={formData.cost ? validateCost(formData.cost.toString()) : undefined}
+                  leftIcon="dollarsign.circle"
+                />
               </View>
 
               <View style={styles.flex1}>
-                <View style={styles.inputContainer}>
-                  <Text style={styles.label}>Liters Filled</Text>
-                  <TextInput
-                    style={[styles.input, styles.inputReadOnly]}
-                    value={formData.liters_filled.toString()}
-                    placeholder="Auto-calculated"
-                    placeholderTextColor={colors.icon}
-                    editable={false}
-                  />
-                  <Text style={styles.helpText}>
-                    Auto-calculated when cost and fuel price are entered
-                  </Text>
-                </View>
+                <Input
+                  label="Liters Filled"
+                  value={formData.liters_filled.toFixed(3)}
+                  placeholder="Auto-calculated"
+                  editable={false}
+                  helperText="Auto-calculated from cost and price"
+                  leftIcon="drop"
+                />
               </View>
             </View>
 
-            <View style={styles.inputContainer}>
-              <Text style={styles.label}>
-                Odometer Reading (km) <Text style={styles.requiredLabel}>*</Text>
-              </Text>
-              <TextInput
-                style={styles.input}
-                value={formData.odometer_reading.toString()}
-                onChangeText={(text) => {
-                  const reading = parseInt(text.replace(/,/g, '')) || 0;
-                  setFormData(prev => ({ ...prev, odometer_reading: reading }));
-                }}
-                placeholder="150,000"
-                placeholderTextColor={colors.icon}
-                keyboardType="numeric"
-              />
-              <Text style={styles.helpText}>
-                Odometer reading at the time of fuel fill-up
-              </Text>
-            </View>
+            <Input
+              label="Odometer Reading (km)"
+              value={formData.odometer_reading > 0 ? formData.odometer_reading.toString() : ''}
+              onChangeText={(text) => {
+                const reading = parseInt(text.replace(/,/g, '')) || 0;
+                setFormData(prev => ({ ...prev, odometer_reading: reading }));
+              }}
+              placeholder="150,000"
+              keyboardType="numeric"
+              required
+              error={formData.odometer_reading ? validateOdometer(formData.odometer_reading.toString()) : undefined}
+              helperText="Odometer reading at the time of fuel fill-up"
+              leftIcon="speedometer"
+            />
 
-            <View style={styles.inputContainer}>
-              <Text style={styles.label}>
-                Date <Text style={styles.requiredLabel}>*</Text>
-              </Text>
-              <TextInput
-                style={styles.input}
-                value={formData.date}
-                onChangeText={(text) => setFormData(prev => ({ ...prev, date: text }))}
-                placeholder="01/01/2024"
-                placeholderTextColor={colors.icon}
-              />
-              <Text style={styles.helpText}>
-                Date format: DD/MM/YYYY
-              </Text>
-            </View>
+            <Input
+              label="Date"
+              value={formData.date}
+              onChangeText={(text) => setFormData(prev => ({ ...prev, date: text }))}
+              placeholder="2024-01-01"
+              required
+              helperText="Date format: YYYY-MM-DD"
+              leftIcon="calendar"
+            />
 
-            <View style={styles.inputContainer}>
-              <Text style={styles.label}>Location (Optional)</Text>
-              <TextInput
-                style={styles.input}
-                value={formData.location}
-                onChangeText={(text) => setFormData(prev => ({ ...prev, location: text }))}
-                placeholder="Shell Station, Main St"
-                placeholderTextColor={colors.icon}
+            <Input
+              label="Location (Optional)"
+              value={formData.location || ''}
+              onChangeText={(text) => setFormData(prev => ({ ...prev, location: text }))}
+              placeholder="Shell Station, Main St"
+              helperText="Gas station or location where fuel was purchased"
+              leftIcon="location"
+            />
+
+            <View style={styles.buttonContainer}>
+              <Button
+                title="Cancel"
+                onPress={() => router.back()}
+                variant="outline"
+                icon="xmark"
+                style={styles.cancelButton}
               />
-              <Text style={styles.helpText}>
-                Gas station or location where fuel was purchased
-              </Text>
+              <Button
+                title="Save Log"
+                onPress={handleSave}
+                disabled={!isFormValid()}
+                loading={loading}
+                icon="checkmark"
+                style={styles.saveButton}
+              />
             </View>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
+
+      <AlertModal
+        visible={showSuccessModal}
+        onClose={handleSuccessModalClose}
+        title="Success"
+        message="Fuel log added successfully!"
+        variant="success"
+        buttonText="Done"
+      />
+
+      <AlertModal
+        visible={showErrorModal}
+        onClose={() => setShowErrorModal(false)}
+        title="Error"
+        message={errorMessage}
+        variant="error"
+      />
     </SafeAreaView>
   );
 }

@@ -177,6 +177,7 @@ export interface AuthUser {
   id: string;
   email: string;
   profile?: Profile;
+  username: string;
 }
 
 export interface AuthState {

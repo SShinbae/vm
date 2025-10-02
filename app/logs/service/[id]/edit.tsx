@@ -1,7 +1,10 @@
+import { Button } from '@/components/ui/Button';
+import { DatePicker } from '@/components/ui/DatePicker';
 import { IconSymbol } from '@/components/ui/icon-symbol';
+import { Input } from '@/components/ui/Input';
+import { AlertModal } from '@/components/ui/Modal';
 import { ReceiptViewer } from '@/components/ui/ReceiptViewer';
 import { ServiceItemsInput, calculateTotalCost, createDefaultServiceItems, validateServiceItems } from '@/components/ui/ServiceItemsInput';
-import { DatePicker } from '@/components/ui/DatePicker';
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { ServiceLogService } from '@/lib/services/loggingService';
@@ -10,13 +13,11 @@ import { router, useLocalSearchParams } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
@@ -71,13 +72,18 @@ export default function EditServiceLogScreen() {
   });
   const [loading, setLoading] = useState(false);
   const [dataLoading, setDataLoading] = useState(true);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [showErrorModal, setShowErrorModal] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
+  const isWeb = Platform.OS === 'web';
 
   useEffect(() => {
     const fetchServiceLog = async () => {
       if (!id) {
-        Alert.alert('Error', 'Invalid service log ID');
+        setErrorMessage('Invalid service log ID');
+        setShowErrorModal(true);
         router.back();
         return;
       }
@@ -85,14 +91,16 @@ export default function EditServiceLogScreen() {
       try {
         const { data: logs, error } = await ServiceLogService.getServiceLogs();
         if (error) {
-          Alert.alert('Error', 'Failed to load service log');
+          setErrorMessage('Failed to load service log');
+          setShowErrorModal(true);
           router.back();
           return;
         }
 
         const log = logs?.find(l => l.id === id);
         if (!log) {
-          Alert.alert('Error', 'Service log not found');
+          setErrorMessage('Service log not found');
+          setShowErrorModal(true);
           router.back();
           return;
         }
@@ -117,7 +125,8 @@ export default function EditServiceLogScreen() {
         });
       } catch (error) {
         console.error('Error fetching service log:', error);
-        Alert.alert('Error', 'Failed to load service log');
+        setErrorMessage('Failed to load service log');
+        setShowErrorModal(true);
         router.back();
       }
 
@@ -131,16 +140,19 @@ export default function EditServiceLogScreen() {
     // Validation
     const itemsError = validateServiceItems(formData.items || []);
     if (itemsError) {
-      Alert.alert('Error', itemsError);
+      setErrorMessage(itemsError);
+      setShowErrorModal(true);
       return;
     }
 
     if (formData.odometer_reading <= 0) {
-      Alert.alert('Error', 'Please enter a valid odometer reading');
+      setErrorMessage('Please enter a valid odometer reading');
+      setShowErrorModal(true);
       return;
     }
     if (!formData.date) {
-      Alert.alert('Error', 'Please select a date');
+      setErrorMessage('Please select a date');
+      setShowErrorModal(true);
       return;
     }
 
@@ -164,15 +176,24 @@ export default function EditServiceLogScreen() {
     setLoading(false);
 
     if (error) {
-      Alert.alert('Error', error);
+      setErrorMessage(error);
+      setShowErrorModal(true);
     } else {
-      Alert.alert('Success', 'Service log updated successfully', [
-        {
-          text: 'OK',
-          onPress: () => router.push('/(tabs)/logs'),
-        },
-      ]);
+      setShowSuccessModal(true);
     }
+  };
+
+  const handleSuccessModalClose = () => {
+    setShowSuccessModal(false);
+    router.push('/(tabs)/logs');
+  };
+
+  const validateOdometer = (value: string) => {
+    const reading = parseInt(value.replace(/,/g, ''));
+    if (isNaN(reading) || reading <= 0) {
+      return 'Please enter a valid odometer reading';
+    }
+    return undefined;
   };
 
   const isFormValid = () => {
@@ -221,7 +242,7 @@ export default function EditServiceLogScreen() {
   const styles = StyleSheet.create({
     container: {
       flex: 1,
-      backgroundColor: colors.background,
+      backgroundColor: isWeb ? colors.icon + '08' : colors.background,
     },
     header: {
       flexDirection: 'row',
@@ -230,46 +251,66 @@ export default function EditServiceLogScreen() {
       paddingVertical: 16,
       borderBottomWidth: 1,
       borderBottomColor: colors.icon + '20',
+      backgroundColor: colors.background,
     },
     backButton: {
       marginRight: 16,
       padding: 4,
     },
-    title: {
+    headerTitle: {
       fontSize: 24,
       fontWeight: 'bold',
       color: colors.text,
       flex: 1,
     },
-    saveButton: {
-      backgroundColor: colors.tint,
-      paddingHorizontal: 16,
-      paddingVertical: 8,
-      borderRadius: 8,
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 6,
-    },
-    saveButtonDisabled: {
-      opacity: 0.6,
-    },
-    saveButtonText: {
-      color: 'white',
-      fontSize: 14,
-      fontWeight: '600',
-    },
     content: {
       flex: 1,
     },
     scrollContent: {
-      padding: 20,
+      padding: isWeb ? 40 : 20,
+      paddingBottom: 100,
+      ...(isWeb && {
+        maxWidth: 600,
+        width: '100%',
+        alignSelf: 'center',
+      }),
     },
-    formCard: {
+    title: {
+      fontSize: 32,
+      fontWeight: 'bold',
+      color: colors.text,
+      marginBottom: 8,
+      textAlign: isWeb ? 'center' : 'left',
+    },
+    subtitle: {
+      fontSize: 16,
+      color: colors.icon,
+      marginBottom: 32,
+      textAlign: isWeb ? 'center' : 'left',
+    },
+    card: {
       backgroundColor: colors.background,
-      borderRadius: 12,
-      padding: 20,
-      borderWidth: 1,
-      borderColor: colors.icon + '20',
+      borderRadius: isWeb ? 16 : 12,
+      padding: isWeb ? 32 : 20,
+      ...(isWeb && {
+        shadowColor: colorScheme === 'dark' ? '#ffffff' : '#000000',
+        shadowOffset: {
+          width: 0,
+          height: 4,
+        },
+        shadowOpacity: colorScheme === 'dark' ? 0.1 : 0.08,
+        shadowRadius: 12,
+        elevation: 4,
+      }),
+    },
+    section: {
+      marginBottom: 24,
+    },
+    sectionTitle: {
+      fontSize: 18,
+      fontWeight: '600',
+      color: colors.text,
+      marginBottom: 16,
     },
     inputContainer: {
       marginBottom: 20,
@@ -283,22 +324,8 @@ export default function EditServiceLogScreen() {
     requiredLabel: {
       color: '#ff4444',
     },
-    input: {
-      backgroundColor: colors.background,
-      borderWidth: 1,
-      borderColor: colors.icon,
-      borderRadius: 8,
-      paddingHorizontal: 16,
-      paddingVertical: 12,
-      fontSize: 16,
-      color: colors.text,
-    },
-    textArea: {
-      height: 80,
-      textAlignVertical: 'top',
-    },
     row: {
-      flexDirection: 'row',
+      flexDirection: isWeb ? 'row' : 'column',
       gap: 16,
     },
     flex1: {
@@ -364,17 +391,30 @@ export default function EditServiceLogScreen() {
     serviceTypeTextSelected: {
       color: colors.tint,
     },
+    buttonContainer: {
+      flexDirection: 'row',
+      gap: 12,
+      marginTop: 32,
+    },
+    cancelButton: {
+      flex: 1,
+    },
+    saveButton: {
+      flex: 2,
+    },
   });
 
   if (dataLoading) {
     return (
       <SafeAreaView style={styles.container}>
-        <View style={styles.header}>
-          <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-            <IconSymbol name="chevron.left" size={24} color={colors.text} />
-          </TouchableOpacity>
-          <Text style={styles.title}>Edit Service Log</Text>
-        </View>
+        {!isWeb && (
+          <View style={styles.header}>
+            <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+              <IconSymbol name="chevron.left" size={24} color={colors.text} />
+            </TouchableOpacity>
+            <Text style={styles.headerTitle}>Edit Service Log</Text>
+          </View>
+        )}
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={colors.tint} />
         </View>
@@ -384,26 +424,14 @@ export default function EditServiceLogScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-          <IconSymbol name="chevron.left" size={24} color={colors.text} />
-        </TouchableOpacity>
-        <Text style={styles.title}>Edit Service Log</Text>
-        <TouchableOpacity
-          style={[styles.saveButton, (!isFormValid() || loading) && styles.saveButtonDisabled]}
-          onPress={handleSave}
-          disabled={!isFormValid() || loading}
-        >
-          {loading ? (
-            <ActivityIndicator color="white" size="small" />
-          ) : (
-            <>
-              <IconSymbol name="checkmark" size={14} color="white" />
-              <Text style={styles.saveButtonText}>Save</Text>
-            </>
-          )}
-        </TouchableOpacity>
-      </View>
+      {!isWeb && (
+        <View style={styles.header}>
+          <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+            <IconSymbol name="chevron.left" size={24} color={colors.text} />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Edit Service Log</Text>
+        </View>
+      )}
 
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -414,7 +442,14 @@ export default function EditServiceLogScreen() {
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
-          <View style={styles.formCard}>
+          {isWeb && (
+            <>
+              <Text style={styles.title}>Edit Service Log</Text>
+              <Text style={styles.subtitle}>Update your service log details</Text>
+            </>
+          )}
+
+          <View style={styles.card}>
             <View style={styles.inputContainer}>
               <Text style={styles.label}>Vehicle</Text>
               {serviceLog?.vehicles && (
@@ -432,65 +467,106 @@ export default function EditServiceLogScreen() {
               )}
             </View>
 
-            <ServiceTypeSelector />
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Service Information</Text>
 
-            {formData.receipt_image_url && (
-              <View style={styles.inputContainer}>
-                <ReceiptViewer
-                  receiptImageUrl={formData.receipt_image_url}
-                  ocrData={formData.ocr_extracted_data}
-                  showOcrData={!!formData.ocr_extracted_data}
-                />
-              </View>
-            )}
+              <ServiceTypeSelector />
 
-            <ServiceItemsInput
-              items={formData.items || []}
-              onItemsChange={(items) => setFormData(prev => ({ ...prev, items }))}
-            />
+              {formData.receipt_image_url && (
+                <View style={styles.inputContainer}>
+                  <ReceiptViewer
+                    receiptImageUrl={formData.receipt_image_url}
+                    ocrData={formData.ocr_extracted_data}
+                    showOcrData={!!formData.ocr_extracted_data}
+                  />
+                </View>
+              )}
 
-            <View style={styles.inputContainer}>
-              <Text style={styles.label}>
-                Odometer (km) <Text style={styles.requiredLabel}>*</Text>
-              </Text>
-              <TextInput
-                style={styles.input}
+              <ServiceItemsInput
+                items={formData.items || []}
+                onItemsChange={(items) => setFormData(prev => ({ ...prev, items }))}
+              />
+            </View>
+
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Vehicle Details</Text>
+
+              <Input
+                label="Odometer (km)"
                 value={formData.odometer_reading.toString()}
                 onChangeText={(text) => {
                   const reading = parseInt(text.replace(/,/g, '')) || 0;
                   setFormData(prev => ({ ...prev, odometer_reading: reading }));
                 }}
                 placeholder="150,000"
-                placeholderTextColor={colors.icon}
                 keyboardType="numeric"
+                required
+                error={formData.odometer_reading ? validateOdometer(formData.odometer_reading.toString()) : undefined}
+                leftIcon="speedometer"
               />
+
+              <View style={styles.row}>
+                <View style={styles.flex1}>
+                  <DatePicker
+                    label="Date"
+                    value={formData.date}
+                    onDateChange={(date) => setFormData(prev => ({ ...prev, date }))}
+                    placeholder="Select date"
+                    required
+                    style={{ marginBottom: 0 }}
+                  />
+                </View>
+
+                <View style={styles.flex1}>
+                  <DatePicker
+                    label="Next Service Due"
+                    value={formData.next_service_due}
+                    onDateChange={(date) => setFormData(prev => ({ ...prev, next_service_due: date }))}
+                    placeholder="Select next service date"
+                    style={{ marginBottom: 0 }}
+                  />
+                </View>
+              </View>
             </View>
 
-            <View style={styles.row}>
-              <View style={styles.flex1}>
-                <DatePicker
-                  label="Date"
-                  value={formData.date}
-                  onDateChange={(date) => setFormData(prev => ({ ...prev, date }))}
-                  placeholder="Select date"
-                  required
-                  style={{ marginBottom: 0 }}
-                />
-              </View>
-
-              <View style={styles.flex1}>
-                <DatePicker
-                  label="Next Service Due"
-                  value={formData.next_service_due}
-                  onDateChange={(date) => setFormData(prev => ({ ...prev, next_service_due: date }))}
-                  placeholder="Select next service date"
-                  style={{ marginBottom: 0 }}
-                />
-              </View>
+            {/* Action Buttons */}
+            <View style={styles.buttonContainer}>
+              <Button
+                title="Cancel"
+                onPress={() => router.back()}
+                variant="outline"
+                icon="xmark"
+                style={styles.cancelButton}
+              />
+              <Button
+                title="Save Changes"
+                onPress={handleSave}
+                disabled={!isFormValid()}
+                loading={loading}
+                icon="checkmark"
+                style={styles.saveButton}
+              />
             </View>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
+
+      <AlertModal
+        visible={showSuccessModal}
+        onClose={handleSuccessModalClose}
+        title="Success"
+        message="Service log updated successfully!"
+        variant="success"
+        buttonText="Done"
+      />
+
+      <AlertModal
+        visible={showErrorModal}
+        onClose={() => setShowErrorModal(false)}
+        title="Error"
+        message={errorMessage}
+        variant="error"
+      />
     </SafeAreaView>
   );
 }
