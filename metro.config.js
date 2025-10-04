@@ -26,7 +26,18 @@ if (isWebBuild) {
   // For native builds, use NativeWind
   try {
     const { withNativeWind } = require('nativewind/metro');
-    module.exports = withNativeWind(config, { input: './global.css' });
+    module.exports = withNativeWind(config, {
+      input: './global.css',
+      inlineRem: false,
+      browserslist: {
+        production: ['chrome 109'],
+      },
+      transformCssOptions: {
+        exclude: [
+          /aspect-ratio/,
+        ],
+      },
+    });
   } catch (error) {
     console.warn('NativeWind not available, using default config:', error.message);
     module.exports = config;

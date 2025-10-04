@@ -10,5 +10,8 @@ module.exports = {
     extend: {},
   },
   plugins: [],
+  corePlugins: {
+    aspectRatio: false, // Disable aspect-ratio utilities for React Native compatibility
+  },
 }
 
