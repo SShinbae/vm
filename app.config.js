@@ -37,6 +37,7 @@ export default {
     },
     plugins: [
       'expo-router',
+      'expo-web-browser',
       [
         'expo-splash-screen',
         {
@@ -53,7 +54,7 @@ export default {
     ],
     experiments: {
       typedRoutes: true,
-      reactCompiler: true,
+      // reactCompiler: true, // Disabled for React 18 compatibility
     },
     extra: {
       eas: {
