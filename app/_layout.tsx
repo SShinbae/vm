@@ -7,7 +7,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useCallback, useEffect } from 'react';
 import { Platform, View } from 'react-native';
 import 'react-native-reanimated';
-import '../global.css';
+import '../unistyles'; // Import Unistyles configuration
 
 // Simplified imports - temporarily disable complex components to test
 // import { AuthGuard } from '@/components/AuthGuard';
@@ -15,10 +15,9 @@ import '../global.css';
 // import { NotificationManager } from '@/components/ui/NotificationManager';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 // import { useResponsiveLayout } from '@/hooks/use-responsive-layout';
-// import { AuthProvider } from '@/lib/contexts/AuthContext';
+import { AuthProvider } from '@/lib/contexts/AuthContext';
 // import { DialogProvider } from '@/lib/contexts/DialogContext';
 // import { NotificationProvider } from '@/lib/contexts/NotificationContext';
-// import { SidebarProvider, useSidebar } from '@/lib/contexts/SidebarContext';
 import { ThemeProvider } from '@/lib/contexts/ThemeContext';
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
@@ -31,7 +30,9 @@ export const unstable_settings = {
 export default function RootLayout() {
   return (
     <ThemeProvider>
-      <RootLayoutContent />
+      <AuthProvider>
+        <RootLayoutContent />
+      </AuthProvider>
     </ThemeProvider>
   );
 }

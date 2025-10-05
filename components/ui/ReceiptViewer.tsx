@@ -11,6 +11,7 @@ import {
 import { Image } from 'expo-image';
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import { formatDate } from '@/lib/utils/dateUtils';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { OCRExtractedData } from '@/types';
 
@@ -421,7 +422,7 @@ export function ReceiptList({ receipts, onReceiptPress, onReceiptDelete }: Recei
               {receipt.serviceName || 'Service Receipt'}
             </Text>
             <Text style={styles.receiptMeta}>
-              {receipt.date && new Date(receipt.date).toLocaleDateString()}
+              {receipt.date && formatDate(receipt.date)}
               {receipt.ocrData && ` • ${receipt.ocrData.confidence}% confidence`}
             </Text>
           </View>

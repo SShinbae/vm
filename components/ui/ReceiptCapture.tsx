@@ -14,6 +14,7 @@ import { useColorScheme } from '@/hooks/use-color-scheme';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { OCRService, ReceiptProcessingResult } from '@/lib/services/ocrService';
 import { OCRExtractedData } from '@/types';
+import { formatDate } from '@/lib/utils/dateUtils';
 
 interface ReceiptCaptureProps {
   onReceiptProcessed: (result: ReceiptProcessingResult) => void;
@@ -511,7 +512,7 @@ export function OCRResultDisplay({ ocrData, onAccept, onReject }: OCRResultDispl
       case 'service_type':
         return value ? value.replace('_', ' ').replace(/\b\w/g, (l: string) => l.toUpperCase()) : 'Not detected';
       case 'date':
-        return value ? new Date(value).toLocaleDateString() : 'Not detected';
+        return value ? formatDate(value) : 'Not detected';
       case 'odometer_reading':
         return value ? `${value.toLocaleString()} km` : 'Not detected';
       default:

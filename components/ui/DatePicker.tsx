@@ -42,15 +42,23 @@ export function DatePicker({
       const [day, month, year] = dateString.split('/');
       return new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
     } else if (dateString.includes('-')) {
-      // YYYY-MM-DD format (database format)
-      return new Date(dateString);
+      // Check if it's DD-MM-YYYY or YYYY-MM-DD
+      const parts = dateString.split('-');
+      if (parts[0].length === 4) {
+        // YYYY-MM-DD format (database format)
+        return new Date(dateString);
+      } else {
+        // DD-MM-YYYY format
+        const [day, month, year] = parts;
+        return new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+      }
     }
 
     return new Date();
   };
 
   const formatDate = (date: Date): string => {
-    // Return YYYY-MM-DD format for compatibility with existing system
+    // Return YYYY-MM-DD format for database storage
     const year = date.getFullYear();
     const month = (date.getMonth() + 1).toString().padStart(2, '0');
     const day = date.getDate().toString().padStart(2, '0');
@@ -58,11 +66,11 @@ export function DatePicker({
   };
 
   const formatDisplayDate = (date: Date): string => {
-    // Display format DD/MM/YYYY for better UX
+    // Display format DD-MM-YYYY
     const day = date.getDate().toString().padStart(2, '0');
     const month = (date.getMonth() + 1).toString().padStart(2, '0');
     const year = date.getFullYear();
-    return `${day}/${month}/${year}`;
+    return `${day}-${month}-${year}`;
   };
 
   const handleDateChange = (event: any, selectedDate?: Date) => {
@@ -89,10 +97,15 @@ export function DatePicker({
   const handleTextInputChange = (text: string) => {
     // Handle direct text input for web platform
     if (text.match(/^\d{4}-\d{2}-\d{2}$/)) {
-      // YYYY-MM-DD format from HTML5 date input
+      // YYYY-MM-DD format from HTML5 date input - keep as is for database
       onDateChange(text);
+    } else if (text.match(/^\d{2}-\d{2}-\d{4}$/)) {
+      // DD-MM-YYYY format - convert to YYYY-MM-DD for database
+      const [day, month, year] = text.split('-');
+      const formattedDate = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+      onDateChange(formattedDate);
     } else if (text.match(/^\d{2}\/\d{2}\/\d{4}$/)) {
-      // DD/MM/YYYY format - convert to YYYY-MM-DD
+      // DD/MM/YYYY format - convert to YYYY-MM-DD for database
       const [day, month, year] = text.split('/');
       const formattedDate = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
       onDateChange(formattedDate);

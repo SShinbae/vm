@@ -38,8 +38,8 @@ export function WebSidebar() {
   // Hide sidebar on auth pages (login, register)
   const isAuthPage = pathname === '/login' || pathname === '/register' || pathname.startsWith('/(auth)');
 
-  // Only render on web and larger screens, and not on auth pages
-  if (!layout.isWeb || layout.isMobile || isAuthPage) {
+  // Only render on web, and not on auth pages
+  if (!layout.isWeb || isAuthPage) {
     return null;
   }
 
