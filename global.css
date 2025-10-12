@@ -144,3 +144,175 @@ html, body {
 body.modal-open {
   overflow: hidden;
 }
+
+/* Mobile Web Bottom Navigation */
+@media screen and (max-width: 767px) {
+  /* Ensure bottom tab bar stays at bottom on mobile web */
+  [data-testid="tab-bar"],
+  .expo-tab-bar,
+  [role="tablist"] {
+    position: fixed !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    z-index: 1000 !important;
+    border-top: 1px solid var(--border-color) !important;
+    /* Removed static background-color to let React Native handle it */
+    height: 70px !important;
+    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1) !important;
+  }
+  
+  /* Force tab labels to be visible */
+  [data-testid="tab-bar"] span,
+  [data-testid="tab-bar"] text,
+  .expo-tab-bar span,
+  .expo-tab-bar text,
+  [role="tablist"] span,
+  [role="tablist"] text {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    font-size: 11px !important;
+    font-weight: 500 !important;
+    line-height: 12px !important;
+    margin-top: 2px !important;
+  }
+  
+  /* Tab button styling for mobile web */
+  [data-testid="tab-bar"] button,
+  [data-testid="tab-bar"] a,
+  .expo-tab-bar button,
+  .expo-tab-bar a,
+  [role="tablist"] button,
+  [role="tablist"] a {
+    flex-direction: column !important;
+    justify-content: center !important;
+    align-items: center !important;
+    gap: 2px !important;
+    padding: 6px 4px 8px 4px !important;
+    height: 100% !important;
+    min-height: 70px !important;
+  }
+  
+  /* Ensure icons have proper spacing */
+  [data-testid="tab-bar"] svg,
+  .expo-tab-bar svg,
+  [role="tablist"] svg {
+    margin-bottom: 2px !important;
+  }
+  
+  /* Add padding to body content to account for fixed bottom bar */
+  .main-content-mobile {
+    padding-bottom: 80px !important;
+  }
+}
+
+/* Desktop Web - Hide tab bar */
+@media screen and (min-width: 768px) {
+  [data-testid="tab-bar"] {
+    display: none !important;
+  }
+}
+
+/* Additional web-specific tab label fixes */
+@media screen and (max-width: 767px) {
+  /* Override any hidden label styles */
+  .expo-tab-bar .expo-tab-bar__tab-label,
+  [role="tablist"] [role="tab"] span:last-child,
+  [data-testid="tab-bar"] > * > span:not([data-testid]),
+  [data-testid="tab-bar"] span[style*="display: none"],
+  [data-testid="tab-bar"] span[hidden] {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    font-size: 11px !important;
+    color: inherit !important;
+    text-align: center !important;
+  }
+  
+  /* Force all text elements to be visible */
+  [data-testid="tab-bar"] *:has-text,
+  [data-testid="tab-bar"] *[title] {
+    font-size: 11px !important;
+  }
+  
+  /* Specific targeting for Expo Router generated elements */
+  div[role="tablist"] button span,
+  div[role="tablist"] a span {
+    display: block !important;
+    font-size: 11px !important;
+    margin-top: 2px !important;
+    line-height: 1.1 !important;
+  }
+  
+  /* Try to override any React Native Web specific hiding */
+  [data-testid="tab-bar"] * {
+    max-height: none !important;
+    overflow: visible !important;
+  }
+  
+  /* Nuclear option - force all possible text elements to be visible */
+  [data-testid="tab-bar"] span,
+  [data-testid="tab-bar"] text,
+  [data-testid="tab-bar"] p,
+  [data-testid="tab-bar"] div[role="text"],
+  [data-testid="tab-bar"] [class*="label"],
+  [data-testid="tab-bar"] [class*="text"],
+  [data-testid="tab-bar"] [aria-label] {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    font-size: 11px !important;
+    color: currentColor !important;
+    white-space: nowrap !important;
+    text-overflow: ellipsis !important;
+    overflow: visible !important;
+    max-width: 100% !important;
+  }
+}
+
+/* Force labels to appear with JavaScript fallback */
+@media screen and (max-width: 767px) {
+  /* Add content for missing labels using CSS pseudo-elements as fallback */
+  [data-testid="tab-bar"] button:nth-child(1)::after {
+    content: "Dashboard";
+    font-size: 11px;
+    display: block;
+    margin-top: 2px;
+  }
+  
+  [data-testid="tab-bar"] button:nth-child(2)::after {
+    content: "Vehicles";
+    font-size: 11px;
+    display: block;
+    margin-top: 2px;
+  }
+  
+  [data-testid="tab-bar"] button:nth-child(3)::after {
+    content: "Analytics";
+    font-size: 11px;
+    display: block;
+    margin-top: 2px;
+  }
+  
+  [data-testid="tab-bar"] button:nth-child(4)::after {
+    content: "Logs";
+    font-size: 11px;
+    display: block;
+    margin-top: 2px;
+  }
+  
+  [data-testid="tab-bar"] button:nth-child(5)::after {
+    content: "Groups";
+    font-size: 11px;
+    display: block;
+    margin-top: 2px;
+  }
+  
+  [data-testid="tab-bar"] button:nth-child(6)::after {
+    content: "Profile";
+    font-size: 11px;
+    display: block;
+    margin-top: 2px;
+  }
+}

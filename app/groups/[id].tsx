@@ -5,9 +5,9 @@ import {
   TouchableOpacity,
   ScrollView,
   StyleSheet,
-  Alert,
   ActivityIndicator,
   RefreshControl,
+  Platform,
 } from 'react-native';
 import { Image } from 'expo-image';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -19,6 +19,7 @@ import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAuth } from '@/lib/contexts/AuthContext';
+import { useDialog } from '@/lib/contexts/DialogContext';
 import { SkeletonHeader, SkeletonStats, SkeletonList } from '@/components/ui/Skeleton';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { formatDateWithPrefix } from '@/lib/utils/dateUtils';
@@ -28,6 +29,7 @@ type TabType = 'members' | 'invitations' | 'vehicles';
 export default function GroupDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { user } = useAuth();
+  const dialog = useDialog();
   const [activeTab, setActiveTab] = useState<TabType>('members');
   const [group, setGroup] = useState<GroupWithMembers | null>(null);
   const [invitations, setInvitations] = useState<GroupInvitationWithDetails[]>([]);
@@ -48,7 +50,7 @@ export default function GroupDetailScreen() {
     ]);
 
     if (groupResult.error) {
-      Alert.alert('Error', 'Failed to load group details');
+      dialog.showError('Error', 'Failed to load group details');
       router.back();
     } else if (groupResult.data) {
       setGroup(groupResult.data);
@@ -74,7 +76,7 @@ export default function GroupDetailScreen() {
   const handleRemoveMember = async (memberId: string, memberName: string) => {
     if (!group) return;
 
-    Alert.alert(
+    dialog.alert(
       'Remove Member',
       `Are you sure you want to remove ${memberName} from this group?`,
       [
@@ -85,11 +87,12 @@ export default function GroupDetailScreen() {
           onPress: async () => {
             const { error } = await GroupService.removeMember(group.id, memberId);
             if (error) {
-              Alert.alert('Error', error);
+              dialog.showError('Error', error);
             } else {
               await fetchGroupData();
-              Alert.alert('Success', 'Member removed successfully');
+              dialog.showSuccess('Success', 'Member removed successfully');
             }
+            dialog.hideConfirm();
           },
         },
       ]
@@ -97,7 +100,7 @@ export default function GroupDetailScreen() {
   };
 
   const handleCancelInvitation = async (invitationId: string, email: string) => {
-    Alert.alert(
+    dialog.alert(
       'Cancel Invitation',
       `Are you sure you want to cancel the invitation to ${email}?`,
       [
@@ -108,11 +111,12 @@ export default function GroupDetailScreen() {
           onPress: async () => {
             const { error } = await GroupInvitationService.cancelInvitation(invitationId);
             if (error) {
-              Alert.alert('Error', error);
+              dialog.showError('Error', error);
             } else {
               await fetchGroupData();
-              Alert.alert('Success', 'Invitation cancelled');
+              dialog.showSuccess('Success', 'Invitation cancelled');
             }
+            dialog.hideConfirm();
           },
         },
       ]
@@ -122,7 +126,7 @@ export default function GroupDetailScreen() {
   const handleLeaveGroup = async () => {
     if (!group) return;
 
-    Alert.alert(
+    dialog.alert(
       'Leave Group',
       `Are you sure you want to leave "${group.name}"? You will no longer have access to shared vehicles and group information.`,
       [
@@ -133,15 +137,11 @@ export default function GroupDetailScreen() {
           onPress: async () => {
             const { error } = await GroupService.leaveGroup(group.id);
             if (error) {
-              Alert.alert('Error', error);
+              dialog.showError('Error', error);
             } else {
-              Alert.alert('Success', 'You have left the group', [
-                {
-                  text: 'OK',
-                  onPress: () => router.back(),
-                },
-              ]);
+              dialog.showSuccess('Success', 'You have left the group', () => router.back());
             }
+            dialog.hideConfirm();
           },
         },
       ]

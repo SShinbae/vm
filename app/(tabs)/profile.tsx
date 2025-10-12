@@ -4,6 +4,7 @@ import { Modal } from '@/components/ui/Modal';
 import { NotificationBell } from '@/components/ui/NotificationBell';
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import { useResponsiveLayout } from '@/hooks/use-responsive-layout';
 import { useAuth } from '@/lib/contexts/AuthContext';
 import { useTheme } from '@/lib/contexts/ThemeContext';
 import { useDialog } from '@/lib/contexts/DialogContext';
@@ -35,6 +36,7 @@ export default function ProfileScreen() {
   const [loading, setLoading] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+  const { isMobile } = useResponsiveLayout();
 
   // Notification preferences
   const [notificationPrefs, setNotificationPrefs] = useState({
@@ -571,7 +573,7 @@ export default function ProfileScreen() {
               <View style={[styles.circle, styles.circle2]} />
               <View style={[styles.circle, styles.circle3]} />
             </View>
-            {Platform.OS !== 'web' && (
+            {(Platform.OS !== 'web' || (isWeb && isMobile)) && (
               <>
                 <View style={styles.notificationButton}>
                   <NotificationBell

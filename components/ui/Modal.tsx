@@ -173,22 +173,49 @@ function WebModal({
   if (!visible) return null;
 
   const modalContent = (
-    <div
+    <View
+      // @ts-ignore - Web-specific className
       className={`web-modal-overlay ${variant === 'bottom-sheet' ? 'bottom-sheet' : ''}`}
-      style={{
-        padding: variant === 'fullscreen' ? 0 : 20,
-        ...containerStyle,
-      }}
+      style={[
+        {
+          position: 'fixed' as any,
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          zIndex: 999999,
+          display: 'flex' as any,
+          justifyContent: 'center',
+          alignItems: 'center',
+          padding: variant === 'fullscreen' ? 0 : 20,
+        },
+        containerStyle,
+      ]}
     >
       {/* Backdrop */}
-      <div
-        className="web-modal-backdrop"
-        onClick={handleBackdropPress}
-      />
+      <TouchableWithoutFeedback onPress={handleBackdropPress}>
+        <View
+          // @ts-ignore - Web-specific className
+          className="web-modal-backdrop"
+          style={{
+            position: 'absolute' as any,
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+          }}
+        />
+      </TouchableWithoutFeedback>
 
       {/* Modal Content */}
-      <div
+      <View
+        // @ts-ignore - Web-specific className
         className={`web-modal-content ${variant === 'bottom-sheet' ? 'bottom-sheet' : ''}`}
+        style={{
+          position: 'relative' as any,
+          zIndex: 1,
+        }}
       >
         <View style={getContentStyle()}>
           {(title || showCloseButton) && (
@@ -204,8 +231,8 @@ function WebModal({
 
           <View style={styles.body}>{children}</View>
         </View>
-      </div>
-    </div>
+      </View>
+    </View>
   );
 
   // Use portal if available, otherwise render normally
