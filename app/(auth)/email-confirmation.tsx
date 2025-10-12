@@ -1,6 +1,5 @@
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
-import { useAuth } from '@/lib/contexts/AuthContext';
 import { Link, router, useLocalSearchParams } from 'expo-router';
 import React, { useState, useEffect } from 'react';
 import {
@@ -21,7 +20,6 @@ function EmailConfirmationScreen() {
   const { email } = useLocalSearchParams<{ email: string }>();
   const [resendLoading, setResendLoading] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(0);
-  const { signUp } = useAuth();
   const colorScheme = useColorScheme();
   const { showConfirm } = useAlert();
   const colors = Colors[colorScheme ?? 'light'];
@@ -243,14 +241,14 @@ function EmailConfirmationScreen() {
             </View>
             <Text style={styles.title}>Check your email</Text>
             <Text style={styles.subtitle}>
-              We've sent a verification link to
+              We&apos;ve sent a verification link to
             </Text>
             <Text style={styles.emailText}>{email}</Text>
           </View>
 
           {/* Instructions Card */}
           <View style={styles.card}>
-            <Text style={styles.instructionTitle}>What's next?</Text>
+            <Text style={styles.instructionTitle}>What&apos;s next?</Text>
             <View style={styles.instructionList}>
               <View style={styles.instructionItem}>
                 <View style={styles.instructionNumber}>
@@ -307,7 +305,7 @@ function EmailConfirmationScreen() {
           </View>
 
           <Text style={styles.footerText}>
-            Didn't receive the email? Check your spam folder or{' '}
+            Didn&apos;t receive the email? Check your spam folder or{' '}
             <Link href="/(auth)/register" asChild>
               <Text style={styles.linkText}>try again with a different email</Text>
             </Link>

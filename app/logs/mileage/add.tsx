@@ -23,6 +23,53 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+// Separate component to handle vehicle option rendering with proper hook usage
+const VehicleOption: React.FC<{
+  vehicle: VehicleWithDetails;
+  isSelected: boolean;
+  onPress: () => void;
+  styles: any;
+}> = ({ vehicle, isSelected, onPress, styles }) => {
+  const [imageError, setImageError] = useState(false);
+
+  return (
+    <TouchableOpacity
+      style={[
+        styles.vehicleOption,
+        isSelected && styles.vehicleOptionSelected,
+      ]}
+      onPress={onPress}
+    >
+      {vehicle.main_image_url && !imageError ? (
+        <Image
+          source={{ uri: vehicle.main_image_url }}
+          style={styles.vehicleIcon}
+          contentFit="cover"
+          cachePolicy="memory-disk"
+          transition={200}
+          onError={() => setImageError(true)}
+        />
+      ) : (
+        <View style={styles.vehicleIcon}>
+          <IconSymbol name="car.fill" size={16} color="white" />
+        </View>
+      )}
+      <Text style={[
+        styles.vehicleOptionText,
+        isSelected && styles.vehicleOptionTextSelected,
+      ]}>
+        {vehicle.year} {vehicle.make}
+      </Text>
+      <Text style={[
+        styles.vehiclePlateText,
+        isSelected && styles.vehiclePlateTextSelected,
+      ]}>
+        {vehicle.license_plate}
+      </Text>
+    </TouchableOpacity>
+  );
+};
+
 export default function AddMileageLogScreen() {
   const { vehicleId } = useLocalSearchParams<{ vehicleId?: string }>();
   const [vehicles, setVehicles] = useState<VehicleWithDetails[]>([]);
@@ -176,47 +223,15 @@ export default function AddMileageLogScreen() {
           style={styles.vehicleSelector}
           contentContainerStyle={styles.vehicleSelectorContent}
         >
-          {vehicles.map((vehicle) => {
-            const [vehicleImageError, setVehicleImageError] = React.useState(false);
-
-            return (
-              <TouchableOpacity
-                key={vehicle.id}
-                style={[
-                  styles.vehicleOption,
-                  formData.vehicle_id === vehicle.id && styles.vehicleOptionSelected,
-                ]}
-                onPress={() => setFormData(prev => ({ ...prev, vehicle_id: vehicle.id }))}
-              >
-                {vehicle.main_image_url && !vehicleImageError ? (
-                  <Image
-                    source={{ uri: vehicle.main_image_url }}
-                    style={styles.vehicleIcon}
-                    contentFit="cover"
-                    cachePolicy="memory-disk"
-                    transition={200}
-                    onError={() => setVehicleImageError(true)}
-                  />
-                ) : (
-                  <View style={styles.vehicleIcon}>
-                    <IconSymbol name="car.fill" size={16} color="white" />
-                  </View>
-                )}
-                <Text style={[
-                  styles.vehicleOptionText,
-                  formData.vehicle_id === vehicle.id && styles.vehicleOptionTextSelected,
-                ]}>
-                  {vehicle.year} {vehicle.make}
-                </Text>
-                <Text style={[
-                  styles.vehiclePlateText,
-                  formData.vehicle_id === vehicle.id && styles.vehiclePlateTextSelected,
-                ]}>
-                  {vehicle.license_plate}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
+          {vehicles.map((vehicle) => (
+            <VehicleOption
+              key={vehicle.id}
+              vehicle={vehicle}
+              isSelected={formData.vehicle_id === vehicle.id}
+              onPress={() => setFormData(prev => ({ ...prev, vehicle_id: vehicle.id }))}
+              styles={styles}
+            />
+          ))}
         </ScrollView>
       </View>
     );
@@ -479,7 +494,7 @@ export default function AddMileageLogScreen() {
           {isWeb && (
             <>
               <Text style={styles.title}>Add Mileage Log</Text>
-              <Text style={styles.subtitle}>Record your vehicle's mileage</Text>
+              <Text style={styles.subtitle}>Record your vehicle&apos;s mileage</Text>
             </>
           )}
 

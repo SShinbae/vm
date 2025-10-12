@@ -16,9 +16,9 @@ export function ThemedText({
   ...rest
 }: ThemedTextProps) {
   // Use different color for link type
-  const color = type === 'link'
-    ? useThemeColor({ light: lightColor, dark: darkColor }, 'link')
-    : useThemeColor({ light: lightColor, dark: darkColor }, 'text');
+  const linkColor = useThemeColor({ light: lightColor, dark: darkColor }, 'link');
+  const textColor = useThemeColor({ light: lightColor, dark: darkColor }, 'text');
+  const color = type === 'link' ? linkColor : textColor;
 
   return (
     <Text

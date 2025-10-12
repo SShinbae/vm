@@ -244,6 +244,9 @@ function WebModal({
 }
 
 export function Modal(props: ModalProps) {
+  const colorScheme = useColorScheme();
+  const colors = Colors[colorScheme ?? 'light'];
+
   // Use web-specific modal for web platform
   if (Platform.OS === 'web') {
     return <WebModal {...props} />;
@@ -265,8 +268,6 @@ export function Modal(props: ModalProps) {
     contentStyle,
     titleStyle,
   } = props;
-  const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? 'light'];
 
   const getContainerStyle = (): ViewStyle[] => {
     const baseStyle = [styles.container];
