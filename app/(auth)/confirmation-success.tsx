@@ -1,6 +1,6 @@
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
-import { Link, router } from 'expo-router';
+import { router } from 'expo-router';
 import React, { useState, useEffect } from 'react';
 import {
   ActivityIndicator,
@@ -34,6 +34,7 @@ export default function ConfirmationSuccessScreen() {
     }, 1000);
 
     return () => clearInterval(timer);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleGoToLogin = () => {

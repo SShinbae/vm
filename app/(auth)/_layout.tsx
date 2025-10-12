@@ -1,5 +1,4 @@
 import { Stack } from 'expo-router';
-import { StyleSheet } from 'react-native';
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 

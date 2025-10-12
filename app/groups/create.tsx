@@ -297,7 +297,7 @@ export default function CreateGroupScreen() {
               </View>
               <View style={styles.featureItem}>
                 <IconSymbol name="checkmark.circle.fill" size={16} color="#4CAF50" />
-                <Text style={styles.featureText}>View group members' shared vehicles</Text>
+                <Text style={styles.featureText}>View group members&apos; shared vehicles</Text>
               </View>
               <View style={styles.featureItem}>
                 <IconSymbol name="checkmark.circle.fill" size={16} color="#4CAF50" />

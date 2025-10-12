@@ -238,7 +238,7 @@ export default function GroupsScreen() {
         </View>
         <View style={styles.invitationInfo}>
           <Text style={styles.invitationTitle}>
-            Invitation to join "{invitation.groups?.name}"
+            Invitation to join &quot;{invitation.groups?.name}&quot;
           </Text>
           <Text style={styles.invitationSubtitle}>
             Invited by {invitation.profiles?.full_name || invitation.profiles?.email || 'Unknown'}
@@ -596,7 +596,7 @@ export default function GroupsScreen() {
             </View>
             <Text style={styles.emptyTitle}>No invitations</Text>
             <Text style={styles.emptyDescription}>
-              You'll see group invitations from other users here.
+              You&apos;ll see group invitations from other users here.
             </Text>
           </View>
         ) : (

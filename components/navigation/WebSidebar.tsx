@@ -84,14 +84,14 @@ export function WebSidebar() {
           <IconSymbol
             name={item.icon as any}
             size={showAsBottomBar ? 24 : 20}
-            color={isActive ? colors.tint : colors.text}
+            color={isActive ? (showAsBottomBar ? colors.tint : '#ffffff') : colors.text}
           />
           {(showAsBottomBar || isOpen) && (
             <Text
               style={[
                 styles.navButtonText,
                 {
-                  color: isActive ? colors.tint : colors.text,
+                  color: isActive ? (showAsBottomBar ? colors.tint : '#ffffff') : colors.text,
                 },
                 Platform.OS === 'web' && {
                   // @ts-ignore - web-specific class
