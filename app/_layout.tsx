@@ -9,29 +9,27 @@ import { Platform, View } from 'react-native';
 import 'react-native-reanimated';
 import '../unistyles'; // Import Unistyles configuration
 
-// Simplified imports - temporarily disable complex components to test
-// import { AuthGuard } from '@/components/AuthGuard';
-// import { WebSidebar } from '@/components/navigation/WebSidebar';
-// import { NotificationManager } from '@/components/ui/NotificationManager';
+import { AuthGuard } from '@/components/AuthGuard';
 import { useColorScheme } from '@/hooks/use-color-scheme';
-// import { useResponsiveLayout } from '@/hooks/use-responsive-layout';
 import { AuthProvider } from '@/lib/contexts/AuthContext';
-// import { DialogProvider } from '@/lib/contexts/DialogContext';
-// import { NotificationProvider } from '@/lib/contexts/NotificationContext';
+import { DialogProvider } from '@/lib/contexts/DialogContext';
 import { ThemeProvider } from '@/lib/contexts/ThemeContext';
+import { NotificationProvider } from '@/lib/contexts/NotificationContext';
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
 
-export const unstable_settings = {
-  anchor: '(tabs)',
-};
+// Removed unstable_settings to allow index.tsx to control default route
 
 export default function RootLayout() {
   return (
     <ThemeProvider>
       <AuthProvider>
-        <RootLayoutContent />
+        <NotificationProvider>
+          <DialogProvider>
+            <RootLayoutContent />
+          </DialogProvider>
+        </NotificationProvider>
       </AuthProvider>
     </ThemeProvider>
   );
@@ -71,22 +69,23 @@ function RootLayoutContent() {
           <title>Vehicle Management</title>
         </Head>
       )}
-      {/* Simplified layout - temporarily disable context providers to test loading */}
-      <View style={{ flex: 1 }}>
-        <Stack>
-          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-          <Stack.Screen name="(auth)" options={{ headerShown: false }} />
-          <Stack.Screen name="auth" options={{ headerShown: false }} />
-          <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
-          <Stack.Screen
-            name="notifications"
-            options={{
-              presentation: 'modal',
-              headerShown: false
-            }}
-          />
-        </Stack>
-      </View>
+      <AuthGuard>
+        <View style={{ flex: 1 }}>
+          <Stack>
+            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+            <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+            <Stack.Screen name="auth" options={{ headerShown: false }} />
+            <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
+            <Stack.Screen
+              name="notifications"
+              options={{
+                presentation: 'modal',
+                headerShown: false
+              }}
+            />
+          </Stack>
+        </View>
+      </AuthGuard>
       <StatusBar style="auto" />
     </NavigationThemeProvider>
   );

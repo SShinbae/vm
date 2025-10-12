@@ -8,7 +8,6 @@ import {
   StyleSheet,
   ActivityIndicator,
   RefreshControl,
-  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
@@ -19,6 +18,7 @@ import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useResponsiveLayout } from '@/hooks/use-responsive-layout';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAuth } from '@/lib/contexts/AuthContext';
+import { useDialog } from '@/lib/contexts/DialogContext';
 import { formatDate } from '@/lib/utils/dateUtils';
 import { WebLayout } from '@/components/layout/WebLayout';
 import { ResponsiveGrid } from '@/components/layout/ResponsiveGrid';
@@ -27,6 +27,7 @@ type TabType = 'groups' | 'invitations';
 
 export default function GroupsScreen() {
   const { user } = useAuth();
+  const dialog = useDialog();
   const [activeTab, setActiveTab] = useState<TabType>('groups');
   const [groups, setGroups] = useState<GroupWithMembers[]>([]);
   const [invitations, setInvitations] = useState<GroupInvitationWithDetails[]>([]);
@@ -56,14 +57,15 @@ export default function GroupsScreen() {
 
   const handleLeaveGroup = async (group: GroupWithMembers) => {
     if (group.owner_id === user?.id) {
-      Alert.alert(
+      dialog.alert(
         'Cannot Leave Group',
-        'You are the owner of this group. Transfer ownership to another member or delete the group.'
+        'You are the owner of this group. Transfer ownership to another member or delete the group.',
+        [{ text: 'OK', style: 'cancel' }]
       );
       return;
     }
 
-    Alert.alert(
+    dialog.alert(
       'Leave Group',
       `Are you sure you want to leave "${group.name}"?`,
       [
@@ -74,11 +76,12 @@ export default function GroupsScreen() {
           onPress: async () => {
             const { error } = await GroupService.leaveGroup(group.id);
             if (error) {
-              Alert.alert('Error', error);
+              dialog.showError('Error', error);
             } else {
               await fetchData();
-              Alert.alert('Success', 'You have left the group');
+              dialog.showSuccess('Success', 'You have left the group');
             }
+            dialog.hideConfirm();
           },
         },
       ]
@@ -86,7 +89,7 @@ export default function GroupsScreen() {
   };
 
   const handleDeleteGroup = async (group: GroupWithMembers) => {
-    Alert.alert(
+    dialog.alert(
       'Delete Group',
       `Are you sure you want to delete "${group.name}"? This action cannot be undone.`,
       [
@@ -97,11 +100,12 @@ export default function GroupsScreen() {
           onPress: async () => {
             const { error } = await GroupService.deleteGroup(group.id);
             if (error) {
-              Alert.alert('Error', error);
+              dialog.showError('Error', error);
             } else {
               await fetchData();
-              Alert.alert('Success', 'Group deleted successfully');
+              dialog.showSuccess('Success', 'Group deleted successfully');
             }
+            dialog.hideConfirm();
           },
         },
       ]
@@ -111,15 +115,15 @@ export default function GroupsScreen() {
   const handleAcceptInvitation = async (invitation: GroupInvitationWithDetails) => {
     const { data, error } = await GroupInvitationService.acceptInvitation(invitation.id);
     if (error) {
-      Alert.alert('Error', error);
+      dialog.showError('Error', error);
     } else {
       await fetchData();
-      Alert.alert('Success', `You have joined "${data?.groupName || invitation.groups?.name || 'the group'}"`);
+      dialog.showSuccess('Success', `You have joined "${data?.groupName || invitation.groups?.name || 'the group'}"`);
     }
   };
 
   const handleDeclineInvitation = async (invitation: GroupInvitationWithDetails) => {
-    Alert.alert(
+    dialog.alert(
       'Decline Invitation',
       `Are you sure you want to decline the invitation to join "${invitation.groups?.name}"?`,
       [
@@ -130,11 +134,12 @@ export default function GroupsScreen() {
           onPress: async () => {
             const { error } = await GroupInvitationService.declineInvitation(invitation.id);
             if (error) {
-              Alert.alert('Error', error);
+              dialog.showError('Error', error);
             } else {
               await fetchData();
-              Alert.alert('Success', 'Invitation declined');
+              dialog.showSuccess('Success', 'Invitation declined');
             }
+            dialog.hideConfirm();
           },
         },
       ]

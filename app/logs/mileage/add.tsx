@@ -1,7 +1,6 @@
 import { Button } from '@/components/ui/Button';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { Input } from '@/components/ui/Input';
-import { DatePicker } from '@/components/ui/DatePicker';
 import { AlertModal } from '@/components/ui/Modal';
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
@@ -103,6 +102,11 @@ export default function AddMileageLogScreen() {
   const validateOdometer = (value: string) => {
     const num = parseInt(value.replace(/,/g, ''));
     if (isNaN(num) || num <= 0) return 'Please enter a valid odometer reading';
+    return undefined;
+  };
+
+  const validateDate = (value: string) => {
+    if (!value.trim()) return 'Date is required';
     return undefined;
   };
 
@@ -497,11 +501,15 @@ export default function AddMileageLogScreen() {
               leftIcon="speedometer"
             />
 
-            <DatePicker
+            <Input
               label="Date"
               value={formData.date}
-              onDateChange={(date) => setFormData(prev => ({ ...prev, date }))}
+              onChangeText={(text) => setFormData(prev => ({ ...prev, date: text }))}
+              placeholder="2024-01-01"
               required
+              error={formData.date ? validateDate(formData.date) : undefined}
+              helperText="Date format: YYYY-MM-DD"
+              leftIcon="calendar"
             />
 
             <Input
