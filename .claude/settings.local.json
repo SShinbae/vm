@@ -20,7 +20,12 @@
       "Bash(Get-NetTCPConnection -LocalPort 8081 -ErrorAction SilentlyContinue)",
       "Bash(Select-Object -Property LocalPort, OwningProcess)",
       "Bash(eas build:list:*)",
-      "Bash(del package-lock.json)"
+      "Bash(del package-lock.json)",
+      "Bash(git pull:*)",
+      "Bash(git checkout:*)",
+      "Bash(git stash:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)"
     ],
     "deny": [],
     "ask": []
