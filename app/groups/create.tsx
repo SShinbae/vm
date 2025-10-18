@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -10,29 +10,29 @@ import {
   StyleSheet,
   Alert,
   ActivityIndicator,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { router } from 'expo-router';
-import { GroupService } from '@/lib/services/groupService';
-import { GroupFormData } from '@/types';
-import { Colors } from '@/constants/theme';
-import { useColorScheme } from '@/hooks/use-color-scheme';
-import { IconSymbol } from '@/components/ui/icon-symbol';
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { router } from "expo-router";
+import { GroupService } from "@/lib/services/groupService";
+import { GroupFormData } from "@/types";
+import { Colors } from "@/constants/theme";
+import { useColorScheme } from "@/hooks/use-color-scheme";
+import { IconSymbol } from "@/components/ui/icon-symbol";
 
 export default function CreateGroupScreen() {
   const [formData, setFormData] = useState<GroupFormData>({
-    name: '',
-    description: '',
+    name: "",
+    description: "",
   });
   const [loading, setLoading] = useState(false);
   const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? 'light'];
-  const isWeb = Platform.OS === 'web';
+  const colors = Colors[colorScheme ?? "light"];
+  const isWeb = Platform.OS === "web";
 
   const handleSave = async () => {
     // Validation
     if (!formData.name.trim()) {
-      Alert.alert('Error', 'Please enter a group name');
+      Alert.alert("Error", "Please enter a group name");
       return;
     }
 
@@ -47,11 +47,11 @@ export default function CreateGroupScreen() {
     setLoading(false);
 
     if (error) {
-      Alert.alert('Error', error);
+      Alert.alert("Error", error);
     } else {
-      Alert.alert('Success', 'Group created successfully', [
+      Alert.alert("Success", "Group created successfully", [
         {
-          text: 'OK',
+          text: "OK",
           onPress: () => router.back(),
         },
       ]);
@@ -68,12 +68,12 @@ export default function CreateGroupScreen() {
       backgroundColor: colors.background,
     },
     header: {
-      flexDirection: 'row',
-      alignItems: 'center',
+      flexDirection: "row",
+      alignItems: "center",
       paddingHorizontal: 20,
       paddingVertical: 16,
       borderBottomWidth: 1,
-      borderBottomColor: colors.icon + '20',
+      borderBottomColor: colors.icon + "20",
     },
     backButton: {
       marginRight: 16,
@@ -81,7 +81,7 @@ export default function CreateGroupScreen() {
     },
     title: {
       fontSize: 24,
-      fontWeight: 'bold',
+      fontWeight: "bold",
       color: colors.text,
       flex: 1,
     },
@@ -90,17 +90,17 @@ export default function CreateGroupScreen() {
       paddingHorizontal: 16,
       paddingVertical: 8,
       borderRadius: 8,
-      flexDirection: 'row',
-      alignItems: 'center',
+      flexDirection: "row",
+      alignItems: "center",
       gap: 6,
     },
     saveButtonDisabled: {
       opacity: 0.6,
     },
     saveButtonText: {
-      color: 'white',
+      color: "white",
       fontSize: 14,
-      fontWeight: '600',
+      fontWeight: "600",
     },
     content: {
       flex: 1,
@@ -113,7 +113,7 @@ export default function CreateGroupScreen() {
       borderRadius: 12,
       padding: 20,
       borderWidth: 1,
-      borderColor: colors.icon + '20',
+      borderColor: colors.icon + "20",
       marginBottom: 24,
     },
     section: {
@@ -121,7 +121,7 @@ export default function CreateGroupScreen() {
     },
     sectionTitle: {
       fontSize: 18,
-      fontWeight: '600',
+      fontWeight: "600",
       color: colors.text,
       marginBottom: 16,
     },
@@ -130,12 +130,12 @@ export default function CreateGroupScreen() {
     },
     label: {
       fontSize: 16,
-      fontWeight: '500',
+      fontWeight: "500",
       color: colors.text,
       marginBottom: 8,
     },
     requiredLabel: {
-      color: '#ff4444',
+      color: "#ff4444",
     },
     input: {
       backgroundColor: colors.background,
@@ -149,7 +149,7 @@ export default function CreateGroupScreen() {
     },
     textArea: {
       height: 100,
-      textAlignVertical: 'top',
+      textAlignVertical: "top",
     },
     helpText: {
       fontSize: 12,
@@ -158,24 +158,24 @@ export default function CreateGroupScreen() {
       lineHeight: 16,
     },
     infoCard: {
-      backgroundColor: colors.tint + '10',
+      backgroundColor: colors.tint + "10",
       borderRadius: 12,
       padding: 16,
       borderWidth: 1,
-      borderColor: colors.tint + '30',
+      borderColor: colors.tint + "30",
     },
     infoIcon: {
       width: 40,
       height: 40,
       borderRadius: 20,
-      backgroundColor: colors.tint + '20',
-      alignItems: 'center',
-      justifyContent: 'center',
+      backgroundColor: colors.tint + "20",
+      alignItems: "center",
+      justifyContent: "center",
       marginBottom: 12,
     },
     infoTitle: {
       fontSize: 16,
-      fontWeight: '600',
+      fontWeight: "600",
       color: colors.text,
       marginBottom: 8,
     },
@@ -189,8 +189,8 @@ export default function CreateGroupScreen() {
       gap: 8,
     },
     featureItem: {
-      flexDirection: 'row',
-      alignItems: 'center',
+      flexDirection: "row",
+      alignItems: "center",
       gap: 8,
     },
     featureText: {
@@ -212,7 +212,10 @@ export default function CreateGroupScreen() {
           </TouchableOpacity>
           <Text style={styles.title}>Create Group</Text>
           <TouchableOpacity
-            style={[styles.saveButton, (!isFormValid() || loading) && styles.saveButtonDisabled]}
+            style={[
+              styles.saveButton,
+              (!isFormValid() || loading) && styles.saveButtonDisabled,
+            ]}
             onPress={handleSave}
             disabled={!isFormValid() || loading}
           >
@@ -229,7 +232,7 @@ export default function CreateGroupScreen() {
       )}
 
       <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={styles.content}
       >
         <ScrollView
@@ -249,7 +252,7 @@ export default function CreateGroupScreen() {
                   style={styles.input}
                   value={formData.name}
                   onChangeText={(text) =>
-                    setFormData(prev => ({ ...prev, name: text }))
+                    setFormData((prev) => ({ ...prev, name: text }))
                   }
                   placeholder="Family Cars"
                   placeholderTextColor={colors.icon}
@@ -267,7 +270,7 @@ export default function CreateGroupScreen() {
                   style={[styles.input, styles.textArea]}
                   value={formData.description}
                   onChangeText={(text) =>
-                    setFormData(prev => ({ ...prev, description: text }))
+                    setFormData((prev) => ({ ...prev, description: text }))
                   }
                   placeholder="Share information about our family vehicles..."
                   placeholderTextColor={colors.icon}
@@ -275,7 +278,8 @@ export default function CreateGroupScreen() {
                   textAlignVertical="top"
                 />
                 <Text style={styles.helpText}>
-                  Describe the purpose of this group to help members understand its goals
+                  Describe the purpose of this group to help members understand
+                  its goals
                 </Text>
               </View>
             </View>
@@ -287,21 +291,40 @@ export default function CreateGroupScreen() {
             </View>
             <Text style={styles.infoTitle}>About Groups</Text>
             <Text style={styles.infoText}>
-              Groups allow you to share vehicle information with family members or friends.
-              As the group owner, you can invite members and manage group settings.
+              Groups allow you to share vehicle information with family members
+              or friends. As the group owner, you can invite members and manage
+              group settings.
             </Text>
             <View style={styles.featureList}>
               <View style={styles.featureItem}>
-                <IconSymbol name="checkmark.circle.fill" size={16} color="#4CAF50" />
-                <Text style={styles.featureText}>Share vehicle maintenance logs</Text>
+                <IconSymbol
+                  name="checkmark.circle.fill"
+                  size={16}
+                  color="#4CAF50"
+                />
+                <Text style={styles.featureText}>
+                  Share vehicle maintenance logs
+                </Text>
               </View>
               <View style={styles.featureItem}>
-                <IconSymbol name="checkmark.circle.fill" size={16} color="#4CAF50" />
-                <Text style={styles.featureText}>View group members&apos; shared vehicles</Text>
+                <IconSymbol
+                  name="checkmark.circle.fill"
+                  size={16}
+                  color="#4CAF50"
+                />
+                <Text style={styles.featureText}>
+                  View group members&apos; shared vehicles
+                </Text>
               </View>
               <View style={styles.featureItem}>
-                <IconSymbol name="checkmark.circle.fill" size={16} color="#4CAF50" />
-                <Text style={styles.featureText}>Privacy-first: only shared vehicles are visible</Text>
+                <IconSymbol
+                  name="checkmark.circle.fill"
+                  size={16}
+                  color="#4CAF50"
+                />
+                <Text style={styles.featureText}>
+                  Privacy-first: only shared vehicles are visible
+                </Text>
               </View>
             </View>
           </View>

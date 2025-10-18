@@ -1,7 +1,7 @@
-import { useDialog } from '@/lib/contexts/DialogContext';
-import { useFocusEffect } from '@react-navigation/native';
-import { router } from 'expo-router';
-import React, { useCallback, useState } from 'react';
+import { useDialog } from "@/lib/contexts/DialogContext";
+import { useFocusEffect } from "@react-navigation/native";
+import { router } from "expo-router";
+import React, { useCallback, useState } from "react";
 import {
   ActivityIndicator,
   RefreshControl,
@@ -11,27 +11,27 @@ import {
   TextInput,
   TouchableOpacity,
   View,
-} from 'react-native';
-import { Image } from 'expo-image';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { VehicleService } from '../../lib/services/vehicleService';
+} from "react-native";
+import { Image } from "expo-image";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { VehicleService } from "../../lib/services/vehicleService";
 
-import { ResponsiveGrid } from '@/components/layout/ResponsiveGrid';
-import { WebLayout } from '@/components/layout/WebLayout';
-import { IconSymbol } from '@/components/ui/icon-symbol';
-import { Colors } from '@/constants/theme';
-import { useColorScheme } from '@/hooks/use-color-scheme';
-import { useResponsiveLayout } from '@/hooks/use-responsive-layout';
-import { formatDateWithPrefix } from '@/lib/utils/dateUtils';
-import { VehicleWithDetails } from '@/types/database-v2';
+import { ResponsiveGrid } from "@/components/layout/ResponsiveGrid";
+import { WebLayout } from "@/components/layout/WebLayout";
+import { IconSymbol } from "@/components/ui/icon-symbol";
+import { Colors } from "@/constants/theme";
+import { useColorScheme } from "@/hooks/use-color-scheme";
+import { useResponsiveLayout } from "@/hooks/use-responsive-layout";
+import { formatDateWithPrefix } from "@/lib/utils/dateUtils";
+import { VehicleWithDetails } from "@/types/database-v2";
 
 export default function VehiclesScreen() {
   const [allVehicles, setAllVehicles] = useState<VehicleWithDetails[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [tableSearchQuery, setTableSearchQuery] = useState('');
+  const [tableSearchQuery, setTableSearchQuery] = useState("");
   const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? 'light'];
+  const colors = Colors[colorScheme ?? "light"];
   const layout = useResponsiveLayout();
   const dialog = useDialog();
 
@@ -39,17 +39,17 @@ export default function VehiclesScreen() {
     const vehiclesResult = await VehicleService.getVehiclesSeparated();
 
     if (vehiclesResult.error) {
-      dialog.showError('Error', 'Failed to load vehicles');
-      console.error('Failed to fetch vehicles:', vehiclesResult.error);
+      dialog.showError("Error", "Failed to load vehicles");
+      console.error("Failed to fetch vehicles:", vehiclesResult.error);
     } else if (vehiclesResult.data) {
       // Combine own and shared vehicles into one array
       const combinedVehicles = [
         ...vehiclesResult.data.ownVehicles,
-        ...vehiclesResult.data.sharedVehicles
+        ...vehiclesResult.data.sharedVehicles,
       ];
       setAllVehicles(combinedVehicles);
-      console.log('🚗 Vehicles loaded:', {
-        totalCount: combinedVehicles.length
+      console.log("🚗 Vehicles loaded:", {
+        totalCount: combinedVehicles.length,
       });
     }
 
@@ -64,25 +64,25 @@ export default function VehiclesScreen() {
 
   const handleDeleteVehicle = (vehicle: VehicleWithDetails) => {
     dialog.alert(
-      'Delete Vehicle',
+      "Delete Vehicle",
       `Are you sure you want to delete ${vehicle.year} ${vehicle.make} ${vehicle.model}? This action cannot be undone.`,
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: "Cancel", style: "cancel" },
         {
-          text: 'Delete',
-          style: 'destructive',
+          text: "Delete",
+          style: "destructive",
           onPress: async () => {
             const { error } = await VehicleService.deleteVehicle(vehicle.id);
             if (error) {
-              dialog.showError('Error', 'Failed to delete vehicle');
+              dialog.showError("Error", "Failed to delete vehicle");
             } else {
-              setAllVehicles(prev => prev.filter(v => v.id !== vehicle.id));
-              dialog.showSuccess('Success', 'Vehicle deleted successfully');
+              setAllVehicles((prev) => prev.filter((v) => v.id !== vehicle.id));
+              dialog.showSuccess("Success", "Vehicle deleted successfully");
             }
             dialog.hideConfirm();
           },
         },
-      ]
+      ],
     );
   };
 
@@ -93,14 +93,15 @@ export default function VehiclesScreen() {
     const isValidImageUrl = (url: string | null) => {
       if (!url) return false;
       // Check for common invalid patterns
-      if (url.startsWith('file://')) return false;
-      if (url.includes('undefined') || url.includes('null')) return false;
+      if (url.startsWith("file://")) return false;
+      if (url.includes("undefined") || url.includes("null")) return false;
       return true;
     };
 
-    const imageUrl = vehicle.main_image_url && isValidImageUrl(vehicle.main_image_url) 
-      ? vehicle.main_image_url 
-      : null;
+    const imageUrl =
+      vehicle.main_image_url && isValidImageUrl(vehicle.main_image_url)
+        ? vehicle.main_image_url
+        : null;
 
     return (
       <TouchableOpacity
@@ -111,82 +112,109 @@ export default function VehiclesScreen() {
           {imageUrl && !imageError ? (
             <Image
               source={{ uri: imageUrl }}
-              style={[styles.vehicleImage, !vehicle.is_own_vehicle && styles.groupVehicleImage]}
+              style={[
+                styles.vehicleImage,
+                !vehicle.is_own_vehicle && styles.groupVehicleImage,
+              ]}
               contentFit="cover"
               cachePolicy="memory-disk"
               transition={200}
               onError={(error) => {
-                console.error('Image load error for vehicle:', vehicle.id, error);
-                console.log('Failed URL:', imageUrl);
+                console.error(
+                  "Image load error for vehicle:",
+                  vehicle.id,
+                  error,
+                );
+                console.log("Failed URL:", imageUrl);
                 setImageError(true);
               }}
               onLoad={() => {
-                console.log('Image loaded successfully for vehicle:', vehicle.id);
+                console.log(
+                  "Image loaded successfully for vehicle:",
+                  vehicle.id,
+                );
               }}
             />
           ) : (
-            <View style={[styles.vehicleIcon, !vehicle.is_own_vehicle && styles.groupVehicleIcon]}>
-              <IconSymbol name={!vehicle.is_own_vehicle ? "person.3.fill" : "car.fill"} size={24} color="white" />
+            <View
+              style={[
+                styles.vehicleIcon,
+                !vehicle.is_own_vehicle && styles.groupVehicleIcon,
+              ]}
+            >
+              <IconSymbol
+                name={!vehicle.is_own_vehicle ? "person.3.fill" : "car.fill"}
+                size={24}
+                color="white"
+              />
             </View>
           )}
-        <View style={styles.vehicleInfo}>
-          <View style={styles.vehicleNameRow}>
-            <Text style={styles.vehicleName}>
-              {vehicle.year} {vehicle.make} {vehicle.model}
-            </Text>
-            {!vehicle.is_own_vehicle && (
-              <View style={styles.sharedBadge}>
-                <IconSymbol name="person.3.fill" size={12} color="white" />
-              </View>
+          <View style={styles.vehicleInfo}>
+            <View style={styles.vehicleNameRow}>
+              <Text style={styles.vehicleName}>
+                {vehicle.year} {vehicle.make} {vehicle.model}
+              </Text>
+              {!vehicle.is_own_vehicle && (
+                <View style={styles.sharedBadge}>
+                  <IconSymbol name="person.3.fill" size={12} color="white" />
+                </View>
+              )}
+              {vehicle.is_own_vehicle &&
+                vehicle.shared_groups &&
+                vehicle.shared_groups.length > 0 && (
+                  <View style={styles.sharedBadge}>
+                    <IconSymbol name="person.3.fill" size={12} color="white" />
+                  </View>
+                )}
+            </View>
+            <Text style={styles.vehiclePlate}>{vehicle.license_plate}</Text>
+            {!vehicle.is_own_vehicle && vehicle.owner_profile && (
+              <Text style={styles.ownerInfo}>
+                Shared by{" "}
+                {vehicle.owner_profile.full_name || vehicle.owner_profile.email}
+              </Text>
             )}
-            {vehicle.is_own_vehicle && vehicle.shared_groups && vehicle.shared_groups.length > 0 && (
-              <View style={styles.sharedBadge}>
-                <IconSymbol name="person.3.fill" size={12} color="white" />
-              </View>
-            )}
+            {vehicle.is_own_vehicle &&
+              vehicle.shared_groups &&
+              vehicle.shared_groups.length > 0 && (
+                <Text style={styles.sharingStatus}>
+                  Shared with {vehicle.shared_groups.length} group
+                  {vehicle.shared_groups.length > 1 ? "s" : ""}
+                </Text>
+              )}
           </View>
-          <Text style={styles.vehiclePlate}>{vehicle.license_plate}</Text>
-          {!vehicle.is_own_vehicle && vehicle.owner_profile && (
-            <Text style={styles.ownerInfo}>
-              Shared by {vehicle.owner_profile.full_name || vehicle.owner_profile.email}
-            </Text>
-          )}
-          {vehicle.is_own_vehicle && vehicle.shared_groups && vehicle.shared_groups.length > 0 && (
-            <Text style={styles.sharingStatus}>
-              Shared with {vehicle.shared_groups.length} group{vehicle.shared_groups.length > 1 ? 's' : ''}
-            </Text>
+          {vehicle.is_own_vehicle && (
+            <TouchableOpacity
+              style={styles.deleteButton}
+              onPress={() => handleDeleteVehicle(vehicle)}
+            >
+              <IconSymbol name="trash" size={18} color="#ff4444" />
+            </TouchableOpacity>
           )}
         </View>
-        {vehicle.is_own_vehicle && (
-          <TouchableOpacity
-            style={styles.deleteButton}
-            onPress={() => handleDeleteVehicle(vehicle)}
-          >
-            <IconSymbol name="trash" size={18} color="#ff4444" />
-          </TouchableOpacity>
+
+        {vehicle.vin && (
+          <View style={styles.vehicleDetails}>
+            <Text style={styles.detailLabel}>VIN: {vehicle.vin}</Text>
+          </View>
         )}
-      </View>
 
-      {vehicle.vin && (
-        <View style={styles.vehicleDetails}>
-          <Text style={styles.detailLabel}>VIN: {vehicle.vin}</Text>
+        <View style={styles.vehicleFooter}>
+          <Text style={styles.addedDate}>
+            {vehicle.created_at
+              ? formatDateWithPrefix(vehicle.created_at, "Added")
+              : "Added recently"}
+          </Text>
+          <IconSymbol name="chevron.right" size={16} color={colors.icon} />
         </View>
-      )}
-
-      <View style={styles.vehicleFooter}>
-        <Text style={styles.addedDate}>
-          {vehicle.created_at ? formatDateWithPrefix(vehicle.created_at, 'Added') : 'Added recently'}
-        </Text>
-        <IconSymbol name="chevron.right" size={16} color={colors.icon} />
-      </View>
-    </TouchableOpacity>
+      </TouchableOpacity>
     );
   };
 
   useFocusEffect(
     useCallback(() => {
       fetchData();
-    }, [fetchData])
+    }, [fetchData]),
   );
 
   const styles = StyleSheet.create({
@@ -203,7 +231,7 @@ export default function VehiclesScreen() {
     },
     greeting: {
       fontSize: 32,
-      fontWeight: '700',
+      fontWeight: "700",
       color: colors.text,
       marginBottom: 4,
     },
@@ -222,12 +250,12 @@ export default function VehiclesScreen() {
     },
     sectionTitle: {
       fontSize: 22,
-      fontWeight: '600',
+      fontWeight: "600",
       color: colors.text,
       marginBottom: 20,
     },
     quickActionsContainer: {
-      flexDirection: 'row',
+      flexDirection: "row",
       gap: 16,
     },
     quickActionCard: {
@@ -237,9 +265,9 @@ export default function VehiclesScreen() {
       padding: 20,
       borderWidth: 1,
       borderColor: colors.cardBorder,
-      alignItems: 'center',
+      alignItems: "center",
       gap: 12,
-      shadowColor: '#000',
+      shadowColor: "#000",
       shadowOffset: {
         width: 0,
         height: 2,
@@ -252,19 +280,19 @@ export default function VehiclesScreen() {
       width: 56,
       height: 56,
       borderRadius: 28,
-      alignItems: 'center',
-      justifyContent: 'center',
+      alignItems: "center",
+      justifyContent: "center",
     },
     quickActionTitle: {
       fontSize: 14,
-      fontWeight: '600',
+      fontWeight: "600",
       color: colors.text,
-      textAlign: 'center',
+      textAlign: "center",
     },
     loadingContainer: {
       flex: 1,
-      justifyContent: 'center',
-      alignItems: 'center',
+      justifyContent: "center",
+      alignItems: "center",
     },
     vehicleCard: {
       backgroundColor: colors.card,
@@ -273,7 +301,7 @@ export default function VehiclesScreen() {
       marginBottom: 12,
       borderWidth: 1,
       borderColor: colors.cardBorder,
-      shadowColor: '#000',
+      shadowColor: "#000",
       shadowOffset: {
         width: 0,
         height: 2,
@@ -283,8 +311,8 @@ export default function VehiclesScreen() {
       elevation: 4,
     },
     vehicleHeader: {
-      flexDirection: 'row',
-      alignItems: 'flex-start',
+      flexDirection: "row",
+      alignItems: "flex-start",
       marginBottom: 12,
     },
     vehicleIcon: {
@@ -292,8 +320,8 @@ export default function VehiclesScreen() {
       height: 48,
       borderRadius: 24,
       backgroundColor: colors.tint,
-      alignItems: 'center',
-      justifyContent: 'center',
+      alignItems: "center",
+      justifyContent: "center",
       marginRight: 16,
     },
     vehicleImage: {
@@ -302,34 +330,34 @@ export default function VehiclesScreen() {
       borderRadius: 24,
       marginRight: 16,
       backgroundColor: colors.surface,
-      overflow: 'hidden', // Ensures borderRadius works on web
+      overflow: "hidden", // Ensures borderRadius works on web
     },
     groupVehicleImage: {
       borderWidth: 2,
-      borderColor: '#10B981',
+      borderColor: "#10B981",
     },
     vehicleInfo: {
       flex: 1,
     },
     vehicleNameRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
+      flexDirection: "row",
+      alignItems: "center",
       gap: 8,
       marginBottom: 4,
     },
     vehicleName: {
       fontSize: 16,
-      fontWeight: '600',
+      fontWeight: "600",
       color: colors.text,
       flex: 1,
     },
     sharedBadge: {
-      backgroundColor: '#10B981',
+      backgroundColor: "#10B981",
       borderRadius: 12,
       paddingHorizontal: 8,
       paddingVertical: 4,
-      flexDirection: 'row',
-      alignItems: 'center',
+      flexDirection: "row",
+      alignItems: "center",
       gap: 4,
     },
     vehiclePlate: {
@@ -337,12 +365,12 @@ export default function VehiclesScreen() {
       color: colors.textSecondary,
     },
     groupVehicleIcon: {
-      backgroundColor: '#10B981',
+      backgroundColor: "#10B981",
     },
     ownerInfo: {
       fontSize: 12,
-      color: '#10B981',
-      fontWeight: '500',
+      color: "#10B981",
+      fontWeight: "500",
       marginTop: 4,
     },
     sharingStatus: {
@@ -351,9 +379,9 @@ export default function VehiclesScreen() {
       marginTop: 4,
     },
     sectionHeader: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
       paddingHorizontal: layout.isMobile ? 16 : 24,
       paddingVertical: 20,
       backgroundColor: colors.background,
@@ -366,17 +394,17 @@ export default function VehiclesScreen() {
       marginTop: 2,
     },
     sectionCount: {
-      backgroundColor: '#F59E0B',
+      backgroundColor: "#F59E0B",
       borderRadius: 12,
       paddingHorizontal: 12,
       paddingVertical: 6,
       minWidth: 32,
-      alignItems: 'center',
+      alignItems: "center",
     },
     sectionCountText: {
       fontSize: 14,
-      fontWeight: '600',
-      color: 'white',
+      fontWeight: "600",
+      color: "white",
     },
     sectionContent: {
       padding: layout.isMobile ? 16 : 24,
@@ -384,7 +412,7 @@ export default function VehiclesScreen() {
     emptySection: {
       paddingVertical: 60,
       paddingHorizontal: 24,
-      alignItems: 'center',
+      alignItems: "center",
       backgroundColor: colors.background,
     },
     emptySectionIcon: {
@@ -392,21 +420,21 @@ export default function VehiclesScreen() {
       height: 80,
       borderRadius: 40,
       backgroundColor: colors.surface,
-      alignItems: 'center',
-      justifyContent: 'center',
+      alignItems: "center",
+      justifyContent: "center",
       marginBottom: 20,
     },
     emptySectionTitle: {
       fontSize: 18,
-      fontWeight: '600',
+      fontWeight: "600",
       color: colors.text,
       marginBottom: 8,
-      textAlign: 'center',
+      textAlign: "center",
     },
     emptySectionDescription: {
       fontSize: 14,
       color: colors.textSecondary,
-      textAlign: 'center',
+      textAlign: "center",
       lineHeight: 22,
       maxWidth: 400,
     },
@@ -419,13 +447,13 @@ export default function VehiclesScreen() {
     detailLabel: {
       fontSize: 12,
       color: colors.textSecondary,
-      textTransform: 'uppercase',
+      textTransform: "uppercase",
       letterSpacing: 0.5,
     },
     vehicleFooter: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
       paddingTop: 12,
       borderTopWidth: 1,
       borderTopColor: colors.border,
@@ -435,8 +463,8 @@ export default function VehiclesScreen() {
       color: colors.textSecondary,
     },
     tableSearchContainer: {
-      flexDirection: 'row',
-      alignItems: 'center',
+      flexDirection: "row",
+      alignItems: "center",
       backgroundColor: colors.surface,
       borderRadius: 6,
       paddingHorizontal: 12,
@@ -450,8 +478,8 @@ export default function VehiclesScreen() {
       flex: 1,
     },
     tableSortButton: {
-      flexDirection: 'row',
-      alignItems: 'center',
+      flexDirection: "row",
+      alignItems: "center",
       backgroundColor: colors.surface,
       borderRadius: 6,
       paddingHorizontal: 12,
@@ -465,8 +493,11 @@ export default function VehiclesScreen() {
   });
 
   const QuickActionCard = ({ title, icon, onPress, color }: any) => (
-    <TouchableOpacity style={[styles.quickActionCard, { borderColor: color + '30' }]} onPress={onPress}>
-      <View style={[styles.quickActionIcon, { backgroundColor: color + '20' }]}>
+    <TouchableOpacity
+      style={[styles.quickActionCard, { borderColor: color + "30" }]}
+      onPress={onPress}
+    >
+      <View style={[styles.quickActionIcon, { backgroundColor: color + "20" }]}>
         <IconSymbol name={icon} size={24} color={color} />
       </View>
       <Text style={styles.quickActionTitle}>{title}</Text>
@@ -509,19 +540,19 @@ export default function VehiclesScreen() {
                 title="Add Vehicle"
                 icon="plus.circle.fill"
                 color={colors.tint}
-                onPress={() => router.push('/vehicles/add')}
+                onPress={() => router.push("/vehicles/add")}
               />
               <QuickActionCard
                 title="Log Fuel"
                 icon="fuelpump.fill"
                 color={colors.chart.fuel}
-                onPress={() => router.push('/logs/fuel/add' as any)}
+                onPress={() => router.push("/logs/fuel/add" as any)}
               />
               <QuickActionCard
                 title="Log Service"
                 icon="wrench.fill"
                 color={colors.chart.service}
-                onPress={() => router.push('/logs/service/add' as any)}
+                onPress={() => router.push("/logs/service/add" as any)}
               />
             </View>
           </View>
@@ -530,12 +561,20 @@ export default function VehiclesScreen() {
           <View style={styles.sectionHeader}>
             <View style={{ flex: 1 }}>
               <Text style={styles.sectionTitle}>My Vehicles</Text>
-              <Text style={styles.sectionSubtitle}>All your vehicles in one place</Text>
+              <Text style={styles.sectionSubtitle}>
+                All your vehicles in one place
+              </Text>
             </View>
             {layout.isDesktop && allVehicles.length > 0 && (
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+              <View
+                style={{ flexDirection: "row", alignItems: "center", gap: 12 }}
+              >
                 <View style={styles.tableSearchContainer}>
-                  <IconSymbol name="magnifyingglass" size={16} color={colors.icon} />
+                  <IconSymbol
+                    name="magnifyingglass"
+                    size={16}
+                    color={colors.icon}
+                  />
                   <TextInput
                     style={styles.tableSearchInput}
                     placeholder="Search"
@@ -546,7 +585,11 @@ export default function VehiclesScreen() {
                 </View>
                 <TouchableOpacity style={styles.tableSortButton}>
                   <Text style={styles.tableSortText}>Sort by</Text>
-                  <IconSymbol name="chevron.down" size={14} color={colors.icon} />
+                  <IconSymbol
+                    name="chevron.down"
+                    size={14}
+                    color={colors.icon}
+                  />
                 </TouchableOpacity>
               </View>
             )}
@@ -562,19 +605,20 @@ export default function VehiclesScreen() {
               </View>
               <Text style={styles.emptySectionTitle}>No vehicles yet</Text>
               <Text style={styles.emptySectionDescription}>
-                Add your first vehicle to start tracking mileage, fuel consumption, and maintenance.
+                Add your first vehicle to start tracking mileage, fuel
+                consumption, and maintenance.
               </Text>
             </View>
           ) : (
             <View style={styles.sectionContent}>
               {layout.isDesktop ? (
                 <ResponsiveGrid minItemWidth={350} spacing={16}>
-                  {allVehicles.map(vehicle => (
+                  {allVehicles.map((vehicle) => (
                     <VehicleCard key={vehicle.id} vehicle={vehicle} />
                   ))}
                 </ResponsiveGrid>
               ) : (
-                allVehicles.map(vehicle => (
+                allVehicles.map((vehicle) => (
                   <VehicleCard key={vehicle.id} vehicle={vehicle} />
                 ))
               )}

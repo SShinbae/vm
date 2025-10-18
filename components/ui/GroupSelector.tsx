@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -7,12 +7,12 @@ import {
   ScrollView,
   Modal,
   Alert,
-} from 'react-native';
-import { IconSymbol } from './icon-symbol';
-import { Colors } from '@/constants/theme';
-import { useColorScheme } from '@/hooks/use-color-scheme';
-import { GroupService } from '@/lib/services/groupService';
-import { Group } from '@/types/database-v2';
+} from "react-native";
+import { IconSymbol } from "./icon-symbol";
+import { Colors } from "@/constants/theme";
+import { useColorScheme } from "@/hooks/use-color-scheme";
+import { GroupService } from "@/lib/services/groupService";
+import { Group } from "@/types/database-v2";
 
 interface GroupSelectorProps {
   selectedGroupIds: string[];
@@ -27,8 +27,8 @@ interface GroupSelectorProps {
 export const GroupSelector: React.FC<GroupSelectorProps> = ({
   selectedGroupIds,
   onSelectionChange,
-  title = 'Share with Groups',
-  subtitle = 'Select which groups can see this vehicle',
+  title = "Share with Groups",
+  subtitle = "Select which groups can see this vehicle",
   disabled = false,
   maxSelections,
   style,
@@ -37,7 +37,7 @@ export const GroupSelector: React.FC<GroupSelectorProps> = ({
   const [loading, setLoading] = useState(true);
   const [modalVisible, setModalVisible] = useState(false);
   const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? 'light'];
+  const colors = Colors[colorScheme ?? "light"];
 
   useEffect(() => {
     loadGroups();
@@ -47,12 +47,12 @@ export const GroupSelector: React.FC<GroupSelectorProps> = ({
     try {
       const result = await GroupService.getGroups();
       if (result.error) {
-        Alert.alert('Error', 'Failed to load groups');
+        Alert.alert("Error", "Failed to load groups");
       } else {
         setGroups(result.data || []);
       }
     } catch (error) {
-      console.error('Error loading groups:', error);
+      console.error("Error loading groups:", error);
     } finally {
       setLoading(false);
     }
@@ -64,13 +64,13 @@ export const GroupSelector: React.FC<GroupSelectorProps> = ({
 
     if (isCurrentlySelected) {
       // Remove from selection
-      newSelection = selectedGroupIds.filter(id => id !== groupId);
+      newSelection = selectedGroupIds.filter((id) => id !== groupId);
     } else {
       // Add to selection
       if (maxSelections && selectedGroupIds.length >= maxSelections) {
         Alert.alert(
-          'Selection Limit',
-          `You can only select up to ${maxSelections} group${maxSelections > 1 ? 's' : ''}.`
+          "Selection Limit",
+          `You can only select up to ${maxSelections} group${maxSelections > 1 ? "s" : ""}.`,
         );
         return;
       }
@@ -86,7 +86,7 @@ export const GroupSelector: React.FC<GroupSelectorProps> = ({
       onSelectionChange([]);
     } else {
       // Select all (or up to max)
-      const allIds = groups.map(g => g.id);
+      const allIds = groups.map((g) => g.id);
       const newSelection = maxSelections
         ? allIds.slice(0, maxSelections)
         : allIds;
@@ -96,8 +96,8 @@ export const GroupSelector: React.FC<GroupSelectorProps> = ({
 
   const getSelectedGroupNames = () => {
     return groups
-      .filter(group => selectedGroupIds.includes(group.id))
-      .map(group => group.name);
+      .filter((group) => selectedGroupIds.includes(group.id))
+      .map((group) => group.name);
   };
 
   const styles = StyleSheet.create({
@@ -109,7 +109,7 @@ export const GroupSelector: React.FC<GroupSelectorProps> = ({
     },
     title: {
       fontSize: 16,
-      fontWeight: '600',
+      fontWeight: "600",
       color: colors.text,
       marginBottom: 4,
     },
@@ -120,15 +120,15 @@ export const GroupSelector: React.FC<GroupSelectorProps> = ({
     },
     selector: {
       borderWidth: 1,
-      borderColor: colors.icon + '30',
+      borderColor: colors.icon + "30",
       borderRadius: 8,
       padding: 12,
       backgroundColor: colors.background,
     },
     selectorContent: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
     },
     selectorText: {
       flex: 1,
@@ -137,7 +137,7 @@ export const GroupSelector: React.FC<GroupSelectorProps> = ({
     },
     placeholderText: {
       color: colors.icon,
-      fontStyle: 'italic',
+      fontStyle: "italic",
     },
     chevron: {
       marginLeft: 8,
@@ -151,51 +151,51 @@ export const GroupSelector: React.FC<GroupSelectorProps> = ({
     },
     countText: {
       fontSize: 12,
-      fontWeight: '600',
-      color: 'white',
+      fontWeight: "600",
+      color: "white",
     },
 
     // Modal styles
     modalOverlay: {
       flex: 1,
-      backgroundColor: 'rgba(0,0,0,0.5)',
-      justifyContent: 'center',
-      alignItems: 'center',
+      backgroundColor: "rgba(0,0,0,0.5)",
+      justifyContent: "center",
+      alignItems: "center",
     },
     modalContent: {
       backgroundColor: colors.background,
       borderRadius: 12,
       padding: 20,
-      width: '90%',
+      width: "90%",
       maxWidth: 400,
-      maxHeight: '80%',
+      maxHeight: "80%",
     },
     modalHeader: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
       marginBottom: 16,
       paddingBottom: 12,
       borderBottomWidth: 1,
-      borderBottomColor: colors.icon + '20',
+      borderBottomColor: colors.icon + "20",
     },
     modalTitle: {
       fontSize: 18,
-      fontWeight: '600',
+      fontWeight: "600",
       color: colors.text,
     },
     closeButton: {
       padding: 4,
     },
     selectAllButton: {
-      flexDirection: 'row',
-      alignItems: 'center',
+      flexDirection: "row",
+      alignItems: "center",
       paddingVertical: 8,
       marginBottom: 12,
     },
     selectAllText: {
       fontSize: 14,
-      fontWeight: '500',
+      fontWeight: "500",
       color: colors.tint,
       marginLeft: 8,
     },
@@ -203,12 +203,12 @@ export const GroupSelector: React.FC<GroupSelectorProps> = ({
       maxHeight: 300,
     },
     groupItem: {
-      flexDirection: 'row',
-      alignItems: 'center',
+      flexDirection: "row",
+      alignItems: "center",
       paddingVertical: 12,
       paddingHorizontal: 4,
       borderBottomWidth: 1,
-      borderBottomColor: colors.icon + '10',
+      borderBottomColor: colors.icon + "10",
     },
     groupInfo: {
       flex: 1,
@@ -216,7 +216,7 @@ export const GroupSelector: React.FC<GroupSelectorProps> = ({
     },
     groupName: {
       fontSize: 16,
-      fontWeight: '500',
+      fontWeight: "500",
       color: colors.text,
     },
     groupDescription: {
@@ -234,9 +234,9 @@ export const GroupSelector: React.FC<GroupSelectorProps> = ({
       height: 20,
       borderRadius: 4,
       borderWidth: 2,
-      borderColor: colors.icon + '50',
-      alignItems: 'center',
-      justifyContent: 'center',
+      borderColor: colors.icon + "50",
+      alignItems: "center",
+      justifyContent: "center",
     },
     checkboxSelected: {
       backgroundColor: colors.tint,
@@ -246,14 +246,14 @@ export const GroupSelector: React.FC<GroupSelectorProps> = ({
       marginTop: -1,
     },
     emptyText: {
-      textAlign: 'center',
+      textAlign: "center",
       fontSize: 14,
       color: colors.icon,
-      fontStyle: 'italic',
+      fontStyle: "italic",
       paddingVertical: 20,
     },
     loadingText: {
-      textAlign: 'center',
+      textAlign: "center",
       fontSize: 14,
       color: colors.icon,
       paddingVertical: 20,
@@ -261,11 +261,12 @@ export const GroupSelector: React.FC<GroupSelectorProps> = ({
   });
 
   const selectedNames = getSelectedGroupNames();
-  const displayText = selectedNames.length > 0
-    ? selectedNames.length === 1
-      ? selectedNames[0]
-      : `${selectedNames.length} groups selected`
-    : 'No groups selected';
+  const displayText =
+    selectedNames.length > 0
+      ? selectedNames.length === 1
+        ? selectedNames[0]
+        : `${selectedNames.length} groups selected`
+      : "No groups selected";
 
   return (
     <View style={styles.container}>
@@ -280,10 +281,12 @@ export const GroupSelector: React.FC<GroupSelectorProps> = ({
         disabled={disabled}
       >
         <View style={styles.selectorContent}>
-          <Text style={[
-            styles.selectorText,
-            selectedNames.length === 0 && styles.placeholderText
-          ]}>
+          <Text
+            style={[
+              styles.selectorText,
+              selectedNames.length === 0 && styles.placeholderText,
+            ]}
+          >
             {displayText}
           </Text>
 
@@ -326,10 +329,13 @@ export const GroupSelector: React.FC<GroupSelectorProps> = ({
                 style={styles.selectAllButton}
                 onPress={handleSelectAll}
               >
-                <View style={[
-                  styles.checkbox,
-                  selectedGroupIds.length === groups.length && styles.checkboxSelected
-                ]}>
+                <View
+                  style={[
+                    styles.checkbox,
+                    selectedGroupIds.length === groups.length &&
+                      styles.checkboxSelected,
+                  ]}
+                >
                   {selectedGroupIds.length === groups.length && (
                     <IconSymbol
                       name="checkmark"
@@ -340,12 +346,17 @@ export const GroupSelector: React.FC<GroupSelectorProps> = ({
                   )}
                 </View>
                 <Text style={styles.selectAllText}>
-                  {selectedGroupIds.length === groups.length ? 'Deselect All' : 'Select All'}
+                  {selectedGroupIds.length === groups.length
+                    ? "Deselect All"
+                    : "Select All"}
                 </Text>
               </TouchableOpacity>
             )}
 
-            <ScrollView style={styles.groupsList} showsVerticalScrollIndicator={false}>
+            <ScrollView
+              style={styles.groupsList}
+              showsVerticalScrollIndicator={false}
+            >
               {loading ? (
                 <Text style={styles.loadingText}>Loading groups...</Text>
               ) : groups.length === 0 ? (
@@ -362,10 +373,12 @@ export const GroupSelector: React.FC<GroupSelectorProps> = ({
                       style={styles.groupItem}
                       onPress={() => handleGroupToggle(group.id)}
                     >
-                      <View style={[
-                        styles.checkbox,
-                        isSelected && styles.checkboxSelected
-                      ]}>
+                      <View
+                        style={[
+                          styles.checkbox,
+                          isSelected && styles.checkboxSelected,
+                        ]}
+                      >
                         {isSelected && (
                           <IconSymbol
                             name="checkmark"
@@ -379,13 +392,16 @@ export const GroupSelector: React.FC<GroupSelectorProps> = ({
                       <View style={styles.groupInfo}>
                         <Text style={styles.groupName}>{group.name}</Text>
                         {group.description && (
-                          <Text style={styles.groupDescription} numberOfLines={1}>
+                          <Text
+                            style={styles.groupDescription}
+                            numberOfLines={1}
+                          >
                             {group.description}
                           </Text>
                         )}
                         <Text style={styles.memberCount}>
                           {/* This would need to be populated from the group data */}
-                          Group • Tap to {isSelected ? 'remove' : 'share'}
+                          Group • Tap to {isSelected ? "remove" : "share"}
                         </Text>
                       </View>
                     </TouchableOpacity>
@@ -415,19 +431,19 @@ export const QuickSharingToggle: React.FC<QuickSharingToggleProps> = ({
   disabled = false,
 }) => {
   const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? 'light'];
+  const colors = Colors[colorScheme ?? "light"];
 
   const styles = StyleSheet.create({
     container: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
       paddingVertical: 12,
       paddingHorizontal: 16,
       backgroundColor: colors.background,
       borderRadius: 8,
       borderWidth: 1,
-      borderColor: isShared ? colors.tint + '30' : colors.icon + '20',
+      borderColor: isShared ? colors.tint + "30" : colors.icon + "20",
     },
     content: {
       flex: 1,
@@ -435,7 +451,7 @@ export const QuickSharingToggle: React.FC<QuickSharingToggleProps> = ({
     },
     title: {
       fontSize: 16,
-      fontWeight: '500',
+      fontWeight: "500",
       color: colors.text,
     },
     subtitle: {
@@ -447,17 +463,17 @@ export const QuickSharingToggle: React.FC<QuickSharingToggleProps> = ({
       width: 50,
       height: 30,
       borderRadius: 15,
-      backgroundColor: isShared ? colors.tint : colors.icon + '30',
-      justifyContent: 'center',
+      backgroundColor: isShared ? colors.tint : colors.icon + "30",
+      justifyContent: "center",
       paddingHorizontal: 2,
     },
     toggleButton: {
       width: 26,
       height: 26,
       borderRadius: 13,
-      backgroundColor: 'white',
-      alignSelf: isShared ? 'flex-end' : 'flex-start',
-      shadowColor: '#000',
+      backgroundColor: "white",
+      alignSelf: isShared ? "flex-end" : "flex-start",
+      shadowColor: "#000",
       shadowOffset: { width: 0, height: 2 },
       shadowOpacity: 0.2,
       shadowRadius: 2,
@@ -476,10 +492,9 @@ export const QuickSharingToggle: React.FC<QuickSharingToggleProps> = ({
         <Text style={styles.subtitle}>
           {isShared
             ? groupCount > 0
-              ? `Shared with ${groupCount} group${groupCount === 1 ? '' : 's'}`
-              : 'Sharing enabled but no groups selected'
-            : 'Keep vehicle private'
-          }
+              ? `Shared with ${groupCount} group${groupCount === 1 ? "" : "s"}`
+              : "Sharing enabled but no groups selected"
+            : "Keep vehicle private"}
         </Text>
       </View>
 

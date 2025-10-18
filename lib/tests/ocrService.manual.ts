@@ -1,8 +1,8 @@
 // OCR Service Test Suite
 // This file contains test cases for validating OCR functionality
 
-import { OCRService } from '../services/ocrService';
-import { OCRExtractedData } from '../../types';
+import { OCRService } from "../services/ocrService";
+import { OCRExtractedData } from "../../types";
 
 // Mock receipt texts for testing
 const MOCK_RECEIPTS = {
@@ -60,7 +60,7 @@ Service Performed:
 - Tire Pressure Check
 
 Service Total: $75.00
-Thank you for your business!`
+Thank you for your business!`,
 };
 
 // Test cases for OCR parsing
@@ -69,13 +69,16 @@ export class OCRServiceTests {
    * Test service type detection accuracy
    */
   static testServiceTypeDetection() {
-    console.log('🧪 Testing Service Type Detection...');
+    console.log("🧪 Testing Service Type Detection...");
 
     const testCases = [
-      { receipt: MOCK_RECEIPTS.oilChange, expected: 'oil_change' },
-      { receipt: MOCK_RECEIPTS.brakeService, expected: 'brake_service' },
-      { receipt: MOCK_RECEIPTS.generalMaintenance, expected: 'general_maintenance' },
-      { receipt: MOCK_RECEIPTS.tireService, expected: 'tire_rotation' }
+      { receipt: MOCK_RECEIPTS.oilChange, expected: "oil_change" },
+      { receipt: MOCK_RECEIPTS.brakeService, expected: "brake_service" },
+      {
+        receipt: MOCK_RECEIPTS.generalMaintenance,
+        expected: "general_maintenance",
+      },
+      { receipt: MOCK_RECEIPTS.tireService, expected: "tire_rotation" },
     ];
 
     let passed = 0;
@@ -89,11 +92,15 @@ export class OCRServiceTests {
         console.log(`✅ Test ${index + 1}: PASSED - Detected: ${detected}`);
         passed++;
       } else {
-        console.log(`❌ Test ${index + 1}: FAILED - Expected: ${test.expected}, Got: ${detected}`);
+        console.log(
+          `❌ Test ${index + 1}: FAILED - Expected: ${test.expected}, Got: ${detected}`,
+        );
       }
     });
 
-    console.log(`📊 Service Type Detection: ${passed}/${total} tests passed (${Math.round((passed/total)*100)}%)\n`);
+    console.log(
+      `📊 Service Type Detection: ${passed}/${total} tests passed (${Math.round((passed / total) * 100)}%)\n`,
+    );
     return passed === total;
   }
 
@@ -101,13 +108,13 @@ export class OCRServiceTests {
    * Test cost extraction accuracy
    */
   static testCostExtraction() {
-    console.log('🧪 Testing Cost Extraction...');
+    console.log("🧪 Testing Cost Extraction...");
 
     const testCases = [
       { receipt: MOCK_RECEIPTS.oilChange, expected: 89.99 },
       { receipt: MOCK_RECEIPTS.brakeService, expected: 265.14 },
       { receipt: MOCK_RECEIPTS.generalMaintenance, expected: 156.75 },
-      { receipt: MOCK_RECEIPTS.tireService, expected: 75.00 }
+      { receipt: MOCK_RECEIPTS.tireService, expected: 75.0 },
     ];
 
     let passed = 0;
@@ -121,11 +128,15 @@ export class OCRServiceTests {
         console.log(`✅ Test ${index + 1}: PASSED - Detected: $${detected}`);
         passed++;
       } else {
-        console.log(`❌ Test ${index + 1}: FAILED - Expected: $${test.expected}, Got: $${detected}`);
+        console.log(
+          `❌ Test ${index + 1}: FAILED - Expected: $${test.expected}, Got: $${detected}`,
+        );
       }
     });
 
-    console.log(`📊 Cost Extraction: ${passed}/${total} tests passed (${Math.round((passed/total)*100)}%)\n`);
+    console.log(
+      `📊 Cost Extraction: ${passed}/${total} tests passed (${Math.round((passed / total) * 100)}%)\n`,
+    );
     return passed === total;
   }
 
@@ -133,13 +144,19 @@ export class OCRServiceTests {
    * Test date parsing accuracy
    */
   static testDateExtraction() {
-    console.log('🧪 Testing Date Extraction...');
+    console.log("🧪 Testing Date Extraction...");
 
     const testCases = [
       { receipt: MOCK_RECEIPTS.oilChange, expectedPattern: /12\/19\/2024/ },
       { receipt: MOCK_RECEIPTS.brakeService, expectedPattern: /2024-11-15/ },
-      { receipt: MOCK_RECEIPTS.generalMaintenance, expectedPattern: /11\/28\/2024/ },
-      { receipt: MOCK_RECEIPTS.tireService, expectedPattern: /October 5, 2024/ }
+      {
+        receipt: MOCK_RECEIPTS.generalMaintenance,
+        expectedPattern: /11\/28\/2024/,
+      },
+      {
+        receipt: MOCK_RECEIPTS.tireService,
+        expectedPattern: /October 5, 2024/,
+      },
     ];
 
     let passed = 0;
@@ -153,11 +170,15 @@ export class OCRServiceTests {
         console.log(`✅ Test ${index + 1}: PASSED - Detected: ${detected}`);
         passed++;
       } else {
-        console.log(`❌ Test ${index + 1}: FAILED - Expected date pattern not found, Got: ${detected}`);
+        console.log(
+          `❌ Test ${index + 1}: FAILED - Expected date pattern not found, Got: ${detected}`,
+        );
       }
     });
 
-    console.log(`📊 Date Extraction: ${passed}/${total} tests passed (${Math.round((passed/total)*100)}%)\n`);
+    console.log(
+      `📊 Date Extraction: ${passed}/${total} tests passed (${Math.round((passed / total) * 100)}%)\n`,
+    );
     return passed === total;
   }
 
@@ -165,13 +186,13 @@ export class OCRServiceTests {
    * Test odometer reading extraction
    */
   static testOdometerExtraction() {
-    console.log('🧪 Testing Odometer Reading Extraction...');
+    console.log("🧪 Testing Odometer Reading Extraction...");
 
     const testCases = [
       { receipt: MOCK_RECEIPTS.oilChange, expected: 45250 },
       { receipt: MOCK_RECEIPTS.brakeService, expected: 87500 },
       { receipt: MOCK_RECEIPTS.generalMaintenance, expected: 62100 },
-      { receipt: MOCK_RECEIPTS.tireService, expected: 23450 }
+      { receipt: MOCK_RECEIPTS.tireService, expected: 23450 },
     ];
 
     let passed = 0;
@@ -185,11 +206,15 @@ export class OCRServiceTests {
         console.log(`✅ Test ${index + 1}: PASSED - Detected: ${detected} km`);
         passed++;
       } else {
-        console.log(`❌ Test ${index + 1}: FAILED - Expected: ${test.expected}, Got: ${detected}`);
+        console.log(
+          `❌ Test ${index + 1}: FAILED - Expected: ${test.expected}, Got: ${detected}`,
+        );
       }
     });
 
-    console.log(`📊 Odometer Extraction: ${passed}/${total} tests passed (${Math.round((passed/total)*100)}%)\n`);
+    console.log(
+      `📊 Odometer Extraction: ${passed}/${total} tests passed (${Math.round((passed / total) * 100)}%)\n`,
+    );
     return passed === total;
   }
 
@@ -197,12 +222,12 @@ export class OCRServiceTests {
    * Test business name recognition
    */
   static testBusinessNameExtraction() {
-    console.log('🧪 Testing Business Name Extraction...');
+    console.log("🧪 Testing Business Name Extraction...");
 
     const testCases = [
-      { receipt: MOCK_RECEIPTS.oilChange, expected: 'Jiffy Lube' },
-      { receipt: MOCK_RECEIPTS.brakeService, expected: 'Midas' },
-      { receipt: MOCK_RECEIPTS.tireService, expected: 'Firestone' }
+      { receipt: MOCK_RECEIPTS.oilChange, expected: "Jiffy Lube" },
+      { receipt: MOCK_RECEIPTS.brakeService, expected: "Midas" },
+      { receipt: MOCK_RECEIPTS.tireService, expected: "Firestone" },
     ];
 
     let passed = 0;
@@ -212,15 +237,22 @@ export class OCRServiceTests {
       const result = OCRService.parseExtractedText(test.receipt);
       const detected = result.business_name;
 
-      if (detected && detected.toLowerCase().includes(test.expected.toLowerCase())) {
+      if (
+        detected &&
+        detected.toLowerCase().includes(test.expected.toLowerCase())
+      ) {
         console.log(`✅ Test ${index + 1}: PASSED - Detected: ${detected}`);
         passed++;
       } else {
-        console.log(`❌ Test ${index + 1}: FAILED - Expected to contain: ${test.expected}, Got: ${detected}`);
+        console.log(
+          `❌ Test ${index + 1}: FAILED - Expected to contain: ${test.expected}, Got: ${detected}`,
+        );
       }
     });
 
-    console.log(`📊 Business Name Extraction: ${passed}/${total} tests passed (${Math.round((passed/total)*100)}%)\n`);
+    console.log(
+      `📊 Business Name Extraction: ${passed}/${total} tests passed (${Math.round((passed / total) * 100)}%)\n`,
+    );
     return passed === total;
   }
 
@@ -228,7 +260,7 @@ export class OCRServiceTests {
    * Test overall confidence scoring
    */
   static testConfidenceScoring() {
-    console.log('🧪 Testing Confidence Scoring...');
+    console.log("🧪 Testing Confidence Scoring...");
 
     let passed = 0;
     let total = Object.keys(MOCK_RECEIPTS).length;
@@ -238,20 +270,29 @@ export class OCRServiceTests {
       const confidenceScores = result.confidence_scores;
 
       // Check if confidence scores exist and are reasonable
-      const hasScores = confidenceScores && Object.keys(confidenceScores).length > 0;
-      const validScores = hasScores && Object.values(confidenceScores).every(score =>
-        typeof score === 'number' && score >= 0 && score <= 100
-      );
+      const hasScores =
+        confidenceScores && Object.keys(confidenceScores).length > 0;
+      const validScores =
+        hasScores &&
+        Object.values(confidenceScores).every(
+          (score) => typeof score === "number" && score >= 0 && score <= 100,
+        );
 
       if (hasScores && validScores) {
-        console.log(`✅ Test ${index + 1} (${type}): PASSED - Confidence scores valid`);
+        console.log(
+          `✅ Test ${index + 1} (${type}): PASSED - Confidence scores valid`,
+        );
         passed++;
       } else {
-        console.log(`❌ Test ${index + 1} (${type}): FAILED - Invalid confidence scores`);
+        console.log(
+          `❌ Test ${index + 1} (${type}): FAILED - Invalid confidence scores`,
+        );
       }
     });
 
-    console.log(`📊 Confidence Scoring: ${passed}/${total} tests passed (${Math.round((passed/total)*100)}%)\n`);
+    console.log(
+      `📊 Confidence Scoring: ${passed}/${total} tests passed (${Math.round((passed / total) * 100)}%)\n`,
+    );
     return passed === total;
   }
 
@@ -259,7 +300,7 @@ export class OCRServiceTests {
    * Run all OCR tests
    */
   static async runAllTests() {
-    console.log('🚀 Starting OCR Service Test Suite...\n');
+    console.log("🚀 Starting OCR Service Test Suite...\n");
 
     const testResults = {
       serviceType: this.testServiceTypeDetection(),
@@ -267,28 +308,32 @@ export class OCRServiceTests {
       dateExtraction: this.testDateExtraction(),
       odometerExtraction: this.testOdometerExtraction(),
       businessNameExtraction: this.testBusinessNameExtraction(),
-      confidenceScoring: this.testConfidenceScoring()
+      confidenceScoring: this.testConfidenceScoring(),
     };
 
     const totalTests = Object.keys(testResults).length;
-    const passedTests = Object.values(testResults).filter(result => result).length;
+    const passedTests = Object.values(testResults).filter(
+      (result) => result,
+    ).length;
     const successRate = Math.round((passedTests / totalTests) * 100);
 
-    console.log('📋 TEST SUMMARY');
-    console.log('================');
+    console.log("📋 TEST SUMMARY");
+    console.log("================");
     Object.entries(testResults).forEach(([testName, passed]) => {
-      const status = passed ? '✅ PASSED' : '❌ FAILED';
+      const status = passed ? "✅ PASSED" : "❌ FAILED";
       console.log(`${testName}: ${status}`);
     });
 
-    console.log(`\n🎯 Overall Success Rate: ${passedTests}/${totalTests} (${successRate}%)`);
+    console.log(
+      `\n🎯 Overall Success Rate: ${passedTests}/${totalTests} (${successRate}%)`,
+    );
 
     if (successRate >= 80) {
-      console.log('🎉 OCR Service is performing well!');
+      console.log("🎉 OCR Service is performing well!");
     } else if (successRate >= 60) {
-      console.log('⚠️  OCR Service needs some improvements.');
+      console.log("⚠️  OCR Service needs some improvements.");
     } else {
-      console.log('🔥 OCR Service requires significant improvements.');
+      console.log("🔥 OCR Service requires significant improvements.");
     }
 
     return testResults;
@@ -298,7 +343,7 @@ export class OCRServiceTests {
    * Performance test for OCR parsing
    */
   static performanceTest() {
-    console.log('⚡ Running Performance Test...');
+    console.log("⚡ Running Performance Test...");
 
     const iterations = 100;
     const startTime = Date.now();
@@ -314,7 +359,9 @@ export class OCRServiceTests {
     console.log(`📊 Performance Results:`);
     console.log(`   Total time: ${totalTime}ms`);
     console.log(`   Average time per parsing: ${avgTime.toFixed(2)}ms`);
-    console.log(`   Throughput: ${(1000 / avgTime).toFixed(1)} parsings/second\n`);
+    console.log(
+      `   Throughput: ${(1000 / avgTime).toFixed(1)} parsings/second\n`,
+    );
 
     return avgTime;
   }

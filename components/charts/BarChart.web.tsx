@@ -1,9 +1,17 @@
-import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
-import { BarChart as RechartsBarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { useColorScheme } from '@/hooks/use-color-scheme';
-import { Colors } from '@/constants/theme';
-import { ChartDataPoint } from '@/lib/services/analyticsService';
+import React from "react";
+import { View, Text, StyleSheet } from "react-native";
+import {
+  BarChart as RechartsBarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+} from "recharts";
+import { useColorScheme } from "@/hooks/use-color-scheme";
+import { Colors } from "@/constants/theme";
+import { ChartDataPoint } from "@/lib/services/analyticsService";
 
 interface BarChartProps {
   data: ChartDataPoint[];
@@ -20,10 +28,10 @@ export function BarChart({
   height = 200,
   color,
   formatY = (value: number) => `RM${value.toFixed(0)}`,
-  horizontal = false
+  horizontal = false,
 }: BarChartProps) {
   const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? 'light'];
+  const colors = Colors[colorScheme ?? "light"];
 
   const chartColor = color || colors.chart.service;
 
@@ -38,18 +46,18 @@ export function BarChart({
     },
     title: {
       fontSize: 18,
-      fontWeight: '600',
+      fontWeight: "600",
       color: colors.text,
       marginBottom: 16,
     },
     chartContainer: {
       height: height,
-      width: '100%',
+      width: "100%",
     },
     emptyState: {
       height,
-      justifyContent: 'center',
-      alignItems: 'center',
+      justifyContent: "center",
+      alignItems: "center",
     },
     emptyText: {
       fontSize: 14,
@@ -87,11 +95,11 @@ export function BarChart({
               fontSize={12}
               interval={0}
               angle={data.length > 3 ? -45 : 0}
-              textAnchor={data.length > 3 ? 'end' : 'middle'}
+              textAnchor={data.length > 3 ? "end" : "middle"}
               height={data.length > 3 ? 80 : 40}
               tickFormatter={(value) => {
-                if (typeof value === 'string' && value.length > 15) {
-                  return value.substring(0, 12) + '...';
+                if (typeof value === "string" && value.length > 15) {
+                  return value.substring(0, 12) + "...";
                 }
                 return value;
               }}
@@ -102,19 +110,15 @@ export function BarChart({
               tickFormatter={formatY}
             />
             <Tooltip
-              formatter={(value: any) => [formatY(value), 'Value']}
+              formatter={(value: any) => [formatY(value), "Value"]}
               labelStyle={{ color: colors.text }}
               contentStyle={{
                 backgroundColor: colors.card,
                 border: `1px solid ${colors.cardBorder}`,
-                borderRadius: '8px',
+                borderRadius: "8px",
               }}
             />
-            <Bar
-              dataKey="value"
-              fill={chartColor}
-              radius={[4, 4, 0, 0]}
-            />
+            <Bar dataKey="value" fill={chartColor} radius={[4, 4, 0, 0]} />
           </RechartsBarChart>
         </ResponsiveContainer>
       </View>

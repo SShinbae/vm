@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -7,12 +7,12 @@ import {
   Modal,
   Alert,
   ActivityIndicator,
-} from 'react-native';
-import { Image } from 'expo-image';
-import { Colors } from '@/constants/theme';
-import { useColorScheme } from '@/hooks/use-color-scheme';
-import { IconSymbol } from '@/components/ui/icon-symbol';
-import { OCRExtractedData } from '@/types';
+} from "react-native";
+import { Image } from "expo-image";
+import { Colors } from "@/constants/theme";
+import { useColorScheme } from "@/hooks/use-color-scheme";
+import { IconSymbol } from "@/components/ui/icon-symbol";
+import { OCRExtractedData } from "@/types";
 
 interface ReceiptViewerProps {
   receiptImageUrl?: string;
@@ -25,13 +25,13 @@ export function ReceiptViewer({
   receiptImageUrl,
   ocrData,
   showOcrData = true,
-  onDelete
+  onDelete,
 }: ReceiptViewerProps) {
   const [showFullscreen, setShowFullscreen] = useState(false);
   const [imageLoading, setImageLoading] = useState(true);
   const [imageError, setImageError] = useState(false);
   const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? 'light'];
+  const colors = Colors[colorScheme ?? "light"];
 
   if (!receiptImageUrl) {
     return null;
@@ -39,21 +39,21 @@ export function ReceiptViewer({
 
   const handleDeleteReceipt = () => {
     Alert.alert(
-      'Delete Receipt',
-      'Are you sure you want to delete this receipt image? This action cannot be undone.',
+      "Delete Receipt",
+      "Are you sure you want to delete this receipt image? This action cannot be undone.",
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: "Cancel", style: "cancel" },
         {
-          text: 'Delete',
-          style: 'destructive',
+          text: "Delete",
+          style: "destructive",
           onPress: onDelete,
         },
-      ]
+      ],
     );
   };
 
   const formatConfidenceScore = (score?: number): string => {
-    if (!score) return 'N/A';
+    if (!score) return "N/A";
     return `${score}%`;
   };
 
@@ -62,132 +62,132 @@ export function ReceiptViewer({
       backgroundColor: colors.background,
       borderRadius: 12,
       borderWidth: 1,
-      borderColor: colors.icon + '20',
-      overflow: 'hidden',
+      borderColor: colors.icon + "20",
+      overflow: "hidden",
     },
     header: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
       padding: 12,
-      backgroundColor: colors.icon + '10',
+      backgroundColor: colors.icon + "10",
     },
     headerLeft: {
-      flexDirection: 'row',
-      alignItems: 'center',
+      flexDirection: "row",
+      alignItems: "center",
       gap: 8,
     },
     headerTitle: {
       fontSize: 14,
-      fontWeight: '600',
+      fontWeight: "600",
       color: colors.text,
     },
     headerActions: {
-      flexDirection: 'row',
+      flexDirection: "row",
       gap: 8,
     },
     actionButton: {
       padding: 4,
     },
     imageContainer: {
-      position: 'relative',
+      position: "relative",
       height: 120,
-      backgroundColor: colors.icon + '05',
+      backgroundColor: colors.icon + "05",
     },
     receiptImage: {
-      width: '100%',
-      height: '100%',
+      width: "100%",
+      height: "100%",
     },
     imageOverlay: {
-      position: 'absolute',
+      position: "absolute",
       bottom: 8,
       right: 8,
-      backgroundColor: 'rgba(0, 0, 0, 0.7)',
+      backgroundColor: "rgba(0, 0, 0, 0.7)",
       borderRadius: 6,
       paddingHorizontal: 8,
       paddingVertical: 4,
     },
     overlayText: {
-      color: 'white',
+      color: "white",
       fontSize: 12,
-      fontWeight: '500',
+      fontWeight: "500",
     },
     loadingContainer: {
-      position: 'absolute',
+      position: "absolute",
       top: 0,
       left: 0,
       right: 0,
       bottom: 0,
-      justifyContent: 'center',
-      alignItems: 'center',
+      justifyContent: "center",
+      alignItems: "center",
       backgroundColor: colors.background,
     },
     errorContainer: {
-      justifyContent: 'center',
-      alignItems: 'center',
+      justifyContent: "center",
+      alignItems: "center",
       padding: 20,
     },
     errorText: {
       fontSize: 14,
       color: colors.icon,
-      textAlign: 'center',
+      textAlign: "center",
       marginTop: 8,
     },
     ocrDataContainer: {
       padding: 12,
       borderTopWidth: 1,
-      borderTopColor: colors.icon + '20',
+      borderTopColor: colors.icon + "20",
     },
     ocrTitle: {
       fontSize: 14,
-      fontWeight: '600',
+      fontWeight: "600",
       color: colors.text,
       marginBottom: 8,
     },
     ocrField: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
       marginBottom: 4,
     },
     ocrLabel: {
       fontSize: 12,
       color: colors.icon,
-      fontWeight: '500',
+      fontWeight: "500",
     },
     ocrValue: {
       fontSize: 12,
       color: colors.text,
-      fontWeight: '500',
+      fontWeight: "500",
     },
     confidenceHigh: {
-      color: '#4CAF50',
+      color: "#4CAF50",
     },
     confidenceMedium: {
-      color: '#FF9800',
+      color: "#FF9800",
     },
     confidenceLow: {
-      color: '#F44336',
+      color: "#F44336",
     },
     fullscreenModal: {
       flex: 1,
-      backgroundColor: 'rgba(0, 0, 0, 0.95)',
-      justifyContent: 'center',
-      alignItems: 'center',
+      backgroundColor: "rgba(0, 0, 0, 0.95)",
+      justifyContent: "center",
+      alignItems: "center",
     },
     fullscreenImage: {
-      width: '95%',
-      height: '80%',
+      width: "95%",
+      height: "80%",
     },
     fullscreenControls: {
-      position: 'absolute',
+      position: "absolute",
       top: 50,
       right: 20,
-      flexDirection: 'row',
+      flexDirection: "row",
       gap: 15,
     },
     fullscreenButton: {
-      backgroundColor: 'rgba(255, 255, 255, 0.2)',
+      backgroundColor: "rgba(255, 255, 255, 0.2)",
       borderRadius: 8,
       padding: 12,
     },
@@ -212,7 +212,11 @@ export function ReceiptViewer({
             style={styles.actionButton}
             onPress={() => setShowFullscreen(true)}
           >
-            <IconSymbol name="arrow.up.left.and.arrow.down.right" size={16} color={colors.icon} />
+            <IconSymbol
+              name="arrow.up.left.and.arrow.down.right"
+              size={16}
+              color={colors.icon}
+            />
           </TouchableOpacity>
           {onDelete && (
             <TouchableOpacity
@@ -260,10 +264,12 @@ export function ReceiptViewer({
           </>
         ) : (
           <View style={styles.errorContainer}>
-            <IconSymbol name="exclamationmark.triangle" size={24} color={colors.icon} />
-            <Text style={styles.errorText}>
-              Unable to load receipt image
-            </Text>
+            <IconSymbol
+              name="exclamationmark.triangle"
+              size={24}
+              color={colors.icon}
+            />
+            <Text style={styles.errorText}>Unable to load receipt image</Text>
           </View>
         )}
       </TouchableOpacity>
@@ -276,7 +282,7 @@ export function ReceiptViewer({
             <View style={styles.ocrField}>
               <Text style={styles.ocrLabel}>Service Type:</Text>
               <Text style={styles.ocrValue}>
-                {ocrData.extracted_fields.service_type.replace('_', ' ')}
+                {ocrData.extracted_fields.service_type.replace("_", " ")}
               </Text>
             </View>
           )}
@@ -301,7 +307,9 @@ export function ReceiptViewer({
 
           <View style={styles.ocrField}>
             <Text style={styles.ocrLabel}>Overall Confidence:</Text>
-            <Text style={[styles.ocrValue, getConfidenceColor(ocrData.confidence)]}>
+            <Text
+              style={[styles.ocrValue, getConfidenceColor(ocrData.confidence)]}
+            >
               {formatConfidenceScore(ocrData.confidence)}
             </Text>
           </View>
@@ -348,35 +356,39 @@ interface ReceiptListProps {
   onReceiptDelete?: (receiptId: string) => void;
 }
 
-export function ReceiptList({ receipts, onReceiptPress, onReceiptDelete }: ReceiptListProps) {
+export function ReceiptList({
+  receipts,
+  onReceiptPress,
+  onReceiptDelete,
+}: ReceiptListProps) {
   const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? 'light'];
+  const colors = Colors[colorScheme ?? "light"];
 
   const styles = StyleSheet.create({
     container: {
       gap: 12,
     },
     receiptItem: {
-      flexDirection: 'row',
+      flexDirection: "row",
       backgroundColor: colors.background,
       borderRadius: 8,
       borderWidth: 1,
-      borderColor: colors.icon + '20',
-      overflow: 'hidden',
+      borderColor: colors.icon + "20",
+      overflow: "hidden",
     },
     thumbnail: {
       width: 60,
       height: 60,
-      backgroundColor: colors.icon + '10',
+      backgroundColor: colors.icon + "10",
     },
     receiptInfo: {
       flex: 1,
       padding: 12,
-      justifyContent: 'space-between',
+      justifyContent: "space-between",
     },
     receiptTitle: {
       fontSize: 14,
-      fontWeight: '600',
+      fontWeight: "600",
       color: colors.text,
     },
     receiptMeta: {
@@ -386,13 +398,13 @@ export function ReceiptList({ receipts, onReceiptPress, onReceiptDelete }: Recei
     },
     receiptActions: {
       paddingRight: 12,
-      justifyContent: 'center',
+      justifyContent: "center",
     },
   });
 
   if (receipts.length === 0) {
     return (
-      <View style={{ padding: 20, alignItems: 'center' }}>
+      <View style={{ padding: 20, alignItems: "center" }}>
         <IconSymbol name="doc" size={48} color={colors.icon} />
         <Text style={{ fontSize: 16, color: colors.icon, marginTop: 8 }}>
           No receipts found
@@ -418,17 +430,16 @@ export function ReceiptList({ receipts, onReceiptPress, onReceiptDelete }: Recei
           />
           <View style={styles.receiptInfo}>
             <Text style={styles.receiptTitle}>
-              {receipt.serviceName || 'Service Receipt'}
+              {receipt.serviceName || "Service Receipt"}
             </Text>
             <Text style={styles.receiptMeta}>
               {receipt.date && new Date(receipt.date).toLocaleDateString()}
-              {receipt.ocrData && ` • ${receipt.ocrData.confidence}% confidence`}
+              {receipt.ocrData &&
+                ` • ${receipt.ocrData.confidence}% confidence`}
             </Text>
           </View>
           <View style={styles.receiptActions}>
-            <TouchableOpacity
-              onPress={() => onReceiptDelete?.(receipt.id)}
-            >
+            <TouchableOpacity onPress={() => onReceiptDelete?.(receipt.id)}>
               <IconSymbol name="trash" size={16} color="#F44336" />
             </TouchableOpacity>
           </View>
@@ -452,7 +463,7 @@ export function ServiceReceiptIndicator({
   size = 20,
 }: ServiceReceiptIndicatorProps) {
   const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? 'light'];
+  const colors = Colors[colorScheme ?? "light"];
 
   if (!hasReceipt || !receiptUrl) {
     return null;
@@ -460,11 +471,11 @@ export function ServiceReceiptIndicator({
 
   const indicatorStyles = StyleSheet.create({
     indicator: {
-      backgroundColor: colors.tint + '20',
+      backgroundColor: colors.tint + "20",
       borderRadius: size / 2,
       padding: 4,
-      alignItems: 'center',
-      justifyContent: 'center',
+      alignItems: "center",
+      justifyContent: "center",
     },
   });
 

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -7,13 +7,13 @@ import {
   Alert,
   ActivityIndicator,
   Modal,
-} from 'react-native';
-import { Image } from 'expo-image';
-import { Colors } from '@/constants/theme';
-import { useColorScheme } from '@/hooks/use-color-scheme';
-import { IconSymbol } from '@/components/ui/icon-symbol';
-import { OCRService, ReceiptProcessingResult } from '@/lib/services/ocrService';
-import { OCRExtractedData } from '@/types';
+} from "react-native";
+import { Image } from "expo-image";
+import { Colors } from "@/constants/theme";
+import { useColorScheme } from "@/hooks/use-color-scheme";
+import { IconSymbol } from "@/components/ui/icon-symbol";
+import { OCRService, ReceiptProcessingResult } from "@/lib/services/ocrService";
+import { OCRExtractedData } from "@/types";
 
 interface ReceiptCaptureProps {
   onReceiptProcessed: (result: ReceiptProcessingResult) => void;
@@ -22,12 +22,17 @@ interface ReceiptCaptureProps {
   disabled?: boolean;
 }
 
-export function ReceiptCapture({ onReceiptProcessed, onPictureOnly, onCancel, disabled = false }: ReceiptCaptureProps) {
+export function ReceiptCapture({
+  onReceiptProcessed,
+  onPictureOnly,
+  onCancel,
+  disabled = false,
+}: ReceiptCaptureProps) {
   const [processing, setProcessing] = useState(false);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [showPreview, setShowPreview] = useState(false);
   const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? 'light'];
+  const colors = Colors[colorScheme ?? "light"];
 
   const handleCameraCapture = async () => {
     try {
@@ -37,15 +42,18 @@ export function ReceiptCapture({ onReceiptProcessed, onPictureOnly, onCancel, di
       const hasPermissions = await OCRService.requestPermissions();
       if (!hasPermissions) {
         Alert.alert(
-          'Permissions Required',
-          'Camera and media library permissions are required to scan receipts. Please enable them in your device settings.',
+          "Permissions Required",
+          "Camera and media library permissions are required to scan receipts. Please enable them in your device settings.",
           [
-            { text: 'Cancel', style: 'cancel' },
-            { text: 'Open Settings', onPress: () => {
-              // On React Native, you'd typically use Linking.openSettings()
-              console.log('User should open settings to enable permissions');
-            }}
-          ]
+            { text: "Cancel", style: "cancel" },
+            {
+              text: "Open Settings",
+              onPress: () => {
+                // On React Native, you'd typically use Linking.openSettings()
+                console.log("User should open settings to enable permissions");
+              },
+            },
+          ],
         );
         return;
       }
@@ -58,23 +66,26 @@ export function ReceiptCapture({ onReceiptProcessed, onPictureOnly, onCancel, di
         onReceiptProcessed(result);
       } else {
         // Provide more specific error messages
-        let errorMessage = result.error || 'Failed to process receipt from camera';
+        let errorMessage =
+          result.error || "Failed to process receipt from camera";
 
-        if (errorMessage.includes('cancelled')) {
+        if (errorMessage.includes("cancelled")) {
           return; // Don't show error if user cancelled
-        } else if (errorMessage.includes('API key')) {
-          errorMessage = 'Google Vision API is not configured. Please contact support.';
-        } else if (errorMessage.includes('network')) {
-          errorMessage = 'Network error. Please check your internet connection and try again.';
+        } else if (errorMessage.includes("API key")) {
+          errorMessage =
+            "Google Vision API is not configured. Please contact support.";
+        } else if (errorMessage.includes("network")) {
+          errorMessage =
+            "Network error. Please check your internet connection and try again.";
         }
 
-        Alert.alert('Error', errorMessage);
+        Alert.alert("Error", errorMessage);
       }
     } catch (error) {
-      console.error('Camera capture error:', error);
+      console.error("Camera capture error:", error);
       Alert.alert(
-        'Error',
-        'An unexpected error occurred while capturing the receipt. Please try again.'
+        "Error",
+        "An unexpected error occurred while capturing the receipt. Please try again.",
       );
     } finally {
       setProcessing(false);
@@ -89,14 +100,17 @@ export function ReceiptCapture({ onReceiptProcessed, onPictureOnly, onCancel, di
       const hasPermissions = await OCRService.requestPermissions();
       if (!hasPermissions) {
         Alert.alert(
-          'Permissions Required',
-          'Media library permission is required to select receipt images. Please enable it in your device settings.',
+          "Permissions Required",
+          "Media library permission is required to select receipt images. Please enable it in your device settings.",
           [
-            { text: 'Cancel', style: 'cancel' },
-            { text: 'Open Settings', onPress: () => {
-              console.log('User should open settings to enable permissions');
-            }}
-          ]
+            { text: "Cancel", style: "cancel" },
+            {
+              text: "Open Settings",
+              onPress: () => {
+                console.log("User should open settings to enable permissions");
+              },
+            },
+          ],
         );
         return;
       }
@@ -109,25 +123,29 @@ export function ReceiptCapture({ onReceiptProcessed, onPictureOnly, onCancel, di
         onReceiptProcessed(result);
       } else {
         // Provide more specific error messages
-        let errorMessage = result.error || 'Failed to process receipt from gallery';
+        let errorMessage =
+          result.error || "Failed to process receipt from gallery";
 
-        if (errorMessage.includes('cancelled')) {
+        if (errorMessage.includes("cancelled")) {
           return; // Don't show error if user cancelled
-        } else if (errorMessage.includes('API key')) {
-          errorMessage = 'Google Vision API is not configured. Please contact support.';
-        } else if (errorMessage.includes('network')) {
-          errorMessage = 'Network error. Please check your internet connection and try again.';
-        } else if (errorMessage.includes('No text')) {
-          errorMessage = 'No text was found in the image. Please try a clearer photo of your receipt.';
+        } else if (errorMessage.includes("API key")) {
+          errorMessage =
+            "Google Vision API is not configured. Please contact support.";
+        } else if (errorMessage.includes("network")) {
+          errorMessage =
+            "Network error. Please check your internet connection and try again.";
+        } else if (errorMessage.includes("No text")) {
+          errorMessage =
+            "No text was found in the image. Please try a clearer photo of your receipt.";
         }
 
-        Alert.alert('Error', errorMessage);
+        Alert.alert("Error", errorMessage);
       }
     } catch (error) {
-      console.error('Gallery pick error:', error);
+      console.error("Gallery pick error:", error);
       Alert.alert(
-        'Error',
-        'An unexpected error occurred while processing the receipt. Please try again.'
+        "Error",
+        "An unexpected error occurred while processing the receipt. Please try again.",
       );
     } finally {
       setProcessing(false);
@@ -141,14 +159,17 @@ export function ReceiptCapture({ onReceiptProcessed, onPictureOnly, onCancel, di
       const hasPermissions = await OCRService.requestPermissions();
       if (!hasPermissions) {
         Alert.alert(
-          'Permissions Required',
-          'Camera permission is required to take pictures. Please enable it in your device settings.',
+          "Permissions Required",
+          "Camera permission is required to take pictures. Please enable it in your device settings.",
           [
-            { text: 'Cancel', style: 'cancel' },
-            { text: 'Open Settings', onPress: () => {
-              console.log('User should open settings to enable permissions');
-            }}
-          ]
+            { text: "Cancel", style: "cancel" },
+            {
+              text: "Open Settings",
+              onPress: () => {
+                console.log("User should open settings to enable permissions");
+              },
+            },
+          ],
         );
         return;
       }
@@ -162,15 +183,18 @@ export function ReceiptCapture({ onReceiptProcessed, onPictureOnly, onCancel, di
         }
         onPictureOnly?.(result);
       } else {
-        let errorMessage = result.error || 'Failed to save picture from camera';
-        if (errorMessage.includes('cancelled')) {
+        let errorMessage = result.error || "Failed to save picture from camera";
+        if (errorMessage.includes("cancelled")) {
           return;
         }
-        Alert.alert('Error', errorMessage);
+        Alert.alert("Error", errorMessage);
       }
     } catch (error) {
-      console.error('Picture only camera error:', error);
-      Alert.alert('Error', 'An unexpected error occurred while taking the picture. Please try again.');
+      console.error("Picture only camera error:", error);
+      Alert.alert(
+        "Error",
+        "An unexpected error occurred while taking the picture. Please try again.",
+      );
     } finally {
       setProcessing(false);
     }
@@ -183,14 +207,17 @@ export function ReceiptCapture({ onReceiptProcessed, onPictureOnly, onCancel, di
       const hasPermissions = await OCRService.requestPermissions();
       if (!hasPermissions) {
         Alert.alert(
-          'Permissions Required',
-          'Media library permission is required to select pictures. Please enable it in your device settings.',
+          "Permissions Required",
+          "Media library permission is required to select pictures. Please enable it in your device settings.",
           [
-            { text: 'Cancel', style: 'cancel' },
-            { text: 'Open Settings', onPress: () => {
-              console.log('User should open settings to enable permissions');
-            }}
-          ]
+            { text: "Cancel", style: "cancel" },
+            {
+              text: "Open Settings",
+              onPress: () => {
+                console.log("User should open settings to enable permissions");
+              },
+            },
+          ],
         );
         return;
       }
@@ -204,15 +231,19 @@ export function ReceiptCapture({ onReceiptProcessed, onPictureOnly, onCancel, di
         }
         onPictureOnly?.(result);
       } else {
-        let errorMessage = result.error || 'Failed to save picture from gallery';
-        if (errorMessage.includes('cancelled')) {
+        let errorMessage =
+          result.error || "Failed to save picture from gallery";
+        if (errorMessage.includes("cancelled")) {
           return;
         }
-        Alert.alert('Error', errorMessage);
+        Alert.alert("Error", errorMessage);
       }
     } catch (error) {
-      console.error('Picture only gallery error:', error);
-      Alert.alert('Error', 'An unexpected error occurred while selecting the picture. Please try again.');
+      console.error("Picture only gallery error:", error);
+      Alert.alert(
+        "Error",
+        "An unexpected error occurred while selecting the picture. Please try again.",
+      );
     } finally {
       setProcessing(false);
     }
@@ -220,54 +251,57 @@ export function ReceiptCapture({ onReceiptProcessed, onPictureOnly, onCancel, di
 
   const handleOptionSelect = () => {
     Alert.alert(
-      'Add Receipt/Picture',
-      'Choose how you want to add your service receipt or picture:',
+      "Add Receipt/Picture",
+      "Choose how you want to add your service receipt or picture:",
       [
         {
-          text: 'Scan Receipt (OCR)',
+          text: "Scan Receipt (OCR)",
           onPress: () => {
             Alert.alert(
-              'Scan Receipt',
-              'Enhanced OCR will extract service type, cost, date, mileage, and business info. For best results, ensure good lighting and clear text.',
+              "Scan Receipt",
+              "Enhanced OCR will extract service type, cost, date, mileage, and business info. For best results, ensure good lighting and clear text.",
               [
-                { text: 'Take Photo', onPress: handleCameraCapture },
-                { text: 'Choose from Gallery', onPress: handleGalleryPick },
-                { text: 'Back', style: 'cancel' },
-              ]
+                { text: "Take Photo", onPress: handleCameraCapture },
+                { text: "Choose from Gallery", onPress: handleGalleryPick },
+                { text: "Back", style: "cancel" },
+              ],
             );
           },
         },
         {
-          text: 'Save Picture Only',
+          text: "Save Picture Only",
           onPress: () => {
             Alert.alert(
-              'Save Picture',
-              'This will save the picture without processing text. You can review it later with your service records.',
+              "Save Picture",
+              "This will save the picture without processing text. You can review it later with your service records.",
               [
-                { text: 'Take Photo', onPress: handlePictureOnlyCamera },
-                { text: 'Choose from Gallery', onPress: handlePictureOnlyGallery },
-                { text: 'Back', style: 'cancel' },
-              ]
+                { text: "Take Photo", onPress: handlePictureOnlyCamera },
+                {
+                  text: "Choose from Gallery",
+                  onPress: handlePictureOnlyGallery,
+                },
+                { text: "Back", style: "cancel" },
+              ],
             );
           },
         },
         {
-          text: 'Cancel',
-          style: 'cancel',
+          text: "Cancel",
+          style: "cancel",
           onPress: onCancel,
         },
-      ]
+      ],
     );
   };
 
   const styles = StyleSheet.create({
     container: {
-      alignItems: 'center',
+      alignItems: "center",
       gap: 12,
     },
     captureButton: {
-      flexDirection: 'row',
-      alignItems: 'center',
+      flexDirection: "row",
+      alignItems: "center",
       backgroundColor: colors.tint,
       paddingHorizontal: 20,
       paddingVertical: 12,
@@ -276,14 +310,14 @@ export function ReceiptCapture({ onReceiptProcessed, onPictureOnly, onCancel, di
       opacity: disabled ? 0.6 : 1,
     },
     captureButtonSecondary: {
-      backgroundColor: 'transparent',
+      backgroundColor: "transparent",
       borderWidth: 1,
       borderColor: colors.tint,
     },
     captureButtonText: {
-      color: 'white',
+      color: "white",
       fontSize: 16,
-      fontWeight: '600',
+      fontWeight: "600",
     },
     captureButtonTextSecondary: {
       color: colors.tint,
@@ -291,33 +325,33 @@ export function ReceiptCapture({ onReceiptProcessed, onPictureOnly, onCancel, di
     helpText: {
       fontSize: 14,
       color: colors.icon,
-      textAlign: 'center',
+      textAlign: "center",
       maxWidth: 280,
       lineHeight: 20,
     },
     processingContainer: {
-      flexDirection: 'row',
-      alignItems: 'center',
+      flexDirection: "row",
+      alignItems: "center",
       gap: 8,
     },
     processingText: {
       fontSize: 16,
       color: colors.text,
-      fontWeight: '500',
+      fontWeight: "500",
     },
     previewModal: {
       flex: 1,
-      backgroundColor: 'rgba(0, 0, 0, 0.9)',
-      justifyContent: 'center',
-      alignItems: 'center',
+      backgroundColor: "rgba(0, 0, 0, 0.9)",
+      justifyContent: "center",
+      alignItems: "center",
     },
     previewImage: {
-      width: '90%',
-      height: '70%',
+      width: "90%",
+      height: "70%",
       borderRadius: 12,
     },
     previewControls: {
-      flexDirection: 'row',
+      flexDirection: "row",
       marginTop: 20,
       gap: 15,
     },
@@ -328,12 +362,12 @@ export function ReceiptCapture({ onReceiptProcessed, onPictureOnly, onCancel, di
       borderRadius: 8,
     },
     previewButtonSecondary: {
-      backgroundColor: 'rgba(255, 255, 255, 0.2)',
+      backgroundColor: "rgba(255, 255, 255, 0.2)",
     },
     previewButtonText: {
-      color: 'white',
+      color: "white",
       fontSize: 16,
-      fontWeight: '600',
+      fontWeight: "600",
     },
   });
 
@@ -345,7 +379,8 @@ export function ReceiptCapture({ onReceiptProcessed, onPictureOnly, onCancel, di
           <Text style={styles.processingText}>Processing receipt...</Text>
         </View>
         <Text style={styles.helpText}>
-          🔍 Using enhanced OCR to extract service details, cost, date, and mileage from your receipt
+          🔍 Using enhanced OCR to extract service details, cost, date, and
+          mileage from your receipt
         </Text>
       </View>
     );
@@ -363,7 +398,8 @@ export function ReceiptCapture({ onReceiptProcessed, onPictureOnly, onCancel, di
       </TouchableOpacity>
 
       <Text style={styles.helpText}>
-        📱 For best OCR results: Use good lighting, keep receipt flat, ensure text is clear and readable
+        📱 For best OCR results: Use good lighting, keep receipt flat, ensure
+        text is clear and readable
       </Text>
 
       <Modal
@@ -413,12 +449,17 @@ interface OCRResultDisplayProps {
   onReject: () => void;
 }
 
-export function OCRResultDisplay({ ocrData, onAccept, onReject }: OCRResultDisplayProps) {
+export function OCRResultDisplay({
+  ocrData,
+  onAccept,
+  onReject,
+}: OCRResultDisplayProps) {
   const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? 'light'];
+  const colors = Colors[colorScheme ?? "light"];
 
   const { extracted_fields: fields, confidence } = ocrData;
-  const confidenceColor = confidence > 70 ? '#4CAF50' : confidence > 50 ? '#FF9800' : '#F44336';
+  const confidenceColor =
+    confidence > 70 ? "#4CAF50" : confidence > 50 ? "#FF9800" : "#F44336";
 
   const styles = StyleSheet.create({
     container: {
@@ -426,23 +467,23 @@ export function OCRResultDisplay({ ocrData, onAccept, onReject }: OCRResultDispl
       borderRadius: 12,
       padding: 16,
       borderWidth: 1,
-      borderColor: colors.icon + '20',
+      borderColor: colors.icon + "20",
       marginVertical: 10,
     },
     header: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
       marginBottom: 12,
     },
     title: {
       fontSize: 18,
-      fontWeight: '600',
+      fontWeight: "600",
       color: colors.text,
     },
     confidence: {
       fontSize: 14,
-      fontWeight: '600',
+      fontWeight: "600",
       color: confidenceColor,
     },
     fieldContainer: {
@@ -451,35 +492,35 @@ export function OCRResultDisplay({ ocrData, onAccept, onReject }: OCRResultDispl
     fieldLabel: {
       fontSize: 12,
       color: colors.icon,
-      fontWeight: '500',
-      textTransform: 'uppercase',
+      fontWeight: "500",
+      textTransform: "uppercase",
       letterSpacing: 0.5,
     },
     fieldValue: {
       fontSize: 16,
       color: colors.text,
-      fontWeight: '500',
+      fontWeight: "500",
       marginTop: 2,
     },
     fieldValueMissing: {
       color: colors.icon,
-      fontStyle: 'italic',
+      fontStyle: "italic",
     },
     separator: {
       height: 1,
-      backgroundColor: colors.icon + '20',
+      backgroundColor: colors.icon + "20",
       marginVertical: 12,
     },
     buttons: {
-      flexDirection: 'row',
+      flexDirection: "row",
       gap: 12,
       marginTop: 16,
     },
     button: {
       flex: 1,
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'center',
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
       paddingVertical: 12,
       borderRadius: 8,
       gap: 6,
@@ -488,16 +529,16 @@ export function OCRResultDisplay({ ocrData, onAccept, onReject }: OCRResultDispl
       backgroundColor: colors.tint,
     },
     rejectButton: {
-      backgroundColor: 'transparent',
+      backgroundColor: "transparent",
       borderWidth: 1,
       borderColor: colors.icon,
     },
     buttonText: {
       fontSize: 16,
-      fontWeight: '600',
+      fontWeight: "600",
     },
     acceptButtonText: {
-      color: 'white',
+      color: "white",
     },
     rejectButtonText: {
       color: colors.text,
@@ -506,16 +547,20 @@ export function OCRResultDisplay({ ocrData, onAccept, onReject }: OCRResultDispl
 
   const formatFieldValue = (key: string, value: any): string => {
     switch (key) {
-      case 'cost':
-        return value ? `$${value.toFixed(2)}` : 'Not detected';
-      case 'service_type':
-        return value ? value.replace('_', ' ').replace(/\b\w/g, (l: string) => l.toUpperCase()) : 'Not detected';
-      case 'date':
-        return value ? new Date(value).toLocaleDateString() : 'Not detected';
-      case 'odometer_reading':
-        return value ? `${value.toLocaleString()} km` : 'Not detected';
+      case "cost":
+        return value ? `$${value.toFixed(2)}` : "Not detected";
+      case "service_type":
+        return value
+          ? value
+              .replace("_", " ")
+              .replace(/\b\w/g, (l: string) => l.toUpperCase())
+          : "Not detected";
+      case "date":
+        return value ? new Date(value).toLocaleDateString() : "Not detected";
+      case "odometer_reading":
+        return value ? `${value.toLocaleString()} km` : "Not detected";
       default:
-        return value || 'Not detected';
+        return value || "Not detected";
     }
   };
 
@@ -523,67 +568,67 @@ export function OCRResultDisplay({ ocrData, onAccept, onReject }: OCRResultDispl
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>Detected Information</Text>
-        <Text style={styles.confidence}>
-          {confidence}% confidence
-        </Text>
+        <Text style={styles.confidence}>{confidence}% confidence</Text>
       </View>
 
       <View style={styles.fieldContainer}>
         <Text style={styles.fieldLabel}>Service Type</Text>
-        <Text style={[
-          styles.fieldValue,
-          !fields.service_type && styles.fieldValueMissing
-        ]}>
-          {formatFieldValue('service_type', fields.service_type)}
+        <Text
+          style={[
+            styles.fieldValue,
+            !fields.service_type && styles.fieldValueMissing,
+          ]}
+        >
+          {formatFieldValue("service_type", fields.service_type)}
         </Text>
       </View>
 
       <View style={styles.fieldContainer}>
         <Text style={styles.fieldLabel}>Description</Text>
-        <Text style={[
-          styles.fieldValue,
-          !fields.description && styles.fieldValueMissing
-        ]}>
-          {formatFieldValue('description', fields.description)}
+        <Text
+          style={[
+            styles.fieldValue,
+            !fields.description && styles.fieldValueMissing,
+          ]}
+        >
+          {formatFieldValue("description", fields.description)}
         </Text>
       </View>
 
       <View style={styles.fieldContainer}>
         <Text style={styles.fieldLabel}>Cost</Text>
-        <Text style={[
-          styles.fieldValue,
-          !fields.cost && styles.fieldValueMissing
-        ]}>
-          {formatFieldValue('cost', fields.cost)}
+        <Text
+          style={[styles.fieldValue, !fields.cost && styles.fieldValueMissing]}
+        >
+          {formatFieldValue("cost", fields.cost)}
         </Text>
       </View>
 
       <View style={styles.fieldContainer}>
         <Text style={styles.fieldLabel}>Date</Text>
-        <Text style={[
-          styles.fieldValue,
-          !fields.date && styles.fieldValueMissing
-        ]}>
-          {formatFieldValue('date', fields.date)}
+        <Text
+          style={[styles.fieldValue, !fields.date && styles.fieldValueMissing]}
+        >
+          {formatFieldValue("date", fields.date)}
         </Text>
       </View>
 
       <View style={styles.fieldContainer}>
         <Text style={styles.fieldLabel}>Odometer Reading</Text>
-        <Text style={[
-          styles.fieldValue,
-          !fields.odometer_reading && styles.fieldValueMissing
-        ]}>
-          {formatFieldValue('odometer_reading', fields.odometer_reading)}
+        <Text
+          style={[
+            styles.fieldValue,
+            !fields.odometer_reading && styles.fieldValueMissing,
+          ]}
+        >
+          {formatFieldValue("odometer_reading", fields.odometer_reading)}
         </Text>
       </View>
 
       {fields.business_name && (
         <View style={styles.fieldContainer}>
           <Text style={styles.fieldLabel}>Service Provider</Text>
-          <Text style={styles.fieldValue}>
-            {fields.business_name}
-          </Text>
+          <Text style={styles.fieldValue}>{fields.business_name}</Text>
         </View>
       )}
 

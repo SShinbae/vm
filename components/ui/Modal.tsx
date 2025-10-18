@@ -1,4 +1,4 @@
-import React from 'react';
+import React from "react";
 import {
   Modal as RNModal,
   View,
@@ -10,37 +10,41 @@ import {
   TextStyle,
   Dimensions,
   Platform,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { Colors } from '@/constants/theme';
-import { useColorScheme } from '@/hooks/use-color-scheme';
-import { IconSymbol } from './icon-symbol';
-import { Button } from './Button';
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { Colors } from "@/constants/theme";
+import { useColorScheme } from "@/hooks/use-color-scheme";
+import { IconSymbol } from "./icon-symbol";
+import { Button } from "./Button";
 
 // Import createPortal for web platform
 let createPortal: any = null;
-if (Platform.OS === 'web') {
+if (Platform.OS === "web") {
   try {
-    const ReactDOM = require('react-dom');
+    const ReactDOM = require("react-dom");
     createPortal = ReactDOM.createPortal;
   } catch (e) {
     // Fallback if react-dom is not available
   }
 }
 
-const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
+const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
 
 interface ModalProps {
   visible: boolean;
   onClose: () => void;
   title?: string;
   children: React.ReactNode;
-  variant?: 'default' | 'fullscreen' | 'bottom-sheet';
-  size?: 'small' | 'medium' | 'large';
+  variant?: "default" | "fullscreen" | "bottom-sheet";
+  size?: "small" | "medium" | "large";
   showCloseButton?: boolean;
   closeOnBackdrop?: boolean;
-  animationType?: 'slide' | 'fade' | 'none';
-  presentationStyle?: 'fullScreen' | 'pageSheet' | 'formSheet' | 'overFullScreen';
+  animationType?: "slide" | "fade" | "none";
+  presentationStyle?:
+    | "fullScreen"
+    | "pageSheet"
+    | "formSheet"
+    | "overFullScreen";
   containerStyle?: ViewStyle;
   contentStyle?: ViewStyle;
   titleStyle?: TextStyle;
@@ -54,7 +58,7 @@ interface ConfirmModalProps {
   message: string;
   confirmText?: string;
   cancelText?: string;
-  variant?: 'default' | 'danger';
+  variant?: "default" | "danger";
   loading?: boolean;
 }
 
@@ -64,7 +68,7 @@ interface AlertModalProps {
   title: string;
   message: string;
   buttonText?: string;
-  variant?: 'info' | 'success' | 'warning' | 'error';
+  variant?: "info" | "success" | "warning" | "error";
 }
 
 // Web-specific Modal Component
@@ -73,8 +77,8 @@ function WebModal({
   onClose,
   title,
   children,
-  variant = 'default',
-  size = 'medium',
+  variant = "default",
+  size = "medium",
   showCloseButton = true,
   closeOnBackdrop = true,
   containerStyle,
@@ -82,19 +86,19 @@ function WebModal({
   titleStyle,
 }: ModalProps) {
   const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? 'light'];
+  const colors = Colors[colorScheme ?? "light"];
 
   // Prevent body scroll when modal is open
   React.useEffect(() => {
-    if (Platform.OS === 'web' && typeof document !== 'undefined') {
+    if (Platform.OS === "web" && typeof document !== "undefined") {
       if (visible) {
-        document.body.classList.add('modal-open');
+        document.body.classList.add("modal-open");
       } else {
-        document.body.classList.remove('modal-open');
+        document.body.classList.remove("modal-open");
       }
 
       return () => {
-        document.body.classList.remove('modal-open');
+        document.body.classList.remove("modal-open");
       };
     }
   }, [visible]);
@@ -102,43 +106,43 @@ function WebModal({
   const getContentStyle = (): ViewStyle => {
     const baseStyle: ViewStyle = {
       backgroundColor: colors.background,
-      borderColor: colors.icon + '20',
+      borderColor: colors.icon + "20",
       borderRadius: 12,
       borderWidth: 1,
-      overflow: 'hidden',
+      overflow: "hidden",
       minWidth: 280,
-      maxWidth: '100%',
-      position: 'relative',
-      boxShadow: '0 10px 25px rgba(0, 0, 0, 0.25)',
+      maxWidth: "100%",
+      position: "relative",
+      boxShadow: "0 10px 25px rgba(0, 0, 0, 0.25)",
     };
 
-    if (variant === 'fullscreen') {
+    if (variant === "fullscreen") {
       Object.assign(baseStyle, {
-        width: '100%',
-        height: '100%',
+        width: "100%",
+        height: "100%",
         borderRadius: 0,
         borderWidth: 0,
       });
-    } else if (variant === 'bottom-sheet') {
+    } else if (variant === "bottom-sheet") {
       Object.assign(baseStyle, {
-        width: '100%',
+        width: "100%",
         borderTopLeftRadius: 20,
         borderTopRightRadius: 20,
         borderBottomLeftRadius: 0,
         borderBottomRightRadius: 0,
-        maxHeight: '90vh',
+        maxHeight: "90vh",
       });
     } else {
       // Default modal sizing
       switch (size) {
-        case 'small':
-          Object.assign(baseStyle, { maxWidth: '80vw', maxHeight: '40vh' });
+        case "small":
+          Object.assign(baseStyle, { maxWidth: "80vw", maxHeight: "40vh" });
           break;
-        case 'large':
-          Object.assign(baseStyle, { maxWidth: '95vw', maxHeight: '80vh' });
+        case "large":
+          Object.assign(baseStyle, { maxWidth: "95vw", maxHeight: "80vh" });
           break;
         default:
-          Object.assign(baseStyle, { maxWidth: '90vw', maxHeight: '60vh' });
+          Object.assign(baseStyle, { maxWidth: "90vw", maxHeight: "60vh" });
       }
     }
 
@@ -152,7 +156,7 @@ function WebModal({
   const getTitleStyle = (): TextStyle => {
     const baseStyle: TextStyle = {
       fontSize: 18,
-      fontWeight: '600',
+      fontWeight: "600",
       color: colors.text,
       flex: 1,
     };
@@ -175,19 +179,19 @@ function WebModal({
   const modalContent = (
     <View
       // @ts-ignore - Web-specific className
-      className={`web-modal-overlay ${variant === 'bottom-sheet' ? 'bottom-sheet' : ''}`}
+      className={`web-modal-overlay ${variant === "bottom-sheet" ? "bottom-sheet" : ""}`}
       style={[
         {
-          position: 'fixed' as any,
+          position: "fixed" as any,
           top: 0,
           left: 0,
           right: 0,
           bottom: 0,
           zIndex: 999999,
-          display: 'flex' as any,
-          justifyContent: 'center',
-          alignItems: 'center',
-          padding: variant === 'fullscreen' ? 0 : 20,
+          display: "flex" as any,
+          justifyContent: "center",
+          alignItems: "center",
+          padding: variant === "fullscreen" ? 0 : 20,
         },
         containerStyle,
       ]}
@@ -198,12 +202,12 @@ function WebModal({
           // @ts-ignore - Web-specific className
           className="web-modal-backdrop"
           style={{
-            position: 'absolute' as any,
+            position: "absolute" as any,
             top: 0,
             left: 0,
             right: 0,
             bottom: 0,
-            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+            backgroundColor: "rgba(0, 0, 0, 0.5)",
           }}
         />
       </TouchableWithoutFeedback>
@@ -211,9 +215,9 @@ function WebModal({
       {/* Modal Content */}
       <View
         // @ts-ignore - Web-specific className
-        className={`web-modal-content ${variant === 'bottom-sheet' ? 'bottom-sheet' : ''}`}
+        className={`web-modal-content ${variant === "bottom-sheet" ? "bottom-sheet" : ""}`}
         style={{
-          position: 'relative' as any,
+          position: "relative" as any,
           zIndex: 1,
         }}
       >
@@ -236,7 +240,7 @@ function WebModal({
   );
 
   // Use portal if available, otherwise render normally
-  if (createPortal && typeof document !== 'undefined') {
+  if (createPortal && typeof document !== "undefined") {
     return createPortal(modalContent, document.body);
   }
 
@@ -245,10 +249,10 @@ function WebModal({
 
 export function Modal(props: ModalProps) {
   const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? 'light'];
+  const colors = Colors[colorScheme ?? "light"];
 
   // Use web-specific modal for web platform
-  if (Platform.OS === 'web') {
+  if (Platform.OS === "web") {
     return <WebModal {...props} />;
   }
 
@@ -258,12 +262,12 @@ export function Modal(props: ModalProps) {
     onClose,
     title,
     children,
-    variant = 'default',
-    size = 'medium',
+    variant = "default",
+    size = "medium",
     showCloseButton = true,
     closeOnBackdrop = true,
-    animationType = 'slide',
-    presentationStyle = 'overFullScreen',
+    animationType = "slide",
+    presentationStyle = "overFullScreen",
     containerStyle,
     contentStyle,
     titleStyle,
@@ -272,9 +276,9 @@ export function Modal(props: ModalProps) {
   const getContainerStyle = (): ViewStyle[] => {
     const baseStyle = [styles.container];
 
-    if (variant === 'fullscreen') {
+    if (variant === "fullscreen") {
       baseStyle.push(styles.fullscreenContainer);
-    } else if (variant === 'bottom-sheet') {
+    } else if (variant === "bottom-sheet") {
       baseStyle.push(styles.bottomSheetContainer);
     }
 
@@ -290,25 +294,34 @@ export function Modal(props: ModalProps) {
       styles.content,
       {
         backgroundColor: colors.background,
-        borderColor: colors.icon + '20',
+        borderColor: colors.icon + "20",
       },
     ];
 
-    if (variant === 'fullscreen') {
+    if (variant === "fullscreen") {
       baseStyle.push(styles.fullscreenContent);
-    } else if (variant === 'bottom-sheet') {
+    } else if (variant === "bottom-sheet") {
       baseStyle.push(styles.bottomSheetContent);
     } else {
       // Default modal sizing
       switch (size) {
-        case 'small':
-          baseStyle.push({ maxWidth: screenWidth * 0.8, maxHeight: screenHeight * 0.4 });
+        case "small":
+          baseStyle.push({
+            maxWidth: screenWidth * 0.8,
+            maxHeight: screenHeight * 0.4,
+          });
           break;
-        case 'large':
-          baseStyle.push({ maxWidth: screenWidth * 0.95, maxHeight: screenHeight * 0.8 });
+        case "large":
+          baseStyle.push({
+            maxWidth: screenWidth * 0.95,
+            maxHeight: screenHeight * 0.8,
+          });
           break;
         default:
-          baseStyle.push({ maxWidth: screenWidth * 0.9, maxHeight: screenHeight * 0.6 });
+          baseStyle.push({
+            maxWidth: screenWidth * 0.9,
+            maxHeight: screenHeight * 0.6,
+          });
       }
     }
 
@@ -358,7 +371,7 @@ export function Modal(props: ModalProps) {
     </View>
   );
 
-  if (variant === 'fullscreen') {
+  if (variant === "fullscreen") {
     return (
       <RNModal
         visible={visible}
@@ -366,7 +379,12 @@ export function Modal(props: ModalProps) {
         presentationStyle="fullScreen"
         onRequestClose={onClose}
       >
-        <SafeAreaView style={[styles.fullscreenWrapper, { backgroundColor: colors.background }]}>
+        <SafeAreaView
+          style={[
+            styles.fullscreenWrapper,
+            { backgroundColor: colors.background },
+          ]}
+        >
           <View style={styles.fullscreenHeader}>
             {title && <Text style={getTitleStyle()}>{title}</Text>}
             {showCloseButton && (
@@ -400,13 +418,13 @@ export function ConfirmModal({
   onConfirm,
   title,
   message,
-  confirmText = 'Confirm',
-  cancelText = 'Cancel',
-  variant = 'default',
+  confirmText = "Confirm",
+  cancelText = "Cancel",
+  variant = "default",
   loading = false,
 }: ConfirmModalProps) {
   const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? 'light'];
+  const colors = Colors[colorScheme ?? "light"];
 
   const handleConfirm = () => {
     if (!loading) {
@@ -415,9 +433,17 @@ export function ConfirmModal({
   };
 
   return (
-    <Modal visible={visible} onClose={onClose} title={title} size="small" closeOnBackdrop={!loading}>
+    <Modal
+      visible={visible}
+      onClose={onClose}
+      title={title}
+      size="small"
+      closeOnBackdrop={!loading}
+    >
       <View style={styles.confirmContent}>
-        <Text style={[styles.confirmMessage, { color: colors.text }]}>{message}</Text>
+        <Text style={[styles.confirmMessage, { color: colors.text }]}>
+          {message}
+        </Text>
 
         <View style={styles.confirmButtons}>
           <Button
@@ -430,7 +456,7 @@ export function ConfirmModal({
           <Button
             title={confirmText}
             onPress={handleConfirm}
-            variant={variant === 'danger' ? 'danger' : 'primary'}
+            variant={variant === "danger" ? "danger" : "primary"}
             style={styles.confirmButton}
             loading={loading}
             disabled={loading}
@@ -446,33 +472,33 @@ export function AlertModal({
   onClose,
   title,
   message,
-  buttonText = 'OK',
-  variant = 'info',
+  buttonText = "OK",
+  variant = "info",
 }: AlertModalProps) {
   const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? 'light'];
+  const colors = Colors[colorScheme ?? "light"];
 
   const getIconName = () => {
     switch (variant) {
-      case 'success':
-        return 'checkmark.circle.fill';
-      case 'warning':
-        return 'exclamationmark.triangle.fill';
-      case 'error':
-        return 'xmark.circle.fill';
+      case "success":
+        return "checkmark.circle.fill";
+      case "warning":
+        return "exclamationmark.triangle.fill";
+      case "error":
+        return "xmark.circle.fill";
       default:
-        return 'info.circle.fill';
+        return "info.circle.fill";
     }
   };
 
   const getIconColor = () => {
     switch (variant) {
-      case 'success':
-        return '#4CAF50';
-      case 'warning':
-        return '#FF9800';
-      case 'error':
-        return '#ff4444';
+      case "success":
+        return "#4CAF50";
+      case "warning":
+        return "#FF9800";
+      case "error":
+        return "#ff4444";
       default:
         return colors.tint;
     }
@@ -485,7 +511,9 @@ export function AlertModal({
           <IconSymbol name={getIconName()} size={48} color={getIconColor()} />
         </View>
 
-        <Text style={[styles.alertMessage, { color: colors.text }]}>{message}</Text>
+        <Text style={[styles.alertMessage, { color: colors.text }]}>
+          {message}
+        </Text>
 
         <Button
           title={buttonText}
@@ -502,34 +530,34 @@ export function AlertModal({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     padding: 20,
   },
   fullscreenContainer: {
     padding: 0,
   },
   bottomSheetContainer: {
-    justifyContent: 'flex-end',
+    justifyContent: "flex-end",
     padding: 0,
   },
   backdrop: {
-    position: 'absolute',
+    position: "absolute",
     top: 0,
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
   },
   content: {
     borderRadius: 12,
     borderWidth: 1,
-    overflow: 'hidden',
+    overflow: "hidden",
     minWidth: 280,
-    maxWidth: '100%',
+    maxWidth: "100%",
     ...Platform.select({
       ios: {
-        shadowColor: '#000',
+        shadowColor: "#000",
         shadowOffset: { width: 0, height: 10 },
         shadowOpacity: 0.25,
         shadowRadius: 20,
@@ -540,13 +568,13 @@ const styles = StyleSheet.create({
     }),
   },
   fullscreenContent: {
-    width: '100%',
-    height: '100%',
+    width: "100%",
+    height: "100%",
     borderRadius: 0,
     borderWidth: 0,
   },
   bottomSheetContent: {
-    width: '100%',
+    width: "100%",
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     borderBottomLeftRadius: 0,
@@ -557,29 +585,29 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   fullscreenHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     paddingHorizontal: 20,
     paddingVertical: 16,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(0, 0, 0, 0.1)',
+    borderBottomColor: "rgba(0, 0, 0, 0.1)",
   },
   fullscreenBody: {
     flex: 1,
   },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     paddingHorizontal: 20,
     paddingVertical: 16,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(0, 0, 0, 0.1)',
+    borderBottomColor: "rgba(0, 0, 0, 0.1)",
   },
   title: {
     fontSize: 18,
-    fontWeight: '600',
+    fontWeight: "600",
     flex: 1,
   },
   closeButton: {
@@ -590,24 +618,24 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   confirmContent: {
-    alignItems: 'center',
+    alignItems: "center",
   },
   confirmMessage: {
     fontSize: 16,
     lineHeight: 22,
-    textAlign: 'center',
+    textAlign: "center",
     marginBottom: 24,
   },
   confirmButtons: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: 12,
-    width: '100%',
+    width: "100%",
   },
   confirmButton: {
     flex: 1,
   },
   alertContent: {
-    alignItems: 'center',
+    alignItems: "center",
   },
   alertIcon: {
     marginBottom: 16,
@@ -615,7 +643,7 @@ const styles = StyleSheet.create({
   alertMessage: {
     fontSize: 16,
     lineHeight: 22,
-    textAlign: 'center',
+    textAlign: "center",
     marginBottom: 24,
   },
   alertButton: {

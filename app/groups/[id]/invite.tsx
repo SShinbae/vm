@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -7,29 +7,29 @@ import {
   KeyboardAvoidingView,
   Platform,
   StyleSheet,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { router, useLocalSearchParams } from 'expo-router';
-import { GroupInvitationService } from '@/lib/services/groupService';
-import { Colors } from '@/constants/theme';
-import { useColorScheme } from '@/hooks/use-color-scheme';
-import { IconSymbol } from '@/components/ui/icon-symbol';
-import { Input } from '@/components/ui/Input';
-import { Button } from '@/components/ui/Button';
-import { Card, CardContent } from '@/components/ui/Card';
-import { AlertModal, ConfirmModal } from '@/components/ui/Modal';
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { router, useLocalSearchParams } from "expo-router";
+import { GroupInvitationService } from "@/lib/services/groupService";
+import { Colors } from "@/constants/theme";
+import { useColorScheme } from "@/hooks/use-color-scheme";
+import { IconSymbol } from "@/components/ui/icon-symbol";
+import { Input } from "@/components/ui/Input";
+import { Button } from "@/components/ui/Button";
+import { Card, CardContent } from "@/components/ui/Card";
+import { AlertModal, ConfirmModal } from "@/components/ui/Modal";
 
 export default function InviteToGroupScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [showErrorModal, setShowErrorModal] = useState(false);
-  const [errorMessage, setErrorMessage] = useState('');
+  const [errorMessage, setErrorMessage] = useState("");
   const [showSendAnotherConfirm, setShowSendAnotherConfirm] = useState(false);
-  const [lastSentEmail, setLastSentEmail] = useState('');
+  const [lastSentEmail, setLastSentEmail] = useState("");
   const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? 'light'];
+  const colors = Colors[colorScheme ?? "light"];
 
   const validateEmail = (email: string) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -38,26 +38,29 @@ export default function InviteToGroupScreen() {
 
   const handleSendInvitation = async () => {
     if (!email.trim()) {
-      setErrorMessage('Please enter an email address');
+      setErrorMessage("Please enter an email address");
       setShowErrorModal(true);
       return;
     }
 
     if (!validateEmail(email.trim())) {
-      setErrorMessage('Please enter a valid email address');
+      setErrorMessage("Please enter a valid email address");
       setShowErrorModal(true);
       return;
     }
 
     if (!id) {
-      setErrorMessage('Group not found');
+      setErrorMessage("Group not found");
       setShowErrorModal(true);
       return;
     }
 
     setLoading(true);
 
-    const { error } = await GroupInvitationService.sendInvitation(id, email.trim());
+    const { error } = await GroupInvitationService.sendInvitation(
+      id,
+      email.trim(),
+    );
     setLoading(false);
 
     if (error) {
@@ -71,7 +74,7 @@ export default function InviteToGroupScreen() {
 
   const handleSendAnother = () => {
     setShowSendAnotherConfirm(false);
-    setEmail('');
+    setEmail("");
   };
 
   const handleDone = () => {
@@ -81,7 +84,9 @@ export default function InviteToGroupScreen() {
 
   const getEmailValidationError = () => {
     if (!email.trim()) return undefined;
-    return validateEmail(email.trim()) ? undefined : 'Please enter a valid email address';
+    return validateEmail(email.trim())
+      ? undefined
+      : "Please enter a valid email address";
   };
 
   const isFormValid = () => {
@@ -94,12 +99,12 @@ export default function InviteToGroupScreen() {
       backgroundColor: colors.background,
     },
     header: {
-      flexDirection: 'row',
-      alignItems: 'center',
+      flexDirection: "row",
+      alignItems: "center",
       paddingHorizontal: 20,
       paddingVertical: 16,
       borderBottomWidth: 1,
-      borderBottomColor: colors.icon + '20',
+      borderBottomColor: colors.icon + "20",
     },
     backButton: {
       marginRight: 16,
@@ -107,7 +112,7 @@ export default function InviteToGroupScreen() {
     },
     title: {
       fontSize: 24,
-      fontWeight: 'bold',
+      fontWeight: "bold",
       color: colors.text,
       flex: 1,
     },
@@ -122,7 +127,7 @@ export default function InviteToGroupScreen() {
     },
     sectionTitle: {
       fontSize: 18,
-      fontWeight: '600',
+      fontWeight: "600",
       color: colors.text,
       marginBottom: 16,
     },
@@ -130,14 +135,14 @@ export default function InviteToGroupScreen() {
       width: 40,
       height: 40,
       borderRadius: 20,
-      backgroundColor: colors.tint + '20',
-      alignItems: 'center',
-      justifyContent: 'center',
+      backgroundColor: colors.tint + "20",
+      alignItems: "center",
+      justifyContent: "center",
       marginBottom: 12,
     },
     infoTitle: {
       fontSize: 16,
-      fontWeight: '600',
+      fontWeight: "600",
       color: colors.text,
       marginBottom: 8,
     },
@@ -147,8 +152,8 @@ export default function InviteToGroupScreen() {
       lineHeight: 20,
     },
     bulletPoint: {
-      flexDirection: 'row',
-      alignItems: 'flex-start',
+      flexDirection: "row",
+      alignItems: "flex-start",
       marginTop: 8,
     },
     bulletText: {
@@ -159,7 +164,6 @@ export default function InviteToGroupScreen() {
       flex: 1,
     },
   });
-
 
   return (
     <SafeAreaView style={styles.container}>
@@ -182,7 +186,7 @@ export default function InviteToGroupScreen() {
       </View>
 
       <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={styles.content}
       >
         <ScrollView
@@ -206,8 +210,16 @@ export default function InviteToGroupScreen() {
                   autoComplete="email"
                   required
                   error={getEmailValidationError()}
-                  success={email.trim() && validateEmail(email.trim()) ? 'Valid email address' : undefined}
-                  helperText={!email.trim() ? 'Enter the email address of the person you want to invite' : undefined}
+                  success={
+                    email.trim() && validateEmail(email.trim())
+                      ? "Valid email address"
+                      : undefined
+                  }
+                  helperText={
+                    !email.trim()
+                      ? "Enter the email address of the person you want to invite"
+                      : undefined
+                  }
                   leftIcon="envelope"
                 />
               </View>
@@ -220,14 +232,13 @@ export default function InviteToGroupScreen() {
                 <IconSymbol name="info.circle" size={20} color={colors.tint} />
               </View>
               <Text style={styles.infoTitle}>How Invitations Work</Text>
-              <Text style={styles.infoText}>
-                When you send an invitation:
-              </Text>
+              <Text style={styles.infoText}>When you send an invitation:</Text>
 
               <View style={styles.bulletPoint}>
                 <IconSymbol name="circle.fill" size={4} color={colors.text} />
                 <Text style={styles.bulletText}>
-                  The person will receive an email invitation (note: email functionality is pending implementation)
+                  The person will receive an email invitation (note: email
+                  functionality is pending implementation)
                 </Text>
               </View>
 

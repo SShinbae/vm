@@ -1,8 +1,8 @@
-import { Colors } from '@/constants/theme';
-import { useColorScheme } from '@/hooks/use-color-scheme';
-import { useAuth } from '@/lib/contexts/AuthContext';
-import { Link, router } from 'expo-router';
-import React, { useState } from 'react';
+import { Colors } from "@/constants/theme";
+import { useColorScheme } from "@/hooks/use-color-scheme";
+import { useAuth } from "@/lib/contexts/AuthContext";
+import { Link, router } from "expo-router";
+import React, { useState } from "react";
 import {
   ActivityIndicator,
   Dimensions,
@@ -14,27 +14,27 @@ import {
   TextInput,
   TouchableOpacity,
   View,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { withWebAlert, useAlert } from '@/components/ui';
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { withWebAlert, useAlert } from "@/components/ui";
 
-const { width: screenWidth } = Dimensions.get('window');
+const { width: screenWidth } = Dimensions.get("window");
 
 function LoginScreen() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [emailFocused, setEmailFocused] = useState(false);
   const [passwordFocused, setPasswordFocused] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const { signIn } = useAuth();
   const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? 'light'];
+  const colors = Colors[colorScheme ?? "light"];
   const { showError } = useAlert();
 
   const handleSignIn = async () => {
     if (!email.trim() || !password.trim()) {
-      showError('Error', 'Please fill in all fields');
+      showError("Error", "Please fill in all fields");
       return;
     }
 
@@ -43,9 +43,9 @@ function LoginScreen() {
     setLoading(false);
 
     if (error) {
-      showError('Sign In Failed', error);
+      showError("Sign In Failed", error);
     } else {
-      router.replace('/(tabs)');
+      router.replace("/(tabs)");
     }
   };
 
@@ -60,39 +60,39 @@ function LoginScreen() {
     content: {
       flex: 1,
       paddingHorizontal: 20,
-      justifyContent: 'center',
-      maxWidth: screenWidth > 600 ? 400 : '100%',
-      alignSelf: 'center',
-      width: '100%',
+      justifyContent: "center",
+      maxWidth: screenWidth > 600 ? 400 : "100%",
+      alignSelf: "center",
+      width: "100%",
     },
     logoContainer: {
-      alignItems: 'center',
+      alignItems: "center",
       marginBottom: 32,
     },
     logo: {
       fontSize: 48,
-      fontWeight: 'bold',
+      fontWeight: "bold",
       color: colors.facebook?.primary || colors.tint,
       marginBottom: 8,
-      textAlign: 'center',
+      textAlign: "center",
     },
     tagline: {
       fontSize: 20,
       color: colors.text,
-      textAlign: 'center',
+      textAlign: "center",
       marginBottom: 8,
     },
     subtitle: {
       fontSize: 16,
       color: colors.facebook?.gray || colors.icon,
-      textAlign: 'center',
+      textAlign: "center",
       marginBottom: 40,
     },
     card: {
       backgroundColor: colors.facebook?.card || colors.background,
       borderRadius: 12,
       padding: 24,
-      shadowColor: '#000',
+      shadowColor: "#000",
       shadowOffset: {
         width: 0,
         height: 2,
@@ -122,8 +122,8 @@ function LoginScreen() {
       backgroundColor: colors.facebook?.card || colors.background,
     },
     checkboxContainer: {
-      flexDirection: 'row',
-      alignItems: 'center',
+      flexDirection: "row",
+      alignItems: "center",
       marginBottom: 20,
     },
     checkbox: {
@@ -133,8 +133,8 @@ function LoginScreen() {
       borderColor: colors.facebook?.divider || colors.border,
       borderRadius: 4,
       marginRight: 12,
-      alignItems: 'center',
-      justifyContent: 'center',
+      alignItems: "center",
+      justifyContent: "center",
     },
     checkboxChecked: {
       backgroundColor: colors.facebook?.primary || colors.tint,
@@ -149,7 +149,7 @@ function LoginScreen() {
       backgroundColor: colors.facebook?.primary || colors.tint,
       borderRadius: 8,
       paddingVertical: 16,
-      alignItems: 'center',
+      alignItems: "center",
       marginBottom: 16,
       minHeight: 52,
       shadowColor: colors.facebook?.primary || colors.tint,
@@ -167,22 +167,22 @@ function LoginScreen() {
       elevation: 0,
     },
     buttonText: {
-      color: '#FFFFFF',
+      color: "#FFFFFF",
       fontSize: 16,
-      fontWeight: '600',
+      fontWeight: "600",
     },
     forgotPasswordContainer: {
-      alignItems: 'center',
+      alignItems: "center",
       marginBottom: 24,
     },
     forgotPasswordText: {
       color: colors.facebook?.primary || colors.tint,
       fontSize: 14,
-      fontWeight: '500',
+      fontWeight: "500",
     },
     dividerContainer: {
-      flexDirection: 'row',
-      alignItems: 'center',
+      flexDirection: "row",
+      alignItems: "center",
       marginBottom: 24,
     },
     dividerLine: {
@@ -194,14 +194,14 @@ function LoginScreen() {
       color: colors.facebook?.gray || colors.icon,
       fontSize: 14,
       marginHorizontal: 16,
-      fontWeight: '500',
+      fontWeight: "500",
     },
     signupContainer: {
-      alignItems: 'center',
+      alignItems: "center",
       backgroundColor: colors.facebook?.card || colors.background,
       borderRadius: 12,
       padding: 20,
-      shadowColor: '#000',
+      shadowColor: "#000",
       shadowOffset: {
         width: 0,
         height: 1,
@@ -214,26 +214,27 @@ function LoginScreen() {
       color: colors.facebook?.gray || colors.icon,
       fontSize: 14,
       marginBottom: 16,
-      textAlign: 'center',
+      textAlign: "center",
     },
     signupButton: {
-      backgroundColor: colors.facebook?.secondary || colors.facebook?.primary || colors.tint,
+      backgroundColor:
+        colors.facebook?.secondary || colors.facebook?.primary || colors.tint,
       borderRadius: 8,
       paddingVertical: 12,
       paddingHorizontal: 24,
       minHeight: 44,
     },
     signupButtonText: {
-      color: '#FFFFFF',
+      color: "#FFFFFF",
       fontSize: 14,
-      fontWeight: '600',
+      fontWeight: "600",
     },
   });
 
   return (
     <SafeAreaView style={styles.container}>
       <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={styles.container}
       >
         <ScrollView
@@ -251,14 +252,13 @@ function LoginScreen() {
             <View style={styles.card}>
               <View style={styles.inputContainer}>
                 <TextInput
-                  style={[
-                    styles.input,
-                    emailFocused && styles.inputFocused,
-                  ]}
+                  style={[styles.input, emailFocused && styles.inputFocused]}
                   value={email}
                   onChangeText={setEmail}
                   placeholder="Email address"
-                  placeholderTextColor={colors.facebook?.placeholder || colors.icon}
+                  placeholderTextColor={
+                    colors.facebook?.placeholder || colors.icon
+                  }
                   keyboardType="email-address"
                   autoCapitalize="none"
                   autoCorrect={false}
@@ -269,14 +269,13 @@ function LoginScreen() {
 
               <View style={styles.inputContainer}>
                 <TextInput
-                  style={[
-                    styles.input,
-                    passwordFocused && styles.inputFocused,
-                  ]}
+                  style={[styles.input, passwordFocused && styles.inputFocused]}
                   value={password}
                   onChangeText={setPassword}
                   placeholder="Password"
-                  placeholderTextColor={colors.facebook?.placeholder || colors.icon}
+                  placeholderTextColor={
+                    colors.facebook?.placeholder || colors.icon
+                  }
                   secureTextEntry
                   autoCapitalize="none"
                   autoCorrect={false}
@@ -290,16 +289,33 @@ function LoginScreen() {
                 style={styles.checkboxContainer}
                 onPress={() => setRememberMe(!rememberMe)}
               >
-                <View style={[styles.checkbox, rememberMe && styles.checkboxChecked]}>
+                <View
+                  style={[
+                    styles.checkbox,
+                    rememberMe && styles.checkboxChecked,
+                  ]}
+                >
                   {rememberMe && (
-                    <Text style={{ color: '#FFFFFF', fontSize: 12, fontWeight: 'bold' }}>✓</Text>
+                    <Text
+                      style={{
+                        color: "#FFFFFF",
+                        fontSize: 12,
+                        fontWeight: "bold",
+                      }}
+                    >
+                      ✓
+                    </Text>
                   )}
                 </View>
                 <Text style={styles.checkboxText}>Keep me signed in</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
-                style={[styles.button, (loading || !email.trim() || !password.trim()) && styles.buttonDisabled]}
+                style={[
+                  styles.button,
+                  (loading || !email.trim() || !password.trim()) &&
+                    styles.buttonDisabled,
+                ]}
                 onPress={handleSignIn}
                 disabled={loading || !email.trim() || !password.trim()}
               >
@@ -314,7 +330,9 @@ function LoginScreen() {
               <View style={styles.forgotPasswordContainer}>
                 <Link href="/(auth)/forgot-password" asChild>
                   <TouchableOpacity>
-                    <Text style={styles.forgotPasswordText}>Forgotten password?</Text>
+                    <Text style={styles.forgotPasswordText}>
+                      Forgotten password?
+                    </Text>
                   </TouchableOpacity>
                 </Link>
               </View>
@@ -332,7 +350,9 @@ function LoginScreen() {
               <Text style={styles.signupText}>Don&apos;t have an account?</Text>
               <Link href="/(auth)/register" asChild>
                 <TouchableOpacity style={styles.signupButton}>
-                  <Text style={styles.signupButtonText}>Create new account</Text>
+                  <Text style={styles.signupButtonText}>
+                    Create new account
+                  </Text>
                 </TouchableOpacity>
               </Link>
             </View>

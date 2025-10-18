@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef } from "react";
 import {
   View,
   Text,
@@ -6,12 +6,12 @@ import {
   TouchableOpacity,
   Dimensions,
   Platform,
-} from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { NotificationData } from '../../lib/services/notificationService';
-import { useThemeColor } from '../../hooks/use-theme-color';
+} from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { NotificationData } from "../../lib/services/notificationService";
+import { useThemeColor } from "../../hooks/use-theme-color";
 
-const { width: screenWidth } = Dimensions.get('window');
+const { width: screenWidth } = Dimensions.get("window");
 const TOAST_WIDTH = screenWidth - 32;
 const ANIMATION_DURATION = 300;
 const AUTO_DISMISS_DURATION = 4000;
@@ -33,9 +33,9 @@ export function NotificationToast({
   const opacity = useRef(new Animated.Value(0)).current;
   const timeoutRef = useRef<NodeJS.Timeout>();
 
-  const backgroundColor = useThemeColor({}, 'card');
-  const textColor = useThemeColor({}, 'text');
-  const borderColor = useThemeColor({}, 'border');
+  const backgroundColor = useThemeColor({}, "card");
+  const textColor = useThemeColor({}, "text");
+  const borderColor = useThemeColor({}, "border");
 
   const handleDismiss = () => {
     Animated.parallel([
@@ -98,21 +98,21 @@ export function NotificationToast({
   };
 
   const getIcon = () => {
-    if (!notification) return 'notifications-outline';
+    if (!notification) return "notifications-outline";
 
     switch (notification.type) {
-      case 'mileage_log':
-        return 'speedometer-outline';
-      case 'fuel_log':
-        return 'car-outline';
-      case 'service_log':
-        return 'construct-outline';
-      case 'group_member':
-        return 'people-outline';
-      case 'group_invite':
-        return 'mail-outline';
+      case "mileage_log":
+        return "speedometer-outline";
+      case "fuel_log":
+        return "car-outline";
+      case "service_log":
+        return "construct-outline";
+      case "group_member":
+        return "people-outline";
+      case "group_invite":
+        return "mail-outline";
       default:
-        return 'notifications-outline';
+        return "notifications-outline";
     }
   };
 
@@ -120,16 +120,16 @@ export function NotificationToast({
     if (!notification) return textColor;
 
     switch (notification.type) {
-      case 'mileage_log':
-        return '#007AFF';
-      case 'fuel_log':
-        return '#FF9500';
-      case 'service_log':
-        return '#FF3B30';
-      case 'group_member':
-        return '#34C759';
-      case 'group_invite':
-        return '#AF52DE';
+      case "mileage_log":
+        return "#007AFF";
+      case "fuel_log":
+        return "#FF9500";
+      case "service_log":
+        return "#FF3B30";
+      case "group_member":
+        return "#34C759";
+      case "group_invite":
+        return "#AF52DE";
       default:
         return textColor;
     }
@@ -140,8 +140,8 @@ export function NotificationToast({
   return (
     <Animated.View
       style={{
-        position: 'absolute',
-        top: Platform.OS === 'ios' ? 60 : 40,
+        position: "absolute",
+        top: Platform.OS === "ios" ? 60 : 40,
         left: 16,
         right: 16,
         zIndex: 1000,

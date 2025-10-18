@@ -1,4 +1,4 @@
-import React from 'react';
+import React from "react";
 import {
   TouchableOpacity,
   Text,
@@ -6,20 +6,20 @@ import {
   StyleSheet,
   ViewStyle,
   TextStyle,
-} from 'react-native';
-import { Colors } from '@/constants/theme';
-import { useColorScheme } from '@/hooks/use-color-scheme';
-import { IconSymbol } from './icon-symbol';
+} from "react-native";
+import { Colors } from "@/constants/theme";
+import { useColorScheme } from "@/hooks/use-color-scheme";
+import { IconSymbol } from "./icon-symbol";
 
 interface ButtonProps {
   title: string;
   onPress: () => void;
-  variant?: 'primary' | 'secondary' | 'outline' | 'danger';
-  size?: 'small' | 'medium' | 'large';
+  variant?: "primary" | "secondary" | "outline" | "danger";
+  size?: "small" | "medium" | "large";
   loading?: boolean;
   disabled?: boolean;
   icon?: string;
-  iconPosition?: 'left' | 'right';
+  iconPosition?: "left" | "right";
   style?: ViewStyle;
   textStyle?: TextStyle;
   fullWidth?: boolean;
@@ -28,28 +28,28 @@ interface ButtonProps {
 export function Button({
   title,
   onPress,
-  variant = 'primary',
-  size = 'medium',
+  variant = "primary",
+  size = "medium",
   loading = false,
   disabled = false,
   icon,
-  iconPosition = 'left',
+  iconPosition = "left",
   style,
   textStyle,
   fullWidth = false,
 }: ButtonProps) {
   const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? 'light'];
+  const colors = Colors[colorScheme ?? "light"];
 
   const getButtonStyle = (): ViewStyle[] => {
     const baseStyle = [styles.button];
 
     // Size styles
     switch (size) {
-      case 'small':
+      case "small":
         baseStyle.push(styles.buttonSmall);
         break;
-      case 'large':
+      case "large":
         baseStyle.push(styles.buttonLarge);
         break;
       default:
@@ -58,23 +58,23 @@ export function Button({
 
     // Variant styles
     switch (variant) {
-      case 'secondary':
+      case "secondary":
         baseStyle.push({
-          backgroundColor: colors.icon + '20',
-          borderColor: colors.icon + '30',
+          backgroundColor: colors.icon + "20",
+          borderColor: colors.icon + "30",
           borderWidth: 1,
         });
         break;
-      case 'outline':
+      case "outline":
         baseStyle.push({
-          backgroundColor: 'transparent',
+          backgroundColor: "transparent",
           borderColor: colors.tint,
           borderWidth: 1,
         });
         break;
-      case 'danger':
+      case "danger":
         baseStyle.push({
-          backgroundColor: '#ff4444',
+          backgroundColor: "#ff4444",
         });
         break;
       default:
@@ -106,10 +106,10 @@ export function Button({
 
     // Size text styles
     switch (size) {
-      case 'small':
+      case "small":
         baseStyle.push(styles.textSmall);
         break;
-      case 'large':
+      case "large":
         baseStyle.push(styles.textLarge);
         break;
       default:
@@ -118,18 +118,18 @@ export function Button({
 
     // Variant text styles - improved contrast for dark mode
     switch (variant) {
-      case 'secondary':
+      case "secondary":
         baseStyle.push({ color: colors.text });
         break;
-      case 'outline':
+      case "outline":
         baseStyle.push({ color: colors.tint });
         break;
-      case 'danger':
-        baseStyle.push({ color: 'white' });
+      case "danger":
+        baseStyle.push({ color: "white" });
         break;
       default:
         // Primary button: use white text for better contrast with tint background
-        baseStyle.push({ color: 'white' });
+        baseStyle.push({ color: "white" });
     }
 
     // Custom text style
@@ -142,9 +142,9 @@ export function Button({
 
   const getIconSize = () => {
     switch (size) {
-      case 'small':
+      case "small":
         return 14;
-      case 'large':
+      case "large":
         return 18;
       default:
         return 16;
@@ -153,15 +153,15 @@ export function Button({
 
   const getIconColor = () => {
     switch (variant) {
-      case 'secondary':
+      case "secondary":
         return colors.text;
-      case 'outline':
+      case "outline":
         return colors.tint;
-      case 'danger':
-        return 'white';
+      case "danger":
+        return "white";
       default:
         // Primary button: use white icons for better contrast with tint background
-        return 'white';
+        return "white";
     }
   };
 
@@ -169,7 +169,11 @@ export function Button({
     if (loading) {
       return (
         <ActivityIndicator
-          color={variant === 'outline' || variant === 'secondary' ? colors.tint : 'white'}
+          color={
+            variant === "outline" || variant === "secondary"
+              ? colors.tint
+              : "white"
+          }
           size="small"
         />
       );
@@ -185,7 +189,7 @@ export function Button({
       return textElement;
     }
 
-    return iconPosition === 'left' ? (
+    return iconPosition === "left" ? (
       <>
         {iconElement}
         {textElement}
@@ -212,9 +216,9 @@ export function Button({
 
 const styles = StyleSheet.create({
   button: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
     borderRadius: 8,
     gap: 8,
   },
@@ -231,14 +235,14 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
   },
   fullWidth: {
-    width: '100%',
+    width: "100%",
   },
   disabled: {
     opacity: 0.6,
   },
   text: {
-    fontWeight: '600',
-    textAlign: 'center',
+    fontWeight: "600",
+    textAlign: "center",
   },
   textSmall: {
     fontSize: 14,

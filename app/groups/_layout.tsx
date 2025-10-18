@@ -1,6 +1,6 @@
-import { Stack } from 'expo-router';
-import { Colors } from '@/constants/theme';
-import { useColorScheme } from '@/hooks/use-color-scheme';
+import { Stack } from "expo-router";
+import { Colors } from "@/constants/theme";
+import { useColorScheme } from "@/hooks/use-color-scheme";
 
 export default function GroupsLayout() {
   const colorScheme = useColorScheme();
@@ -10,11 +10,11 @@ export default function GroupsLayout() {
       screenOptions={{
         headerShown: false,
         headerStyle: {
-          backgroundColor: Colors[colorScheme ?? 'light'].background,
+          backgroundColor: Colors[colorScheme ?? "light"].background,
         },
-        headerTintColor: Colors[colorScheme ?? 'light'].text,
+        headerTintColor: Colors[colorScheme ?? "light"].text,
         headerTitleStyle: {
-          fontWeight: '600',
+          fontWeight: "600",
         },
       }}
     >

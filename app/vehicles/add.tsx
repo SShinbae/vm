@@ -1,63 +1,63 @@
-import { Button } from '@/components/ui/Button';
-import { Card, CardContent } from '@/components/ui/Card';
-import { IconSymbol } from '@/components/ui/icon-symbol';
-import { ImageUpload } from '@/components/ui/ImageUpload';
-import { Input } from '@/components/ui/Input';
-import { AlertModal } from '@/components/ui/Modal';
-import { Colors } from '@/constants/theme';
-import { useColorScheme } from '@/hooks/use-color-scheme';
-import { VehicleService } from '@/lib/services/vehicleService';
-import { VehicleFormData } from '@/types';
-import { router } from 'expo-router';
-import { useState } from 'react';
+import { Button } from "@/components/ui/Button";
+import { Card, CardContent } from "@/components/ui/Card";
+import { IconSymbol } from "@/components/ui/icon-symbol";
+import { ImageUpload } from "@/components/ui/ImageUpload";
+import { Input } from "@/components/ui/Input";
+import { AlertModal } from "@/components/ui/Modal";
+import { Colors } from "@/constants/theme";
+import { useColorScheme } from "@/hooks/use-color-scheme";
+import { VehicleService } from "@/lib/services/vehicleService";
+import { VehicleFormData } from "@/types";
+import { router } from "expo-router";
+import { useState } from "react";
 import {
-    KeyboardAvoidingView,
-    Platform,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function AddVehicleScreen() {
   const [formData, setFormData] = useState<VehicleFormData>({
-    make: '',
-    model: '',
+    make: "",
+    model: "",
     year: new Date().getFullYear(),
-    license_plate: '',
-    vin: '',
+    license_plate: "",
+    vin: "",
   });
-  const [imageUri, setImageUri] = useState<string>('');
-  const [vehicleId, setVehicleId] = useState<string>('');
+  const [imageUri, setImageUri] = useState<string>("");
+  const [vehicleId, setVehicleId] = useState<string>("");
   const [loading, setLoading] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [showErrorModal, setShowErrorModal] = useState(false);
-  const [errorMessage, setErrorMessage] = useState('');
+  const [errorMessage, setErrorMessage] = useState("");
   const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? 'light'];
-  const isWeb = Platform.OS === 'web';
+  const colors = Colors[colorScheme ?? "light"];
+  const isWeb = Platform.OS === "web";
 
   const handleSave = async () => {
     // Validation
     if (!formData.make.trim()) {
-      setErrorMessage('Please enter the vehicle make');
+      setErrorMessage("Please enter the vehicle make");
       setShowErrorModal(true);
       return;
     }
     if (!formData.model.trim()) {
-      setErrorMessage('Please enter the vehicle model');
+      setErrorMessage("Please enter the vehicle model");
       setShowErrorModal(true);
       return;
     }
     if (!formData.license_plate.trim()) {
-      setErrorMessage('Please enter the license plate');
+      setErrorMessage("Please enter the license plate");
       setShowErrorModal(true);
       return;
     }
     if (formData.year < 1900 || formData.year > new Date().getFullYear() + 2) {
-      setErrorMessage('Please enter a valid year');
+      setErrorMessage("Please enter a valid year");
       setShowErrorModal(true);
       return;
     }
@@ -75,7 +75,7 @@ export default function AddVehicleScreen() {
     const { error } = await VehicleService.createVehicle(
       vehicleData,
       undefined, // sharedGroupIds
-      imageUri || undefined // imageUri
+      imageUri || undefined, // imageUri
     );
     setLoading(false);
 
@@ -89,7 +89,7 @@ export default function AddVehicleScreen() {
 
   const handleSuccessModalClose = () => {
     setShowSuccessModal(false);
-    router.push('/(tabs)/vehicles');
+    router.push("/(tabs)/vehicles");
   };
 
   const handleImageUpload = (url: string) => {
@@ -102,31 +102,31 @@ export default function AddVehicleScreen() {
   };
 
   const validateMake = (value: string) => {
-    if (!value.trim()) return 'Make is required';
+    if (!value.trim()) return "Make is required";
     return undefined;
   };
 
   const validateModel = (value: string) => {
-    if (!value.trim()) return 'Model is required';
+    if (!value.trim()) return "Model is required";
     return undefined;
   };
 
   const validateYear = (value: string) => {
     const year = parseInt(value);
     if (isNaN(year) || year < 1900 || year > new Date().getFullYear() + 2) {
-      return 'Please enter a valid year';
+      return "Please enter a valid year";
     }
     return undefined;
   };
 
   const validateLicensePlate = (value: string) => {
-    if (!value.trim()) return 'License plate is required';
+    if (!value.trim()) return "License plate is required";
     return undefined;
   };
 
   const validateVin = (value: string) => {
     if (value && value.length !== 17) {
-      return 'VIN must be exactly 17 characters';
+      return "VIN must be exactly 17 characters";
     }
     return undefined;
   };
@@ -144,15 +144,15 @@ export default function AddVehicleScreen() {
   const styles = StyleSheet.create({
     container: {
       flex: 1,
-      backgroundColor: isWeb ? colors.icon + '08' : colors.background,
+      backgroundColor: isWeb ? colors.icon + "08" : colors.background,
     },
     header: {
-      flexDirection: 'row',
-      alignItems: 'center',
+      flexDirection: "row",
+      alignItems: "center",
       paddingHorizontal: 20,
       paddingVertical: 16,
       borderBottomWidth: 1,
-      borderBottomColor: colors.icon + '20',
+      borderBottomColor: colors.icon + "20",
       backgroundColor: colors.background,
     },
     backButton: {
@@ -161,7 +161,7 @@ export default function AddVehicleScreen() {
     },
     headerTitle: {
       fontSize: 24,
-      fontWeight: 'bold',
+      fontWeight: "bold",
       color: colors.text,
       flex: 1,
     },
@@ -173,25 +173,25 @@ export default function AddVehicleScreen() {
       paddingBottom: 100,
       ...(isWeb && {
         maxWidth: 600,
-        width: '100%',
-        alignSelf: 'center',
+        width: "100%",
+        alignSelf: "center",
       }),
     },
     title: {
       fontSize: 32,
-      fontWeight: 'bold',
+      fontWeight: "bold",
       color: colors.text,
       marginBottom: 8,
-      textAlign: isWeb ? 'center' : 'left',
+      textAlign: isWeb ? "center" : "left",
     },
     subtitle: {
       fontSize: 16,
       color: colors.icon,
       marginBottom: 32,
-      textAlign: isWeb ? 'center' : 'left',
+      textAlign: isWeb ? "center" : "left",
     },
     avatarContainer: {
-      alignItems: 'center',
+      alignItems: "center",
       marginBottom: 32,
     },
     avatarUpload: {
@@ -203,19 +203,19 @@ export default function AddVehicleScreen() {
       fontSize: 14,
       color: colors.icon,
       marginTop: 12,
-      textAlign: 'center',
+      textAlign: "center",
     },
     section: {
       marginBottom: 24,
     },
     sectionTitle: {
       fontSize: 18,
-      fontWeight: '600',
+      fontWeight: "600",
       color: colors.text,
       marginBottom: 16,
     },
     row: {
-      flexDirection: isWeb ? 'row' : 'column',
+      flexDirection: isWeb ? "row" : "column",
       gap: 16,
     },
     flex1: {
@@ -226,18 +226,18 @@ export default function AddVehicleScreen() {
       borderRadius: isWeb ? 16 : 12,
       padding: isWeb ? 32 : 20,
       ...(isWeb && {
-        shadowColor: colorScheme === 'dark' ? '#ffffff' : '#000000',
+        shadowColor: colorScheme === "dark" ? "#ffffff" : "#000000",
         shadowOffset: {
           width: 0,
           height: 4,
         },
-        shadowOpacity: colorScheme === 'dark' ? 0.1 : 0.08,
+        shadowOpacity: colorScheme === "dark" ? 0.1 : 0.08,
         shadowRadius: 12,
         elevation: 4,
       }),
     },
     buttonContainer: {
-      flexDirection: 'row',
+      flexDirection: "row",
       gap: 12,
       marginTop: 32,
     },
@@ -264,7 +264,7 @@ export default function AddVehicleScreen() {
       )}
 
       <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={styles.content}
       >
         <ScrollView
@@ -275,7 +275,9 @@ export default function AddVehicleScreen() {
           {isWeb && (
             <>
               <Text style={styles.title}>Add Vehicle</Text>
-              <Text style={styles.subtitle}>Add a new vehicle to your fleet</Text>
+              <Text style={styles.subtitle}>
+                Add a new vehicle to your fleet
+              </Text>
             </>
           )}
 
@@ -303,13 +305,15 @@ export default function AddVehicleScreen() {
                     label="Make"
                     value={formData.make}
                     onChangeText={(text) =>
-                      setFormData(prev => ({ ...prev, make: text }))
+                      setFormData((prev) => ({ ...prev, make: text }))
                     }
                     placeholder="Toyota"
                     autoCapitalize="words"
                     autoCorrect={false}
                     required
-                    error={formData.make ? validateMake(formData.make) : undefined}
+                    error={
+                      formData.make ? validateMake(formData.make) : undefined
+                    }
                     leftIcon="car"
                   />
                 </View>
@@ -319,13 +323,15 @@ export default function AddVehicleScreen() {
                     label="Model"
                     value={formData.model}
                     onChangeText={(text) =>
-                      setFormData(prev => ({ ...prev, model: text }))
+                      setFormData((prev) => ({ ...prev, model: text }))
                     }
                     placeholder="Camry"
                     autoCapitalize="words"
                     autoCorrect={false}
                     required
-                    error={formData.model ? validateModel(formData.model) : undefined}
+                    error={
+                      formData.model ? validateModel(formData.model) : undefined
+                    }
                   />
                 </View>
               </View>
@@ -335,13 +341,17 @@ export default function AddVehicleScreen() {
                 value={formData.year.toString()}
                 onChangeText={(text) => {
                   const year = parseInt(text) || new Date().getFullYear();
-                  setFormData(prev => ({ ...prev, year }));
+                  setFormData((prev) => ({ ...prev, year }));
                 }}
                 placeholder="2024"
                 keyboardType="numeric"
                 maxLength={4}
                 required
-                error={formData.year ? validateYear(formData.year.toString()) : undefined}
+                error={
+                  formData.year
+                    ? validateYear(formData.year.toString())
+                    : undefined
+                }
                 leftIcon="calendar"
               />
 
@@ -349,22 +359,29 @@ export default function AddVehicleScreen() {
                 label="License Plate"
                 value={formData.license_plate}
                 onChangeText={(text) =>
-                  setFormData(prev => ({ ...prev, license_plate: text.toUpperCase() }))
+                  setFormData((prev) => ({
+                    ...prev,
+                    license_plate: text.toUpperCase(),
+                  }))
                 }
                 placeholder="ABC123"
                 autoCapitalize="characters"
                 autoCorrect={false}
                 required
-                error={formData.license_plate ? validateLicensePlate(formData.license_plate) : undefined}
+                error={
+                  formData.license_plate
+                    ? validateLicensePlate(formData.license_plate)
+                    : undefined
+                }
                 helperText="Enter the license plate number as shown on your vehicle"
                 leftIcon="number"
               />
 
               <Input
                 label="VIN (Optional)"
-                value={formData.vin || ''}
+                value={formData.vin || ""}
                 onChangeText={(text) =>
-                  setFormData(prev => ({ ...prev, vin: text.toUpperCase() }))
+                  setFormData((prev) => ({ ...prev, vin: text.toUpperCase() }))
                 }
                 placeholder="1HGBH41JXMN109186"
                 autoCapitalize="characters"

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -10,27 +10,27 @@ import {
   StyleSheet,
   Alert,
   ActivityIndicator,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { router } from 'expo-router';
-import { ServiceTemplateFormData, ServiceItemFormData } from '@/types';
-import { VehicleService } from '@/lib/services/vehicleService';
-import { Colors } from '@/constants/theme';
-import { useColorScheme } from '@/hooks/use-color-scheme';
-import { IconSymbol } from '@/components/ui/icon-symbol';
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { router } from "expo-router";
+import { ServiceTemplateFormData, ServiceItemFormData } from "@/types";
+import { VehicleService } from "@/lib/services/vehicleService";
+import { Colors } from "@/constants/theme";
+import { useColorScheme } from "@/hooks/use-color-scheme";
+import { IconSymbol } from "@/components/ui/icon-symbol";
 
 export default function AddServiceScreen() {
   const [formData, setFormData] = useState<ServiceTemplateFormData>({
-    name: '',
-    description: '',
+    name: "",
+    description: "",
     items: [
-      { description: '', price: 0 },
-      { description: '', price: 0 },
+      { description: "", price: 0 },
+      { description: "", price: 0 },
     ],
   });
   const [loading, setLoading] = useState(false);
   const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? 'light'];
+  const colors = Colors[colorScheme ?? "light"];
 
   const calculateTotalCost = (items: ServiceItemFormData[]): number => {
     return items.reduce((total, item) => total + (item.price || 0), 0);
@@ -41,16 +41,16 @@ export default function AddServiceScreen() {
   const handleSave = async () => {
     // Validation
     if (!formData.name.trim()) {
-      Alert.alert('Error', 'Please enter a service name');
+      Alert.alert("Error", "Please enter a service name");
       return;
     }
 
-    const validItems = formData.items.filter(item =>
-      item.description.trim() && item.price > 0
+    const validItems = formData.items.filter(
+      (item) => item.description.trim() && item.price > 0,
     );
 
     if (validItems.length === 0) {
-      Alert.alert('Error', 'Please add at least one valid service item');
+      Alert.alert("Error", "Please add at least one valid service item");
       return;
     }
 
@@ -65,40 +65,44 @@ export default function AddServiceScreen() {
     setLoading(false);
 
     if (result.error) {
-      Alert.alert('Error', result.error);
+      Alert.alert("Error", result.error);
     } else {
-      Alert.alert('Success', 'Service template created successfully', [
+      Alert.alert("Success", "Service template created successfully", [
         {
-          text: 'OK',
+          text: "OK",
           onPress: () => router.back(),
         },
       ]);
     }
   };
 
-  const updateItem = (index: number, field: keyof ServiceItemFormData, value: string | number) => {
-    setFormData(prev => ({
+  const updateItem = (
+    index: number,
+    field: keyof ServiceItemFormData,
+    value: string | number,
+  ) => {
+    setFormData((prev) => ({
       ...prev,
       items: prev.items.map((item, i) =>
-        i === index ? { ...item, [field]: value } : item
+        i === index ? { ...item, [field]: value } : item,
       ),
     }));
   };
 
   const addItem = () => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      items: [...prev.items, { description: '', price: 0 }],
+      items: [...prev.items, { description: "", price: 0 }],
     }));
   };
 
   const removeItem = (index: number) => {
     if (formData.items.length <= 1) {
-      Alert.alert('Error', 'At least one service item is required');
+      Alert.alert("Error", "At least one service item is required");
       return;
     }
 
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
       items: prev.items.filter((_, i) => i !== index),
     }));
@@ -106,18 +110,22 @@ export default function AddServiceScreen() {
 
   const isFormValid = () => {
     const hasName = formData.name.trim().length > 0;
-    const hasValidItems = formData.items.some(item =>
-      item.description.trim() && item.price > 0
+    const hasValidItems = formData.items.some(
+      (item) => item.description.trim() && item.price > 0,
     );
     return hasName && hasValidItems;
   };
 
-  const ServiceItem = ({ item, index }: { item: ServiceItemFormData; index: number }) => (
+  const ServiceItem = ({
+    item,
+    index,
+  }: {
+    item: ServiceItemFormData;
+    index: number;
+  }) => (
     <View style={styles.serviceItem}>
       <View style={styles.serviceItemHeader}>
-        <Text style={styles.serviceItemTitle}>
-          Item {index + 1}
-        </Text>
+        <Text style={styles.serviceItemTitle}>Item {index + 1}</Text>
         {formData.items.length > 1 && (
           <TouchableOpacity
             style={styles.removeItemButton}
@@ -134,7 +142,7 @@ export default function AddServiceScreen() {
           <TextInput
             style={styles.serviceItemInput}
             value={item.description}
-            onChangeText={(text) => updateItem(index, 'description', text)}
+            onChangeText={(text) => updateItem(index, "description", text)}
             placeholder="e.g., Engine Oil (5L)"
             placeholderTextColor={colors.icon}
           />
@@ -144,10 +152,10 @@ export default function AddServiceScreen() {
           <Text style={styles.serviceItemLabel}>Price (RM)</Text>
           <TextInput
             style={styles.serviceItemInput}
-            value={item.price?.toString() || ''}
+            value={item.price?.toString() || ""}
             onChangeText={(text) => {
               const price = parseFloat(text) || 0;
-              updateItem(index, 'price', price);
+              updateItem(index, "price", price);
             }}
             placeholder="0.00"
             placeholderTextColor={colors.icon}
@@ -164,12 +172,12 @@ export default function AddServiceScreen() {
       backgroundColor: colors.background,
     },
     header: {
-      flexDirection: 'row',
-      alignItems: 'center',
+      flexDirection: "row",
+      alignItems: "center",
       paddingHorizontal: 20,
       paddingVertical: 16,
       borderBottomWidth: 1,
-      borderBottomColor: colors.icon + '20',
+      borderBottomColor: colors.icon + "20",
     },
     backButton: {
       marginRight: 16,
@@ -177,7 +185,7 @@ export default function AddServiceScreen() {
     },
     title: {
       fontSize: 24,
-      fontWeight: 'bold',
+      fontWeight: "bold",
       color: colors.text,
       flex: 1,
     },
@@ -186,17 +194,17 @@ export default function AddServiceScreen() {
       paddingHorizontal: 16,
       paddingVertical: 8,
       borderRadius: 8,
-      flexDirection: 'row',
-      alignItems: 'center',
+      flexDirection: "row",
+      alignItems: "center",
       gap: 6,
     },
     saveButtonDisabled: {
       opacity: 0.6,
     },
     saveButtonText: {
-      color: 'white',
+      color: "white",
       fontSize: 14,
-      fontWeight: '600',
+      fontWeight: "600",
     },
     content: {
       flex: 1,
@@ -209,7 +217,7 @@ export default function AddServiceScreen() {
       borderRadius: 12,
       padding: 20,
       borderWidth: 1,
-      borderColor: colors.icon + '20',
+      borderColor: colors.icon + "20",
       marginBottom: 20,
     },
     inputContainer: {
@@ -217,12 +225,12 @@ export default function AddServiceScreen() {
     },
     label: {
       fontSize: 16,
-      fontWeight: '500',
+      fontWeight: "500",
       color: colors.text,
       marginBottom: 8,
     },
     requiredLabel: {
-      color: '#ff4444',
+      color: "#ff4444",
     },
     input: {
       backgroundColor: colors.background,
@@ -236,34 +244,34 @@ export default function AddServiceScreen() {
     },
     textArea: {
       height: 80,
-      textAlignVertical: 'top',
+      textAlignVertical: "top",
     },
     itemsSection: {
       marginBottom: 20,
     },
     sectionTitle: {
       fontSize: 18,
-      fontWeight: '600',
+      fontWeight: "600",
       color: colors.text,
       marginBottom: 16,
     },
     serviceItem: {
       backgroundColor: colors.background,
       borderWidth: 1,
-      borderColor: colors.icon + '30',
+      borderColor: colors.icon + "30",
       borderRadius: 8,
       padding: 16,
       marginBottom: 12,
     },
     serviceItemHeader: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
       marginBottom: 12,
     },
     serviceItemTitle: {
       fontSize: 14,
-      fontWeight: '600',
+      fontWeight: "600",
       color: colors.text,
     },
     removeItemButton: {
@@ -280,14 +288,14 @@ export default function AddServiceScreen() {
     },
     serviceItemLabel: {
       fontSize: 14,
-      fontWeight: '500',
+      fontWeight: "500",
       color: colors.text,
       marginBottom: 6,
     },
     serviceItemInput: {
       backgroundColor: colors.background,
       borderWidth: 1,
-      borderColor: colors.icon + '50',
+      borderColor: colors.icon + "50",
       borderRadius: 6,
       paddingHorizontal: 12,
       paddingVertical: 8,
@@ -298,24 +306,24 @@ export default function AddServiceScreen() {
       backgroundColor: colors.background,
       borderWidth: 2,
       borderColor: colors.tint,
-      borderStyle: 'dashed',
+      borderStyle: "dashed",
       borderRadius: 8,
       padding: 16,
-      alignItems: 'center',
-      flexDirection: 'row',
-      justifyContent: 'center',
+      alignItems: "center",
+      flexDirection: "row",
+      justifyContent: "center",
       gap: 8,
     },
     addItemButtonText: {
       color: colors.tint,
       fontSize: 14,
-      fontWeight: '500',
+      fontWeight: "500",
     },
     totalSection: {
-      backgroundColor: colors.tint + '10',
+      backgroundColor: colors.tint + "10",
       borderRadius: 8,
       padding: 16,
-      alignItems: 'center',
+      alignItems: "center",
     },
     totalLabel: {
       fontSize: 14,
@@ -324,7 +332,7 @@ export default function AddServiceScreen() {
     },
     totalCost: {
       fontSize: 24,
-      fontWeight: 'bold',
+      fontWeight: "bold",
       color: colors.tint,
     },
     helpText: {
@@ -338,12 +346,18 @@ export default function AddServiceScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => router.back()}
+        >
           <IconSymbol name="chevron.left" size={24} color={colors.text} />
         </TouchableOpacity>
         <Text style={styles.title}>Create Service Template</Text>
         <TouchableOpacity
-          style={[styles.saveButton, (!isFormValid() || loading) && styles.saveButtonDisabled]}
+          style={[
+            styles.saveButton,
+            (!isFormValid() || loading) && styles.saveButtonDisabled,
+          ]}
           onPress={handleSave}
           disabled={!isFormValid() || loading}
         >
@@ -359,7 +373,7 @@ export default function AddServiceScreen() {
       </View>
 
       <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={styles.content}
       >
         <ScrollView
@@ -375,7 +389,9 @@ export default function AddServiceScreen() {
               <TextInput
                 style={styles.input}
                 value={formData.name}
-                onChangeText={(text) => setFormData(prev => ({ ...prev, name: text }))}
+                onChangeText={(text) =>
+                  setFormData((prev) => ({ ...prev, name: text }))
+                }
                 placeholder="e.g., Basic Oil Change"
                 placeholderTextColor={colors.icon}
               />
@@ -386,7 +402,9 @@ export default function AddServiceScreen() {
               <TextInput
                 style={[styles.input, styles.textArea]}
                 value={formData.description}
-                onChangeText={(text) => setFormData(prev => ({ ...prev, description: text }))}
+                onChangeText={(text) =>
+                  setFormData((prev) => ({ ...prev, description: text }))
+                }
                 placeholder="Optional description of the service..."
                 placeholderTextColor={colors.icon}
                 multiline

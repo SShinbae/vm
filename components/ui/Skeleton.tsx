@@ -1,13 +1,7 @@
-import React, { useEffect, useRef } from 'react';
-import {
-  View,
-  Animated,
-  StyleSheet,
-  ViewStyle,
-  Easing,
-} from 'react-native';
-import { Colors } from '@/constants/theme';
-import { useColorScheme } from '@/hooks/use-color-scheme';
+import React, { useEffect, useRef } from "react";
+import { View, Animated, StyleSheet, ViewStyle, Easing } from "react-native";
+import { Colors } from "@/constants/theme";
+import { useColorScheme } from "@/hooks/use-color-scheme";
 
 interface SkeletonProps {
   width?: number | string;
@@ -18,14 +12,14 @@ interface SkeletonProps {
 }
 
 export function Skeleton({
-  width = '100%',
+  width = "100%",
   height = 20,
   borderRadius = 4,
   style,
   animated = true,
 }: SkeletonProps) {
   const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? 'light'];
+  const colors = Colors[colorScheme ?? "light"];
   const animatedValue = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
@@ -45,7 +39,7 @@ export function Skeleton({
           easing: Easing.inOut(Easing.ease),
           useNativeDriver: false,
         }),
-      ])
+      ]),
     );
 
     animation.start();
@@ -56,9 +50,9 @@ export function Skeleton({
   const backgroundColor = animated
     ? animatedValue.interpolate({
         inputRange: [0, 1],
-        outputRange: [colors.icon + '20', colors.icon + '40'],
+        outputRange: [colors.icon + "20", colors.icon + "40"],
       })
-    : colors.icon + '20';
+    : colors.icon + "20";
 
   return (
     <Animated.View
@@ -102,7 +96,7 @@ export function SkeletonCard({
           {Array.from({ length: lines }).map((_, index) => (
             <Skeleton
               key={index}
-              width={index === lines - 1 ? '70%' : '100%'}
+              width={index === lines - 1 ? "70%" : "100%"}
               height={14}
               style={{ marginBottom: 8 }}
             />
@@ -146,12 +140,7 @@ export function SkeletonButton({
   style?: ViewStyle;
 }) {
   return (
-    <Skeleton
-      width={width}
-      height={height}
-      borderRadius={8}
-      style={style}
-    />
+    <Skeleton width={width} height={height} borderRadius={8} style={style} />
   );
 }
 
@@ -166,10 +155,12 @@ export function SkeletonHeader({
 }) {
   return (
     <View style={[styles.header, style]}>
-      {showBackButton && (
-        <Skeleton width={24} height={24} borderRadius={4} />
-      )}
-      <Skeleton width="40%" height={24} style={{ marginLeft: showBackButton ? 16 : 0 }} />
+      {showBackButton && <Skeleton width={24} height={24} borderRadius={4} />}
+      <Skeleton
+        width="40%"
+        height={24}
+        style={{ marginLeft: showBackButton ? 16 : 0 }}
+      />
       <View style={styles.spacer} />
       {showActions && (
         <View style={styles.headerActions}>
@@ -206,14 +197,14 @@ const styles = StyleSheet.create({
   card: {
     borderRadius: 12,
     padding: 16,
-    backgroundColor: 'transparent',
+    backgroundColor: "transparent",
   },
   cardContent: {
     // Card content container
   },
   avatarRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginBottom: 12,
   },
   avatarText: {
@@ -227,8 +218,8 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     paddingHorizontal: 20,
     paddingVertical: 16,
   },
@@ -236,15 +227,15 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   headerActions: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: 8,
   },
   stats: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
+    flexDirection: "row",
+    justifyContent: "space-around",
     paddingVertical: 16,
   },
   statItem: {
-    alignItems: 'center',
+    alignItems: "center",
   },
 });

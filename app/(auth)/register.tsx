@@ -1,8 +1,8 @@
-import { Colors } from '@/constants/theme';
-import { useColorScheme } from '@/hooks/use-color-scheme';
-import { useAuth } from '@/lib/contexts/AuthContext';
-import { Link, router } from 'expo-router';
-import React, { useState } from 'react';
+import { Colors } from "@/constants/theme";
+import { useColorScheme } from "@/hooks/use-color-scheme";
+import { useAuth } from "@/lib/contexts/AuthContext";
+import { Link, router } from "expo-router";
+import React, { useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -15,17 +15,17 @@ import {
   TextInput,
   TouchableOpacity,
   View,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { withWebAlert } from '@/components/ui';
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { withWebAlert } from "@/components/ui";
 
-const { width: screenWidth } = Dimensions.get('window');
+const { width: screenWidth } = Dimensions.get("window");
 
 function RegisterScreen() {
-  const [fullName, setFullName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+  const [fullName, setFullName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [fullNameFocused, setFullNameFocused] = useState(false);
   const [emailFocused, setEmailFocused] = useState(false);
@@ -34,31 +34,31 @@ function RegisterScreen() {
   const [agreeToTerms, setAgreeToTerms] = useState(false);
   const { signUp } = useAuth();
   const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? 'light'];
+  const colors = Colors[colorScheme ?? "light"];
 
   const validateForm = () => {
     if (!fullName.trim()) {
-      Alert.alert('Error', 'Please enter your full name');
+      Alert.alert("Error", "Please enter your full name");
       return false;
     }
     if (!email.trim()) {
-      Alert.alert('Error', 'Please enter your email');
+      Alert.alert("Error", "Please enter your email");
       return false;
     }
-    if (!email.includes('@')) {
-      Alert.alert('Error', 'Please enter a valid email address');
+    if (!email.includes("@")) {
+      Alert.alert("Error", "Please enter a valid email address");
       return false;
     }
     if (password.length < 6) {
-      Alert.alert('Error', 'Password must be at least 6 characters long');
+      Alert.alert("Error", "Password must be at least 6 characters long");
       return false;
     }
     if (password !== confirmPassword) {
-      Alert.alert('Error', 'Passwords do not match');
+      Alert.alert("Error", "Passwords do not match");
       return false;
     }
     if (!agreeToTerms) {
-      Alert.alert('Error', 'Please agree to the Terms of Service');
+      Alert.alert("Error", "Please agree to the Terms of Service");
       return false;
     }
     return true;
@@ -69,38 +69,56 @@ function RegisterScreen() {
       return;
     }
 
-    console.log('=== REGISTRATION FLOW DEBUG ===');
-    console.log('Starting registration for:', email.trim().toLowerCase());
+    console.log("=== REGISTRATION FLOW DEBUG ===");
+    console.log("Starting registration for:", email.trim().toLowerCase());
 
     setLoading(true);
-    const { error } = await signUp(email.trim().toLowerCase(), password, fullName.trim());
+    const { error } = await signUp(
+      email.trim().toLowerCase(),
+      password,
+      fullName.trim(),
+    );
     setLoading(false);
 
     if (error) {
-      console.error('Registration failed with error:', error);
-      Alert.alert('Registration Failed', error);
+      console.error("Registration failed with error:", error);
+      Alert.alert("Registration Failed", error);
     } else {
-      console.log('Registration successful, redirecting to email confirmation page...');
+      console.log(
+        "Registration successful, redirecting to email confirmation page...",
+      );
       router.replace({
-        pathname: '/(auth)/email-confirmation',
-        params: { email: email.trim().toLowerCase() }
+        pathname: "/(auth)/email-confirmation",
+        params: { email: email.trim().toLowerCase() },
       });
     }
   };
 
   const isFormValid = () => {
-    return fullName.trim() && email.trim() && password.length >= 6 && password === confirmPassword && agreeToTerms;
+    return (
+      fullName.trim() &&
+      email.trim() &&
+      password.length >= 6 &&
+      password === confirmPassword &&
+      agreeToTerms
+    );
   };
 
   const getPasswordStrength = () => {
     if (password.length === 0) return null;
-    if (password.length < 6) return { text: 'Too short', style: styles.passwordWeak };
-    if (password.length < 8) return { text: 'Weak', style: styles.passwordWeak };
-    if (password.length < 12 && /(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(password)) {
-      return { text: 'Strong', style: styles.passwordStrong };
+    if (password.length < 6)
+      return { text: "Too short", style: styles.passwordWeak };
+    if (password.length < 8)
+      return { text: "Weak", style: styles.passwordWeak };
+    if (
+      password.length < 12 &&
+      /(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(password)
+    ) {
+      return { text: "Strong", style: styles.passwordStrong };
     }
-    if (password.length >= 8) return { text: 'Good', style: styles.passwordMedium };
-    return { text: 'Weak', style: styles.passwordWeak };
+    if (password.length >= 8)
+      return { text: "Good", style: styles.passwordMedium };
+    return { text: "Weak", style: styles.passwordWeak };
   };
 
   const styles = StyleSheet.create({
@@ -114,31 +132,31 @@ function RegisterScreen() {
     },
     content: {
       paddingHorizontal: 20,
-      maxWidth: screenWidth > 600 ? 400 : '100%',
-      alignSelf: 'center',
-      width: '100%',
+      maxWidth: screenWidth > 600 ? 400 : "100%",
+      alignSelf: "center",
+      width: "100%",
     },
     logoContainer: {
-      alignItems: 'center',
+      alignItems: "center",
       marginBottom: 32,
     },
     logo: {
       fontSize: 48,
-      fontWeight: 'bold',
+      fontWeight: "bold",
       color: colors.facebook?.primary || colors.tint,
       marginBottom: 8,
     },
     title: {
       fontSize: 24,
-      fontWeight: 'bold',
+      fontWeight: "bold",
       color: colors.text,
-      textAlign: 'center',
+      textAlign: "center",
       marginBottom: 8,
     },
     subtitle: {
       fontSize: 16,
       color: colors.facebook?.gray || colors.icon,
-      textAlign: 'center',
+      textAlign: "center",
       marginBottom: 32,
       lineHeight: 22,
     },
@@ -146,7 +164,7 @@ function RegisterScreen() {
       backgroundColor: colors.facebook?.card || colors.background,
       borderRadius: 12,
       padding: 24,
-      shadowColor: '#000',
+      shadowColor: "#000",
       shadowOffset: {
         width: 0,
         height: 2,
@@ -181,17 +199,17 @@ function RegisterScreen() {
       marginLeft: 4,
     },
     passwordWeak: {
-      color: colors.facebook?.error || '#F02849',
+      color: colors.facebook?.error || "#F02849",
     },
     passwordMedium: {
-      color: '#FFA500',
+      color: "#FFA500",
     },
     passwordStrong: {
       color: colors.facebook?.success || colors.facebook?.secondary,
     },
     checkboxContainer: {
-      flexDirection: 'row',
-      alignItems: 'flex-start',
+      flexDirection: "row",
+      alignItems: "flex-start",
       marginBottom: 20,
       paddingHorizontal: 4,
     },
@@ -203,8 +221,8 @@ function RegisterScreen() {
       borderRadius: 4,
       marginRight: 12,
       marginTop: 2,
-      alignItems: 'center',
-      justifyContent: 'center',
+      alignItems: "center",
+      justifyContent: "center",
     },
     checkboxChecked: {
       backgroundColor: colors.facebook?.primary || colors.tint,
@@ -218,16 +236,18 @@ function RegisterScreen() {
     },
     termsLink: {
       color: colors.facebook?.primary || colors.tint,
-      textDecorationLine: 'underline',
+      textDecorationLine: "underline",
     },
     button: {
-      backgroundColor: colors.facebook?.secondary || colors.facebook?.primary || colors.tint,
+      backgroundColor:
+        colors.facebook?.secondary || colors.facebook?.primary || colors.tint,
       borderRadius: 8,
       paddingVertical: 16,
-      alignItems: 'center',
+      alignItems: "center",
       marginBottom: 16,
       minHeight: 52,
-      shadowColor: colors.facebook?.secondary || colors.facebook?.primary || colors.tint,
+      shadowColor:
+        colors.facebook?.secondary || colors.facebook?.primary || colors.tint,
       shadowOffset: {
         width: 0,
         height: 2,
@@ -242,13 +262,13 @@ function RegisterScreen() {
       elevation: 0,
     },
     buttonText: {
-      color: '#FFFFFF',
+      color: "#FFFFFF",
       fontSize: 16,
-      fontWeight: '600',
+      fontWeight: "600",
     },
     dividerContainer: {
-      flexDirection: 'row',
-      alignItems: 'center',
+      flexDirection: "row",
+      alignItems: "center",
       marginBottom: 24,
     },
     dividerLine: {
@@ -260,14 +280,14 @@ function RegisterScreen() {
       color: colors.facebook?.gray || colors.icon,
       fontSize: 14,
       marginHorizontal: 16,
-      fontWeight: '500',
+      fontWeight: "500",
     },
     signinContainer: {
-      alignItems: 'center',
+      alignItems: "center",
       backgroundColor: colors.facebook?.card || colors.background,
       borderRadius: 12,
       padding: 20,
-      shadowColor: '#000',
+      shadowColor: "#000",
       shadowOffset: {
         width: 0,
         height: 1,
@@ -280,10 +300,10 @@ function RegisterScreen() {
       color: colors.facebook?.gray || colors.icon,
       fontSize: 14,
       marginBottom: 16,
-      textAlign: 'center',
+      textAlign: "center",
     },
     signinButton: {
-      backgroundColor: 'transparent',
+      backgroundColor: "transparent",
       borderWidth: 1,
       borderColor: colors.facebook?.primary || colors.tint,
       borderRadius: 8,
@@ -294,7 +314,7 @@ function RegisterScreen() {
     signinButtonText: {
       color: colors.facebook?.primary || colors.tint,
       fontSize: 14,
-      fontWeight: '600',
+      fontWeight: "600",
     },
   });
 
@@ -303,7 +323,7 @@ function RegisterScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={styles.container}
       >
         <ScrollView
@@ -316,7 +336,8 @@ function RegisterScreen() {
               <Text style={styles.logo}>Vehicle Management</Text>
               <Text style={styles.title}>Create a new account</Text>
               <Text style={styles.subtitle}>
-                Join Vehicle Management and start managing your vehicles with ease. Connect with other vehicle enthusiasts.
+                Join Vehicle Management and start managing your vehicles with
+                ease. Connect with other vehicle enthusiasts.
               </Text>
             </View>
 
@@ -324,14 +345,13 @@ function RegisterScreen() {
             <View style={styles.card}>
               <View style={styles.inputContainer}>
                 <TextInput
-                  style={[
-                    styles.input,
-                    fullNameFocused && styles.inputFocused,
-                  ]}
+                  style={[styles.input, fullNameFocused && styles.inputFocused]}
                   value={fullName}
                   onChangeText={setFullName}
                   placeholder="Full name"
-                  placeholderTextColor={colors.facebook?.placeholder || colors.icon}
+                  placeholderTextColor={
+                    colors.facebook?.placeholder || colors.icon
+                  }
                   autoCapitalize="words"
                   autoCorrect={false}
                   onFocus={() => setFullNameFocused(true)}
@@ -341,14 +361,13 @@ function RegisterScreen() {
 
               <View style={styles.inputContainer}>
                 <TextInput
-                  style={[
-                    styles.input,
-                    emailFocused && styles.inputFocused,
-                  ]}
+                  style={[styles.input, emailFocused && styles.inputFocused]}
                   value={email}
                   onChangeText={setEmail}
                   placeholder="Email address"
-                  placeholderTextColor={colors.facebook?.placeholder || colors.icon}
+                  placeholderTextColor={
+                    colors.facebook?.placeholder || colors.icon
+                  }
                   keyboardType="email-address"
                   autoCapitalize="none"
                   autoCorrect={false}
@@ -359,14 +378,13 @@ function RegisterScreen() {
 
               <View style={styles.inputContainer}>
                 <TextInput
-                  style={[
-                    styles.input,
-                    passwordFocused && styles.inputFocused,
-                  ]}
+                  style={[styles.input, passwordFocused && styles.inputFocused]}
                   value={password}
                   onChangeText={setPassword}
                   placeholder="Password"
-                  placeholderTextColor={colors.facebook?.placeholder || colors.icon}
+                  placeholderTextColor={
+                    colors.facebook?.placeholder || colors.icon
+                  }
                   secureTextEntry
                   autoCapitalize="none"
                   autoCorrect={false}
@@ -374,7 +392,9 @@ function RegisterScreen() {
                   onBlur={() => setPasswordFocused(false)}
                 />
                 {passwordStrength && (
-                  <Text style={[styles.passwordStrength, passwordStrength.style]}>
+                  <Text
+                    style={[styles.passwordStrength, passwordStrength.style]}
+                  >
                     {passwordStrength.text}
                   </Text>
                 )}
@@ -389,7 +409,9 @@ function RegisterScreen() {
                   value={confirmPassword}
                   onChangeText={setConfirmPassword}
                   placeholder="Confirm password"
-                  placeholderTextColor={colors.facebook?.placeholder || colors.icon}
+                  placeholderTextColor={
+                    colors.facebook?.placeholder || colors.icon
+                  }
                   secureTextEntry
                   autoCapitalize="none"
                   autoCorrect={false}
@@ -403,21 +425,37 @@ function RegisterScreen() {
                 style={styles.checkboxContainer}
                 onPress={() => setAgreeToTerms(!agreeToTerms)}
               >
-                <View style={[styles.checkbox, agreeToTerms && styles.checkboxChecked]}>
+                <View
+                  style={[
+                    styles.checkbox,
+                    agreeToTerms && styles.checkboxChecked,
+                  ]}
+                >
                   {agreeToTerms && (
-                    <Text style={{ color: '#FFFFFF', fontSize: 12, fontWeight: 'bold' }}>✓</Text>
+                    <Text
+                      style={{
+                        color: "#FFFFFF",
+                        fontSize: 12,
+                        fontWeight: "bold",
+                      }}
+                    >
+                      ✓
+                    </Text>
                   )}
                 </View>
                 <Text style={styles.checkboxText}>
-                  By clicking Sign Up, you agree to our{' '}
-                  <Text style={styles.termsLink}>Terms</Text>,{' '}
-                  <Text style={styles.termsLink}>Privacy Policy</Text> and{' '}
+                  By clicking Sign Up, you agree to our{" "}
+                  <Text style={styles.termsLink}>Terms</Text>,{" "}
+                  <Text style={styles.termsLink}>Privacy Policy</Text> and{" "}
                   <Text style={styles.termsLink}>Cookies Policy</Text>.
                 </Text>
               </TouchableOpacity>
 
               <TouchableOpacity
-                style={[styles.button, (!isFormValid() || loading) && styles.buttonDisabled]}
+                style={[
+                  styles.button,
+                  (!isFormValid() || loading) && styles.buttonDisabled,
+                ]}
                 onPress={handleSignUp}
                 disabled={!isFormValid() || loading}
               >

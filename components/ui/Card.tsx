@@ -1,82 +1,84 @@
-import React from 'react';
+import React from "react";
 import {
   View,
   StyleSheet,
   ViewStyle,
   TouchableOpacity,
   TouchableOpacityProps,
-} from 'react-native';
-import { Colors } from '@/constants/theme';
-import { useColorScheme } from '@/hooks/use-color-scheme';
+} from "react-native";
+import { Colors } from "@/constants/theme";
+import { useColorScheme } from "@/hooks/use-color-scheme";
 
 interface CardProps {
   children: React.ReactNode;
   style?: ViewStyle;
-  variant?: 'default' | 'elevated' | 'outlined' | 'filled';
-  padding?: 'none' | 'small' | 'medium' | 'large';
+  variant?: "default" | "elevated" | "outlined" | "filled";
+  padding?: "none" | "small" | "medium" | "large";
   onPress?: () => void;
   disabled?: boolean;
 }
 
-interface TouchableCardProps extends CardProps, Omit<TouchableOpacityProps, 'style' | 'children'> {}
+interface TouchableCardProps
+  extends CardProps,
+    Omit<TouchableOpacityProps, "style" | "children"> {}
 
 export function Card({
   children,
   style,
-  variant = 'default',
-  padding = 'medium',
+  variant = "default",
+  padding = "medium",
   onPress,
   disabled = false,
 }: CardProps | TouchableCardProps) {
   const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? 'light'];
+  const colors = Colors[colorScheme ?? "light"];
 
   const getCardStyle = (): ViewStyle[] => {
     const baseStyle = [styles.card];
 
     // Variant styles
     switch (variant) {
-      case 'elevated':
+      case "elevated":
         baseStyle.push({
           backgroundColor: colors.background,
           elevation: 4,
-          shadowColor: '#000',
+          shadowColor: "#000",
           shadowOffset: { width: 0, height: 2 },
           shadowOpacity: 0.1,
           shadowRadius: 4,
           borderWidth: 0,
         });
         break;
-      case 'outlined':
+      case "outlined":
         baseStyle.push({
           backgroundColor: colors.background,
           borderWidth: 1,
-          borderColor: colors.icon + '30',
+          borderColor: colors.icon + "30",
         });
         break;
-      case 'filled':
+      case "filled":
         baseStyle.push({
-          backgroundColor: colors.icon + '05',
+          backgroundColor: colors.icon + "05",
           borderWidth: 1,
-          borderColor: colors.icon + '10',
+          borderColor: colors.icon + "10",
         });
         break;
       default:
         baseStyle.push({
           backgroundColor: colors.background,
           borderWidth: 1,
-          borderColor: colors.icon + '20',
+          borderColor: colors.icon + "20",
         });
     }
 
     // Padding styles
     switch (padding) {
-      case 'none':
+      case "none":
         break;
-      case 'small':
+      case "small":
         baseStyle.push(styles.paddingSmall);
         break;
-      case 'large':
+      case "large":
         baseStyle.push(styles.paddingLarge);
         break;
       default:
@@ -120,11 +122,7 @@ export function CardHeader({
   children: React.ReactNode;
   style?: ViewStyle;
 }) {
-  return (
-    <View style={[styles.header, style]}>
-      {children}
-    </View>
-  );
+  return <View style={[styles.header, style]}>{children}</View>;
 }
 
 // Content component for cards
@@ -135,11 +133,7 @@ export function CardContent({
   children: React.ReactNode;
   style?: ViewStyle;
 }) {
-  return (
-    <View style={[styles.content, style]}>
-      {children}
-    </View>
-  );
+  return <View style={[styles.content, style]}>{children}</View>;
 }
 
 // Footer component for cards
@@ -151,10 +145,12 @@ export function CardFooter({
   style?: ViewStyle;
 }) {
   const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? 'light'];
+  const colors = Colors[colorScheme ?? "light"];
 
   return (
-    <View style={[styles.footer, { borderTopColor: colors.icon + '10' }, style]}>
+    <View
+      style={[styles.footer, { borderTopColor: colors.icon + "10" }, style]}
+    >
       {children}
     </View>
   );
@@ -163,7 +159,7 @@ export function CardFooter({
 const styles = StyleSheet.create({
   card: {
     borderRadius: 12,
-    overflow: 'hidden',
+    overflow: "hidden",
   },
   paddingSmall: {
     padding: 12,

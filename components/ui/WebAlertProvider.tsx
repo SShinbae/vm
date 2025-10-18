@@ -1,6 +1,10 @@
-import React from 'react';
-import { AlertModal, ConfirmModal } from './Modal';
-import { useWebAlert, WebAlertState, WebConfirmState } from '@/hooks/use-web-alert';
+import React from "react";
+import { AlertModal, ConfirmModal } from "./Modal";
+import {
+  useWebAlert,
+  WebAlertState,
+  WebConfirmState,
+} from "@/hooks/use-web-alert";
 
 interface WebAlertProviderProps {
   children: React.ReactNode;
@@ -61,7 +65,9 @@ export function useAlert() {
 }
 
 // Component wrapper that provides alert functionality
-export function withWebAlert<P extends object>(Component: React.ComponentType<P>) {
+export function withWebAlert<P extends object>(
+  Component: React.ComponentType<P>,
+) {
   return function WrappedComponent(props: P) {
     const webAlert = useWebAlert();
 

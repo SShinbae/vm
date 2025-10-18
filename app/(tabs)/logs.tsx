@@ -1,17 +1,24 @@
-import { IconSymbol } from '@/components/ui/icon-symbol';
-import { AlertModal, ConfirmModal } from '@/components/ui/Modal';
-import { ServiceReceiptIndicator } from '@/components/ui/ReceiptViewer';
-import { Colors } from '@/constants/theme';
-import { useColorScheme } from '@/hooks/use-color-scheme';
-import { FuelLogService, MileageLogService, ServiceLogService } from '@/lib/services/loggingService';
-import { safePromiseAll, isFulfilled } from '@/lib/utils/networkUtils';
-import { formatDate } from '@/lib/utils/dateUtils';
-import { canUserAccessVehicle, formatServiceItems } from '@/lib/utils/serviceUtils';
-import { supabase } from '@/services/supabaseClient';
-import { FuelLog, MileageLog, ServiceLog } from '@/types';
-import { useFocusEffect } from '@react-navigation/native';
-import { router } from 'expo-router';
-import React, { useCallback, useEffect, useState } from 'react';
+import { IconSymbol } from "@/components/ui/icon-symbol";
+import { AlertModal, ConfirmModal } from "@/components/ui/Modal";
+import { ServiceReceiptIndicator } from "@/components/ui/ReceiptViewer";
+import { Colors } from "@/constants/theme";
+import { useColorScheme } from "@/hooks/use-color-scheme";
+import {
+  FuelLogService,
+  MileageLogService,
+  ServiceLogService,
+} from "@/lib/services/loggingService";
+import { safePromiseAll, isFulfilled } from "@/lib/utils/networkUtils";
+import { formatDate } from "@/lib/utils/dateUtils";
+import {
+  canUserAccessVehicle,
+  formatServiceItems,
+} from "@/lib/utils/serviceUtils";
+import { supabase } from "@/services/supabaseClient";
+import { FuelLog, MileageLog, ServiceLog } from "@/types";
+import { useFocusEffect } from "@react-navigation/native";
+import { router } from "expo-router";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
   RefreshControl,
@@ -20,14 +27,14 @@ import {
   Text,
   TouchableOpacity,
   View,
-} from 'react-native';
-import { Image } from 'expo-image';
-import { SafeAreaView } from 'react-native-safe-area-context';
+} from "react-native";
+import { Image } from "expo-image";
+import { SafeAreaView } from "react-native-safe-area-context";
 
-type LogType = 'mileage' | 'fuel' | 'service';
+type LogType = "mileage" | "fuel" | "service";
 
 export default function LogsScreen() {
-  const [activeTab, setActiveTab] = useState<LogType>('mileage');
+  const [activeTab, setActiveTab] = useState<LogType>("mileage");
   const [mileageLogs, setMileageLogs] = useState<MileageLog[]>([]);
   const [fuelLogs, setFuelLogs] = useState<FuelLog[]>([]);
   const [serviceLogs, setServiceLogs] = useState<ServiceLog[]>([]);
@@ -37,25 +44,34 @@ export default function LogsScreen() {
   // Modal states
   const [deleteModalVisible, setDeleteModalVisible] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
-  const [selectedLog, setSelectedLog] = useState<{type: LogType, id: string, description: string} | null>(null);
+  const [selectedLog, setSelectedLog] = useState<{
+    type: LogType;
+    id: string;
+    description: string;
+  } | null>(null);
   const [alertModalVisible, setAlertModalVisible] = useState(false);
-  const [alertMessage, setAlertMessage] = useState('');
-  const [alertTitle, setAlertTitle] = useState('');
-  const [alertVariant, setAlertVariant] = useState<'info' | 'success' | 'warning' | 'error'>('info');
+  const [alertMessage, setAlertMessage] = useState("");
+  const [alertTitle, setAlertTitle] = useState("");
+  const [alertVariant, setAlertVariant] = useState<
+    "info" | "success" | "warning" | "error"
+  >("info");
 
   const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? 'light'];
+  const colors = Colors[colorScheme ?? "light"];
 
   // Helper function to check if user can modify a log
   const canUserModifyLog = async (log: any): Promise<boolean> => {
     try {
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      const {
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser();
       if (userError || !user) return false;
 
       // Use the standardized permission function
       return await canUserAccessVehicle(log.vehicle_id, user.id);
     } catch (error) {
-      console.error('Error checking modify permission:', error);
+      console.error("Error checking modify permission:", error);
       return false;
     }
   };
@@ -63,11 +79,14 @@ export default function LogsScreen() {
   const fetchAllLogs = useCallback(async () => {
     try {
       // Use network utility for safe promise handling with timeout protection
-      const results = await safePromiseAll([
-        MileageLogService.getMileageLogs(),
-        FuelLogService.getFuelLogs(),
-        ServiceLogService.getServiceLogs(),
-      ], 8000);
+      const results = await safePromiseAll(
+        [
+          MileageLogService.getMileageLogs(),
+          FuelLogService.getFuelLogs(),
+          ServiceLogService.getServiceLogs(),
+        ],
+        8000,
+      );
 
       // Process results individually using utility type guards
       const [mileageResult, fuelResult, serviceResult] = results;
@@ -75,26 +94,38 @@ export default function LogsScreen() {
       if (isFulfilled(mileageResult) && mileageResult.value.data) {
         setMileageLogs(mileageResult.value.data);
       } else {
-        console.warn('Failed to fetch mileage logs:', mileageResult.status === 'rejected' ? mileageResult.reason : 'No data');
+        console.warn(
+          "Failed to fetch mileage logs:",
+          mileageResult.status === "rejected"
+            ? mileageResult.reason
+            : "No data",
+        );
         setMileageLogs([]);
       }
 
       if (isFulfilled(fuelResult) && fuelResult.value.data) {
         setFuelLogs(fuelResult.value.data);
       } else {
-        console.warn('Failed to fetch fuel logs:', fuelResult.status === 'rejected' ? fuelResult.reason : 'No data');
+        console.warn(
+          "Failed to fetch fuel logs:",
+          fuelResult.status === "rejected" ? fuelResult.reason : "No data",
+        );
         setFuelLogs([]);
       }
 
       if (isFulfilled(serviceResult) && serviceResult.value.data) {
         setServiceLogs(serviceResult.value.data);
       } else {
-        console.warn('Failed to fetch service logs:', serviceResult.status === 'rejected' ? serviceResult.reason : 'No data');
+        console.warn(
+          "Failed to fetch service logs:",
+          serviceResult.status === "rejected"
+            ? serviceResult.reason
+            : "No data",
+        );
         setServiceLogs([]);
       }
-
     } catch (error) {
-      console.error('Error fetching logs:', error);
+      console.error("Error fetching logs:", error);
       // Set empty arrays on error to prevent infinite loading
       setMileageLogs([]);
       setFuelLogs([]);
@@ -122,13 +153,13 @@ export default function LogsScreen() {
 
     let result;
     switch (selectedLog.type) {
-      case 'mileage':
+      case "mileage":
         result = await MileageLogService.deleteMileageLog(selectedLog.id);
         break;
-      case 'fuel':
+      case "fuel":
         result = await FuelLogService.deleteFuelLog(selectedLog.id);
         break;
-      case 'service':
+      case "service":
         result = await ServiceLogService.deleteServiceLog(selectedLog.id);
         break;
     }
@@ -141,37 +172,58 @@ export default function LogsScreen() {
 
       // Provide more specific error messages based on the error content
       let errorMessage = result.error;
-      if (result.error.includes('not found') || result.error.includes('Log not found')) {
+      if (
+        result.error.includes("not found") ||
+        result.error.includes("Log not found")
+      ) {
         errorMessage = `This ${selectedLog.type} log no longer exists. It may have been deleted by another user.`;
-      } else if (result.error === 'PERMISSION_DENIED_SHARED_VEHICLE') {
+      } else if (result.error === "PERMISSION_DENIED_SHARED_VEHICLE") {
         errorMessage = `This ${selectedLog.type} log belongs to a shared vehicle. You can view it but cannot modify or delete it.`;
-      } else if (result.error === 'PERMISSION_DENIED_ACCESS') {
+      } else if (result.error === "PERMISSION_DENIED_ACCESS") {
         errorMessage = `You do not have permission to delete this ${selectedLog.type} log.`;
-      } else if (result.error.includes('Access denied') || result.error.includes('not authenticated')) {
+      } else if (
+        result.error.includes("Access denied") ||
+        result.error.includes("not authenticated")
+      ) {
         errorMessage = `You do not have permission to delete this ${selectedLog.type} log.`;
-      } else if (result.error.includes('Failed to delete')) {
+      } else if (result.error.includes("Failed to delete")) {
         errorMessage = `Unable to delete ${selectedLog.type} log. Please check your internet connection and try again.`;
       }
 
-      showAlert('Error', errorMessage, 'error');
+      showAlert("Error", errorMessage, "error");
 
       // Refresh the logs to ensure UI is in sync with actual state
       await fetchAllLogs();
     } else if (result?.data === true) {
       // Only show success if the deletion actually succeeded
       await fetchAllLogs();
-      showAlert('Success', `${selectedLog.type} log deleted successfully`, 'success');
+      showAlert(
+        "Success",
+        `${selectedLog.type} log deleted successfully`,
+        "success",
+      );
     } else {
       // Handle unexpected response (not error, but not successful either)
-      console.warn(`Unexpected response when deleting ${selectedLog.type} log:`, result);
-      showAlert('Warning', `${selectedLog.type} log deletion status unclear. Please refresh to see current state.`, 'warning');
+      console.warn(
+        `Unexpected response when deleting ${selectedLog.type} log:`,
+        result,
+      );
+      showAlert(
+        "Warning",
+        `${selectedLog.type} log deletion status unclear. Please refresh to see current state.`,
+        "warning",
+      );
       await fetchAllLogs();
     }
 
     setSelectedLog(null);
   };
 
-  const showAlert = (title: string, message: string, variant: 'info' | 'success' | 'warning' | 'error' = 'info') => {
+  const showAlert = (
+    title: string,
+    message: string,
+    variant: "info" | "success" | "warning" | "error" = "info",
+  ) => {
     setAlertTitle(title);
     setAlertMessage(message);
     setAlertVariant(variant);
@@ -184,13 +236,13 @@ export default function LogsScreen() {
 
   const handleEditLog = (type: LogType, id: string) => {
     switch (type) {
-      case 'mileage':
+      case "mileage":
         router.push(`/logs/mileage/${id}/edit` as any);
         break;
-      case 'fuel':
+      case "fuel":
         router.push(`/logs/fuel/${id}/edit` as any);
         break;
-      case 'service':
+      case "service":
         router.push(`/logs/service/${id}/edit` as any);
         break;
     }
@@ -199,26 +251,37 @@ export default function LogsScreen() {
   useFocusEffect(
     useCallback(() => {
       fetchAllLogs();
-    }, [fetchAllLogs])
+    }, [fetchAllLogs]),
   );
 
-  const TabButton = ({ type, label, icon }: { type: LogType; label: string; icon: string }) => (
+  const TabButton = ({
+    type,
+    label,
+    icon,
+  }: {
+    type: LogType;
+    label: string;
+    icon: string;
+  }) => (
     <TouchableOpacity
       style={[
         styles.tabButton,
-        activeTab === type && { backgroundColor: colors.tint, borderColor: colors.tint },
+        activeTab === type && {
+          backgroundColor: colors.tint,
+          borderColor: colors.tint,
+        },
       ]}
       onPress={() => setActiveTab(type)}
     >
       <IconSymbol
         name={icon}
         size={20}
-        color={activeTab === type ? 'white' : colors.icon}
+        color={activeTab === type ? "white" : colors.icon}
       />
       <Text
         style={[
           styles.tabButtonText,
-          { color: activeTab === type ? 'white' : colors.icon },
+          { color: activeTab === type ? "white" : colors.icon },
         ]}
       >
         {label}
@@ -226,7 +289,13 @@ export default function LogsScreen() {
     </TouchableOpacity>
   );
 
-  const VehicleHeader = ({ vehicle, isSharedVehicle }: { vehicle: any; isSharedVehicle: boolean }) => {
+  const VehicleHeader = ({
+    vehicle,
+    isSharedVehicle,
+  }: {
+    vehicle: any;
+    isSharedVehicle: boolean;
+  }) => {
     const [imageError, setImageError] = useState(false);
 
     return (
@@ -234,21 +303,36 @@ export default function LogsScreen() {
         {vehicle?.main_image_url && !imageError ? (
           <Image
             source={{ uri: vehicle.main_image_url }}
-            style={[styles.vehicleHeaderImage, isSharedVehicle && styles.sharedVehicleHeaderImage]}
+            style={[
+              styles.vehicleHeaderImage,
+              isSharedVehicle && styles.sharedVehicleHeaderImage,
+            ]}
             contentFit="cover"
             cachePolicy="memory-disk"
             transition={200}
             onError={(error) => {
-              console.error('Logs - Image load error for vehicle:', vehicle?.id, error);
-              console.log('Logs - Failed URL:', vehicle?.main_image_url);
+              console.error(
+                "Logs - Image load error for vehicle:",
+                vehicle?.id,
+                error,
+              );
+              console.log("Logs - Failed URL:", vehicle?.main_image_url);
               setImageError(true);
             }}
             onLoad={() => {
-              console.log('Logs - Image loaded successfully for vehicle:', vehicle?.id);
+              console.log(
+                "Logs - Image loaded successfully for vehicle:",
+                vehicle?.id,
+              );
             }}
           />
         ) : (
-          <View style={[styles.vehicleHeaderIcon, isSharedVehicle && styles.sharedVehicleHeaderIcon]}>
+          <View
+            style={[
+              styles.vehicleHeaderIcon,
+              isSharedVehicle && styles.sharedVehicleHeaderIcon,
+            ]}
+          >
             <IconSymbol
               name={isSharedVehicle ? "person.2.fill" : "car.fill"}
               size={20}
@@ -263,13 +347,19 @@ export default function LogsScreen() {
             </Text>
             {isSharedVehicle && (
               <View style={styles.sharedVehicleBadge}>
-                <IconSymbol name="person.2.fill" size={12} color={colors.tint} />
+                <IconSymbol
+                  name="person.2.fill"
+                  size={12}
+                  color={colors.tint}
+                />
                 <Text style={styles.sharedVehicleBadgeText}>Shared</Text>
               </View>
             )}
           </View>
           {vehicle?.license_plate && (
-            <Text style={styles.vehicleHeaderPlate}>{vehicle.license_plate}</Text>
+            <Text style={styles.vehicleHeaderPlate}>
+              {vehicle.license_plate}
+            </Text>
           )}
         </View>
       </View>
@@ -289,32 +379,34 @@ export default function LogsScreen() {
     }, [log]);
     const getLogDetails = () => {
       switch (type) {
-        case 'mileage':
+        case "mileage":
           return {
             title: `${log.odometer_reading?.toLocaleString()} km`,
-            subtitle: log.notes || 'Mileage reading',
-            icon: 'speedometer',
-            color: '#2196F3',
+            subtitle: log.notes || "Mileage reading",
+            icon: "speedometer",
+            color: "#2196F3",
           };
-        case 'fuel':
+        case "fuel":
           return {
-            title: `${log.cost ? `RM${log.cost}` : ''} `,
+            title: `${log.cost ? `RM${log.cost}` : ""} `,
             subtitle: `${log.liters_filled} L`,
-            odometer: log.odometer_reading ? `${log.odometer_reading.toLocaleString()} km` : null,
-            icon: 'fuelpump',
-            color: '#4CAF50',
+            odometer: log.odometer_reading
+              ? `${log.odometer_reading.toLocaleString()} km`
+              : null,
+            icon: "fuelpump",
+            color: "#4CAF50",
           };
-        case 'service':
+        case "service":
           return {
-            title: log.service_type?.replace('_', ' ').toUpperCase(),
-            subtitle: `${formatServiceItems(log.description)}${log.cost ? ` • RM${log.cost}` : ''}`,
-            icon: 'wrench',
-            color: '#FF9800',
+            title: log.service_type?.replace("_", " ").toUpperCase(),
+            subtitle: `${formatServiceItems(log.description)}${log.cost ? ` • RM${log.cost}` : ""}`,
+            icon: "wrench",
+            color: "#FF9800",
             hasReceipt: !!log.receipt_image_url,
             receiptUrl: log.receipt_image_url,
           };
         default:
-          return { title: '', subtitle: '', icon: 'doc', color: colors.tint };
+          return { title: "", subtitle: "", icon: "doc", color: colors.tint };
       }
     };
 
@@ -322,7 +414,7 @@ export default function LogsScreen() {
     const isSharedVehicle = log.is_shared_vehicle || false;
 
     const handleCardPress = () => {
-      if (type === 'service') {
+      if (type === "service") {
         handleViewServiceDetail(log.id);
       } else {
         handleEditLog(type, log.id);
@@ -336,13 +428,15 @@ export default function LogsScreen() {
         activeOpacity={0.7}
       >
         <View style={styles.logHeader}>
-          <View style={[styles.logIcon, { backgroundColor: details.color + '20' }]}>
+          <View
+            style={[styles.logIcon, { backgroundColor: details.color + "20" }]}
+          >
             <IconSymbol name={details.icon} size={20} color={details.color} />
           </View>
           <View style={styles.logInfo}>
             <View style={styles.logTitleRow}>
               <Text style={styles.logTitle}>{details.title}</Text>
-              {type === 'service' && details.hasReceipt && (
+              {type === "service" && details.hasReceipt && (
                 <ServiceReceiptIndicator
                   hasReceipt={details.hasReceipt}
                   receiptUrl={details.receiptUrl}
@@ -353,12 +447,10 @@ export default function LogsScreen() {
             </View>
             {/* <Text style={styles.logSubtitle}>{details.subtitle}</Text> */}
             <Text style={styles.logSubtitle}>{details.subtitle}</Text>
-{details.odometer && (
-  <Text style={styles.logOdometer}>{details.odometer}</Text>
-)}
-            <Text style={styles.logDate}>
-              {formatDate(log.date)}
-            </Text>
+            {details.odometer && (
+              <Text style={styles.logOdometer}>{details.odometer}</Text>
+            )}
+            <Text style={styles.logDate}>{formatDate(log.date)}</Text>
           </View>
           <View style={styles.actionButtons}>
             {canModify === null ? (
@@ -403,11 +495,11 @@ export default function LogsScreen() {
 
   const getCurrentLogs = () => {
     switch (activeTab) {
-      case 'mileage':
+      case "mileage":
         return mileageLogs;
-      case 'fuel':
+      case "fuel":
         return fuelLogs;
-      case 'service':
+      case "service":
         return serviceLogs;
       default:
         return [];
@@ -418,14 +510,14 @@ export default function LogsScreen() {
     const logs = getCurrentLogs();
     const grouped: { [vehicleId: string]: { vehicle: any; logs: any[] } } = {};
 
-    logs.forEach(log => {
+    logs.forEach((log) => {
       const vehicleId = log.vehicle_id;
       const vehicle = (log as any).vehicles;
 
       if (!grouped[vehicleId]) {
         grouped[vehicleId] = {
           vehicle,
-          logs: []
+          logs: [],
         };
       }
 
@@ -433,8 +525,10 @@ export default function LogsScreen() {
     });
 
     // Sort logs within each vehicle group by date (newest first)
-    Object.values(grouped).forEach(group => {
-      group.logs.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    Object.values(grouped).forEach((group) => {
+      group.logs.sort(
+        (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
+      );
     });
 
     return grouped;
@@ -442,14 +536,14 @@ export default function LogsScreen() {
 
   const getAddRoute = () => {
     switch (activeTab) {
-      case 'mileage':
-        return '/logs/mileage/add';
-      case 'fuel':
-        return '/logs/fuel/add';
-      case 'service':
-        return '/logs/service/add';
+      case "mileage":
+        return "/logs/mileage/add";
+      case "fuel":
+        return "/logs/fuel/add";
+      case "service":
+        return "/logs/service/add";
       default:
-        return '/logs/mileage/add';
+        return "/logs/mileage/add";
     }
   };
 
@@ -459,17 +553,17 @@ export default function LogsScreen() {
       backgroundColor: colors.background,
     },
     header: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
       paddingHorizontal: 20,
       paddingVertical: 16,
       borderBottomWidth: 1,
-      borderBottomColor: colors.icon + '20',
+      borderBottomColor: colors.icon + "20",
     },
     title: {
       fontSize: 32,
-      fontWeight: 'bold',
+      fontWeight: "bold",
       color: colors.text,
     },
     addButton: {
@@ -477,37 +571,37 @@ export default function LogsScreen() {
       paddingHorizontal: 16,
       paddingVertical: 8,
       borderRadius: 20,
-      flexDirection: 'row',
-      alignItems: 'center',
+      flexDirection: "row",
+      alignItems: "center",
       gap: 6,
     },
     addButtonText: {
-      color: 'white',
+      color: "white",
       fontSize: 14,
-      fontWeight: '600',
+      fontWeight: "600",
     },
     tabs: {
-      flexDirection: 'row',
+      flexDirection: "row",
       paddingHorizontal: 20,
       paddingVertical: 12,
       gap: 8,
     },
     tabButton: {
       flex: 1,
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'center',
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
       paddingVertical: 12,
       paddingHorizontal: 16,
       borderRadius: 8,
       borderWidth: 1,
-      borderColor: colors.icon + '30',
+      borderColor: colors.icon + "30",
       backgroundColor: colors.background,
       gap: 8,
     },
     tabButtonText: {
       fontSize: 14,
-      fontWeight: '500',
+      fontWeight: "500",
     },
     content: {
       flex: 1,
@@ -517,29 +611,29 @@ export default function LogsScreen() {
     },
     emptyContainer: {
       flex: 1,
-      justifyContent: 'center',
-      alignItems: 'center',
+      justifyContent: "center",
+      alignItems: "center",
       paddingVertical: 60,
     },
     emptyIcon: {
       width: 80,
       height: 80,
       borderRadius: 40,
-      backgroundColor: colors.icon + '20',
-      alignItems: 'center',
-      justifyContent: 'center',
+      backgroundColor: colors.icon + "20",
+      alignItems: "center",
+      justifyContent: "center",
       marginBottom: 16,
     },
     emptyTitle: {
       fontSize: 18,
-      fontWeight: '600',
+      fontWeight: "600",
       color: colors.text,
       marginBottom: 8,
     },
     emptyDescription: {
       fontSize: 14,
       color: colors.icon,
-      textAlign: 'center',
+      textAlign: "center",
       lineHeight: 20,
       marginBottom: 20,
     },
@@ -548,14 +642,14 @@ export default function LogsScreen() {
       paddingHorizontal: 24,
       paddingVertical: 12,
       borderRadius: 8,
-      flexDirection: 'row',
-      alignItems: 'center',
+      flexDirection: "row",
+      alignItems: "center",
       gap: 8,
     },
     emptyButtonText: {
-      color: 'white',
+      color: "white",
       fontSize: 14,
-      fontWeight: '600',
+      fontWeight: "600",
     },
     logCard: {
       backgroundColor: colors.background,
@@ -563,48 +657,48 @@ export default function LogsScreen() {
       padding: 16,
       marginBottom: 12,
       borderWidth: 1,
-      borderColor: colors.icon + '20',
+      borderColor: colors.icon + "20",
       elevation: 2,
-      shadowColor: '#000',
+      shadowColor: "#000",
       shadowOffset: { width: 0, height: 2 },
       shadowOpacity: 0.1,
       shadowRadius: 4,
     },
     sharedLogCard: {
-      borderColor: colors.tint + '40',
-      backgroundColor: colors.tint + '05',
+      borderColor: colors.tint + "40",
+      backgroundColor: colors.tint + "05",
     },
     logHeader: {
-      flexDirection: 'row',
-      alignItems: 'flex-start',
+      flexDirection: "row",
+      alignItems: "flex-start",
     },
     logIcon: {
       width: 40,
       height: 40,
       borderRadius: 20,
-      alignItems: 'center',
-      justifyContent: 'center',
+      alignItems: "center",
+      justifyContent: "center",
       marginRight: 12,
     },
     logInfo: {
       flex: 1,
     },
     logTitleRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
       marginBottom: 4,
     },
     logTitle: {
       fontSize: 16,
-      fontWeight: '600',
+      fontWeight: "600",
       color: colors.text,
       flex: 1,
     },
     sharedBadge: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      backgroundColor: colors.tint + '15',
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: colors.tint + "15",
       paddingHorizontal: 6,
       paddingVertical: 2,
       borderRadius: 8,
@@ -612,7 +706,7 @@ export default function LogsScreen() {
     },
     sharedBadgeText: {
       fontSize: 10,
-      fontWeight: '500',
+      fontWeight: "500",
       color: colors.tint,
     },
     logSubtitle: {
@@ -622,21 +716,21 @@ export default function LogsScreen() {
     },
     logOdometer: {
       fontSize: 13,
-      color: colors.icon + '80',
+      color: colors.icon + "80",
       marginBottom: 4,
     },
     logDate: {
       fontSize: 12,
       // color: colors.icon,
-      color: colors.icon + '80',
+      color: colors.icon + "80",
     },
     ownedByText: {
       fontSize: 11,
       color: colors.tint,
-      fontStyle: 'italic',
+      fontStyle: "italic",
     },
     actionButtons: {
-      flexDirection: 'column',
+      flexDirection: "column",
       gap: 8,
     },
     editButton: {
@@ -647,13 +741,13 @@ export default function LogsScreen() {
     },
     actionLoading: {
       padding: 8,
-      alignItems: 'center',
-      justifyContent: 'center',
+      alignItems: "center",
+      justifyContent: "center",
     },
     readOnlyIndicator: {
-      flexDirection: 'column',
-      alignItems: 'center',
-      justifyContent: 'center',
+      flexDirection: "column",
+      alignItems: "center",
+      justifyContent: "center",
       padding: 4,
       opacity: 0.6,
     },
@@ -661,21 +755,21 @@ export default function LogsScreen() {
       fontSize: 10,
       color: colors.icon,
       marginTop: 2,
-      textAlign: 'center',
+      textAlign: "center",
     },
     loadingContainer: {
       flex: 1,
-      justifyContent: 'center',
-      alignItems: 'center',
+      justifyContent: "center",
+      alignItems: "center",
     },
     vehicleHeader: {
-      flexDirection: 'row',
-      alignItems: 'center',
+      flexDirection: "row",
+      alignItems: "center",
       paddingHorizontal: 20,
       paddingVertical: 16,
       backgroundColor: colors.background,
       borderBottomWidth: 1,
-      borderBottomColor: colors.icon + '10',
+      borderBottomColor: colors.icon + "10",
       marginTop: 12,
     },
     vehicleHeaderIcon: {
@@ -683,8 +777,8 @@ export default function LogsScreen() {
       height: 36,
       borderRadius: 18,
       backgroundColor: colors.tint,
-      alignItems: 'center',
-      justifyContent: 'center',
+      alignItems: "center",
+      justifyContent: "center",
       marginRight: 12,
     },
     vehicleHeaderImage: {
@@ -692,35 +786,35 @@ export default function LogsScreen() {
       height: 36,
       borderRadius: 18,
       marginRight: 12,
-      backgroundColor: colors.icon + '20',
-      overflow: 'hidden',
+      backgroundColor: colors.icon + "20",
+      overflow: "hidden",
     },
     sharedVehicleHeaderIcon: {
-      backgroundColor: '#4CAF50',
+      backgroundColor: "#4CAF50",
     },
     sharedVehicleHeaderImage: {
       borderWidth: 2,
-      borderColor: '#4CAF50',
+      borderColor: "#4CAF50",
     },
     vehicleHeaderInfo: {
       flex: 1,
     },
     vehicleHeaderTitleRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
       marginBottom: 2,
     },
     vehicleHeaderTitle: {
       fontSize: 18,
-      fontWeight: '600',
+      fontWeight: "600",
       color: colors.text,
       flex: 1,
     },
     sharedVehicleBadge: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      backgroundColor: colors.tint + '15',
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: colors.tint + "15",
       paddingHorizontal: 6,
       paddingVertical: 2,
       borderRadius: 8,
@@ -728,13 +822,13 @@ export default function LogsScreen() {
     },
     sharedVehicleBadgeText: {
       fontSize: 10,
-      fontWeight: '500',
+      fontWeight: "500",
       color: colors.tint,
     },
     vehicleHeaderPlate: {
       fontSize: 14,
       color: colors.icon,
-      fontWeight: '500',
+      fontWeight: "500",
     },
     vehicleLogsSection: {
       paddingHorizontal: 20,
@@ -781,14 +875,21 @@ export default function LogsScreen() {
         <View style={styles.emptyContainer}>
           <View style={styles.emptyIcon}>
             <IconSymbol
-              name={activeTab === 'mileage' ? 'speedometer' : activeTab === 'fuel' ? 'fuelpump' : 'wrench'}
+              name={
+                activeTab === "mileage"
+                  ? "speedometer"
+                  : activeTab === "fuel"
+                    ? "fuelpump"
+                    : "wrench"
+              }
               size={32}
               color={colors.icon}
             />
           </View>
           <Text style={styles.emptyTitle}>No {activeTab} logs yet</Text>
           <Text style={styles.emptyDescription}>
-            Start tracking your vehicle&apos;s {activeTab} to monitor performance and maintenance.
+            Start tracking your vehicle&apos;s {activeTab} to monitor
+            performance and maintenance.
           </Text>
           <TouchableOpacity
             style={styles.emptyButton}
@@ -807,11 +908,15 @@ export default function LogsScreen() {
           showsVerticalScrollIndicator={false}
         >
           {Object.entries(groupedLogs).map(([vehicleId, { vehicle, logs }]) => {
-            const isSharedVehicle = logs.length > 0 && (logs[0].is_shared_vehicle || false);
+            const isSharedVehicle =
+              logs.length > 0 && (logs[0].is_shared_vehicle || false);
 
             return (
               <View key={vehicleId}>
-                <VehicleHeader vehicle={vehicle} isSharedVehicle={isSharedVehicle} />
+                <VehicleHeader
+                  vehicle={vehicle}
+                  isSharedVehicle={isSharedVehicle}
+                />
                 <View style={styles.vehicleLogsSection}>
                   {logs.map((log) => (
                     <LogCard key={log.id} log={log} type={activeTab} />
@@ -833,7 +938,11 @@ export default function LogsScreen() {
         }}
         onConfirm={handleConfirmDelete}
         title="Delete Log"
-        message={selectedLog ? `Are you sure you want to delete this ${selectedLog.type} log: ${selectedLog.description}?` : ''}
+        message={
+          selectedLog
+            ? `Are you sure you want to delete this ${selectedLog.type} log: ${selectedLog.description}?`
+            : ""
+        }
         confirmText="Delete"
         cancelText="Cancel"
         variant="danger"

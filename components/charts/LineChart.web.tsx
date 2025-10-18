@@ -1,9 +1,17 @@
-import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
-import { LineChart as RechartsLineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { useColorScheme } from '@/hooks/use-color-scheme';
-import { Colors } from '@/constants/theme';
-import { ChartDataPoint } from '@/lib/services/analyticsService';
+import React from "react";
+import { View, Text, StyleSheet } from "react-native";
+import {
+  LineChart as RechartsLineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+} from "recharts";
+import { useColorScheme } from "@/hooks/use-color-scheme";
+import { Colors } from "@/constants/theme";
+import { ChartDataPoint } from "@/lib/services/analyticsService";
 
 interface LineChartProps {
   data: ChartDataPoint[];
@@ -20,10 +28,10 @@ export function LineChart({
   height = 200,
   color,
   showArea = false,
-  formatY = (value: number) => `RM${value.toFixed(0)}`
+  formatY = (value: number) => `RM${value.toFixed(0)}`,
 }: LineChartProps) {
   const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? 'light'];
+  const colors = Colors[colorScheme ?? "light"];
 
   const chartColor = color || colors.chart.fuel;
 
@@ -38,18 +46,18 @@ export function LineChart({
     },
     title: {
       fontSize: 18,
-      fontWeight: '600',
+      fontWeight: "600",
       color: colors.text,
       marginBottom: 16,
     },
     chartContainer: {
       height: height,
-      width: '100%',
+      width: "100%",
     },
     emptyState: {
       height,
-      justifyContent: 'center',
-      alignItems: 'center',
+      justifyContent: "center",
+      alignItems: "center",
     },
     emptyText: {
       fontSize: 14,
@@ -86,8 +94,8 @@ export function LineChart({
               stroke={colors.textSecondary}
               fontSize={12}
               tickFormatter={(value) => {
-                if (typeof value === 'string' && value.includes(' ')) {
-                  return value.split(' ')[0];
+                if (typeof value === "string" && value.includes(" ")) {
+                  return value.split(" ")[0];
                 }
                 return value;
               }}
@@ -98,12 +106,12 @@ export function LineChart({
               tickFormatter={formatY}
             />
             <Tooltip
-              formatter={(value: any) => [formatY(value), 'Value']}
+              formatter={(value: any) => [formatY(value), "Value"]}
               labelStyle={{ color: colors.text }}
               contentStyle={{
                 backgroundColor: colors.card,
                 border: `1px solid ${colors.cardBorder}`,
-                borderRadius: '8px',
+                borderRadius: "8px",
               }}
             />
             <Line

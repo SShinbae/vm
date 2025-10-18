@@ -1,20 +1,20 @@
-import { IconSymbol } from '@/components/ui/icon-symbol';
-import { VehicleGroupSelector } from '@/components/VehicleGroupSelector';
-import { Colors } from '@/constants/theme';
-import { useColorScheme } from '@/hooks/use-color-scheme';
-import { formatDate } from '@/lib/utils/dateUtils';
-import { VehicleWithDetails } from '@/types/database-v2';
-import { Image } from 'expo-image';
-import React, { useState } from 'react';
+import { IconSymbol } from "@/components/ui/icon-symbol";
+import { VehicleGroupSelector } from "@/components/VehicleGroupSelector";
+import { Colors } from "@/constants/theme";
+import { useColorScheme } from "@/hooks/use-color-scheme";
+import { formatDate } from "@/lib/utils/dateUtils";
+import { VehicleWithDetails } from "@/types/database-v2";
+import { Image } from "expo-image";
+import React, { useState } from "react";
 import {
-    Modal,
-    Platform,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
-} from 'react-native';
+  Modal,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
 interface VehicleDetailProps {
   vehicle: VehicleWithDetails;
@@ -29,8 +29,8 @@ export const VehicleDetail: React.FC<VehicleDetailProps> = ({
   const [imageError, setImageError] = useState(false);
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
   const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? 'light'];
-  const isWeb = Platform.OS === 'web';
+  const colors = Colors[colorScheme ?? "light"];
+  const isWeb = Platform.OS === "web";
 
   const handleSharingUpdate = (success: boolean) => {
     setShowSharingModal(false);
@@ -43,31 +43,31 @@ export const VehicleDetail: React.FC<VehicleDetailProps> = ({
     container: {
       padding: isWeb ? 32 : 20,
       maxWidth: isWeb ? 1200 : undefined,
-      alignSelf: 'center',
-      width: '100%',
+      alignSelf: "center",
+      width: "100%",
     },
     contentWrapper: {
-      flexDirection: isWeb ? 'row' : 'column',
+      flexDirection: isWeb ? "row" : "column",
       gap: isWeb ? 32 : 0,
-      alignItems: 'flex-start',
+      alignItems: "flex-start",
     },
     leftColumn: {
-      width: isWeb ? '35%' : '100%',
+      width: isWeb ? "35%" : "100%",
       minWidth: isWeb ? 300 : undefined,
     },
     rightColumn: {
       flex: isWeb ? 1 : undefined,
-      width: isWeb ? undefined : '100%',
+      width: isWeb ? undefined : "100%",
     },
     header: {
-      flexDirection: 'column',
-      alignItems: 'center',
+      flexDirection: "column",
+      alignItems: "center",
       marginBottom: isWeb ? 32 : 20,
       backgroundColor: colors.card,
       borderRadius: 16,
       padding: 24,
       ...(isWeb && {
-        shadowColor: '#000',
+        shadowColor: "#000",
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.08,
         shadowRadius: 12,
@@ -79,50 +79,50 @@ export const VehicleDetail: React.FC<VehicleDetailProps> = ({
       width: isWeb ? 120 : 60,
       height: isWeb ? 120 : 60,
       borderRadius: isWeb ? 60 : 30,
-      backgroundColor: vehicle.is_own_vehicle ? colors.tint : '#4CAF50',
-      alignItems: 'center',
-      justifyContent: 'center',
+      backgroundColor: vehicle.is_own_vehicle ? colors.tint : "#4CAF50",
+      alignItems: "center",
+      justifyContent: "center",
       marginBottom: 16,
       ...(isWeb && {
-        shadowColor: '#000',
+        shadowColor: "#000",
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.1,
         shadowRadius: 8,
       }),
     },
     statusBadge: {
-      position: 'absolute',
+      position: "absolute",
       top: 0,
       right: 0,
       backgroundColor: vehicle.is_own_vehicle ? colors.tint : colors.success,
       paddingHorizontal: 8,
       paddingVertical: 4,
       borderRadius: 12,
-      flexDirection: 'row',
-      alignItems: 'center',
+      flexDirection: "row",
+      alignItems: "center",
       gap: 4,
     },
     statusBadgeText: {
-      color: 'white',
+      color: "white",
       fontSize: 12,
-      fontWeight: '600',
+      fontWeight: "600",
     },
     vehicleInfo: {
-      alignItems: 'center',
-      width: '100%',
+      alignItems: "center",
+      width: "100%",
     },
     vehicleName: {
       fontSize: isWeb ? 28 : 24,
-      fontWeight: 'bold',
+      fontWeight: "bold",
       color: colors.text,
       marginBottom: 8,
-      textAlign: 'center',
+      textAlign: "center",
     },
     vehiclePlate: {
       fontSize: isWeb ? 18 : 16,
       color: colors.icon,
-      fontWeight: '500',
-      textAlign: 'center',
+      fontWeight: "500",
+      textAlign: "center",
       paddingHorizontal: 12,
       paddingVertical: 6,
       backgroundColor: colors.surface,
@@ -132,13 +132,13 @@ export const VehicleDetail: React.FC<VehicleDetailProps> = ({
     ownerInfo: {
       fontSize: 14,
       color: colors.success,
-      fontStyle: 'italic',
+      fontStyle: "italic",
       marginTop: 4,
-      textAlign: 'center',
+      textAlign: "center",
     },
     statsContainer: {
-      flexDirection: isWeb ? 'row' : 'column',
-      flexWrap: 'wrap',
+      flexDirection: isWeb ? "row" : "column",
+      flexWrap: "wrap",
       gap: 16,
       marginBottom: 24,
     },
@@ -150,9 +150,9 @@ export const VehicleDetail: React.FC<VehicleDetailProps> = ({
       padding: 16,
       borderWidth: 1,
       borderColor: colors.cardBorder,
-      alignItems: 'center',
+      alignItems: "center",
       ...(isWeb && {
-        shadowColor: '#000',
+        shadowColor: "#000",
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.05,
         shadowRadius: 8,
@@ -160,7 +160,7 @@ export const VehicleDetail: React.FC<VehicleDetailProps> = ({
     },
     statValue: {
       fontSize: 28,
-      fontWeight: 'bold',
+      fontWeight: "bold",
       color: colors.text,
       marginTop: 8,
     },
@@ -174,7 +174,7 @@ export const VehicleDetail: React.FC<VehicleDetailProps> = ({
     },
     sectionTitle: {
       fontSize: 18,
-      fontWeight: '600',
+      fontWeight: "600",
       color: colors.text,
       marginBottom: 12,
     },
@@ -183,12 +183,12 @@ export const VehicleDetail: React.FC<VehicleDetailProps> = ({
       borderRadius: 12,
       padding: 16,
       borderWidth: 1,
-      borderColor: colors.icon + '20',
+      borderColor: colors.icon + "20",
     },
     sharingStatus: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
       marginBottom: 12,
     },
     sharingText: {
@@ -200,30 +200,30 @@ export const VehicleDetail: React.FC<VehicleDetailProps> = ({
       paddingHorizontal: 16,
       paddingVertical: 8,
       borderRadius: 6,
-      flexDirection: 'row',
-      alignItems: 'center',
+      flexDirection: "row",
+      alignItems: "center",
       gap: 6,
     },
     shareButtonText: {
-      color: 'white',
+      color: "white",
       fontSize: 14,
-      fontWeight: '600',
+      fontWeight: "600",
     },
     sharedGroupsList: {
       marginTop: 8,
     },
     sharedGroupItem: {
-      flexDirection: 'row',
-      alignItems: 'center',
+      flexDirection: "row",
+      alignItems: "center",
       paddingVertical: 6,
     },
     groupAvatar: {
       width: 32,
       height: 32,
       borderRadius: 16,
-      backgroundColor: colors.tint + '20',
-      alignItems: 'center',
-      justifyContent: 'center',
+      backgroundColor: colors.tint + "20",
+      alignItems: "center",
+      justifyContent: "center",
       marginRight: 8,
     },
     groupAvatarImage: {
@@ -236,71 +236,71 @@ export const VehicleDetail: React.FC<VehicleDetailProps> = ({
       color: colors.icon,
     },
     emptySharing: {
-      textAlign: 'center',
+      textAlign: "center",
       color: colors.icon,
       fontSize: 14,
-      fontStyle: 'italic',
+      fontStyle: "italic",
     },
     modal: {
       flex: 1,
-      backgroundColor: isWeb ? 'rgba(0, 0, 0, 0.6)' : 'rgba(0, 0, 0, 0.5)',
-      justifyContent: 'center',
-      alignItems: 'center',
+      backgroundColor: isWeb ? "rgba(0, 0, 0, 0.6)" : "rgba(0, 0, 0, 0.5)",
+      justifyContent: "center",
+      alignItems: "center",
       ...(isWeb && {
-        backdropFilter: 'blur(4px)',
+        backdropFilter: "blur(4px)",
       }),
     },
     modalContent: {
       backgroundColor: colors.background,
       borderRadius: 16,
-      width: isWeb ? '90%' : '90%',
+      width: isWeb ? "90%" : "90%",
       maxWidth: isWeb ? 600 : undefined,
-      maxHeight: '80%',
+      maxHeight: "80%",
       ...(isWeb && {
-        shadowColor: '#000',
+        shadowColor: "#000",
         shadowOffset: { width: 0, height: 8 },
         shadowOpacity: 0.2,
         shadowRadius: 24,
       }),
     },
     modalHeader: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
       padding: 20,
       borderBottomWidth: 1,
-      borderBottomColor: colors.icon + '20',
+      borderBottomColor: colors.icon + "20",
     },
     modalTitle: {
       fontSize: 18,
-      fontWeight: '600',
+      fontWeight: "600",
       color: colors.text,
     },
     closeButton: {
       padding: 8,
     },
     detailsGrid: {
-      flexDirection: isWeb ? 'row' : 'column',
-      flexWrap: 'wrap',
+      flexDirection: isWeb ? "row" : "column",
+      flexWrap: "wrap",
       gap: 16,
     },
     detailItem: {
       flex: isWeb ? 1 : undefined,
       minWidth: isWeb ? 280 : undefined,
-      flexDirection: 'row',
-      alignItems: 'center',
+      flexDirection: "row",
+      alignItems: "center",
       backgroundColor: colors.card,
       borderRadius: 12,
       padding: 16,
       borderWidth: 1,
       borderColor: colors.cardBorder,
       ...(isWeb && {
-        shadowColor: '#000',
+        shadowColor: "#000",
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.06,
         shadowRadius: 8,
-        cursor: 'pointer',
-        transition: 'all 0.2s ease',
+        cursor: "pointer",
+        transition: "all 0.2s ease",
       }),
     },
     detailItemHovered: {
@@ -315,9 +315,9 @@ export const VehicleDetail: React.FC<VehicleDetailProps> = ({
       width: 40,
       height: 40,
       borderRadius: 20,
-      backgroundColor: colors.tint + '15',
-      alignItems: 'center',
-      justifyContent: 'center',
+      backgroundColor: colors.tint + "15",
+      alignItems: "center",
+      justifyContent: "center",
       marginRight: 12,
     },
     detailContent: {
@@ -325,13 +325,13 @@ export const VehicleDetail: React.FC<VehicleDetailProps> = ({
     },
     detailLabel: {
       fontSize: 14,
-      fontWeight: '500',
+      fontWeight: "500",
       color: colors.icon,
       marginBottom: 2,
     },
     detailValue: {
       fontSize: 16,
-      fontWeight: '600',
+      fontWeight: "600",
       color: colors.text,
     },
   });
@@ -350,7 +350,7 @@ export const VehicleDetail: React.FC<VehicleDetailProps> = ({
                 color="white"
               />
               <Text style={styles.statusBadgeText}>
-                {vehicle.is_own_vehicle ? 'Owned' : 'Shared'}
+                {vehicle.is_own_vehicle ? "Owned" : "Shared"}
               </Text>
             </View>
 
@@ -379,7 +379,9 @@ export const VehicleDetail: React.FC<VehicleDetailProps> = ({
               <Text style={styles.vehiclePlate}>{vehicle.license_plate}</Text>
               {!vehicle.is_own_vehicle && vehicle.owner_profile && (
                 <Text style={styles.ownerInfo}>
-                  Shared by {vehicle.owner_profile.full_name || vehicle.owner_profile.email}
+                  Shared by{" "}
+                  {vehicle.owner_profile.full_name ||
+                    vehicle.owner_profile.email}
                 </Text>
               )}
             </View>
@@ -389,21 +391,33 @@ export const VehicleDetail: React.FC<VehicleDetailProps> = ({
           {isWeb && (
             <View style={styles.statsContainer}>
               <View style={styles.statCard}>
-                <IconSymbol name="list.bullet.clipboard.fill" size={24} color={colors.tint} />
+                <IconSymbol
+                  name="list.bullet.clipboard.fill"
+                  size={24}
+                  color={colors.tint}
+                />
                 <Text style={styles.statValue}>
                   {vehicle.logs?.counts?.mileage_count || 0}
                 </Text>
                 <Text style={styles.statLabel}>Mileage Logs</Text>
               </View>
               <View style={styles.statCard}>
-                <IconSymbol name="fuelpump.fill" size={24} color={colors.tint} />
+                <IconSymbol
+                  name="fuelpump.fill"
+                  size={24}
+                  color={colors.tint}
+                />
                 <Text style={styles.statValue}>
                   {vehicle.logs?.counts?.fuel_count || 0}
                 </Text>
                 <Text style={styles.statLabel}>Fuel Logs</Text>
               </View>
               <View style={styles.statCard}>
-                <IconSymbol name="wrench.and.screwdriver.fill" size={24} color={colors.tint} />
+                <IconSymbol
+                  name="wrench.and.screwdriver.fill"
+                  size={24}
+                  color={colors.tint}
+                />
                 <Text style={styles.statValue}>
                   {vehicle.logs?.counts?.service_count || 0}
                 </Text>
@@ -419,10 +433,9 @@ export const VehicleDetail: React.FC<VehicleDetailProps> = ({
               <View style={styles.sharingSection}>
                 <View style={styles.sharingStatus}>
                   <Text style={styles.sharingText}>
-                    {vehicle.shared_groups?.length ?
-                      `Shared with ${vehicle.shared_groups.length} group${vehicle.shared_groups.length > 1 ? 's' : ''}` :
-                      'Not shared with any groups'
-                    }
+                    {vehicle.shared_groups?.length
+                      ? `Shared with ${vehicle.shared_groups.length} group${vehicle.shared_groups.length > 1 ? "s" : ""}`
+                      : "Not shared with any groups"}
                   </Text>
                   <TouchableOpacity
                     style={styles.shareButton}
@@ -435,7 +448,7 @@ export const VehicleDetail: React.FC<VehicleDetailProps> = ({
 
                 {vehicle.shared_groups && vehicle.shared_groups.length > 0 ? (
                   <View style={styles.sharedGroupsList}>
-                    {vehicle.shared_groups.map(group => (
+                    {vehicle.shared_groups.map((group) => (
                       <View key={group.id} style={styles.sharedGroupItem}>
                         {group.group_image_url ? (
                           <Image
@@ -447,7 +460,11 @@ export const VehicleDetail: React.FC<VehicleDetailProps> = ({
                           />
                         ) : (
                           <View style={styles.groupAvatar}>
-                            <IconSymbol name="person.3.fill" size={16} color={colors.tint} />
+                            <IconSymbol
+                              name="person.3.fill"
+                              size={16}
+                              color={colors.tint}
+                            />
                           </View>
                         )}
                         <Text style={styles.sharedGroupText}>{group.name}</Text>
@@ -456,7 +473,8 @@ export const VehicleDetail: React.FC<VehicleDetailProps> = ({
                   </View>
                 ) : (
                   <Text style={styles.emptySharing}>
-                    Share this vehicle with your groups to let members view and log activities.
+                    Share this vehicle with your groups to let members view and
+                    log activities.
                   </Text>
                 )}
               </View>
@@ -466,7 +484,6 @@ export const VehicleDetail: React.FC<VehicleDetailProps> = ({
 
         {/* Right Column */}
         <View style={styles.rightColumn}>
-
           {/* Vehicle Details Section */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Vehicle Details</Text>
@@ -474,23 +491,32 @@ export const VehicleDetail: React.FC<VehicleDetailProps> = ({
               <TouchableOpacity
                 style={[
                   styles.detailItem,
-                  hoveredItem === 'mileage' && styles.detailItemHovered
+                  hoveredItem === "mileage" && styles.detailItemHovered,
                 ]}
-                onMouseEnter={isWeb ? () => setHoveredItem('mileage') : undefined}
+                onMouseEnter={
+                  isWeb ? () => setHoveredItem("mileage") : undefined
+                }
                 onMouseLeave={isWeb ? () => setHoveredItem(null) : undefined}
                 activeOpacity={0.7}
               >
                 <View style={styles.detailIcon}>
-                  <IconSymbol name="speedometer" size={20} color={colors.tint} />
+                  <IconSymbol
+                    name="speedometer"
+                    size={20}
+                    color={colors.tint}
+                  />
                 </View>
                 <View style={styles.detailContent}>
                   <Text style={styles.detailLabel}>Current Mileage</Text>
                   <Text style={styles.detailValue}>
                     {(() => {
-                      const currentMileage = vehicle.current_mileage && vehicle.current_mileage > 0
-                        ? vehicle.current_mileage
-                        : vehicle.logs?.latest_mileage?.odometer_reading;
-                      return currentMileage ? `${currentMileage.toLocaleString()} km` : 'No data';
+                      const currentMileage =
+                        vehicle.current_mileage && vehicle.current_mileage > 0
+                          ? vehicle.current_mileage
+                          : vehicle.logs?.latest_mileage?.odometer_reading;
+                      return currentMileage
+                        ? `${currentMileage.toLocaleString()} km`
+                        : "No data";
                     })()}
                   </Text>
                 </View>
@@ -499,30 +525,41 @@ export const VehicleDetail: React.FC<VehicleDetailProps> = ({
               <TouchableOpacity
                 style={[
                   styles.detailItem,
-                  hoveredItem === 'fuel' && styles.detailItemHovered
+                  hoveredItem === "fuel" && styles.detailItemHovered,
                 ]}
-                onMouseEnter={isWeb ? () => setHoveredItem('fuel') : undefined}
+                onMouseEnter={isWeb ? () => setHoveredItem("fuel") : undefined}
                 onMouseLeave={isWeb ? () => setHoveredItem(null) : undefined}
                 activeOpacity={0.7}
               >
                 <View style={styles.detailIcon}>
-                  <IconSymbol name="fuelpump.fill" size={20} color={colors.tint} />
+                  <IconSymbol
+                    name="fuelpump.fill"
+                    size={20}
+                    color={colors.tint}
+                  />
                 </View>
                 <View style={styles.detailContent}>
                   <Text style={styles.detailLabel}>
-                    Fuel Records {(() => {
-                      if (vehicle.logs?.counts?.access_status?.fuel_accessible === false) {
-                        return vehicle.logs.counts.access_status.has_permission_issues ? '(Limited)' : '(Error)';
+                    Fuel Records{" "}
+                    {(() => {
+                      if (
+                        vehicle.logs?.counts?.access_status?.fuel_accessible ===
+                        false
+                      ) {
+                        return vehicle.logs.counts.access_status
+                          .has_permission_issues
+                          ? "(Limited)"
+                          : "(Error)";
                       }
-                      return vehicle.logs?.counts?.fuel_count !== undefined ?
-                        `(${vehicle.logs.counts.fuel_count})` : '';
+                      return vehicle.logs?.counts?.fuel_count !== undefined
+                        ? `(${vehicle.logs.counts.fuel_count})`
+                        : "";
                     })()}
                   </Text>
                   <Text style={styles.detailValue}>
-                    {vehicle.logs?.latest_fuel ?
-                      `${vehicle.logs.latest_fuel.liters_filled}L on ${formatDate(vehicle.logs.latest_fuel.date)}` :
-                      'No records'
-                    }
+                    {vehicle.logs?.latest_fuel
+                      ? `${vehicle.logs.latest_fuel.liters_filled}L on ${formatDate(vehicle.logs.latest_fuel.date)}`
+                      : "No records"}
                   </Text>
                 </View>
               </TouchableOpacity>
@@ -530,30 +567,43 @@ export const VehicleDetail: React.FC<VehicleDetailProps> = ({
               <TouchableOpacity
                 style={[
                   styles.detailItem,
-                  hoveredItem === 'service' && styles.detailItemHovered
+                  hoveredItem === "service" && styles.detailItemHovered,
                 ]}
-                onMouseEnter={isWeb ? () => setHoveredItem('service') : undefined}
+                onMouseEnter={
+                  isWeb ? () => setHoveredItem("service") : undefined
+                }
                 onMouseLeave={isWeb ? () => setHoveredItem(null) : undefined}
                 activeOpacity={0.7}
               >
                 <View style={styles.detailIcon}>
-                  <IconSymbol name="wrench.and.screwdriver.fill" size={20} color={colors.tint} />
+                  <IconSymbol
+                    name="wrench.and.screwdriver.fill"
+                    size={20}
+                    color={colors.tint}
+                  />
                 </View>
                 <View style={styles.detailContent}>
                   <Text style={styles.detailLabel}>
-                    Service Records {(() => {
-                      if (vehicle.logs?.counts?.access_status?.service_accessible === false) {
-                        return vehicle.logs.counts.access_status.has_permission_issues ? '(Limited)' : '(Error)';
+                    Service Records{" "}
+                    {(() => {
+                      if (
+                        vehicle.logs?.counts?.access_status
+                          ?.service_accessible === false
+                      ) {
+                        return vehicle.logs.counts.access_status
+                          .has_permission_issues
+                          ? "(Limited)"
+                          : "(Error)";
                       }
-                      return vehicle.logs?.counts?.service_count !== undefined ?
-                        `(${vehicle.logs.counts.service_count})` : '';
+                      return vehicle.logs?.counts?.service_count !== undefined
+                        ? `(${vehicle.logs.counts.service_count})`
+                        : "";
                     })()}
                   </Text>
                   <Text style={styles.detailValue}>
-                    {vehicle.logs?.latest_service ?
-                      `${vehicle.logs.latest_service.service_type} on ${formatDate(vehicle.logs.latest_service.date)}` :
-                      'No records'
-                    }
+                    {vehicle.logs?.latest_service
+                      ? `${vehicle.logs.latest_service.service_type} on ${formatDate(vehicle.logs.latest_service.date)}`
+                      : "No records"}
                   </Text>
                 </View>
               </TouchableOpacity>
@@ -561,30 +611,43 @@ export const VehicleDetail: React.FC<VehicleDetailProps> = ({
               <TouchableOpacity
                 style={[
                   styles.detailItem,
-                  hoveredItem === 'mileage-records' && styles.detailItemHovered
+                  hoveredItem === "mileage-records" && styles.detailItemHovered,
                 ]}
-                onMouseEnter={isWeb ? () => setHoveredItem('mileage-records') : undefined}
+                onMouseEnter={
+                  isWeb ? () => setHoveredItem("mileage-records") : undefined
+                }
                 onMouseLeave={isWeb ? () => setHoveredItem(null) : undefined}
                 activeOpacity={0.7}
               >
                 <View style={styles.detailIcon}>
-                  <IconSymbol name="list.bullet.clipboard.fill" size={20} color={colors.tint} />
+                  <IconSymbol
+                    name="list.bullet.clipboard.fill"
+                    size={20}
+                    color={colors.tint}
+                  />
                 </View>
                 <View style={styles.detailContent}>
                   <Text style={styles.detailLabel}>
-                    Mileage Records {(() => {
-                      if (vehicle.logs?.counts?.access_status?.mileage_accessible === false) {
-                        return vehicle.logs.counts.access_status.has_permission_issues ? '(Limited)' : '(Error)';
+                    Mileage Records{" "}
+                    {(() => {
+                      if (
+                        vehicle.logs?.counts?.access_status
+                          ?.mileage_accessible === false
+                      ) {
+                        return vehicle.logs.counts.access_status
+                          .has_permission_issues
+                          ? "(Limited)"
+                          : "(Error)";
                       }
-                      return vehicle.logs?.counts?.mileage_count !== undefined ?
-                        `(${vehicle.logs.counts.mileage_count})` : '';
+                      return vehicle.logs?.counts?.mileage_count !== undefined
+                        ? `(${vehicle.logs.counts.mileage_count})`
+                        : "";
                     })()}
                   </Text>
                   <Text style={styles.detailValue}>
-                    {vehicle.logs?.latest_mileage ?
-                      `${vehicle.logs.latest_mileage.odometer_reading.toLocaleString()} km on ${formatDate(vehicle.logs.latest_mileage.date)}` :
-                      'No records'
-                    }
+                    {vehicle.logs?.latest_mileage
+                      ? `${vehicle.logs.latest_mileage.odometer_reading.toLocaleString()} km on ${formatDate(vehicle.logs.latest_mileage.date)}`
+                      : "No records"}
                   </Text>
                 </View>
               </TouchableOpacity>

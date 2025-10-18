@@ -1,8 +1,5 @@
-import { supabase } from '../../services/supabaseClient';
-import {
-  ServiceTemplate,
-  ServiceTemplateFormData
-} from '../../types';
+import { supabase } from "../../services/supabaseClient";
+import { ServiceTemplate, ServiceTemplateFormData } from "../../types";
 import {
   ApiResponse,
   Group,
@@ -10,13 +7,12 @@ import {
   VehicleInsert,
   VehicleSharingConfig,
   VehicleUpdate,
-  VehicleWithDetails
-} from '../../types/database-v2';
-import { uploadImage, updateVehicleImage } from '../utils/imageUpload';
+  VehicleWithDetails,
+} from "../../types/database-v2";
+import { uploadImage, updateVehicleImage } from "../utils/imageUpload";
 // Service templates now use Supabase database storage
 
 export class VehicleService {
-
   /**
    * Get vehicles (backward compatibility method)
    */
@@ -27,85 +23,93 @@ export class VehicleService {
   /**
    * Get vehicles with enhanced sharing information using the database function
    */
-  static async getVehiclesWithSharing(): Promise<ApiResponse<VehicleWithDetails[]>> {
+  static async getVehiclesWithSharing(): Promise<
+    ApiResponse<VehicleWithDetails[]>
+  > {
     try {
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      const {
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser();
 
       if (userError || !user) {
-        return { data: null, error: 'User not authenticated', loading: false };
+        return { data: null, error: "User not authenticated", loading: false };
       }
 
-      console.log('🔍 Fetching vehicles with sharing info for user:', user.id);
+      console.log("🔍 Fetching vehicles with sharing info for user:", user.id);
 
       // Use the database function for optimized query
       const { data: vehicleData, error: vehicleError } = await supabase.rpc(
-        'get_user_vehicles_with_sharing',
-        { user_uuid: user.id }
+        "get_user_vehicles_with_sharing",
+        { user_uuid: user.id },
       );
 
       if (vehicleError) {
-        console.error('❌ Error fetching vehicles:', vehicleError);
+        console.error("❌ Error fetching vehicles:", vehicleError);
         return { data: null, error: vehicleError.message, loading: false };
       }
 
-      console.log('✅ Raw vehicle data received:', vehicleData?.length || 0);
+      console.log("✅ Raw vehicle data received:", vehicleData?.length || 0);
 
       // Enhance the data with additional information
       const enhancedVehicles: VehicleWithDetails[] = await Promise.all(
         (vehicleData || []).map(async (vehicle) => {
           // Get vehicle images
           const { data: images } = await supabase
-            .from('vehicle_images')
-            .select('*')
-            .eq('vehicle_id', vehicle.vehicle_id)
-            .order('image_type', { ascending: true })
-            .order('display_order', { ascending: true });
+            .from("vehicle_images")
+            .select("*")
+            .eq("vehicle_id", vehicle.vehicle_id)
+            .order("image_type", { ascending: true })
+            .order("display_order", { ascending: true });
 
           // Get sharing groups for owned vehicles
           let sharedGroups: any[] = [];
           if (vehicle.is_own_vehicle) {
             const { data: shares } = await supabase
-              .from('vehicle_group_shares')
-              .select(`
+              .from("vehicle_group_shares")
+              .select(
+                `
                 group_id,
                 shared_at,
                 groups!inner(id, name, description)
-              `)
-              .eq('vehicle_id', vehicle.vehicle_id);
+              `,
+              )
+              .eq("vehicle_id", vehicle.vehicle_id);
 
-            sharedGroups = shares?.map(share => share.groups) || [];
+            sharedGroups = shares?.map((share) => share.groups) || [];
           }
 
           // Get latest logs for stats
           const [mileageResult, fuelResult, serviceResult] = await Promise.all([
             supabase
-              .from('mileage_logs')
-              .select('*')
-              .eq('vehicle_id', vehicle.vehicle_id)
-              .order('date', { ascending: false })
+              .from("mileage_logs")
+              .select("*")
+              .eq("vehicle_id", vehicle.vehicle_id)
+              .order("date", { ascending: false })
               .limit(1),
             supabase
-              .from('fuel_logs')
-              .select('*')
-              .eq('vehicle_id', vehicle.vehicle_id)
-              .order('date', { ascending: false })
+              .from("fuel_logs")
+              .select("*")
+              .eq("vehicle_id", vehicle.vehicle_id)
+              .order("date", { ascending: false })
               .limit(1),
             supabase
-              .from('service_logs')
-              .select('*')
-              .eq('vehicle_id', vehicle.vehicle_id)
-              .order('date', { ascending: false })
+              .from("service_logs")
+              .select("*")
+              .eq("vehicle_id", vehicle.vehicle_id)
+              .order("date", { ascending: false })
               .limit(1),
           ]);
 
           // Calculate current mileage: use database field or fall back to latest mileage log
-          const currentMileage = vehicle.current_mileage && vehicle.current_mileage > 0
-            ? vehicle.current_mileage
-            : mileageResult.data?.[0]?.odometer_reading || 0;
+          const currentMileage =
+            vehicle.current_mileage && vehicle.current_mileage > 0
+              ? vehicle.current_mileage
+              : mileageResult.data?.[0]?.odometer_reading || 0;
 
           return {
             id: vehicle.vehicle_id,
-            user_id: vehicle.is_own_vehicle ? user.id : 'shared',
+            user_id: vehicle.is_own_vehicle ? user.id : "shared",
             make: vehicle.make,
             model: vehicle.model,
             year: vehicle.year,
@@ -117,16 +121,18 @@ export class VehicleService {
             created_at: vehicle.created_at,
             updated_at: vehicle.updated_at,
             is_own_vehicle: vehicle.is_own_vehicle,
-            owner_profile: vehicle.is_own_vehicle ? null : {
-              id: 'owner-id',
-              email: vehicle.owner_email,
-              full_name: vehicle.owner_name,
-              avatar_url: null,
-              phone: null,
-              bio: null,
-              created_at: '',
-              updated_at: '',
-            },
+            owner_profile: vehicle.is_own_vehicle
+              ? null
+              : {
+                  id: "owner-id",
+                  email: vehicle.owner_email,
+                  full_name: vehicle.owner_name,
+                  avatar_url: null,
+                  phone: null,
+                  bio: null,
+                  created_at: "",
+                  updated_at: "",
+                },
             images: images || [],
             shared_groups: sharedGroups,
             sharing_info: {
@@ -140,25 +146,26 @@ export class VehicleService {
               latest_service: serviceResult.data?.[0] || undefined,
             },
           };
-        })
+        }),
       );
 
-      console.log('🎉 Enhanced vehicles processed:', enhancedVehicles.length);
+      console.log("🎉 Enhanced vehicles processed:", enhancedVehicles.length);
       return { data: enhancedVehicles, error: null, loading: false };
-
     } catch (error) {
-      console.error('💥 Unexpected error fetching vehicles:', error);
-      return { data: null, error: 'Failed to fetch vehicles', loading: false };
+      console.error("💥 Unexpected error fetching vehicles:", error);
+      return { data: null, error: "Failed to fetch vehicles", loading: false };
     }
   }
 
   /**
    * Get vehicles separated by ownership type
    */
-  static async getVehiclesSeparated(): Promise<ApiResponse<{
-    ownVehicles: VehicleWithDetails[];
-    sharedVehicles: VehicleWithDetails[];
-  }>> {
+  static async getVehiclesSeparated(): Promise<
+    ApiResponse<{
+      ownVehicles: VehicleWithDetails[];
+      sharedVehicles: VehicleWithDetails[];
+    }>
+  > {
     try {
       const response = await this.getVehiclesWithSharing();
 
@@ -166,29 +173,29 @@ export class VehicleService {
         return {
           data: null,
           error: response.error,
-          loading: false
+          loading: false,
         };
       }
 
-      const ownVehicles = response.data.filter(v => v.is_own_vehicle);
-      const sharedVehicles = response.data.filter(v => !v.is_own_vehicle);
+      const ownVehicles = response.data.filter((v) => v.is_own_vehicle);
+      const sharedVehicles = response.data.filter((v) => !v.is_own_vehicle);
 
-      console.log('📊 Vehicles separated:', {
+      console.log("📊 Vehicles separated:", {
         ownCount: ownVehicles.length,
-        sharedCount: sharedVehicles.length
+        sharedCount: sharedVehicles.length,
       });
 
       return {
         data: { ownVehicles, sharedVehicles },
         error: null,
-        loading: false
+        loading: false,
       };
     } catch (error) {
-      console.error('💥 Error separating vehicles:', error);
+      console.error("💥 Error separating vehicles:", error);
       return {
         data: null,
-        error: 'Failed to separate vehicles',
-        loading: false
+        error: "Failed to separate vehicles",
+        loading: false,
       };
     }
   }
@@ -198,75 +205,92 @@ export class VehicleService {
    */
   static async shareVehicleWithGroups(
     vehicleId: string,
-    groupIds: string[]
+    groupIds: string[],
   ): Promise<ApiResponse<boolean>> {
     try {
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      const {
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser();
 
       if (userError || !user) {
-        return { data: null, error: 'User not authenticated', loading: false };
+        return { data: null, error: "User not authenticated", loading: false };
       }
 
-      console.log('🔄 Sharing vehicle with groups:', { vehicleId, groupIds });
+      console.log("🔄 Sharing vehicle with groups:", { vehicleId, groupIds });
 
       // Use the database function for atomic operation
-      const { data, error } = await supabase.rpc('share_vehicle_with_groups', {
+      const { data, error } = await supabase.rpc("share_vehicle_with_groups", {
         vehicle_uuid: vehicleId,
-        group_uuids: groupIds
+        group_uuids: groupIds,
       });
 
       if (error) {
-        console.error('❌ Error sharing vehicle:', error);
+        console.error("❌ Error sharing vehicle:", error);
         return { data: null, error: error.message, loading: false };
       }
 
-      console.log('✅ Vehicle shared successfully with', groupIds.length, 'groups');
+      console.log(
+        "✅ Vehicle shared successfully with",
+        groupIds.length,
+        "groups",
+      );
       return { data: true, error: null, loading: false };
-
     } catch (error) {
-      console.error('💥 Unexpected error sharing vehicle:', error);
-      return { data: null, error: 'Failed to share vehicle', loading: false };
+      console.error("💥 Unexpected error sharing vehicle:", error);
+      return { data: null, error: "Failed to share vehicle", loading: false };
     }
   }
 
   /**
    * Get vehicle sharing configuration
    */
-  static async getVehicleSharingConfig(vehicleId: string): Promise<ApiResponse<VehicleSharingConfig>> {
+  static async getVehicleSharingConfig(
+    vehicleId: string,
+  ): Promise<ApiResponse<VehicleSharingConfig>> {
     try {
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      const {
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser();
 
       if (userError || !user) {
-        return { data: null, error: 'User not authenticated', loading: false };
+        return { data: null, error: "User not authenticated", loading: false };
       }
 
       // Verify user owns the vehicle
       const { data: vehicle, error: vehicleError } = await supabase
-        .from('vehicles')
-        .select('user_id')
-        .eq('id', vehicleId)
+        .from("vehicles")
+        .select("user_id")
+        .eq("id", vehicleId)
         .single();
 
       if (vehicleError || !vehicle) {
-        return { data: null, error: 'Vehicle not found', loading: false };
+        return { data: null, error: "Vehicle not found", loading: false };
       }
 
       if (vehicle.user_id !== user.id) {
-        return { data: null, error: 'You can only view sharing config for your own vehicles', loading: false };
+        return {
+          data: null,
+          error: "You can only view sharing config for your own vehicles",
+          loading: false,
+        };
       }
 
       // Get current shares with group info
       const { data: shares, error: sharesError } = await supabase
-        .from('vehicle_group_shares')
-        .select(`
+        .from("vehicle_group_shares")
+        .select(
+          `
           group_id,
           shared_at,
           groups!inner(id, name, description)
-        `)
-        .eq('vehicle_id', vehicleId);
+        `,
+        )
+        .eq("vehicle_id", vehicleId);
 
       if (sharesError) {
-        console.error('Error fetching sharing config:', sharesError);
+        console.error("Error fetching sharing config:", sharesError);
         return { data: null, error: sharesError.message, loading: false };
       }
 
@@ -275,12 +299,12 @@ export class VehicleService {
         (shares || []).map(async (share) => {
           // Get member count for this group using a simpler count query
           const { data: members, error: countError } = await supabase
-            .from('group_members')
-            .select('id')
-            .eq('group_id', share.group_id);
+            .from("group_members")
+            .select("id")
+            .eq("group_id", share.group_id);
 
           if (countError) {
-            console.error('Error getting member count:', countError);
+            console.error("Error getting member count:", countError);
           }
 
           return {
@@ -289,7 +313,7 @@ export class VehicleService {
             member_count: members?.length || 0,
             shared_at: share.shared_at,
           };
-        })
+        }),
       );
 
       const config: VehicleSharingConfig = {
@@ -300,22 +324,31 @@ export class VehicleService {
       };
 
       return { data: config, error: null, loading: false };
-
     } catch (error) {
-      console.error('Unexpected error fetching sharing config:', error);
-      return { data: null, error: 'Failed to fetch sharing configuration', loading: false };
+      console.error("Unexpected error fetching sharing config:", error);
+      return {
+        data: null,
+        error: "Failed to fetch sharing configuration",
+        loading: false,
+      };
     }
   }
 
   /**
    * Remove vehicle sharing (stop sharing with all groups)
    */
-  static async removeVehicleSharing(vehicleId: string): Promise<ApiResponse<boolean>> {
+  static async removeVehicleSharing(
+    vehicleId: string,
+  ): Promise<ApiResponse<boolean>> {
     try {
       return await this.shareVehicleWithGroups(vehicleId, []);
     } catch (error) {
-      console.error('Unexpected error removing vehicle sharing:', error);
-      return { data: null, error: 'Failed to remove vehicle sharing', loading: false };
+      console.error("Unexpected error removing vehicle sharing:", error);
+      return {
+        data: null,
+        error: "Failed to remove vehicle sharing",
+        loading: false,
+      };
     }
   }
 
@@ -323,42 +356,53 @@ export class VehicleService {
    * Create vehicle with enhanced data
    */
   static async createVehicle(
-    vehicleData: Omit<VehicleInsert, 'user_id'>,
+    vehicleData: Omit<VehicleInsert, "user_id">,
     sharedGroupIds?: string[],
-    imageUri?: string
+    imageUri?: string,
   ): Promise<ApiResponse<Vehicle>> {
     try {
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      const {
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser();
 
       if (userError || !user) {
-        return { data: null, error: 'User not authenticated', loading: false };
+        return { data: null, error: "User not authenticated", loading: false };
       }
 
       // Check for duplicate license plate
       const { data: existing } = await supabase
-        .from('vehicles')
-        .select('id')
-        .eq('license_plate', vehicleData.license_plate)
-        .eq('user_id', user.id);
+        .from("vehicles")
+        .select("id")
+        .eq("license_plate", vehicleData.license_plate)
+        .eq("user_id", user.id);
 
       if (existing && existing.length > 0) {
-        return { data: null, error: 'A vehicle with this license plate already exists', loading: false };
+        return {
+          data: null,
+          error: "A vehicle with this license plate already exists",
+          loading: false,
+        };
       }
 
       // Upload image if provided
       let imageUrl: string | undefined;
       if (imageUri) {
-        const uploadResult = await uploadImage(imageUri, 'vehicles', `vehicle_${user.id}`);
+        const uploadResult = await uploadImage(
+          imageUri,
+          "vehicles",
+          `vehicle_${user.id}`,
+        );
         if (uploadResult.success && uploadResult.url) {
           imageUrl = uploadResult.url;
         } else {
-          console.warn('Failed to upload vehicle image:', uploadResult.error);
+          console.warn("Failed to upload vehicle image:", uploadResult.error);
         }
       }
 
       // Create vehicle
       const { data: vehicle, error: vehicleError } = await supabase
-        .from('vehicles')
+        .from("vehicles")
         .insert({
           ...vehicleData,
           main_image_url: imageUrl,
@@ -368,25 +412,27 @@ export class VehicleService {
         .single();
 
       if (vehicleError) {
-        console.error('Error creating vehicle:', vehicleError);
+        console.error("Error creating vehicle:", vehicleError);
         return { data: null, error: vehicleError.message, loading: false };
       }
 
       // Share with groups if specified
       if (sharedGroupIds && sharedGroupIds.length > 0) {
-        const shareResult = await this.shareVehicleWithGroups(vehicle.id, sharedGroupIds);
+        const shareResult = await this.shareVehicleWithGroups(
+          vehicle.id,
+          sharedGroupIds,
+        );
         if (shareResult.error) {
-          console.error('Error sharing new vehicle:', shareResult.error);
+          console.error("Error sharing new vehicle:", shareResult.error);
           // Don't fail the creation, just log the sharing error
         }
       }
 
-      console.log('✅ Vehicle created successfully:', vehicle.id);
+      console.log("✅ Vehicle created successfully:", vehicle.id);
       return { data: vehicle, error: null, loading: false };
-
     } catch (error) {
-      console.error('Unexpected error creating vehicle:', error);
-      return { data: null, error: 'Failed to create vehicle', loading: false };
+      console.error("Unexpected error creating vehicle:", error);
+      return { data: null, error: "Failed to create vehicle", loading: false };
     }
   }
 
@@ -396,60 +442,69 @@ export class VehicleService {
   static async updateVehicle(
     id: string,
     updates: VehicleUpdate,
-    sharedGroupIds?: string[]
+    sharedGroupIds?: string[],
   ): Promise<ApiResponse<Vehicle>> {
     try {
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      const {
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser();
 
       if (userError || !user) {
-        return { data: null, error: 'User not authenticated', loading: false };
+        return { data: null, error: "User not authenticated", loading: false };
       }
 
       // Check for duplicate license plate if updating
       if (updates.license_plate) {
         const { data: existing } = await supabase
-          .from('vehicles')
-          .select('id')
-          .eq('license_plate', updates.license_plate)
-          .eq('user_id', user.id)
-          .neq('id', id);
+          .from("vehicles")
+          .select("id")
+          .eq("license_plate", updates.license_plate)
+          .eq("user_id", user.id)
+          .neq("id", id);
 
         if (existing && existing.length > 0) {
-          return { data: null, error: 'A vehicle with this license plate already exists', loading: false };
+          return {
+            data: null,
+            error: "A vehicle with this license plate already exists",
+            loading: false,
+          };
         }
       }
 
       // Update vehicle
       const { data: vehicle, error: vehicleError } = await supabase
-        .from('vehicles')
+        .from("vehicles")
         .update({
           ...updates,
           updated_at: new Date().toISOString(),
         })
-        .eq('id', id)
+        .eq("id", id)
         .select()
         .single();
 
       if (vehicleError) {
-        console.error('Error updating vehicle:', vehicleError);
+        console.error("Error updating vehicle:", vehicleError);
         return { data: null, error: vehicleError.message, loading: false };
       }
 
       // Update sharing if specified
       if (sharedGroupIds !== undefined) {
-        const shareResult = await this.shareVehicleWithGroups(id, sharedGroupIds);
+        const shareResult = await this.shareVehicleWithGroups(
+          id,
+          sharedGroupIds,
+        );
         if (shareResult.error) {
-          console.error('Error updating vehicle sharing:', shareResult.error);
+          console.error("Error updating vehicle sharing:", shareResult.error);
           // Don't fail the update, just log the sharing error
         }
       }
 
-      console.log('✅ Vehicle updated successfully:', id);
+      console.log("✅ Vehicle updated successfully:", id);
       return { data: vehicle, error: null, loading: false };
-
     } catch (error) {
-      console.error('Unexpected error updating vehicle:', error);
-      return { data: null, error: 'Failed to update vehicle', loading: false };
+      console.error("Unexpected error updating vehicle:", error);
+      return { data: null, error: "Failed to update vehicle", loading: false };
     }
   }
 
@@ -458,98 +513,123 @@ export class VehicleService {
    */
   static async deleteVehicle(id: string): Promise<ApiResponse<boolean>> {
     try {
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      const {
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser();
 
       if (userError || !user) {
-        return { data: null, error: 'User not authenticated', loading: false };
+        return { data: null, error: "User not authenticated", loading: false };
       }
 
       // Verify ownership
       const { data: vehicle, error: vehicleError } = await supabase
-        .from('vehicles')
-        .select('user_id')
-        .eq('id', id)
+        .from("vehicles")
+        .select("user_id")
+        .eq("id", id)
         .single();
 
       if (vehicleError || !vehicle) {
-        return { data: null, error: 'Vehicle not found', loading: false };
+        return { data: null, error: "Vehicle not found", loading: false };
       }
 
       if (vehicle.user_id !== user.id) {
-        return { data: null, error: 'You can only delete your own vehicles', loading: false };
+        return {
+          data: null,
+          error: "You can only delete your own vehicles",
+          loading: false,
+        };
       }
 
       // Delete vehicle (cascading will handle related data)
       const { error: deleteError } = await supabase
-        .from('vehicles')
+        .from("vehicles")
         .delete()
-        .eq('id', id);
+        .eq("id", id);
 
       if (deleteError) {
-        console.error('Error deleting vehicle:', deleteError);
+        console.error("Error deleting vehicle:", deleteError);
         return { data: null, error: deleteError.message, loading: false };
       }
 
-      console.log('✅ Vehicle deleted successfully:', id);
+      console.log("✅ Vehicle deleted successfully:", id);
       return { data: true, error: null, loading: false };
-
     } catch (error) {
-      console.error('Unexpected error deleting vehicle:', error);
-      return { data: null, error: 'Failed to delete vehicle', loading: false };
+      console.error("Unexpected error deleting vehicle:", error);
+      return { data: null, error: "Failed to delete vehicle", loading: false };
     }
   }
 
   /**
    * Get vehicle by ID with full details
    */
-  static async getVehicleById(id: string): Promise<ApiResponse<VehicleWithDetails>> {
+  static async getVehicleById(
+    id: string,
+  ): Promise<ApiResponse<VehicleWithDetails>> {
     try {
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      const {
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser();
 
       if (userError || !user) {
-        return { data: null, error: 'User not authenticated', loading: false };
+        return { data: null, error: "User not authenticated", loading: false };
       }
 
       // Get vehicle with logs
       const { data: vehicle, error: vehicleError } = await supabase
-        .from('vehicles')
-        .select(`
+        .from("vehicles")
+        .select(
+          `
           *,
           mileage_logs(*, created_at),
           fuel_logs(*, created_at),
           service_logs(*, created_at)
-        `)
-        .eq('id', id)
+        `,
+        )
+        .eq("id", id)
         .single();
 
       if (vehicleError) {
-        console.error('Error fetching vehicle:', vehicleError);
+        console.error("Error fetching vehicle:", vehicleError);
         return { data: null, error: vehicleError.message, loading: false };
       }
 
       // Check if user can access this vehicle
-      const canAccess = vehicle.user_id === user.id || await this.canUserAccessVehicle(id, user.id);
+      const canAccess =
+        vehicle.user_id === user.id ||
+        (await this.canUserAccessVehicle(id, user.id));
 
       if (!canAccess) {
-        return { data: null, error: 'Vehicle not found or access denied', loading: false };
+        return {
+          data: null,
+          error: "Vehicle not found or access denied",
+          loading: false,
+        };
       }
 
       // Get additional data including record counts and detailed logs
-      const [imagesResult, sharingResult, ownerResult, recordCountsResult, detailedLogsResult] = await Promise.all([
+      const [
+        imagesResult,
+        sharingResult,
+        ownerResult,
+        recordCountsResult,
+        detailedLogsResult,
+      ] = await Promise.all([
         supabase
-          .from('vehicle_images')
-          .select('*')
-          .eq('vehicle_id', id)
-          .order('image_type', { ascending: true })
-          .order('display_order', { ascending: true }),
+          .from("vehicle_images")
+          .select("*")
+          .eq("vehicle_id", id)
+          .order("image_type", { ascending: true })
+          .order("display_order", { ascending: true }),
         vehicle.user_id === user.id
           ? this.getVehicleSharingConfig(id)
           : Promise.resolve({ data: null, error: null, loading: false }),
         vehicle.user_id !== user.id
           ? supabase
-              .from('profiles')
-              .select('id, email, full_name, avatar_url')
-              .eq('id', vehicle.user_id)
+              .from("profiles")
+              .select("id, email, full_name, avatar_url")
+              .eq("id", vehicle.user_id)
               .single()
           : Promise.resolve({ data: null, error: null }),
         this.getVehicleRecordCounts(id),
@@ -561,27 +641,44 @@ export class VehicleService {
         is_own_vehicle: vehicle.user_id === user.id,
         owner_profile: ownerResult.data || null,
         images: imagesResult.data || [],
-        shared_groups: sharingResult.data?.shared_groups.map(sg => ({
-          id: sg.group_id,
-          name: sg.group_name,
-          description: null,
-          owner_id: '',
-          created_at: '',
-          updated_at: '',
-        })) || [],
-        sharing_info: sharingResult.data ? {
-          is_shared: sharingResult.data.is_sharing_enabled,
-          shared_with_groups: sharingResult.data.shared_groups.map(sg => sg.group_name),
-          total_shares: sharingResult.data.total_shares,
-        } : undefined,
+        shared_groups:
+          sharingResult.data?.shared_groups.map((sg) => ({
+            id: sg.group_id,
+            name: sg.group_name,
+            description: null,
+            owner_id: "",
+            created_at: "",
+            updated_at: "",
+          })) || [],
+        sharing_info: sharingResult.data
+          ? {
+              is_shared: sharingResult.data.is_sharing_enabled,
+              shared_with_groups: sharingResult.data.shared_groups.map(
+                (sg) => sg.group_name,
+              ),
+              total_shares: sharingResult.data.total_shares,
+            }
+          : undefined,
         // Use detailed logs from separate queries, fall back to nested query logs
-        mileage_logs: detailedLogsResult.data?.mileage_logs || vehicle.mileage_logs || [],
-        fuel_logs: detailedLogsResult.data?.fuel_logs || vehicle.fuel_logs || [],
-        service_logs: detailedLogsResult.data?.service_logs || vehicle.service_logs || [],
+        mileage_logs:
+          detailedLogsResult.data?.mileage_logs || vehicle.mileage_logs || [],
+        fuel_logs:
+          detailedLogsResult.data?.fuel_logs || vehicle.fuel_logs || [],
+        service_logs:
+          detailedLogsResult.data?.service_logs || vehicle.service_logs || [],
         logs: {
-          latest_mileage: detailedLogsResult.data?.mileage_logs?.[0] || vehicle.mileage_logs?.[0] || undefined,
-          latest_fuel: detailedLogsResult.data?.fuel_logs?.[0] || vehicle.fuel_logs?.[0] || undefined,
-          latest_service: detailedLogsResult.data?.service_logs?.[0] || vehicle.service_logs?.[0] || undefined,
+          latest_mileage:
+            detailedLogsResult.data?.mileage_logs?.[0] ||
+            vehicle.mileage_logs?.[0] ||
+            undefined,
+          latest_fuel:
+            detailedLogsResult.data?.fuel_logs?.[0] ||
+            vehicle.fuel_logs?.[0] ||
+            undefined,
+          latest_service:
+            detailedLogsResult.data?.service_logs?.[0] ||
+            vehicle.service_logs?.[0] ||
+            undefined,
           counts: recordCountsResult.data || {
             fuel_count: 0,
             service_count: 0,
@@ -591,41 +688,42 @@ export class VehicleService {
       };
 
       return { data: enhancedVehicle, error: null, loading: false };
-
     } catch (error) {
-      console.error('Unexpected error fetching vehicle:', error);
-      return { data: null, error: 'Failed to fetch vehicle', loading: false };
+      console.error("Unexpected error fetching vehicle:", error);
+      return { data: null, error: "Failed to fetch vehicle", loading: false };
     }
   }
 
   /**
    * Check if user can access a vehicle (through sharing)
    */
-  private static async canUserAccessVehicle(vehicleId: string, userId: string): Promise<boolean> {
+  private static async canUserAccessVehicle(
+    vehicleId: string,
+    userId: string,
+  ): Promise<boolean> {
     try {
       // Check if vehicle is shared with any groups the user is a member of
       const { data: shares, error } = await supabase
-        .from('vehicle_group_shares')
-        .select('group_id')
-        .eq('vehicle_id', vehicleId);
+        .from("vehicle_group_shares")
+        .select("group_id")
+        .eq("vehicle_id", vehicleId);
 
       if (error || !shares || shares.length === 0) {
         return false;
       }
 
-      const sharedGroupIds = shares.map(share => share.group_id);
+      const sharedGroupIds = shares.map((share) => share.group_id);
 
       // Check if user is a member of any of these groups
       const { data: memberships, error: membershipError } = await supabase
-        .from('group_members')
-        .select('group_id')
-        .eq('user_id', userId)
-        .in('group_id', sharedGroupIds);
+        .from("group_members")
+        .select("group_id")
+        .eq("user_id", userId)
+        .in("group_id", sharedGroupIds);
 
       return !membershipError && memberships && memberships.length > 0;
-
     } catch (error) {
-      console.error('Error checking vehicle access:', error);
+      console.error("Error checking vehicle access:", error);
       return false;
     }
   }
@@ -639,27 +737,27 @@ export class VehicleService {
 
       // Get latest mileage
       const { data: latestMileage } = await supabase
-        .from('mileage_logs')
-        .select('odometer_reading')
-        .eq('vehicle_id', vehicleId)
-        .order('date', { ascending: false })
+        .from("mileage_logs")
+        .select("odometer_reading")
+        .eq("vehicle_id", vehicleId)
+        .order("date", { ascending: false })
         .limit(1);
 
       // Get fuel efficiency (last 5 fuel-ups)
       const { data: fuelLogs } = await supabase
-        .from('fuel_logs')
-        .select('liters_filled, odometer_reading')
-        .eq('vehicle_id', vehicleId)
-        .order('date', { ascending: false })
+        .from("fuel_logs")
+        .select("liters_filled, odometer_reading")
+        .eq("vehicle_id", vehicleId)
+        .order("date", { ascending: false })
         .limit(5);
 
       // Get next service due
       const { data: nextService } = await supabase
-        .from('service_logs')
-        .select('next_service_due, service_type')
-        .eq('vehicle_id', vehicleId)
-        .not('next_service_due', 'is', null)
-        .order('next_service_due', { ascending: true })
+        .from("service_logs")
+        .select("next_service_due, service_type")
+        .eq("vehicle_id", vehicleId)
+        .not("next_service_due", "is", null)
+        .order("next_service_due", { ascending: true })
         .limit(1);
 
       return {
@@ -668,7 +766,7 @@ export class VehicleService {
         nextService: nextService?.[0] || null,
       };
     } catch (error) {
-      console.error('Error fetching vehicle stats:', error);
+      console.error("Error fetching vehicle stats:", error);
       return {
         currentMileage: 0,
         fuelLogs: [],
@@ -680,18 +778,20 @@ export class VehicleService {
   /**
    * Update vehicle's current mileage based on latest mileage log
    */
-  static async updateVehicleCurrentMileage(vehicleId: string): Promise<ApiResponse<boolean>> {
+  static async updateVehicleCurrentMileage(
+    vehicleId: string,
+  ): Promise<ApiResponse<boolean>> {
     try {
       // Get the latest mileage log
       const { data: latestMileage, error: mileageError } = await supabase
-        .from('mileage_logs')
-        .select('odometer_reading')
-        .eq('vehicle_id', vehicleId)
-        .order('date', { ascending: false })
+        .from("mileage_logs")
+        .select("odometer_reading")
+        .eq("vehicle_id", vehicleId)
+        .order("date", { ascending: false })
         .limit(1);
 
       if (mileageError) {
-        console.error('Error fetching latest mileage:', mileageError);
+        console.error("Error fetching latest mileage:", mileageError);
         return { data: null, error: mileageError.message, loading: false };
       }
 
@@ -700,23 +800,29 @@ export class VehicleService {
 
         // Update the vehicle's current_mileage
         const { error: updateError } = await supabase
-          .from('vehicles')
+          .from("vehicles")
           .update({ current_mileage: newMileage })
-          .eq('id', vehicleId);
+          .eq("id", vehicleId);
 
         if (updateError) {
-          console.error('Error updating current mileage:', updateError);
+          console.error("Error updating current mileage:", updateError);
           return { data: null, error: updateError.message, loading: false };
         }
 
-        console.log(`✅ Updated vehicle ${vehicleId} current_mileage to ${newMileage}`);
+        console.log(
+          `✅ Updated vehicle ${vehicleId} current_mileage to ${newMileage}`,
+        );
         return { data: true, error: null, loading: false };
       }
 
       return { data: true, error: null, loading: false };
     } catch (error) {
-      console.error('Unexpected error updating current mileage:', error);
-      return { data: null, error: 'Failed to update current mileage', loading: false };
+      console.error("Unexpected error updating current mileage:", error);
+      return {
+        data: null,
+        error: "Failed to update current mileage",
+        loading: false,
+      };
     }
   }
 
@@ -725,27 +831,31 @@ export class VehicleService {
    */
   static async getUserGroups(): Promise<ApiResponse<Group[]>> {
     try {
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      const {
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser();
 
       if (userError || !user) {
-        return { data: null, error: 'User not authenticated', loading: false };
+        return { data: null, error: "User not authenticated", loading: false };
       }
 
       // Get groups owned by user
       const { data: ownedGroups, error: ownedError } = await supabase
-        .from('groups')
-        .select('*')
-        .eq('owner_id', user.id);
+        .from("groups")
+        .select("*")
+        .eq("owner_id", user.id);
 
       if (ownedError) {
-        console.error('Error fetching owned groups:', ownedError);
+        console.error("Error fetching owned groups:", ownedError);
         return { data: null, error: ownedError.message, loading: false };
       }
 
       // Get groups where user is a member
       const { data: memberGroups, error: memberError } = await supabase
-        .from('group_members')
-        .select(`
+        .from("group_members")
+        .select(
+          `
           groups (
             id,
             name,
@@ -754,51 +864,57 @@ export class VehicleService {
             created_at,
             updated_at
           )
-        `)
-        .eq('user_id', user.id);
+        `,
+        )
+        .eq("user_id", user.id);
 
       if (memberError) {
-        console.error('Error fetching member groups:', memberError);
+        console.error("Error fetching member groups:", memberError);
         return { data: ownedGroups || [], error: null, loading: false };
       }
 
       // Combine owned and member groups, avoiding duplicates
       const memberGroupData = (memberGroups || [])
-        .map(item => item.groups)
-        .filter(group => group !== null);
+        .map((item) => item.groups)
+        .filter((group) => group !== null);
 
       const allGroups = [...(ownedGroups || [])];
-      
+
       // Add member groups that aren't already in owned groups
-      memberGroupData.forEach(group => {
-        if (!allGroups.find(g => g.id === group.id)) {
+      memberGroupData.forEach((group) => {
+        if (!allGroups.find((g) => g.id === group.id)) {
           allGroups.push(group);
         }
       });
 
       return { data: allGroups, error: null, loading: false };
     } catch (error) {
-      console.error('Unexpected error fetching user groups:', error);
-      return { data: null, error: 'Failed to fetch groups', loading: false };
+      console.error("Unexpected error fetching user groups:", error);
+      return { data: null, error: "Failed to fetch groups", loading: false };
     }
   }
 
   /**
    * Get record counts for a vehicle (fuel, service, mileage)
    */
-  static async getVehicleRecordCounts(vehicleId: string): Promise<ApiResponse<{
-    fuel_count: number;
-    service_count: number;
-    mileage_count: number;
-    access_status?: {
-      fuel_accessible: boolean;
-      service_accessible: boolean;
-      mileage_accessible: boolean;
-      has_permission_issues: boolean;
-    };
-  }>> {
+  static async getVehicleRecordCounts(vehicleId: string): Promise<
+    ApiResponse<{
+      fuel_count: number;
+      service_count: number;
+      mileage_count: number;
+      access_status?: {
+        fuel_accessible: boolean;
+        service_accessible: boolean;
+        mileage_accessible: boolean;
+        has_permission_issues: boolean;
+      };
+    }>
+  > {
     try {
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      const {
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser();
 
       if (userError || !user) {
         return {
@@ -811,36 +927,38 @@ export class VehicleService {
               service_accessible: false,
               mileage_accessible: false,
               has_permission_issues: true,
-            }
+            },
           },
-          error: 'User not authenticated',
-          loading: false
+          error: "User not authenticated",
+          loading: false,
         };
       }
 
       // Get counts for all log types in parallel
-      const [fuelCountResult, serviceCountResult, mileageCountResult] = await Promise.all([
-        supabase
-          .from('fuel_logs')
-          .select('id', { count: 'exact', head: true })
-          .eq('vehicle_id', vehicleId),
-        supabase
-          .from('service_logs')
-          .select('id', { count: 'exact', head: true })
-          .eq('vehicle_id', vehicleId),
-        supabase
-          .from('mileage_logs')
-          .select('id', { count: 'exact', head: true })
-          .eq('vehicle_id', vehicleId),
-      ]);
+      const [fuelCountResult, serviceCountResult, mileageCountResult] =
+        await Promise.all([
+          supabase
+            .from("fuel_logs")
+            .select("id", { count: "exact", head: true })
+            .eq("vehicle_id", vehicleId),
+          supabase
+            .from("service_logs")
+            .select("id", { count: "exact", head: true })
+            .eq("vehicle_id", vehicleId),
+          supabase
+            .from("mileage_logs")
+            .select("id", { count: "exact", head: true })
+            .eq("vehicle_id", vehicleId),
+        ]);
 
       // Check for permission-related errors (like RLS policy violations)
       const isPermissionError = (error: any) => {
-        return error && (
-          error.message?.includes('permission') ||
-          error.message?.includes('policy') ||
-          error.message?.includes('RLS') ||
-          error.code === 'PGRST116' // PostgREST insufficient privilege error
+        return (
+          error &&
+          (error.message?.includes("permission") ||
+            error.message?.includes("policy") ||
+            error.message?.includes("RLS") ||
+            error.code === "PGRST116") // PostgREST insufficient privilege error
         );
       };
 
@@ -851,7 +969,7 @@ export class VehicleService {
         has_permission_issues:
           isPermissionError(fuelCountResult.error) ||
           isPermissionError(serviceCountResult.error) ||
-          isPermissionError(mileageCountResult.error)
+          isPermissionError(mileageCountResult.error),
       };
 
       const counts = {
@@ -863,22 +981,36 @@ export class VehicleService {
 
       // Log errors with appropriate context
       if (fuelCountResult.error) {
-        const errorType = isPermissionError(fuelCountResult.error) ? 'Permission denied' : 'Database error';
-        console.warn(`${errorType} for fuel logs on vehicle ${vehicleId}:`, fuelCountResult.error);
+        const errorType = isPermissionError(fuelCountResult.error)
+          ? "Permission denied"
+          : "Database error";
+        console.warn(
+          `${errorType} for fuel logs on vehicle ${vehicleId}:`,
+          fuelCountResult.error,
+        );
       }
       if (serviceCountResult.error) {
-        const errorType = isPermissionError(serviceCountResult.error) ? 'Permission denied' : 'Database error';
-        console.warn(`${errorType} for service logs on vehicle ${vehicleId}:`, serviceCountResult.error);
+        const errorType = isPermissionError(serviceCountResult.error)
+          ? "Permission denied"
+          : "Database error";
+        console.warn(
+          `${errorType} for service logs on vehicle ${vehicleId}:`,
+          serviceCountResult.error,
+        );
       }
       if (mileageCountResult.error) {
-        const errorType = isPermissionError(mileageCountResult.error) ? 'Permission denied' : 'Database error';
-        console.warn(`${errorType} for mileage logs on vehicle ${vehicleId}:`, mileageCountResult.error);
+        const errorType = isPermissionError(mileageCountResult.error)
+          ? "Permission denied"
+          : "Database error";
+        console.warn(
+          `${errorType} for mileage logs on vehicle ${vehicleId}:`,
+          mileageCountResult.error,
+        );
       }
 
       return { data: counts, error: null, loading: false };
-
     } catch (error) {
-      console.error('Unexpected error fetching vehicle record counts:', error);
+      console.error("Unexpected error fetching vehicle record counts:", error);
       return {
         data: {
           fuel_count: 0,
@@ -889,10 +1021,10 @@ export class VehicleService {
             service_accessible: false,
             mileage_accessible: false,
             has_permission_issues: true,
-          }
+          },
         },
-        error: 'Failed to fetch record counts',
-        loading: false
+        error: "Failed to fetch record counts",
+        loading: false,
       };
     }
   }
@@ -900,44 +1032,50 @@ export class VehicleService {
   /**
    * Get detailed logs for a vehicle using separate queries (for RLS compatibility)
    */
-  static async getVehicleDetailedLogs(vehicleId: string): Promise<ApiResponse<{
-    mileage_logs: any[];
-    fuel_logs: any[];
-    service_logs: any[];
-  }>> {
+  static async getVehicleDetailedLogs(vehicleId: string): Promise<
+    ApiResponse<{
+      mileage_logs: any[];
+      fuel_logs: any[];
+      service_logs: any[];
+    }>
+  > {
     try {
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      const {
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser();
 
       if (userError || !user) {
         return {
           data: { mileage_logs: [], fuel_logs: [], service_logs: [] },
           error: null,
-          loading: false
+          loading: false,
         };
       }
 
       // Get detailed logs for all types in parallel using direct queries
       // This ensures RLS policies work consistently with the count queries
-      const [mileageLogsResult, fuelLogsResult, serviceLogsResult] = await Promise.all([
-        supabase
-          .from('mileage_logs')
-          .select('*')
-          .eq('vehicle_id', vehicleId)
-          .order('date', { ascending: false })
-          .limit(10), // Get recent 10 records
-        supabase
-          .from('fuel_logs')
-          .select('*')
-          .eq('vehicle_id', vehicleId)
-          .order('date', { ascending: false })
-          .limit(10), // Get recent 10 records
-        supabase
-          .from('service_logs')
-          .select('*')
-          .eq('vehicle_id', vehicleId)
-          .order('date', { ascending: false })
-          .limit(10), // Get recent 10 records
-      ]);
+      const [mileageLogsResult, fuelLogsResult, serviceLogsResult] =
+        await Promise.all([
+          supabase
+            .from("mileage_logs")
+            .select("*")
+            .eq("vehicle_id", vehicleId)
+            .order("date", { ascending: false })
+            .limit(10), // Get recent 10 records
+          supabase
+            .from("fuel_logs")
+            .select("*")
+            .eq("vehicle_id", vehicleId)
+            .order("date", { ascending: false })
+            .limit(10), // Get recent 10 records
+          supabase
+            .from("service_logs")
+            .select("*")
+            .eq("vehicle_id", vehicleId)
+            .order("date", { ascending: false })
+            .limit(10), // Get recent 10 records
+        ]);
 
       const logs = {
         mileage_logs: mileageLogsResult.data || [],
@@ -947,23 +1085,31 @@ export class VehicleService {
 
       // Log any errors but don't fail completely - graceful degradation
       if (mileageLogsResult.error) {
-        console.warn(`Could not fetch mileage logs for vehicle ${vehicleId}:`, mileageLogsResult.error);
+        console.warn(
+          `Could not fetch mileage logs for vehicle ${vehicleId}:`,
+          mileageLogsResult.error,
+        );
       }
       if (fuelLogsResult.error) {
-        console.warn(`Could not fetch fuel logs for vehicle ${vehicleId}:`, fuelLogsResult.error);
+        console.warn(
+          `Could not fetch fuel logs for vehicle ${vehicleId}:`,
+          fuelLogsResult.error,
+        );
       }
       if (serviceLogsResult.error) {
-        console.warn(`Could not fetch service logs for vehicle ${vehicleId}:`, serviceLogsResult.error);
+        console.warn(
+          `Could not fetch service logs for vehicle ${vehicleId}:`,
+          serviceLogsResult.error,
+        );
       }
 
       return { data: logs, error: null, loading: false };
-
     } catch (error) {
-      console.error('Unexpected error fetching vehicle detailed logs:', error);
+      console.error("Unexpected error fetching vehicle detailed logs:", error);
       return {
         data: { mileage_logs: [], fuel_logs: [], service_logs: [] },
         error: null,
-        loading: false
+        loading: false,
       };
     }
   }
@@ -977,58 +1123,65 @@ export class VehicleService {
    */
   static async getServiceTemplates(): Promise<ApiResponse<ServiceTemplate[]>> {
     try {
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      const {
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser();
 
       if (userError || !user) {
-        return { data: null, error: 'User not authenticated', loading: false };
+        return { data: null, error: "User not authenticated", loading: false };
       }
 
-      console.log('🔍 Fetching service templates for user:', user.id);
+      console.log("🔍 Fetching service templates for user:", user.id);
 
       // Get templates with their items
       const { data: templates, error: templatesError } = await (supabase as any)
-        .from('service_templates')
-        .select(`
+        .from("service_templates")
+        .select(
+          `
           *,
           service_template_items(*)
-        `)
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false });
+        `,
+        )
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false });
 
       if (templatesError) {
-        console.error('❌ Error fetching service templates:', templatesError);
+        console.error("❌ Error fetching service templates:", templatesError);
         return { data: null, error: templatesError.message, loading: false };
       }
 
       // Transform the data to match our ServiceTemplate interface
-      const serviceTemplates: ServiceTemplate[] = (templates || []).map(template => ({
-        id: template.id,
-        name: template.name,
-        description: template.description || '',
-        items: (template.service_template_items || [])
-          .sort((a, b) => a.display_order - b.display_order)
-          .map(item => ({
-            id: item.id,
-            description: item.description,
-            price: parseFloat(item.price),
-            order: item.display_order,
-          })),
-        total_cost: parseFloat(template.total_cost),
-        created_at: template.created_at,
-        updated_at: template.updated_at,
-      }));
+      const serviceTemplates: ServiceTemplate[] = (templates || []).map(
+        (template) => ({
+          id: template.id,
+          name: template.name,
+          description: template.description || "",
+          items: (template.service_template_items || [])
+            .sort((a, b) => a.display_order - b.display_order)
+            .map((item) => ({
+              id: item.id,
+              description: item.description,
+              price: parseFloat(item.price),
+              order: item.display_order,
+            })),
+          total_cost: parseFloat(template.total_cost),
+          created_at: template.created_at,
+          updated_at: template.updated_at,
+        }),
+      );
 
-      console.log('✅ Service templates fetched:', serviceTemplates.length);
+      console.log("✅ Service templates fetched:", serviceTemplates.length);
       return {
         data: serviceTemplates,
         error: null,
         loading: false,
       };
     } catch (error) {
-      console.error('💥 Error fetching service templates:', error);
+      console.error("💥 Error fetching service templates:", error);
       return {
         data: null,
-        error: 'Failed to fetch service templates',
+        error: "Failed to fetch service templates",
         loading: false,
       };
     }
@@ -1037,40 +1190,50 @@ export class VehicleService {
   /**
    * Get a service template by ID
    */
-  static async getServiceTemplate(id: string): Promise<ApiResponse<ServiceTemplate>> {
+  static async getServiceTemplate(
+    id: string,
+  ): Promise<ApiResponse<ServiceTemplate>> {
     try {
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      const {
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser();
 
       if (userError || !user) {
-        return { data: null, error: 'User not authenticated', loading: false };
+        return { data: null, error: "User not authenticated", loading: false };
       }
 
-      console.log('🔍 Fetching service template:', id);
+      console.log("🔍 Fetching service template:", id);
 
       // Get template with its items
       const { data: template, error: templateError } = await (supabase as any)
-        .from('service_templates')
-        .select(`
+        .from("service_templates")
+        .select(
+          `
           *,
           service_template_items(*)
-        `)
-        .eq('id', id)
-        .eq('user_id', user.id)
+        `,
+        )
+        .eq("id", id)
+        .eq("user_id", user.id)
         .single();
 
       if (templateError) {
-        console.error('❌ Error fetching service template:', templateError);
+        console.error("❌ Error fetching service template:", templateError);
         return {
           data: null,
-          error: templateError.code === 'PGRST116' ? 'Service template not found' : templateError.message,
-          loading: false
+          error:
+            templateError.code === "PGRST116"
+              ? "Service template not found"
+              : templateError.message,
+          loading: false,
         };
       }
 
       if (!template) {
         return {
           data: null,
-          error: 'Service template not found',
+          error: "Service template not found",
           loading: false,
         };
       }
@@ -1079,10 +1242,10 @@ export class VehicleService {
       const serviceTemplate: ServiceTemplate = {
         id: template.id,
         name: template.name,
-        description: template.description || '',
+        description: template.description || "",
         items: (template.service_template_items || [])
           .sort((a, b) => a.display_order - b.display_order)
-          .map(item => ({
+          .map((item) => ({
             id: item.id,
             description: item.description,
             price: parseFloat(item.price),
@@ -1099,10 +1262,10 @@ export class VehicleService {
         loading: false,
       };
     } catch (error) {
-      console.error('💥 Error fetching service template:', error);
+      console.error("💥 Error fetching service template:", error);
       return {
         data: null,
-        error: 'Failed to fetch service template',
+        error: "Failed to fetch service template",
         loading: false,
       };
     }
@@ -1112,37 +1275,43 @@ export class VehicleService {
    * Create a new service template with default 2 rows
    */
   static async createServiceTemplate(
-    formData: ServiceTemplateFormData
+    formData: ServiceTemplateFormData,
   ): Promise<ApiResponse<ServiceTemplate>> {
     try {
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      const {
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser();
 
       if (userError || !user) {
-        return { data: null, error: 'User not authenticated', loading: false };
+        return { data: null, error: "User not authenticated", loading: false };
       }
 
-      console.log('🔄 Creating service template:', formData.name);
+      console.log("🔄 Creating service template:", formData.name);
 
       // Ensure at least 2 rows (default)
-      const items = formData.items.length > 0 ? formData.items : [
-        { description: '', price: 0 },
-        { description: '', price: 0 }
-      ];
+      const items =
+        formData.items.length > 0
+          ? formData.items
+          : [
+              { description: "", price: 0 },
+              { description: "", price: 0 },
+            ];
 
       // Create the template first
       const { data: template, error: templateError } = await (supabase as any)
-        .from('service_templates')
+        .from("service_templates")
         .insert({
           user_id: user.id,
           name: formData.name,
-          description: formData.description || '',
+          description: formData.description || "",
           total_cost: 0, // Will be updated by trigger
         })
         .select()
         .single();
 
       if (templateError) {
-        console.error('❌ Error creating service template:', templateError);
+        console.error("❌ Error creating service template:", templateError);
         return { data: null, error: templateError.message, loading: false };
       }
 
@@ -1156,13 +1325,19 @@ export class VehicleService {
         }));
 
         const { error: itemsError } = await (supabase as any)
-          .from('service_template_items')
+          .from("service_template_items")
           .insert(templateItems);
 
         if (itemsError) {
           // If items creation fails, clean up the template
-          await supabase.from('service_templates').delete().eq('id', template.id);
-          console.error('❌ Error creating service template items:', itemsError);
+          await supabase
+            .from("service_templates")
+            .delete()
+            .eq("id", template.id);
+          console.error(
+            "❌ Error creating service template items:",
+            itemsError,
+          );
           return { data: null, error: itemsError.message, loading: false };
         }
       }
@@ -1171,20 +1346,24 @@ export class VehicleService {
       const createdTemplate = await this.getServiceTemplate(template.id);
 
       if (createdTemplate.error || !createdTemplate.data) {
-        return { data: null, error: createdTemplate.error || 'Failed to fetch created template', loading: false };
+        return {
+          data: null,
+          error: createdTemplate.error || "Failed to fetch created template",
+          loading: false,
+        };
       }
 
-      console.log('✅ Service template created successfully:', template.id);
+      console.log("✅ Service template created successfully:", template.id);
       return {
         data: createdTemplate.data,
         error: null,
         loading: false,
       };
     } catch (error) {
-      console.error('💥 Error creating service template:', error);
+      console.error("💥 Error creating service template:", error);
       return {
         data: null,
-        error: 'Failed to create service template',
+        error: "Failed to create service template",
         loading: false,
       };
     }
@@ -1195,55 +1374,63 @@ export class VehicleService {
    */
   static async updateServiceTemplate(
     id: string,
-    formData: ServiceTemplateFormData
+    formData: ServiceTemplateFormData,
   ): Promise<ApiResponse<ServiceTemplate>> {
     try {
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      const {
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser();
 
       if (userError || !user) {
-        return { data: null, error: 'User not authenticated', loading: false };
+        return { data: null, error: "User not authenticated", loading: false };
       }
 
-      console.log('🔄 Updating service template:', id);
+      console.log("🔄 Updating service template:", id);
 
       // First, verify the template exists and belongs to the user
-      const { data: existingTemplate, error: templateError } = await (supabase as any)
-        .from('service_templates')
-        .select('id')
-        .eq('id', id)
-        .eq('user_id', user.id)
+      const { data: existingTemplate, error: templateError } = await (
+        supabase as any
+      )
+        .from("service_templates")
+        .select("id")
+        .eq("id", id)
+        .eq("user_id", user.id)
         .single();
 
       if (templateError || !existingTemplate) {
         return {
           data: null,
-          error: 'Service template not found',
+          error: "Service template not found",
           loading: false,
         };
       }
 
       // Update the template
       const { error: updateError } = await (supabase as any)
-        .from('service_templates')
+        .from("service_templates")
         .update({
           name: formData.name,
-          description: formData.description || '',
+          description: formData.description || "",
         })
-        .eq('id', id);
+        .eq("id", id);
 
       if (updateError) {
-        console.error('❌ Error updating service template:', updateError);
+        console.error("❌ Error updating service template:", updateError);
         return { data: null, error: updateError.message, loading: false };
       }
 
       // Delete existing items
       const { error: deleteItemsError } = await supabase
-        .from('service_template_items')
+        .from("service_template_items")
         .delete()
-        .eq('template_id', id);
+        .eq("template_id", id);
 
       if (deleteItemsError) {
-        console.error('❌ Error deleting old template items:', deleteItemsError);
+        console.error(
+          "❌ Error deleting old template items:",
+          deleteItemsError,
+        );
         return { data: null, error: deleteItemsError.message, loading: false };
       }
 
@@ -1257,11 +1444,11 @@ export class VehicleService {
         }));
 
         const { error: itemsError } = await (supabase as any)
-          .from('service_template_items')
+          .from("service_template_items")
           .insert(templateItems);
 
         if (itemsError) {
-          console.error('❌ Error creating new template items:', itemsError);
+          console.error("❌ Error creating new template items:", itemsError);
           return { data: null, error: itemsError.message, loading: false };
         }
       }
@@ -1270,20 +1457,24 @@ export class VehicleService {
       const updatedTemplate = await this.getServiceTemplate(id);
 
       if (updatedTemplate.error || !updatedTemplate.data) {
-        return { data: null, error: updatedTemplate.error || 'Failed to fetch updated template', loading: false };
+        return {
+          data: null,
+          error: updatedTemplate.error || "Failed to fetch updated template",
+          loading: false,
+        };
       }
 
-      console.log('✅ Service template updated successfully:', id);
+      console.log("✅ Service template updated successfully:", id);
       return {
         data: updatedTemplate.data,
         error: null,
         loading: false,
       };
     } catch (error) {
-      console.error('💥 Error updating service template:', error);
+      console.error("💥 Error updating service template:", error);
       return {
         data: null,
-        error: 'Failed to update service template',
+        error: "Failed to update service template",
         loading: false,
       };
     }
@@ -1292,39 +1483,44 @@ export class VehicleService {
   /**
    * Delete a service template
    */
-  static async deleteServiceTemplate(id: string): Promise<ApiResponse<boolean>> {
+  static async deleteServiceTemplate(
+    id: string,
+  ): Promise<ApiResponse<boolean>> {
     try {
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      const {
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser();
 
       if (userError || !user) {
-        return { data: null, error: 'User not authenticated', loading: false };
+        return { data: null, error: "User not authenticated", loading: false };
       }
 
-      console.log('🗑️ Deleting service template:', id);
+      console.log("🗑️ Deleting service template:", id);
 
       // Delete the template (cascade will handle items)
       const { error: deleteError } = await (supabase as any)
-        .from('service_templates')
+        .from("service_templates")
         .delete()
-        .eq('id', id)
-        .eq('user_id', user.id);
+        .eq("id", id)
+        .eq("user_id", user.id);
 
       if (deleteError) {
-        console.error('❌ Error deleting service template:', deleteError);
+        console.error("❌ Error deleting service template:", deleteError);
         return { data: null, error: deleteError.message, loading: false };
       }
 
-      console.log('✅ Service template deleted successfully:', id);
+      console.log("✅ Service template deleted successfully:", id);
       return {
         data: true,
         error: null,
         loading: false,
       };
     } catch (error) {
-      console.error('💥 Error deleting service template:', error);
+      console.error("💥 Error deleting service template:", error);
       return {
         data: null,
-        error: 'Failed to delete service template',
+        error: "Failed to delete service template",
         loading: false,
       };
     }
@@ -1335,12 +1531,12 @@ export class VehicleService {
    */
   static createDefaultTemplate(): ServiceTemplateFormData {
     return {
-      name: '',
-      description: '',
+      name: "",
+      description: "",
       items: [
-        { description: '', price: 0 },
-        { description: '', price: 0 }
-      ]
+        { description: "", price: 0 },
+        { description: "", price: 0 },
+      ],
     };
   }
 

@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { Dimensions, Platform } from 'react-native';
+import { useState, useEffect } from "react";
+import { Dimensions, Platform } from "react-native";
 
 interface ResponsiveLayout {
   isMobile: boolean;
@@ -15,12 +15,12 @@ interface ResponsiveLayout {
 
 export function useResponsiveLayout(): ResponsiveLayout {
   const [dimensions, setDimensions] = useState(() => {
-    const { width, height } = Dimensions.get('window');
+    const { width, height } = Dimensions.get("window");
     return { width, height };
   });
 
   useEffect(() => {
-    const subscription = Dimensions.addEventListener('change', ({ window }) => {
+    const subscription = Dimensions.addEventListener("change", ({ window }) => {
       setDimensions({ width: window.width, height: window.height });
     });
 
@@ -29,7 +29,7 @@ export function useResponsiveLayout(): ResponsiveLayout {
 
   const screenWidth = dimensions.width;
   const screenHeight = dimensions.height;
-  const isWeb = Platform.OS === 'web';
+  const isWeb = Platform.OS === "web";
 
   // Responsive breakpoints
   const isMobile = screenWidth < 768;

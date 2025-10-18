@@ -1,16 +1,26 @@
-import { Button } from '@/components/ui/Button';
-import { DatePicker } from '@/components/ui/DatePicker';
-import { IconSymbol } from '@/components/ui/icon-symbol';
-import { Input } from '@/components/ui/Input';
-import { AlertModal } from '@/components/ui/Modal';
-import { ReceiptViewer } from '@/components/ui/ReceiptViewer';
-import { ServiceItemsInput, calculateTotalCost, createDefaultServiceItems, validateServiceItems } from '@/components/ui/ServiceItemsInput';
-import { Colors } from '@/constants/theme';
-import { useColorScheme } from '@/hooks/use-color-scheme';
-import { ServiceLogService } from '@/lib/services/loggingService';
-import { ServiceLog, ServiceLogFormData, ServiceLogItem, ServiceType } from '@/types';
-import { router, useLocalSearchParams } from 'expo-router';
-import React, { useEffect, useState } from 'react';
+import { Button } from "@/components/ui/Button";
+import { DatePicker } from "@/components/ui/DatePicker";
+import { IconSymbol } from "@/components/ui/icon-symbol";
+import { Input } from "@/components/ui/Input";
+import { AlertModal } from "@/components/ui/Modal";
+import { ReceiptViewer } from "@/components/ui/ReceiptViewer";
+import {
+  ServiceItemsInput,
+  calculateTotalCost,
+  createDefaultServiceItems,
+  validateServiceItems,
+} from "@/components/ui/ServiceItemsInput";
+import { Colors } from "@/constants/theme";
+import { useColorScheme } from "@/hooks/use-color-scheme";
+import { ServiceLogService } from "@/lib/services/loggingService";
+import {
+  ServiceLog,
+  ServiceLogFormData,
+  ServiceLogItem,
+  ServiceType,
+} from "@/types";
+import { router, useLocalSearchParams } from "expo-router";
+import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -20,21 +30,28 @@ import {
   Text,
   TouchableOpacity,
   View,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 const SERVICE_TYPES: { value: ServiceType; label: string; icon: string }[] = [
-  { value: 'oil_change', label: 'Oil Change', icon: 'drop' },
-  { value: 'tire_rotation', label: 'Tire Rotation', icon: 'circle' },
-  { value: 'brake_service', label: 'Brake Service', icon: 'stop' },
-  { value: 'general_maintenance', label: 'General Maintenance', icon: 'wrench' },
-  { value: 'repair', label: 'Repair', icon: 'hammer' },
-  { value: 'inspection', label: 'Inspection', icon: 'checkmark.shield' },
-  { value: 'other', label: 'Other', icon: 'ellipsis' },
+  { value: "oil_change", label: "Oil Change", icon: "drop" },
+  { value: "tire_rotation", label: "Tire Rotation", icon: "circle" },
+  { value: "brake_service", label: "Brake Service", icon: "stop" },
+  {
+    value: "general_maintenance",
+    label: "General Maintenance",
+    icon: "wrench",
+  },
+  { value: "repair", label: "Repair", icon: "hammer" },
+  { value: "inspection", label: "Inspection", icon: "checkmark.shield" },
+  { value: "other", label: "Other", icon: "ellipsis" },
 ];
 
 // Helper function to parse service log description (for backward compatibility)
-const parseServiceLogItems = (description: string, cost?: number): ServiceLogItem[] => {
+const parseServiceLogItems = (
+  description: string,
+  cost?: number,
+): ServiceLogItem[] => {
   try {
     // Try to parse as JSON first (new format)
     const parsed = JSON.parse(description);
@@ -58,15 +75,15 @@ export default function EditServiceLogScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const [serviceLog, setServiceLog] = useState<ServiceLog | null>(null);
   const [formData, setFormData] = useState<ServiceLogFormData>({
-    vehicle_id: '',
-    service_type: 'general_maintenance',
-    description: '',
+    vehicle_id: "",
+    service_type: "general_maintenance",
+    description: "",
     cost: 0,
     items: createDefaultServiceItems(),
-    date: new Date().toISOString().split('T')[0],
+    date: new Date().toISOString().split("T")[0],
     odometer_reading: 0,
-    next_service_due: '',
-    receipt_image_url: '',
+    next_service_due: "",
+    receipt_image_url: "",
     ocr_extracted_data: undefined,
     auto_filled: false,
   });
@@ -74,15 +91,15 @@ export default function EditServiceLogScreen() {
   const [dataLoading, setDataLoading] = useState(true);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [showErrorModal, setShowErrorModal] = useState(false);
-  const [errorMessage, setErrorMessage] = useState('');
+  const [errorMessage, setErrorMessage] = useState("");
   const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? 'light'];
-  const isWeb = Platform.OS === 'web';
+  const colors = Colors[colorScheme ?? "light"];
+  const isWeb = Platform.OS === "web";
 
   useEffect(() => {
     const fetchServiceLog = async () => {
       if (!id) {
-        setErrorMessage('Invalid service log ID');
+        setErrorMessage("Invalid service log ID");
         setShowErrorModal(true);
         router.back();
         return;
@@ -91,15 +108,15 @@ export default function EditServiceLogScreen() {
       try {
         const { data: logs, error } = await ServiceLogService.getServiceLogs();
         if (error) {
-          setErrorMessage('Failed to load service log');
+          setErrorMessage("Failed to load service log");
           setShowErrorModal(true);
           router.back();
           return;
         }
 
-        const log = logs?.find(l => l.id === id);
+        const log = logs?.find((l) => l.id === id);
         if (!log) {
-          setErrorMessage('Service log not found');
+          setErrorMessage("Service log not found");
           setShowErrorModal(true);
           router.back();
           return;
@@ -118,14 +135,14 @@ export default function EditServiceLogScreen() {
           items: items,
           date: log.date,
           odometer_reading: log.odometer_reading,
-          next_service_due: log.next_service_due || '',
-          receipt_image_url: log.receipt_image_url || '',
+          next_service_due: log.next_service_due || "",
+          receipt_image_url: log.receipt_image_url || "",
           ocr_extracted_data: log.ocr_extracted_data || undefined,
           auto_filled: log.auto_filled || false,
         });
       } catch (error) {
-        console.error('Error fetching service log:', error);
-        setErrorMessage('Failed to load service log');
+        console.error("Error fetching service log:", error);
+        setErrorMessage("Failed to load service log");
         setShowErrorModal(true);
         router.back();
       }
@@ -146,12 +163,12 @@ export default function EditServiceLogScreen() {
     }
 
     if (formData.odometer_reading <= 0) {
-      setErrorMessage('Please enter a valid odometer reading');
+      setErrorMessage("Please enter a valid odometer reading");
       setShowErrorModal(true);
       return;
     }
     if (!formData.date) {
-      setErrorMessage('Please select a date');
+      setErrorMessage("Please select a date");
       setShowErrorModal(true);
       return;
     }
@@ -172,7 +189,10 @@ export default function EditServiceLogScreen() {
       // Don't update receipt_image_url or ocr_extracted_data in edit
     };
 
-    const { data, error } = await ServiceLogService.updateServiceLog(id!, updateData);
+    const { data, error } = await ServiceLogService.updateServiceLog(
+      id!,
+      updateData,
+    );
     setLoading(false);
 
     if (error) {
@@ -185,26 +205,24 @@ export default function EditServiceLogScreen() {
 
   const handleSuccessModalClose = () => {
     setShowSuccessModal(false);
-    router.push('/(tabs)/logs');
+    router.push("/(tabs)/logs");
   };
 
   const validateOdometer = (value: string) => {
-    const reading = parseInt(value.replace(/,/g, ''));
+    const reading = parseInt(value.replace(/,/g, ""));
     if (isNaN(reading) || reading <= 0) {
-      return 'Please enter a valid odometer reading';
+      return "Please enter a valid odometer reading";
     }
     return undefined;
   };
 
   const isFormValid = () => {
-    const itemsValid = formData.items && formData.items.length > 0 &&
-      formData.items.some(item => item.description.trim() && item.price > 0);
+    const itemsValid =
+      formData.items &&
+      formData.items.length > 0 &&
+      formData.items.some((item) => item.description.trim() && item.price > 0);
 
-    return (
-      itemsValid &&
-      formData.odometer_reading > 0 &&
-      formData.date
-    );
+    return itemsValid && formData.odometer_reading > 0 && formData.date;
   };
 
   const ServiceTypeSelector = () => (
@@ -218,19 +236,27 @@ export default function EditServiceLogScreen() {
             key={type.value}
             style={[
               styles.serviceTypeOption,
-              formData.service_type === type.value && styles.serviceTypeOptionSelected,
+              formData.service_type === type.value &&
+                styles.serviceTypeOptionSelected,
             ]}
-            onPress={() => setFormData(prev => ({ ...prev, service_type: type.value }))}
+            onPress={() =>
+              setFormData((prev) => ({ ...prev, service_type: type.value }))
+            }
           >
             <IconSymbol
               name={type.icon}
               size={20}
-              color={formData.service_type === type.value ? colors.tint : colors.icon}
+              color={
+                formData.service_type === type.value ? colors.tint : colors.icon
+              }
             />
-            <Text style={[
-              styles.serviceTypeText,
-              formData.service_type === type.value && styles.serviceTypeTextSelected,
-            ]}>
+            <Text
+              style={[
+                styles.serviceTypeText,
+                formData.service_type === type.value &&
+                  styles.serviceTypeTextSelected,
+              ]}
+            >
               {type.label}
             </Text>
           </TouchableOpacity>
@@ -242,15 +268,15 @@ export default function EditServiceLogScreen() {
   const styles = StyleSheet.create({
     container: {
       flex: 1,
-      backgroundColor: isWeb ? colors.icon + '08' : colors.background,
+      backgroundColor: isWeb ? colors.icon + "08" : colors.background,
     },
     header: {
-      flexDirection: 'row',
-      alignItems: 'center',
+      flexDirection: "row",
+      alignItems: "center",
       paddingHorizontal: 20,
       paddingVertical: 16,
       borderBottomWidth: 1,
-      borderBottomColor: colors.icon + '20',
+      borderBottomColor: colors.icon + "20",
       backgroundColor: colors.background,
     },
     backButton: {
@@ -259,7 +285,7 @@ export default function EditServiceLogScreen() {
     },
     headerTitle: {
       fontSize: 24,
-      fontWeight: 'bold',
+      fontWeight: "bold",
       color: colors.text,
       flex: 1,
     },
@@ -271,34 +297,34 @@ export default function EditServiceLogScreen() {
       paddingBottom: 100,
       ...(isWeb && {
         maxWidth: 600,
-        width: '100%',
-        alignSelf: 'center',
+        width: "100%",
+        alignSelf: "center",
       }),
     },
     title: {
       fontSize: 32,
-      fontWeight: 'bold',
+      fontWeight: "bold",
       color: colors.text,
       marginBottom: 8,
-      textAlign: isWeb ? 'center' : 'left',
+      textAlign: isWeb ? "center" : "left",
     },
     subtitle: {
       fontSize: 16,
       color: colors.icon,
       marginBottom: 32,
-      textAlign: isWeb ? 'center' : 'left',
+      textAlign: isWeb ? "center" : "left",
     },
     card: {
       backgroundColor: colors.background,
       borderRadius: isWeb ? 16 : 12,
       padding: isWeb ? 32 : 20,
       ...(isWeb && {
-        shadowColor: colorScheme === 'dark' ? '#ffffff' : '#000000',
+        shadowColor: colorScheme === "dark" ? "#ffffff" : "#000000",
         shadowOffset: {
           width: 0,
           height: 4,
         },
-        shadowOpacity: colorScheme === 'dark' ? 0.1 : 0.08,
+        shadowOpacity: colorScheme === "dark" ? 0.1 : 0.08,
         shadowRadius: 12,
         elevation: 4,
       }),
@@ -308,7 +334,7 @@ export default function EditServiceLogScreen() {
     },
     sectionTitle: {
       fontSize: 18,
-      fontWeight: '600',
+      fontWeight: "600",
       color: colors.text,
       marginBottom: 16,
     },
@@ -317,15 +343,15 @@ export default function EditServiceLogScreen() {
     },
     label: {
       fontSize: 16,
-      fontWeight: '500',
+      fontWeight: "500",
       color: colors.text,
       marginBottom: 8,
     },
     requiredLabel: {
-      color: '#ff4444',
+      color: "#ff4444",
     },
     row: {
-      flexDirection: isWeb ? 'row' : 'column',
+      flexDirection: isWeb ? "row" : "column",
       gap: 16,
     },
     flex1: {
@@ -333,15 +359,15 @@ export default function EditServiceLogScreen() {
     },
     loadingContainer: {
       flex: 1,
-      justifyContent: 'center',
-      alignItems: 'center',
+      justifyContent: "center",
+      alignItems: "center",
     },
     vehicleInfo: {
-      backgroundColor: colors.icon + '10',
+      backgroundColor: colors.icon + "10",
       borderRadius: 8,
       padding: 12,
-      flexDirection: 'row',
-      alignItems: 'center',
+      flexDirection: "row",
+      alignItems: "center",
       gap: 12,
     },
     vehicleIcon: {
@@ -349,12 +375,12 @@ export default function EditServiceLogScreen() {
       height: 32,
       borderRadius: 16,
       backgroundColor: colors.tint,
-      alignItems: 'center',
-      justifyContent: 'center',
+      alignItems: "center",
+      justifyContent: "center",
     },
     vehicleText: {
       fontSize: 16,
-      fontWeight: '500',
+      fontWeight: "500",
       color: colors.text,
     },
     vehiclePlate: {
@@ -363,36 +389,36 @@ export default function EditServiceLogScreen() {
       marginTop: 2,
     },
     serviceTypeGrid: {
-      flexDirection: 'row',
-      flexWrap: 'wrap',
+      flexDirection: "row",
+      flexWrap: "wrap",
       gap: 12,
     },
     serviceTypeOption: {
-      flexDirection: 'row',
-      alignItems: 'center',
+      flexDirection: "row",
+      alignItems: "center",
       backgroundColor: colors.background,
       borderWidth: 1,
-      borderColor: colors.icon + '30',
+      borderColor: colors.icon + "30",
       borderRadius: 8,
       paddingHorizontal: 12,
       paddingVertical: 8,
       gap: 8,
-      minWidth: '45%',
+      minWidth: "45%",
     },
     serviceTypeOptionSelected: {
       borderColor: colors.tint,
-      backgroundColor: colors.tint + '10',
+      backgroundColor: colors.tint + "10",
     },
     serviceTypeText: {
       fontSize: 14,
-      fontWeight: '500',
+      fontWeight: "500",
       color: colors.text,
     },
     serviceTypeTextSelected: {
       color: colors.tint,
     },
     buttonContainer: {
-      flexDirection: 'row',
+      flexDirection: "row",
       gap: 12,
       marginTop: 32,
     },
@@ -409,7 +435,10 @@ export default function EditServiceLogScreen() {
       <SafeAreaView style={styles.container}>
         {!isWeb && (
           <View style={styles.header}>
-            <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+            <TouchableOpacity
+              style={styles.backButton}
+              onPress={() => router.back()}
+            >
               <IconSymbol name="chevron.left" size={24} color={colors.text} />
             </TouchableOpacity>
             <Text style={styles.headerTitle}>Edit Service Log</Text>
@@ -426,7 +455,10 @@ export default function EditServiceLogScreen() {
     <SafeAreaView style={styles.container}>
       {!isWeb && (
         <View style={styles.header}>
-          <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => router.back()}
+          >
             <IconSymbol name="chevron.left" size={24} color={colors.text} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Edit Service Log</Text>
@@ -434,7 +466,7 @@ export default function EditServiceLogScreen() {
       )}
 
       <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={styles.content}
       >
         <ScrollView
@@ -445,7 +477,9 @@ export default function EditServiceLogScreen() {
           {isWeb && (
             <>
               <Text style={styles.title}>Edit Service Log</Text>
-              <Text style={styles.subtitle}>Update your service log details</Text>
+              <Text style={styles.subtitle}>
+                Update your service log details
+              </Text>
             </>
           )}
 
@@ -459,9 +493,12 @@ export default function EditServiceLogScreen() {
                   </View>
                   <View>
                     <Text style={styles.vehicleText}>
-                      {serviceLog.vehicles.year} {serviceLog.vehicles.make} {serviceLog.vehicles.model}
+                      {serviceLog.vehicles.year} {serviceLog.vehicles.make}{" "}
+                      {serviceLog.vehicles.model}
                     </Text>
-                    <Text style={styles.vehiclePlate}>{serviceLog.vehicles.license_plate}</Text>
+                    <Text style={styles.vehiclePlate}>
+                      {serviceLog.vehicles.license_plate}
+                    </Text>
                   </View>
                 </View>
               )}
@@ -484,7 +521,9 @@ export default function EditServiceLogScreen() {
 
               <ServiceItemsInput
                 items={formData.items || []}
-                onItemsChange={(items) => setFormData(prev => ({ ...prev, items }))}
+                onItemsChange={(items) =>
+                  setFormData((prev) => ({ ...prev, items }))
+                }
               />
             </View>
 
@@ -495,13 +534,20 @@ export default function EditServiceLogScreen() {
                 label="Odometer (km)"
                 value={formData.odometer_reading.toString()}
                 onChangeText={(text) => {
-                  const reading = parseInt(text.replace(/,/g, '')) || 0;
-                  setFormData(prev => ({ ...prev, odometer_reading: reading }));
+                  const reading = parseInt(text.replace(/,/g, "")) || 0;
+                  setFormData((prev) => ({
+                    ...prev,
+                    odometer_reading: reading,
+                  }));
                 }}
                 placeholder="150,000"
                 keyboardType="numeric"
                 required
-                error={formData.odometer_reading ? validateOdometer(formData.odometer_reading.toString()) : undefined}
+                error={
+                  formData.odometer_reading
+                    ? validateOdometer(formData.odometer_reading.toString())
+                    : undefined
+                }
                 leftIcon="speedometer"
               />
 
@@ -510,7 +556,9 @@ export default function EditServiceLogScreen() {
                   <DatePicker
                     label="Date"
                     value={formData.date}
-                    onDateChange={(date) => setFormData(prev => ({ ...prev, date }))}
+                    onDateChange={(date) =>
+                      setFormData((prev) => ({ ...prev, date }))
+                    }
                     placeholder="Select date"
                     required
                     style={{ marginBottom: 0 }}
@@ -521,7 +569,12 @@ export default function EditServiceLogScreen() {
                   <DatePicker
                     label="Next Service Due"
                     value={formData.next_service_due}
-                    onDateChange={(date) => setFormData(prev => ({ ...prev, next_service_due: date }))}
+                    onDateChange={(date) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        next_service_due: date,
+                      }))
+                    }
                     placeholder="Select next service date"
                     style={{ marginBottom: 0 }}
                   />

@@ -1,10 +1,15 @@
-import React, { createContext, useContext } from 'react';
-import { WebAlertProvider } from '@/components/ui/WebAlertProvider';
-import { useWebAlert } from '@/hooks/use-web-alert';
-import { AlertButton, AlertOptions } from '@/hooks/use-web-alert';
+import React, { createContext, useContext } from "react";
+import { WebAlertProvider } from "@/components/ui/WebAlertProvider";
+import { useWebAlert } from "@/hooks/use-web-alert";
+import { AlertButton, AlertOptions } from "@/hooks/use-web-alert";
 
 interface DialogContextValue {
-  alert: (title: string, message?: string, buttons?: AlertButton[], options?: AlertOptions) => void;
+  alert: (
+    title: string,
+    message?: string,
+    buttons?: AlertButton[],
+    options?: AlertOptions,
+  ) => void;
   showSuccess: (title: string, message?: string, onPress?: () => void) => void;
   showError: (title: string, message?: string, onPress?: () => void) => void;
   showConfirm: (
@@ -14,7 +19,7 @@ interface DialogContextValue {
     onCancel?: () => void,
     confirmText?: string,
     cancelText?: string,
-    destructive?: boolean
+    destructive?: boolean,
   ) => void;
   hideConfirm: () => void;
 }
@@ -49,7 +54,7 @@ export function DialogProvider({ children }: { children: React.ReactNode }) {
 export function useDialog() {
   const context = useContext(DialogContext);
   if (context === undefined) {
-    throw new Error('useDialog must be used within a DialogProvider');
+    throw new Error("useDialog must be used within a DialogProvider");
   }
   return context;
 }
