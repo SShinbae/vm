@@ -18,6 +18,7 @@ on:
           - dev
           - prod-apk
           - prod-aab
+          - publish-expo
           - all
 
 env:
@@ -68,6 +69,15 @@ jobs:
 
       - name: 🎨 Run Prettier check
         run: yarn format:check
+
+      - name: 🧪 Run Jest Tests
+        run: yarn test
+
+      - name: 🧪 Run React Native Testing Library Tests
+        run: yarn test:rntl
+
+      - name: 🧪 Run renderHook Tests
+        run: yarn test:hooks
 
   build-and-deploy:
     needs: test
@@ -190,6 +200,13 @@ jobs:
           eas build --platform android --profile production --local --non-interactive --output=./app-prod.aab
         env:
           NODE_ENV: production
+
+      - name: 🚀 Publish to Expo
+        if: github.event.inputs.buildType == 'all' || github.event.inputs.buildType == 'publish-expo'
+        run: |
+          eas update --auto
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
 
       - name: 📦 Upload build artifacts to GitHub
         uses: actions/upload-artifact@v4
