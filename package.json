@@ -14,6 +14,15 @@
     "lint": "expo lint",
     "prepare": "husky"
   },
+  "lint-staged": {
+    "*.{js,jsx,ts,tsx}": [
+      "npx eslint --fix",
+      "npx prettier --write"
+    ],
+    "*.{ts,tsx}": [
+      "bash -c 'npx tsc --noEmit'"
+    ]
+  },
   "dependencies": {
     "@expo/metro-runtime": "~6.1.2",
     "@expo/vector-icons": "^15.0.2",
@@ -67,11 +76,13 @@
     "@types/react": "^18.3.12",
     "@typescript-eslint/eslint-plugin": "^8.46.0",
     "@typescript-eslint/parser": "^8.46.0",
-    "eslint": "^9.25.0",
+    "eslint": "^9.38.0",
     "eslint-config-expo": "~10.0.0",
     "husky": "^9.1.7",
     "jest": "^30.2.0",
     "jest-expo": "^54.0.12",
+    "lint-staged": "^16.2.4",
+    "prettier": "^3.6.2",
     "react-dom": "19.1.0",
     "react-image-crop": "^11.0.10",
     "react-native-web": "^0.21.1",
