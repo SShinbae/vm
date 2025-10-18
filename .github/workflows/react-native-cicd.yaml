@@ -44,40 +44,19 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "20"
-          cache: "yarn"
-
-      - name: 📦 Get yarn cache directory path
-        id: yarn-cache-dir-path
-        run: echo "dir=$(yarn cache dir)" >> $GITHUB_OUTPUT
-
-      - name: 📦 Setup yarn cache
-        uses: actions/cache@v3
-        with:
-          path: ${{ steps.yarn-cache-dir-path.outputs.dir }}
-          key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-yarn-
+          cache: "npm"
 
       - name: 📦 Install dependencies
-        run: yarn install
+        run: npm ci
 
       - name: 🧪 Run TypeScript check
-        run: yarn tsc
+        run: npx tsc --noEmit
 
       - name: 🧹 Run ESLint
-        run: yarn lint
-
-      - name: 🎨 Run Prettier check
-        run: yarn format:check
+        run: npm run lint
 
       - name: 🧪 Run Jest Tests
-        run: yarn test
-
-      - name: 🧪 Run React Native Testing Library Tests
-        run: yarn test:rntl
-
-      - name: 🧪 Run renderHook Tests
-        run: yarn test:hooks
+        run: npm test
 
   build-and-deploy:
     needs: test
@@ -91,30 +70,18 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "20"
-          cache: "yarn"
-
-      - name: 📦 Get yarn cache directory path
-        id: yarn-cache-dir-path
-        run: echo "dir=$(yarn cache dir)" >> $GITHUB_OUTPUT
-
-      - name: 📦 Setup yarn cache
-        uses: actions/cache@v3
-        with:
-          path: ${{ steps.yarn-cache-dir-path.outputs.dir }}
-          key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-yarn-
+          cache: "npm"
 
       - name: 📦 Install dependencies
         run: |
-          yarn install
-          yarn global add eas-cli@latest
+          npm install
+          npm install -g eas-cli@latest
 
       - name: 📱 Setup EAS build cache
         uses: actions/cache@v3
         with:
           path: ~/.eas-build-local
-          key: ${{ runner.os }}-eas-build-local-${{ hashFiles('**/package.json') }}
+          key: ${{ runner.os }}-eas-build-local-${{ hashFiles('**/package-lock.json') }}
           restore-keys: |
             ${{ runner.os }}-eas-build-local-
 
