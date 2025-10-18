@@ -1,6 +1,6 @@
-import React from 'react';
-import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
-import { useStyles } from 'react-native-unistyles';
+import React from "react";
+import { ScrollView, Text, TouchableOpacity, View } from "react-native";
+import { useStyles } from "react-native-unistyles";
 
 /**
  * Example component demonstrating React Native Unistyles usage
@@ -14,9 +14,7 @@ export function UnistylesExample() {
       {/* Header */}
       <View style={styles.header}>
         <Text style={styles.title}>Unistyles Example</Text>
-        <Text style={styles.subtitle}>
-          Modern styling for React Native
-        </Text>
+        <Text style={styles.subtitle}>Modern styling for React Native</Text>
       </View>
 
       {/* Card Grid */}
@@ -30,9 +28,7 @@ export function UnistylesExample() {
 
         <View style={[styles.card, styles.cardSecondary]}>
           <Text style={styles.cardTitle}>Secondary Card</Text>
-          <Text style={styles.cardText}>
-            Styled with variants
-          </Text>
+          <Text style={styles.cardText}>Styled with variants</Text>
         </View>
       </View>
 
@@ -51,7 +47,8 @@ export function UnistylesExample() {
       <View style={styles.infoBox}>
         <Text style={styles.infoTitle}>💡 Theme Support</Text>
         <Text style={styles.infoText}>
-          Current theme: {theme.colors.background === '#FFFFFF' ? 'Light' : 'Dark'}
+          Current theme:{" "}
+          {theme.colors.background === "#FFFFFF" ? "Light" : "Dark"}
         </Text>
         <Text style={styles.infoText}>
           Colors automatically adjust based on system preferences!
@@ -70,10 +67,10 @@ const stylesheet = (theme: any) => ({
   header: {
     padding: theme.spacing.xl,
     backgroundColor: theme.colors.primary,
-    alignItems: 'center',
+    alignItems: "center",
   },
   title: {
-    fontSize: theme.fontSize['3xl'],
+    fontSize: theme.fontSize["3xl"],
     fontWeight: theme.fontWeight.bold,
     color: theme.colors.white,
     marginBottom: theme.spacing.xs,
@@ -122,7 +119,7 @@ const stylesheet = (theme: any) => ({
     backgroundColor: theme.colors.primary,
     padding: theme.spacing.lg,
     borderRadius: theme.borderRadius.md,
-    alignItems: 'center',
+    alignItems: "center",
   },
   buttonText: {
     color: theme.colors.white,
@@ -130,10 +127,10 @@ const stylesheet = (theme: any) => ({
     fontWeight: theme.fontWeight.semibold,
   },
   secondaryButton: {
-    backgroundColor: 'transparent',
+    backgroundColor: "transparent",
     padding: theme.spacing.lg,
     borderRadius: theme.borderRadius.md,
-    alignItems: 'center',
+    alignItems: "center",
     borderWidth: 2,
     borderColor: theme.colors.primary,
   },
@@ -145,7 +142,7 @@ const stylesheet = (theme: any) => ({
   infoBox: {
     margin: theme.spacing.lg,
     padding: theme.spacing.lg,
-    backgroundColor: theme.colors.success + '20', // 20% opacity
+    backgroundColor: theme.colors.success + "20", // 20% opacity
     borderRadius: theme.borderRadius.lg,
     borderLeftWidth: 4,
     borderLeftColor: theme.colors.success,

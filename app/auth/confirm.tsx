@@ -1,7 +1,7 @@
-import { Colors } from '@/constants/theme';
-import { useColorScheme } from '@/hooks/use-color-scheme';
-import { router, useLocalSearchParams } from 'expo-router';
-import React, { useState, useEffect } from 'react';
+import { Colors } from "@/constants/theme";
+import { useColorScheme } from "@/hooks/use-color-scheme";
+import { router, useLocalSearchParams } from "expo-router";
+import React, { useState, useEffect } from "react";
 import {
   ActivityIndicator,
   Dimensions,
@@ -10,11 +10,11 @@ import {
   Text,
   TouchableOpacity,
   View,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { supabase } from '../../services/supabaseClient';
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { supabase } from "../../services/supabaseClient";
 
-const { width: screenWidth } = Dimensions.get('window');
+const { width: screenWidth } = Dimensions.get("window");
 
 export default function ConfirmEmailScreen() {
   const { token_hash, type } = useLocalSearchParams<{
@@ -26,52 +26,52 @@ export default function ConfirmEmailScreen() {
   const [error, setError] = useState<string | null>(null);
   const [redirecting, setRedirecting] = useState(false);
   const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? 'light'];
+  const colors = Colors[colorScheme ?? "light"];
 
   useEffect(() => {
     const confirmEmail = async () => {
-      console.log('=== EMAIL CONFIRMATION DEBUG ===');
-      console.log('URL params:', { token_hash, type });
-      console.log('================================');
+      console.log("=== EMAIL CONFIRMATION DEBUG ===");
+      console.log("URL params:", { token_hash, type });
+      console.log("================================");
 
       if (!token_hash || !type) {
-        console.error('Missing required params:', { token_hash, type });
-        setError('Invalid confirmation link');
+        console.error("Missing required params:", { token_hash, type });
+        setError("Invalid confirmation link");
         setLoading(false);
         return;
       }
 
       try {
-        console.log('Attempting to verify OTP...');
+        console.log("Attempting to verify OTP...");
         const { data, error } = await supabase.auth.verifyOtp({
           token_hash,
-          type: type as 'signup' | 'recovery' | 'email_change',
+          type: type as "signup" | "recovery" | "email_change",
         });
 
-        console.log('Verification result:', { data, error });
+        console.log("Verification result:", { data, error });
 
         if (error) {
-          console.error('Email confirmation error:', error);
-          setError(error.message || 'Failed to confirm email');
+          console.error("Email confirmation error:", error);
+          setError(error.message || "Failed to confirm email");
         } else if (data.user) {
-          console.log('User confirmed successfully:', data.user.email);
+          console.log("User confirmed successfully:", data.user.email);
           setConfirmed(true);
           // Sign out user after verification to ensure manual login
-          console.log('Signing out user to force manual login...');
+          console.log("Signing out user to force manual login...");
           await supabase.auth.signOut();
           // Redirect to confirmation success page after 2 seconds
           setTimeout(() => {
-            console.log('Redirecting to confirmation success page...');
+            console.log("Redirecting to confirmation success page...");
             setRedirecting(true);
-            router.replace('/(auth)/confirmation-success');
+            router.replace("/(auth)/confirmation-success");
           }, 2000);
         } else {
-          console.error('No user data returned after verification');
-          setError('Confirmation failed');
+          console.error("No user data returned after verification");
+          setError("Confirmation failed");
         }
       } catch (err) {
-        console.error('Unexpected error during confirmation:', err);
-        setError('An unexpected error occurred');
+        console.error("Unexpected error during confirmation:", err);
+        setError("An unexpected error occurred");
       } finally {
         setLoading(false);
       }
@@ -82,7 +82,7 @@ export default function ConfirmEmailScreen() {
 
   const handleGoToLogin = () => {
     setRedirecting(true);
-    router.replace('/(auth)/confirmation-success');
+    router.replace("/(auth)/confirmation-success");
   };
 
   const styles = StyleSheet.create({
@@ -97,13 +97,13 @@ export default function ConfirmEmailScreen() {
     content: {
       flex: 1,
       paddingHorizontal: 20,
-      justifyContent: 'center',
-      maxWidth: screenWidth > 600 ? 400 : '100%',
-      alignSelf: 'center',
-      width: '100%',
+      justifyContent: "center",
+      maxWidth: screenWidth > 600 ? 400 : "100%",
+      alignSelf: "center",
+      width: "100%",
     },
     iconContainer: {
-      alignItems: 'center',
+      alignItems: "center",
       marginBottom: 32,
     },
     loadingIcon: {
@@ -111,19 +111,19 @@ export default function ConfirmEmailScreen() {
       height: 80,
       borderRadius: 40,
       backgroundColor: colors.facebook?.primary || colors.tint,
-      alignItems: 'center',
-      justifyContent: 'center',
+      alignItems: "center",
+      justifyContent: "center",
       marginBottom: 24,
     },
     successIcon: {
       width: 80,
       height: 80,
       borderRadius: 40,
-      backgroundColor: '#4CAF50',
-      alignItems: 'center',
-      justifyContent: 'center',
+      backgroundColor: "#4CAF50",
+      alignItems: "center",
+      justifyContent: "center",
       marginBottom: 24,
-      shadowColor: '#4CAF50',
+      shadowColor: "#4CAF50",
       shadowOffset: {
         width: 0,
         height: 4,
@@ -136,11 +136,11 @@ export default function ConfirmEmailScreen() {
       width: 80,
       height: 80,
       borderRadius: 40,
-      backgroundColor: '#F44336',
-      alignItems: 'center',
-      justifyContent: 'center',
+      backgroundColor: "#F44336",
+      alignItems: "center",
+      justifyContent: "center",
       marginBottom: 24,
-      shadowColor: '#F44336',
+      shadowColor: "#F44336",
       shadowOffset: {
         width: 0,
         height: 4,
@@ -151,20 +151,20 @@ export default function ConfirmEmailScreen() {
     },
     iconText: {
       fontSize: 40,
-      color: '#FFFFFF',
-      fontWeight: 'bold',
+      color: "#FFFFFF",
+      fontWeight: "bold",
     },
     title: {
       fontSize: 28,
-      fontWeight: 'bold',
+      fontWeight: "bold",
       color: colors.text,
-      textAlign: 'center',
+      textAlign: "center",
       marginBottom: 12,
     },
     subtitle: {
       fontSize: 16,
       color: colors.facebook?.gray || colors.icon,
-      textAlign: 'center',
+      textAlign: "center",
       lineHeight: 24,
       marginBottom: 32,
     },
@@ -172,7 +172,7 @@ export default function ConfirmEmailScreen() {
       backgroundColor: colors.facebook?.card || colors.background,
       borderRadius: 12,
       padding: 24,
-      shadowColor: '#000',
+      shadowColor: "#000",
       shadowOffset: {
         width: 0,
         height: 2,
@@ -186,7 +186,7 @@ export default function ConfirmEmailScreen() {
       backgroundColor: colors.facebook?.primary || colors.tint,
       borderRadius: 8,
       paddingVertical: 16,
-      alignItems: 'center',
+      alignItems: "center",
       minHeight: 52,
       shadowColor: colors.facebook?.primary || colors.tint,
       shadowOffset: {
@@ -203,16 +203,16 @@ export default function ConfirmEmailScreen() {
       elevation: 0,
     },
     primaryButtonText: {
-      color: '#FFFFFF',
+      color: "#FFFFFF",
       fontSize: 16,
-      fontWeight: '600',
+      fontWeight: "600",
     },
     redirectText: {
       fontSize: 14,
       color: colors.facebook?.gray || colors.icon,
-      textAlign: 'center',
+      textAlign: "center",
       marginTop: 16,
-      fontStyle: 'italic',
+      fontStyle: "italic",
     },
   });
 
@@ -283,7 +283,8 @@ export default function ConfirmEmailScreen() {
               </View>
               <Text style={styles.title}>Email Confirmed!</Text>
               <Text style={styles.subtitle}>
-                Your email has been successfully verified. Click continue to proceed to sign in.
+                Your email has been successfully verified. Click continue to
+                proceed to sign in.
               </Text>
             </View>
 

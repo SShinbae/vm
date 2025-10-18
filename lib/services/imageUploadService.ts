@@ -1,16 +1,21 @@
-import { supabase } from '../../services/supabaseClient';
+import { supabase } from "../../services/supabaseClient";
 import {
   ApiResponse,
   VehicleImage,
-  VehicleImageInsert
-} from '../../types/database-v2';
+  VehicleImageInsert,
+} from "../../types/database-v2";
 
 export class ImageUploadService {
   // Maximum file size (5MB)
   private static MAX_FILE_SIZE = 5 * 1024 * 1024;
 
   // Allowed image types
-  private static ALLOWED_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+  private static ALLOWED_TYPES = [
+    "image/jpeg",
+    "image/jpg",
+    "image/png",
+    "image/webp",
+  ];
 
   /**
    * Validate image file before upload
@@ -20,7 +25,7 @@ export class ImageUploadService {
     if (file.size > this.MAX_FILE_SIZE) {
       return {
         isValid: false,
-        error: `File size too large. Maximum size is ${this.MAX_FILE_SIZE / 1024 / 1024}MB`
+        error: `File size too large. Maximum size is ${this.MAX_FILE_SIZE / 1024 / 1024}MB`,
       };
     }
 
@@ -28,7 +33,8 @@ export class ImageUploadService {
     if (!this.ALLOWED_TYPES.includes(file.type)) {
       return {
         isValid: false,
-        error: 'Invalid file type. Please upload JPEG, PNG, or WebP images only.'
+        error:
+          "Invalid file type. Please upload JPEG, PNG, or WebP images only.",
       };
     }
 
@@ -38,9 +44,13 @@ export class ImageUploadService {
   /**
    * Generate unique filename for upload
    */
-  private static generateFileName(userId: string, type: string, originalName: string): string {
+  private static generateFileName(
+    userId: string,
+    type: string,
+    originalName: string,
+  ): string {
     const timestamp = Date.now();
-    const extension = originalName.split('.').pop()?.toLowerCase() || 'jpg';
+    const extension = originalName.split(".").pop()?.toLowerCase() || "jpg";
     const randomId = Math.random().toString(36).substring(2, 15);
 
     return `${userId}/${type}_${timestamp}_${randomId}.${extension}`;
@@ -51,84 +61,86 @@ export class ImageUploadService {
    */
   static async uploadProfileAvatar(file: File): Promise<ApiResponse<string>> {
     try {
-      console.log('🚀 Starting avatar upload process...');
-      console.log('📄 File details:', {
+      console.log("🚀 Starting avatar upload process...");
+      console.log("📄 File details:", {
         name: file.name,
         size: file.size,
         type: file.type,
-        lastModified: file.lastModified
+        lastModified: file.lastModified,
       });
 
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      const {
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser();
 
       if (userError || !user) {
-        console.error('❌ User authentication failed:', userError);
-        return { data: null, error: 'User not authenticated', loading: false };
+        console.error("❌ User authentication failed:", userError);
+        return { data: null, error: "User not authenticated", loading: false };
       }
 
-      console.log('✅ User authenticated:', user.id);
+      console.log("✅ User authenticated:", user.id);
 
       // Validate file
       const validation = this.validateImageFile(file);
       if (!validation.isValid) {
-        console.error('❌ File validation failed:', validation.error);
+        console.error("❌ File validation failed:", validation.error);
         return { data: null, error: validation.error!, loading: false };
       }
 
-      console.log('✅ File validation passed');
+      console.log("✅ File validation passed");
 
       // Generate filename
-      const fileName = this.generateFileName(user.id, 'avatar', file.name);
-      console.log('📝 Generated filename:', fileName);
+      const fileName = this.generateFileName(user.id, "avatar", file.name);
+      console.log("📝 Generated filename:", fileName);
 
       // Upload to storage
-      console.log('📤 Uploading to Supabase storage...');
+      console.log("📤 Uploading to Supabase storage...");
       const { data: uploadData, error: uploadError } = await supabase.storage
-        .from('profile-avatars')
+        .from("profile-avatars")
         .upload(fileName, file, {
-          cacheControl: '3600',
-          upsert: false
+          cacheControl: "3600",
+          upsert: false,
         });
 
       if (uploadError) {
-        console.error('❌ Storage upload failed:', uploadError);
-        console.error('   Error details:', {
+        console.error("❌ Storage upload failed:", uploadError);
+        console.error("   Error details:", {
           message: uploadError.message,
           statusCode: (uploadError as any).statusCode,
-          error: (uploadError as any).error
+          error: (uploadError as any).error,
         });
         return { data: null, error: uploadError.message, loading: false };
       }
 
-      console.log('✅ Storage upload successful:', uploadData);
+      console.log("✅ Storage upload successful:", uploadData);
 
       // Get public URL
       const { data: urlData } = supabase.storage
-        .from('profile-avatars')
+        .from("profile-avatars")
         .getPublicUrl(fileName);
 
-      console.log('🔗 Generated public URL:', urlData.publicUrl);
+      console.log("🔗 Generated public URL:", urlData.publicUrl);
 
       // Update user profile with new avatar URL
-      console.log('💾 Updating profile in database...');
+      console.log("💾 Updating profile in database...");
       const { error: updateError } = await supabase
-        .from('profiles')
+        .from("profiles")
         .update({ avatar_url: urlData.publicUrl })
-        .eq('id', user.id);
+        .eq("id", user.id);
 
       if (updateError) {
-        console.error('❌ Profile update failed:', updateError);
+        console.error("❌ Profile update failed:", updateError);
         // Try to cleanup uploaded file
-        await supabase.storage.from('profile-avatars').remove([fileName]);
+        await supabase.storage.from("profile-avatars").remove([fileName]);
         return { data: null, error: updateError.message, loading: false };
       }
 
-      console.log('✅ Avatar upload complete! URL:', urlData.publicUrl);
+      console.log("✅ Avatar upload complete! URL:", urlData.publicUrl);
       return { data: urlData.publicUrl, error: null, loading: false };
-
     } catch (error) {
-      console.error('💥 Unexpected error uploading avatar:', error);
-      return { data: null, error: 'Failed to upload avatar', loading: false };
+      console.error("💥 Unexpected error uploading avatar:", error);
+      return { data: null, error: "Failed to upload avatar", loading: false };
     }
   }
 
@@ -138,29 +150,36 @@ export class ImageUploadService {
   static async uploadVehicleImage(
     vehicleId: string,
     file: File,
-    imageType: 'vehicle_main' | 'vehicle_gallery' = 'vehicle_gallery',
-    caption?: string
+    imageType: "vehicle_main" | "vehicle_gallery" = "vehicle_gallery",
+    caption?: string,
   ): Promise<ApiResponse<VehicleImage>> {
     try {
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      const {
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser();
 
       if (userError || !user) {
-        return { data: null, error: 'User not authenticated', loading: false };
+        return { data: null, error: "User not authenticated", loading: false };
       }
 
       // Verify user owns the vehicle
       const { data: vehicle, error: vehicleError } = await supabase
-        .from('vehicles')
-        .select('user_id')
-        .eq('id', vehicleId)
+        .from("vehicles")
+        .select("user_id")
+        .eq("id", vehicleId)
         .single();
 
       if (vehicleError || !vehicle) {
-        return { data: null, error: 'Vehicle not found', loading: false };
+        return { data: null, error: "Vehicle not found", loading: false };
       }
 
       if (vehicle.user_id !== user.id) {
-        return { data: null, error: 'You can only upload images for your own vehicles', loading: false };
+        return {
+          data: null,
+          error: "You can only upload images for your own vehicles",
+          loading: false,
+        };
       }
 
       // Validate file
@@ -170,35 +189,39 @@ export class ImageUploadService {
       }
 
       // Generate filename
-      const fileName = this.generateFileName(user.id, `vehicle_${vehicleId}`, file.name);
+      const fileName = this.generateFileName(
+        user.id,
+        `vehicle_${vehicleId}`,
+        file.name,
+      );
 
       // Upload to storage
       const { data: uploadData, error: uploadError } = await supabase.storage
-        .from('vehicle-images')
+        .from("vehicle-images")
         .upload(fileName, file, {
-          cacheControl: '3600',
-          upsert: false
+          cacheControl: "3600",
+          upsert: false,
         });
 
       if (uploadError) {
-        console.error('Error uploading vehicle image:', uploadError);
+        console.error("Error uploading vehicle image:", uploadError);
         return { data: null, error: uploadError.message, loading: false };
       }
 
       // Get public URL
       const { data: urlData } = supabase.storage
-        .from('vehicle-images')
+        .from("vehicle-images")
         .getPublicUrl(fileName);
 
       // Get next display order for gallery images
       let displayOrder = 0;
-      if (imageType === 'vehicle_gallery') {
+      if (imageType === "vehicle_gallery") {
         const { data: existingImages } = await supabase
-          .from('vehicle_images')
-          .select('display_order')
-          .eq('vehicle_id', vehicleId)
-          .eq('image_type', 'vehicle_gallery')
-          .order('display_order', { ascending: false })
+          .from("vehicle_images")
+          .select("display_order")
+          .eq("vehicle_id", vehicleId)
+          .eq("image_type", "vehicle_gallery")
+          .order("display_order", { ascending: false })
           .limit(1);
 
         displayOrder = (existingImages?.[0]?.display_order || 0) + 1;
@@ -211,140 +234,165 @@ export class ImageUploadService {
         image_type: imageType,
         caption: caption || null,
         display_order: displayOrder,
-        uploaded_by: user.id
+        uploaded_by: user.id,
       };
 
       const { data: imageRecord, error: imageError } = await supabase
-        .from('vehicle_images')
+        .from("vehicle_images")
         .insert(imageData)
         .select()
         .single();
 
       if (imageError) {
-        console.error('Error creating image record:', imageError);
+        console.error("Error creating image record:", imageError);
         // Try to cleanup uploaded file
-        await supabase.storage.from('vehicle-images').remove([fileName]);
+        await supabase.storage.from("vehicle-images").remove([fileName]);
         return { data: null, error: imageError.message, loading: false };
       }
 
       // If this is a main image, update vehicle record
-      if (imageType === 'vehicle_main') {
+      if (imageType === "vehicle_main") {
         const { error: vehicleUpdateError } = await supabase
-          .from('vehicles')
+          .from("vehicles")
           .update({ main_image_url: urlData.publicUrl })
-          .eq('id', vehicleId);
+          .eq("id", vehicleId);
 
         if (vehicleUpdateError) {
-          console.error('Error updating vehicle main image:', vehicleUpdateError);
+          console.error(
+            "Error updating vehicle main image:",
+            vehicleUpdateError,
+          );
           // Continue anyway, the image record was created successfully
         }
       }
 
-      console.log('✅ Vehicle image uploaded successfully:', urlData.publicUrl);
+      console.log("✅ Vehicle image uploaded successfully:", urlData.publicUrl);
       return { data: imageRecord, error: null, loading: false };
-
     } catch (error) {
-      console.error('Unexpected error uploading vehicle image:', error);
-      return { data: null, error: 'Failed to upload vehicle image', loading: false };
+      console.error("Unexpected error uploading vehicle image:", error);
+      return {
+        data: null,
+        error: "Failed to upload vehicle image",
+        loading: false,
+      };
     }
   }
 
   /**
    * Get vehicle images
    */
-  static async getVehicleImages(vehicleId: string): Promise<ApiResponse<VehicleImage[]>> {
+  static async getVehicleImages(
+    vehicleId: string,
+  ): Promise<ApiResponse<VehicleImage[]>> {
     try {
       const { data, error } = await supabase
-        .from('vehicle_images')
-        .select('*')
-        .eq('vehicle_id', vehicleId)
-        .order('image_type', { ascending: true }) // main images first
-        .order('display_order', { ascending: true });
+        .from("vehicle_images")
+        .select("*")
+        .eq("vehicle_id", vehicleId)
+        .order("image_type", { ascending: true }) // main images first
+        .order("display_order", { ascending: true });
 
       if (error) {
-        console.error('Error fetching vehicle images:', error);
+        console.error("Error fetching vehicle images:", error);
         return { data: null, error: error.message, loading: false };
       }
 
       return { data: data || [], error: null, loading: false };
-
     } catch (error) {
-      console.error('Unexpected error fetching vehicle images:', error);
-      return { data: null, error: 'Failed to fetch vehicle images', loading: false };
+      console.error("Unexpected error fetching vehicle images:", error);
+      return {
+        data: null,
+        error: "Failed to fetch vehicle images",
+        loading: false,
+      };
     }
   }
 
   /**
    * Delete vehicle image
    */
-  static async deleteVehicleImage(imageId: string): Promise<ApiResponse<boolean>> {
+  static async deleteVehicleImage(
+    imageId: string,
+  ): Promise<ApiResponse<boolean>> {
     try {
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      const {
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser();
 
       if (userError || !user) {
-        return { data: null, error: 'User not authenticated', loading: false };
+        return { data: null, error: "User not authenticated", loading: false };
       }
 
       // Get image record to verify ownership and get storage path
       const { data: imageRecord, error: imageError } = await supabase
-        .from('vehicle_images')
-        .select(`
+        .from("vehicle_images")
+        .select(
+          `
           *,
           vehicles!inner(user_id)
-        `)
-        .eq('id', imageId)
+        `,
+        )
+        .eq("id", imageId)
         .single();
 
       if (imageError || !imageRecord) {
-        return { data: null, error: 'Image not found', loading: false };
+        return { data: null, error: "Image not found", loading: false };
       }
 
       // Check ownership
       if (imageRecord.vehicles.user_id !== user.id) {
-        return { data: null, error: 'You can only delete your own vehicle images', loading: false };
+        return {
+          data: null,
+          error: "You can only delete your own vehicle images",
+          loading: false,
+        };
       }
 
       // Extract filename from URL
       const url = new URL(imageRecord.image_url);
-      const pathParts = url.pathname.split('/');
+      const pathParts = url.pathname.split("/");
       const fileName = pathParts[pathParts.length - 1];
       const fullPath = `${user.id}/${fileName}`;
 
       // Delete from storage
       const { error: storageError } = await supabase.storage
-        .from('vehicle-images')
+        .from("vehicle-images")
         .remove([fullPath]);
 
       if (storageError) {
-        console.error('Error deleting from storage:', storageError);
+        console.error("Error deleting from storage:", storageError);
         // Continue with database deletion even if storage fails
       }
 
       // Delete database record
       const { error: deleteError } = await supabase
-        .from('vehicle_images')
+        .from("vehicle_images")
         .delete()
-        .eq('id', imageId);
+        .eq("id", imageId);
 
       if (deleteError) {
-        console.error('Error deleting image record:', deleteError);
+        console.error("Error deleting image record:", deleteError);
         return { data: null, error: deleteError.message, loading: false };
       }
 
       // If this was a main image, clear vehicle's main_image_url
-      if (imageRecord.image_type === 'vehicle_main') {
+      if (imageRecord.image_type === "vehicle_main") {
         await supabase
-          .from('vehicles')
+          .from("vehicles")
           .update({ main_image_url: null })
-          .eq('id', imageRecord.vehicle_id);
+          .eq("id", imageRecord.vehicle_id);
       }
 
-      console.log('✅ Vehicle image deleted successfully');
+      console.log("✅ Vehicle image deleted successfully");
       return { data: true, error: null, loading: false };
-
     } catch (error) {
-      console.error('Unexpected error deleting vehicle image:', error);
-      return { data: null, error: 'Failed to delete vehicle image', loading: false };
+      console.error("Unexpected error deleting vehicle image:", error);
+      return {
+        data: null,
+        error: "Failed to delete vehicle image",
+        loading: false,
+      };
     }
   }
 
@@ -353,54 +401,66 @@ export class ImageUploadService {
    */
   static async updateVehicleImage(
     imageId: string,
-    updates: { caption?: string; display_order?: number }
+    updates: { caption?: string; display_order?: number },
   ): Promise<ApiResponse<VehicleImage>> {
     try {
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      const {
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser();
 
       if (userError || !user) {
-        return { data: null, error: 'User not authenticated', loading: false };
+        return { data: null, error: "User not authenticated", loading: false };
       }
 
       // Verify ownership through vehicle
       const { data: imageRecord, error: checkError } = await supabase
-        .from('vehicle_images')
-        .select(`
+        .from("vehicle_images")
+        .select(
+          `
           *,
           vehicles!inner(user_id)
-        `)
-        .eq('id', imageId)
+        `,
+        )
+        .eq("id", imageId)
         .single();
 
       if (checkError || !imageRecord) {
-        return { data: null, error: 'Image not found', loading: false };
+        return { data: null, error: "Image not found", loading: false };
       }
 
       if (imageRecord.vehicles.user_id !== user.id) {
-        return { data: null, error: 'You can only modify your own vehicle images', loading: false };
+        return {
+          data: null,
+          error: "You can only modify your own vehicle images",
+          loading: false,
+        };
       }
 
       // Update image record
       const { data: updatedImage, error: updateError } = await supabase
-        .from('vehicle_images')
+        .from("vehicle_images")
         .update({
           ...updates,
-          updated_at: new Date().toISOString()
+          updated_at: new Date().toISOString(),
         })
-        .eq('id', imageId)
+        .eq("id", imageId)
         .select()
         .single();
 
       if (updateError) {
-        console.error('Error updating vehicle image:', updateError);
+        console.error("Error updating vehicle image:", updateError);
         return { data: null, error: updateError.message, loading: false };
       }
 
       return { data: updatedImage, error: null, loading: false };
-
     } catch (error) {
-      console.error('Unexpected error updating vehicle image:', error);
-      return { data: null, error: 'Failed to update vehicle image', loading: false };
+      console.error("Unexpected error updating vehicle image:", error);
+      return {
+        data: null,
+        error: "Failed to update vehicle image",
+        loading: false,
+      };
     }
   }
 
@@ -409,56 +469,58 @@ export class ImageUploadService {
    */
   static async deleteProfileAvatar(): Promise<ApiResponse<boolean>> {
     try {
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      const {
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser();
 
       if (userError || !user) {
-        return { data: null, error: 'User not authenticated', loading: false };
+        return { data: null, error: "User not authenticated", loading: false };
       }
 
       // Get current avatar URL
       const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('avatar_url')
-        .eq('id', user.id)
+        .from("profiles")
+        .select("avatar_url")
+        .eq("id", user.id)
         .single();
 
       if (profileError || !profile?.avatar_url) {
-        return { data: null, error: 'No avatar to delete', loading: false };
+        return { data: null, error: "No avatar to delete", loading: false };
       }
 
       // Extract filename from URL
       const url = new URL(profile.avatar_url);
-      const pathParts = url.pathname.split('/');
+      const pathParts = url.pathname.split("/");
       const fileName = pathParts[pathParts.length - 1];
       const fullPath = `${user.id}/${fileName}`;
 
       // Delete from storage
       const { error: storageError } = await supabase.storage
-        .from('profile-avatars')
+        .from("profile-avatars")
         .remove([fullPath]);
 
       if (storageError) {
-        console.error('Error deleting avatar from storage:', storageError);
+        console.error("Error deleting avatar from storage:", storageError);
         // Continue with database update even if storage fails
       }
 
       // Update profile to remove avatar URL
       const { error: updateError } = await supabase
-        .from('profiles')
+        .from("profiles")
         .update({ avatar_url: null })
-        .eq('id', user.id);
+        .eq("id", user.id);
 
       if (updateError) {
-        console.error('Error updating profile:', updateError);
+        console.error("Error updating profile:", updateError);
         return { data: null, error: updateError.message, loading: false };
       }
 
-      console.log('✅ Profile avatar deleted successfully');
+      console.log("✅ Profile avatar deleted successfully");
       return { data: true, error: null, loading: false };
-
     } catch (error) {
-      console.error('Unexpected error deleting avatar:', error);
-      return { data: null, error: 'Failed to delete avatar', loading: false };
+      console.error("Unexpected error deleting avatar:", error);
+      return { data: null, error: "Failed to delete avatar", loading: false };
     }
   }
 
@@ -478,7 +540,7 @@ export class ImageUploadService {
           width: img.width,
           height: img.height,
           size: file.size,
-          type: file.type
+          type: file.type,
         });
       };
       img.onerror = reject;
@@ -489,10 +551,14 @@ export class ImageUploadService {
   /**
    * Compress image before upload (optional utility)
    */
-  static compressImage(file: File, maxWidth: number = 1200, quality: number = 0.8): Promise<File> {
+  static compressImage(
+    file: File,
+    maxWidth: number = 1200,
+    quality: number = 0.8,
+  ): Promise<File> {
     return new Promise((resolve, reject) => {
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d');
+      const canvas = document.createElement("canvas");
+      const ctx = canvas.getContext("2d");
       const img = new Image();
 
       img.onload = () => {
@@ -513,15 +579,15 @@ export class ImageUploadService {
             if (blob) {
               const compressedFile = new File([blob], file.name, {
                 type: file.type,
-                lastModified: Date.now()
+                lastModified: Date.now(),
               });
               resolve(compressedFile);
             } else {
-              reject(new Error('Failed to compress image'));
+              reject(new Error("Failed to compress image"));
             }
           },
           file.type,
-          quality
+          quality,
         );
       };
 

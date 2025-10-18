@@ -1,9 +1,9 @@
-import React from 'react';
-import { View, Text, StyleSheet, Dimensions } from 'react-native';
-import { BarChart as RNBarChart } from 'react-native-chart-kit';
-import { useColorScheme } from '@/hooks/use-color-scheme';
-import { Colors } from '@/constants/theme';
-import { ChartDataPoint } from '@/lib/services/analyticsService';
+import React from "react";
+import { View, Text, StyleSheet, Dimensions } from "react-native";
+import { BarChart as RNBarChart } from "react-native-chart-kit";
+import { useColorScheme } from "@/hooks/use-color-scheme";
+import { Colors } from "@/constants/theme";
+import { ChartDataPoint } from "@/lib/services/analyticsService";
 
 interface BarChartProps {
   data: ChartDataPoint[];
@@ -19,12 +19,13 @@ export function BarChart({
   title,
   height = 200,
   color,
-  formatY = (value: number) => `RM${(typeof value === 'number' && !isNaN(value)) ? value.toFixed(0) : '0'}`,
-  horizontal = false
+  formatY = (value: number) =>
+    `RM${typeof value === "number" && !isNaN(value) ? value.toFixed(0) : "0"}`,
+  horizontal = false,
 }: BarChartProps) {
   const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? 'light'];
-  const screenWidth = Dimensions.get('window').width;
+  const colors = Colors[colorScheme ?? "light"];
+  const screenWidth = Dimensions.get("window").width;
 
   const chartColor = color || colors.chart.service;
 
@@ -39,17 +40,17 @@ export function BarChart({
     },
     title: {
       fontSize: 18,
-      fontWeight: '600',
+      fontWeight: "600",
       color: colors.text,
       marginBottom: 16,
     },
     chartContainer: {
-      alignItems: 'center',
+      alignItems: "center",
     },
     emptyState: {
       height,
-      justifyContent: 'center',
-      alignItems: 'center',
+      justifyContent: "center",
+      alignItems: "center",
     },
     emptyText: {
       fontSize: 14,
@@ -70,17 +71,17 @@ export function BarChart({
 
   // Prepare data for react-native-chart-kit
   const chartData = {
-    labels: data.map(point => {
+    labels: data.map((point) => {
       const label = point.label || point.x;
       // Truncate long vehicle names for better display
-      return label.length > 8 ? label.substring(0, 6) + '...' : label;
+      return label.length > 8 ? label.substring(0, 6) + "..." : label;
     }),
     datasets: [
       {
-        data: data.map(point => {
+        data: data.map((point) => {
           const value = point.y;
           // Ensure all values are valid numbers
-          return (typeof value === 'number' && !isNaN(value)) ? value : 0;
+          return typeof value === "number" && !isNaN(value) ? value : 0;
         }),
       },
     ],
@@ -91,8 +92,16 @@ export function BarChart({
     backgroundGradientFrom: colors.card,
     backgroundGradientTo: colors.card,
     decimalPlaces: 0,
-    color: (opacity = 1) => chartColor + Math.floor(opacity * 255).toString(16).padStart(2, '0'),
-    labelColor: (opacity = 1) => colors.textSecondary + Math.floor(opacity * 255).toString(16).padStart(2, '0'),
+    color: (opacity = 1) =>
+      chartColor +
+      Math.floor(opacity * 255)
+        .toString(16)
+        .padStart(2, "0"),
+    labelColor: (opacity = 1) =>
+      colors.textSecondary +
+      Math.floor(opacity * 255)
+        .toString(16)
+        .padStart(2, "0"),
     style: {
       borderRadius: 16,
     },

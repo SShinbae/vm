@@ -1,9 +1,16 @@
-import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
-import { PieChart as RechartsPieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend } from 'recharts';
-import { useColorScheme } from '@/hooks/use-color-scheme';
-import { Colors } from '@/constants/theme';
-import { ChartDataPoint } from '@/lib/services/analyticsService';
+import React from "react";
+import { View, Text, StyleSheet } from "react-native";
+import {
+  PieChart as RechartsPieChart,
+  Pie,
+  Cell,
+  Tooltip,
+  ResponsiveContainer,
+  Legend,
+} from "recharts";
+import { useColorScheme } from "@/hooks/use-color-scheme";
+import { Colors } from "@/constants/theme";
+import { ChartDataPoint } from "@/lib/services/analyticsService";
 
 interface PieChartProps {
   data: ChartDataPoint[];
@@ -18,12 +25,17 @@ export function PieChart({
   title,
   height = 200,
   colors: customColors,
-  showLegend = true
+  showLegend = true,
 }: PieChartProps) {
   const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? 'light'];
+  const colors = Colors[colorScheme ?? "light"];
 
-  const defaultColors = [colors.chart.fuel, colors.chart.service, colors.chart.mileage, colors.chart.primary];
+  const defaultColors = [
+    colors.chart.fuel,
+    colors.chart.service,
+    colors.chart.mileage,
+    colors.chart.primary,
+  ];
   const pieColors = customColors || defaultColors;
 
   const styles = StyleSheet.create({
@@ -37,19 +49,19 @@ export function PieChart({
     },
     title: {
       fontSize: 18,
-      fontWeight: '600',
+      fontWeight: "600",
       color: colors.text,
       marginBottom: 16,
-      textAlign: 'center',
+      textAlign: "center",
     },
     chartContainer: {
       height: height,
-      width: '100%',
+      width: "100%",
     },
     emptyState: {
       height,
-      justifyContent: 'center',
-      alignItems: 'center',
+      justifyContent: "center",
+      alignItems: "center",
     },
     emptyText: {
       fontSize: 14,
@@ -72,7 +84,7 @@ export function PieChart({
   const chartData = data.map((point) => ({
     name: point.x,
     value: point.y,
-    label: point.label || point.x
+    label: point.label || point.x,
   }));
 
   return (
@@ -98,11 +110,14 @@ export function PieChart({
               ))}
             </Pie>
             <Tooltip
-              formatter={(value: any, name: any) => [`RM${value.toFixed(0)}`, name]}
+              formatter={(value: any, name: any) => [
+                `RM${value.toFixed(0)}`,
+                name,
+              ]}
               contentStyle={{
                 backgroundColor: colors.card,
                 border: `1px solid ${colors.cardBorder}`,
-                borderRadius: '8px',
+                borderRadius: "8px",
               }}
             />
             {showLegend && (
@@ -110,7 +125,9 @@ export function PieChart({
                 verticalAlign="bottom"
                 height={36}
                 formatter={(value, entry: any) => (
-                  <span style={{ color: colors.textSecondary, fontSize: '12px' }}>
+                  <span
+                    style={{ color: colors.textSecondary, fontSize: "12px" }}
+                  >
                     {value} (RM{entry.payload.value.toFixed(0)})
                   </span>
                 )}

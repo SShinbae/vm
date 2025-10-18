@@ -1,16 +1,16 @@
-import { IconSymbol } from '@/components/ui/icon-symbol';
-import { ImageUpload } from '@/components/ui/ImageUpload';
-import { Modal } from '@/components/ui/Modal';
-import { NotificationBell } from '@/components/ui/NotificationBell';
-import { Colors } from '@/constants/theme';
-import { useColorScheme } from '@/hooks/use-color-scheme';
-import { useResponsiveLayout } from '@/hooks/use-responsive-layout';
-import { useAuth } from '@/lib/contexts/AuthContext';
-import { useTheme } from '@/lib/contexts/ThemeContext';
-import { useDialog } from '@/lib/contexts/DialogContext';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { router } from 'expo-router';
-import React, { useEffect, useState } from 'react';
+import { IconSymbol } from "@/components/ui/icon-symbol";
+import { ImageUpload } from "@/components/ui/ImageUpload";
+import { Modal } from "@/components/ui/Modal";
+import { NotificationBell } from "@/components/ui/NotificationBell";
+import { Colors } from "@/constants/theme";
+import { useColorScheme } from "@/hooks/use-color-scheme";
+import { useResponsiveLayout } from "@/hooks/use-responsive-layout";
+import { useAuth } from "@/lib/contexts/AuthContext";
+import { useTheme } from "@/lib/contexts/ThemeContext";
+import { useDialog } from "@/lib/contexts/DialogContext";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { router } from "expo-router";
+import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -22,16 +22,16 @@ import {
   TextInput,
   TouchableOpacity,
   View,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { supabase } from '../../services/supabaseClient';
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { supabase } from "../../services/supabaseClient";
 
 export default function ProfileScreen() {
   const { user, updateProfile, signOut } = useAuth();
   const { themeMode, setThemeMode } = useTheme();
   const { showConfirm, hideConfirm } = useDialog();
-  const [fullName, setFullName] = useState(user?.profile?.full_name || '');
-  const [username, setUsername] = useState(user?.profile?.username || '');
+  const [fullName, setFullName] = useState(user?.profile?.full_name || "");
+  const [username, setUsername] = useState(user?.profile?.username || "");
   const [avatarUrl, setAvatarUrl] = useState(user?.profile?.avatar_url || null);
   const [loading, setLoading] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -47,8 +47,8 @@ export default function ProfileScreen() {
     pushNotifications: true,
   });
   const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? 'light'];
-  const isWeb = Platform.OS === 'web';
+  const colors = Colors[colorScheme ?? "light"];
+  const isWeb = Platform.OS === "web";
 
   // Update avatar state when user profile changes
   useEffect(() => {
@@ -62,34 +62,42 @@ export default function ProfileScreen() {
 
   const loadNotificationPreferences = async () => {
     try {
-      const stored = await AsyncStorage.getItem('notification_preferences');
+      const stored = await AsyncStorage.getItem("notification_preferences");
       if (stored) {
         const prefs = JSON.parse(stored);
         setNotificationPrefs(prefs);
       }
     } catch (error) {
-      console.error('Error loading notification preferences:', error);
+      console.error("Error loading notification preferences:", error);
     }
   };
 
-  const saveNotificationPreferences = async (prefs: typeof notificationPrefs) => {
+  const saveNotificationPreferences = async (
+    prefs: typeof notificationPrefs,
+  ) => {
     try {
-      await AsyncStorage.setItem('notification_preferences', JSON.stringify(prefs));
+      await AsyncStorage.setItem(
+        "notification_preferences",
+        JSON.stringify(prefs),
+      );
       setNotificationPrefs(prefs);
     } catch (error) {
-      console.error('Error saving notification preferences:', error);
-      Alert.alert('Error', 'Failed to save notification preferences');
+      console.error("Error saving notification preferences:", error);
+      Alert.alert("Error", "Failed to save notification preferences");
     }
   };
 
-  const updateNotificationPref = (key: keyof typeof notificationPrefs, value: boolean) => {
+  const updateNotificationPref = (
+    key: keyof typeof notificationPrefs,
+    value: boolean,
+  ) => {
     const newPrefs = { ...notificationPrefs, [key]: value };
     saveNotificationPreferences(newPrefs);
   };
 
   const handleUpdateProfile = async () => {
     if (!fullName.trim()) {
-      Alert.alert('Error', 'Please enter your full name');
+      Alert.alert("Error", "Please enter your full name");
       return;
     }
 
@@ -97,44 +105,46 @@ export default function ProfileScreen() {
     const { error } = await updateProfile({
       full_name: fullName.trim(),
       username: username.trim() || null,
-      avatar_url: avatarUrl
+      avatar_url: avatarUrl,
     });
     setLoading(false);
 
     if (error) {
-      Alert.alert('Update Failed', error);
+      Alert.alert("Update Failed", error);
     } else {
       if (isWeb) {
         setIsEditing(false);
       } else {
         setShowEditModal(false);
       }
-      Alert.alert('Success', 'Profile updated successfully');
+      Alert.alert("Success", "Profile updated successfully");
     }
   };
 
   const handleAvatarUpload = (imageUrl: string) => {
-    console.log('🖼️ handleAvatarUpload called with URL:', imageUrl);
+    console.log("🖼️ handleAvatarUpload called with URL:", imageUrl);
     // Avatar is automatically saved to the database by ImageUpload component
     // Update local state immediately for instant preview
     setAvatarUrl(imageUrl);
 
     // Trigger AuthContext to refresh user profile from database in the background
     // This ensures the user context has the latest avatar_url
-    console.log('🔄 Updating profile in AuthContext (background)...');
+    console.log("🔄 Updating profile in AuthContext (background)...");
     updateProfile({
-      full_name: user?.profile?.full_name || '',
+      full_name: user?.profile?.full_name || "",
       username: user?.profile?.username || null,
-      avatar_url: imageUrl
-    }).then(result => {
-      console.log('✅ Profile update complete:', result);
-    }).catch(error => {
-      console.error('❌ Profile update failed:', error);
-    });
+      avatar_url: imageUrl,
+    })
+      .then((result) => {
+        console.log("✅ Profile update complete:", result);
+      })
+      .catch((error) => {
+        console.error("❌ Profile update failed:", error);
+      });
   };
 
   const handleAvatarError = (error: string) => {
-    Alert.alert('Avatar Upload Error', error);
+    Alert.alert("Avatar Upload Error", error);
   };
 
   const handleEditPress = () => {
@@ -147,33 +157,31 @@ export default function ProfileScreen() {
 
   const handleCancelEdit = () => {
     setIsEditing(false);
-    setFullName(user?.profile?.full_name || '');
-    setUsername(user?.profile?.username || '');
+    setFullName(user?.profile?.full_name || "");
+    setUsername(user?.profile?.username || "");
     setAvatarUrl(user?.profile?.avatar_url || null);
   };
 
   const handleSignOut = async () => {
     showConfirm(
-      'Sign Out',
-      'Are you sure you want to sign out?',
+      "Sign Out",
+      "Are you sure you want to sign out?",
       async () => {
         try {
           await signOut();
           hideConfirm();
-          router.replace('/(auth)/login');
+          router.replace("/(auth)/login");
         } catch (error) {
-          console.error('Error signing out:', error);
+          console.error("Error signing out:", error);
           hideConfirm();
         }
       },
       undefined,
-      'Sign Out',
-      'Cancel',
-      true
+      "Sign Out",
+      "Cancel",
+      true,
     );
   };
-
-
 
   const styles = StyleSheet.create({
     container: {
@@ -184,38 +192,38 @@ export default function ProfileScreen() {
       backgroundColor: colors.surface || colors.background,
       margin: 16,
       borderRadius: 16,
-      shadowColor: colorScheme === 'dark' ? '#ffffff' : '#000000',
+      shadowColor: colorScheme === "dark" ? "#ffffff" : "#000000",
       shadowOffset: {
         width: 0,
         height: 2,
       },
-      shadowOpacity: colorScheme === 'dark' ? 0.05 : 0.1,
+      shadowOpacity: colorScheme === "dark" ? 0.05 : 0.1,
       shadowRadius: 8,
       elevation: 4,
-      overflow: 'hidden',
+      overflow: "hidden",
     },
     headerBackground: {
       height: 120,
       backgroundColor: colors.tint,
-      position: 'relative',
-      overflow: 'hidden',
+      position: "relative",
+      overflow: "hidden",
     },
     circlePattern: {
-      position: 'absolute',
-      width: '100%',
-      height: '100%',
+      position: "absolute",
+      width: "100%",
+      height: "100%",
     },
     logoutButton: {
-      position: 'absolute',
+      position: "absolute",
       top: 16,
       right: 16,
       width: 36,
       height: 36,
       borderRadius: 18,
-      backgroundColor: 'rgba(255, 255, 255, 0.95)',
-      alignItems: 'center',
-      justifyContent: 'center',
-      shadowColor: '#000000',
+      backgroundColor: "rgba(255, 255, 255, 0.95)",
+      alignItems: "center",
+      justifyContent: "center",
+      shadowColor: "#000000",
       shadowOffset: {
         width: 0,
         height: 2,
@@ -225,19 +233,19 @@ export default function ProfileScreen() {
       elevation: 10,
       zIndex: 1000,
       borderWidth: 1,
-      borderColor: 'rgba(255, 68, 68, 0.3)',
+      borderColor: "rgba(255, 68, 68, 0.3)",
     },
     notificationButton: {
-      position: 'absolute',
+      position: "absolute",
       top: 16,
       right: 60,
       width: 36,
       height: 36,
       borderRadius: 18,
-      backgroundColor: 'rgba(255, 255, 255, 0.95)',
-      alignItems: 'center',
-      justifyContent: 'center',
-      shadowColor: '#000000',
+      backgroundColor: "rgba(255, 255, 255, 0.95)",
+      alignItems: "center",
+      justifyContent: "center",
+      shadowColor: "#000000",
       shadowOffset: {
         width: 0,
         height: 2,
@@ -248,9 +256,9 @@ export default function ProfileScreen() {
       zIndex: 1000,
     },
     circle: {
-      position: 'absolute',
+      position: "absolute",
       borderRadius: 100,
-      backgroundColor: 'rgba(255, 255, 255, 0.1)',
+      backgroundColor: "rgba(255, 255, 255, 0.1)",
     },
     circle1: {
       width: 80,
@@ -271,7 +279,7 @@ export default function ProfileScreen() {
       left: 30,
     },
     avatarContainer: {
-      alignItems: 'center',
+      alignItems: "center",
       marginTop: -40,
       marginBottom: 32,
     },
@@ -285,18 +293,18 @@ export default function ProfileScreen() {
       height: 80,
       borderRadius: 40,
       borderWidth: 4,
-      borderColor: 'white',
+      borderColor: "white",
       backgroundColor: colors.tint,
-      alignItems: 'center',
-      justifyContent: 'center',
+      alignItems: "center",
+      justifyContent: "center",
     },
     avatarText: {
       fontSize: 32,
-      fontWeight: 'bold',
-      color: 'white',
+      fontWeight: "bold",
+      color: "white",
     },
     profileInfo: {
-      alignItems: 'center',
+      alignItems: "center",
       paddingHorizontal: 20,
       marginBottom: 20,
     },
@@ -307,23 +315,23 @@ export default function ProfileScreen() {
     },
     name: {
       fontSize: 24,
-      fontWeight: 'bold',
+      fontWeight: "bold",
       color: colors.text,
       marginBottom: 4,
     },
     locationRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
+      flexDirection: "row",
+      alignItems: "center",
     },
     joinDate: {
       fontSize: 14,
       color: colors.icon,
     },
     actionButtons: {
-      flexDirection: 'row',
+      flexDirection: "row",
       paddingHorizontal: 20,
       marginBottom: 20,
-      justifyContent: 'space-between',
+      justifyContent: "space-between",
     },
     editButton: {
       backgroundColor: colors.tint,
@@ -332,18 +340,18 @@ export default function ProfileScreen() {
       borderRadius: 20,
       flex: 1,
       marginRight: 8,
-      alignItems: 'center',
-      flexDirection: 'row',
-      justifyContent: 'center',
+      alignItems: "center",
+      flexDirection: "row",
+      justifyContent: "center",
       gap: 8,
     },
     editButtonText: {
-      color: 'white',
-      fontWeight: '600',
+      color: "white",
+      fontWeight: "600",
       fontSize: 14,
     },
     cancelButton: {
-      backgroundColor: 'transparent',
+      backgroundColor: "transparent",
       borderWidth: 1,
       borderColor: colors.border,
       paddingHorizontal: 24,
@@ -351,14 +359,14 @@ export default function ProfileScreen() {
       borderRadius: 20,
       flex: 1,
       marginHorizontal: 4,
-      alignItems: 'center',
-      flexDirection: 'row',
-      justifyContent: 'center',
+      alignItems: "center",
+      flexDirection: "row",
+      justifyContent: "center",
       gap: 8,
     },
     cancelButtonText: {
       color: colors.text,
-      fontWeight: '600',
+      fontWeight: "600",
       fontSize: 14,
     },
     saveButton: {
@@ -367,14 +375,14 @@ export default function ProfileScreen() {
       paddingVertical: 10,
       borderRadius: 20,
       marginLeft: 8,
-      alignItems: 'center',
-      flexDirection: 'row',
-      justifyContent: 'center',
+      alignItems: "center",
+      flexDirection: "row",
+      justifyContent: "center",
       gap: 8,
     },
     saveButtonText: {
-      color: 'white',
-      fontWeight: '600',
+      color: "white",
+      fontWeight: "600",
       fontSize: 14,
     },
     informationSection: {
@@ -383,14 +391,14 @@ export default function ProfileScreen() {
     },
     sectionTitle: {
       fontSize: 18,
-      fontWeight: 'bold',
+      fontWeight: "bold",
       color: colors.text,
       marginBottom: 20,
     },
     infoRow: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
       paddingVertical: 12,
       borderBottomWidth: 1,
       borderBottomColor: colors.border,
@@ -403,16 +411,16 @@ export default function ProfileScreen() {
     infoValue: {
       fontSize: 14,
       color: colors.text,
-      fontWeight: '500',
+      fontWeight: "500",
       flex: 2,
-      textAlign: 'right',
+      textAlign: "right",
     },
     input: {
       fontSize: 14,
       color: colors.text,
-      fontWeight: '500',
+      fontWeight: "500",
       flex: 2,
-      textAlign: 'right',
+      textAlign: "right",
       paddingVertical: 4,
       paddingHorizontal: 8,
       backgroundColor: colors.background,
@@ -422,8 +430,8 @@ export default function ProfileScreen() {
     },
     themeOptions: {
       flex: 2,
-      flexDirection: 'row',
-      justifyContent: 'flex-end',
+      flexDirection: "row",
+      justifyContent: "flex-end",
       gap: 8,
     },
     themeOption: {
@@ -441,32 +449,32 @@ export default function ProfileScreen() {
     themeOptionText: {
       fontSize: 12,
       color: colors.text,
-      fontWeight: '500',
+      fontWeight: "500",
     },
     themeOptionTextActive: {
-      color: 'white',
+      color: "white",
     },
     avatarUpload: {
       marginTop: -40,
       marginBottom: 16,
     },
     avatarOverlay: {
-      position: 'absolute',
+      position: "absolute",
       top: 0,
       left: 0,
       right: 0,
       bottom: 0,
-      backgroundColor: 'rgba(0,0,0,0.3)',
+      backgroundColor: "rgba(0,0,0,0.3)",
       borderRadius: 40,
-      justifyContent: 'center',
-      alignItems: 'center',
+      justifyContent: "center",
+      alignItems: "center",
     },
     // Modal styles
     modalContent: {
       // No additional styling needed as Modal component handles the container
     },
     modalAvatarContainer: {
-      alignItems: 'center',
+      alignItems: "center",
       marginBottom: 24,
     },
     modalAvatarUpload: {
@@ -478,7 +486,7 @@ export default function ProfileScreen() {
       fontSize: 14,
       color: colors.icon || colors.text,
       marginTop: 8,
-      textAlign: 'center',
+      textAlign: "center",
     },
     modalForm: {
       marginBottom: 24,
@@ -488,7 +496,7 @@ export default function ProfileScreen() {
     },
     modalLabel: {
       fontSize: 16,
-      fontWeight: '600',
+      fontWeight: "600",
       color: colors.text,
       marginBottom: 8,
     },
@@ -513,25 +521,25 @@ export default function ProfileScreen() {
       marginTop: 4,
     },
     modalButtons: {
-      flexDirection: 'row',
+      flexDirection: "row",
       gap: 12,
     },
     modalCancelButton: {
       flex: 1,
-      backgroundColor: 'transparent',
+      backgroundColor: "transparent",
       borderWidth: 1,
       borderColor: colors.border,
       paddingVertical: 12,
       paddingHorizontal: 16,
       borderRadius: 8,
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'center',
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
       gap: 8,
     },
     modalCancelButtonText: {
       color: colors.text,
-      fontWeight: '600',
+      fontWeight: "600",
       fontSize: 16,
     },
     modalSaveButton: {
@@ -540,14 +548,14 @@ export default function ProfileScreen() {
       paddingVertical: 12,
       paddingHorizontal: 16,
       borderRadius: 8,
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'center',
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
       gap: 8,
     },
     modalSaveButtonText: {
-      color: 'white',
-      fontWeight: '600',
+      color: "white",
+      fontWeight: "600",
       fontSize: 16,
     },
   });
@@ -556,9 +564,9 @@ export default function ProfileScreen() {
 
   const formatJoinDate = (dateString: string) => {
     const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long'
+    return date.toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "long",
     });
   };
 
@@ -573,11 +581,11 @@ export default function ProfileScreen() {
               <View style={[styles.circle, styles.circle2]} />
               <View style={[styles.circle, styles.circle3]} />
             </View>
-            {(Platform.OS !== 'web' || (isWeb && isMobile)) && (
+            {(Platform.OS !== "web" || (isWeb && isMobile)) && (
               <>
                 <View style={styles.notificationButton}>
                   <NotificationBell
-                    onPress={() => router.push('/notifications')}
+                    onPress={() => router.push("/notifications")}
                     size={20}
                   />
                 </View>
@@ -586,7 +594,11 @@ export default function ProfileScreen() {
                   onPress={handleSignOut}
                   activeOpacity={0.7}
                 >
-                  <IconSymbol name="arrow.right.square.fill" size={18} color="#ff4444" />
+                  <IconSymbol
+                    name="arrow.right.square.fill"
+                    size={18}
+                    color="#ff4444"
+                  />
                 </TouchableOpacity>
               </>
             )}
@@ -606,14 +618,14 @@ export default function ProfileScreen() {
           {/* Profile Info */}
           <View style={styles.profileInfo}>
             <Text style={styles.name}>
-              {user.profile?.full_name || 'Name not provided'}
+              {user.profile?.full_name || "Name not provided"}
             </Text>
             <Text style={styles.username}>
-              @{user.profile?.username || 'username'}
+              @{user.profile?.username || "username"}
             </Text>
             <View style={styles.locationRow}>
               <Text style={styles.joinDate}>
-                Joined {formatJoinDate(user.profile?.created_at || '')}
+                Joined {formatJoinDate(user.profile?.created_at || "")}
               </Text>
             </View>
           </View>
@@ -674,7 +686,7 @@ export default function ProfileScreen() {
                 />
               ) : (
                 <Text style={styles.infoValue}>
-                  @{user.profile?.username || 'Not set'}
+                  @{user.profile?.username || "Not set"}
                 </Text>
               )}
             </View>
@@ -693,7 +705,7 @@ export default function ProfileScreen() {
                 />
               ) : (
                 <Text style={styles.infoValue}>
-                  {user.profile?.full_name || 'Not provided'}
+                  {user.profile?.full_name || "Not provided"}
                 </Text>
               )}
             </View>
@@ -706,7 +718,7 @@ export default function ProfileScreen() {
             <View style={styles.infoRow}>
               <Text style={styles.infoLabel}>Joined</Text>
               <Text style={styles.infoValue}>
-                {formatJoinDate(user.profile?.created_at || '')}
+                {formatJoinDate(user.profile?.created_at || "")}
               </Text>
             </View>
 
@@ -716,14 +728,14 @@ export default function ProfileScreen() {
                 <TouchableOpacity
                   style={[
                     styles.themeOption,
-                    themeMode === 'system' && styles.themeOptionActive,
+                    themeMode === "system" && styles.themeOptionActive,
                   ]}
-                  onPress={() => setThemeMode('system')}
+                  onPress={() => setThemeMode("system")}
                 >
                   <Text
                     style={[
                       styles.themeOptionText,
-                      themeMode === 'system' && styles.themeOptionTextActive,
+                      themeMode === "system" && styles.themeOptionTextActive,
                     ]}
                   >
                     System
@@ -732,14 +744,14 @@ export default function ProfileScreen() {
                 <TouchableOpacity
                   style={[
                     styles.themeOption,
-                    themeMode === 'light' && styles.themeOptionActive,
+                    themeMode === "light" && styles.themeOptionActive,
                   ]}
-                  onPress={() => setThemeMode('light')}
+                  onPress={() => setThemeMode("light")}
                 >
                   <Text
                     style={[
                       styles.themeOptionText,
-                      themeMode === 'light' && styles.themeOptionTextActive,
+                      themeMode === "light" && styles.themeOptionTextActive,
                     ]}
                   >
                     Light
@@ -748,14 +760,14 @@ export default function ProfileScreen() {
                 <TouchableOpacity
                   style={[
                     styles.themeOption,
-                    themeMode === 'dark' && styles.themeOptionActive,
+                    themeMode === "dark" && styles.themeOptionActive,
                   ]}
-                  onPress={() => setThemeMode('dark')}
+                  onPress={() => setThemeMode("dark")}
                 >
                   <Text
                     style={[
                       styles.themeOptionText,
-                      themeMode === 'dark' && styles.themeOptionTextActive,
+                      themeMode === "dark" && styles.themeOptionTextActive,
                     ]}
                   >
                     Dark
@@ -773,9 +785,13 @@ export default function ProfileScreen() {
               <Text style={styles.infoLabel}>Log Updates</Text>
               <Switch
                 value={notificationPrefs.logUpdates}
-                onValueChange={(value) => updateNotificationPref('logUpdates', value)}
+                onValueChange={(value) =>
+                  updateNotificationPref("logUpdates", value)
+                }
                 trackColor={{ false: colors.border, true: colors.tint }}
-                thumbColor={notificationPrefs.logUpdates ? 'white' : colors.icon}
+                thumbColor={
+                  notificationPrefs.logUpdates ? "white" : colors.icon
+                }
               />
             </View>
 
@@ -783,9 +799,13 @@ export default function ProfileScreen() {
               <Text style={styles.infoLabel}>Group Members</Text>
               <Switch
                 value={notificationPrefs.groupMembers}
-                onValueChange={(value) => updateNotificationPref('groupMembers', value)}
+                onValueChange={(value) =>
+                  updateNotificationPref("groupMembers", value)
+                }
                 trackColor={{ false: colors.border, true: colors.tint }}
-                thumbColor={notificationPrefs.groupMembers ? 'white' : colors.icon}
+                thumbColor={
+                  notificationPrefs.groupMembers ? "white" : colors.icon
+                }
               />
             </View>
 
@@ -793,9 +813,13 @@ export default function ProfileScreen() {
               <Text style={styles.infoLabel}>Invitations</Text>
               <Switch
                 value={notificationPrefs.invitations}
-                onValueChange={(value) => updateNotificationPref('invitations', value)}
+                onValueChange={(value) =>
+                  updateNotificationPref("invitations", value)
+                }
                 trackColor={{ false: colors.border, true: colors.tint }}
-                thumbColor={notificationPrefs.invitations ? 'white' : colors.icon}
+                thumbColor={
+                  notificationPrefs.invitations ? "white" : colors.icon
+                }
               />
             </View>
 
@@ -803,9 +827,13 @@ export default function ProfileScreen() {
               <Text style={styles.infoLabel}>In-App Toasts</Text>
               <Switch
                 value={notificationPrefs.inAppToasts}
-                onValueChange={(value) => updateNotificationPref('inAppToasts', value)}
+                onValueChange={(value) =>
+                  updateNotificationPref("inAppToasts", value)
+                }
                 trackColor={{ false: colors.border, true: colors.tint }}
-                thumbColor={notificationPrefs.inAppToasts ? 'white' : colors.icon}
+                thumbColor={
+                  notificationPrefs.inAppToasts ? "white" : colors.icon
+                }
               />
             </View>
 
@@ -813,110 +841,117 @@ export default function ProfileScreen() {
               <Text style={styles.infoLabel}>Push Notifications</Text>
               <Switch
                 value={notificationPrefs.pushNotifications}
-                onValueChange={(value) => updateNotificationPref('pushNotifications', value)}
+                onValueChange={(value) =>
+                  updateNotificationPref("pushNotifications", value)
+                }
                 trackColor={{ false: colors.border, true: colors.tint }}
-                thumbColor={notificationPrefs.pushNotifications ? 'white' : colors.icon}
+                thumbColor={
+                  notificationPrefs.pushNotifications ? "white" : colors.icon
+                }
               />
             </View>
           </View>
         </View>
-
       </ScrollView>
 
       {/* Edit Profile Modal - Only show on mobile */}
       {!isWeb && (
         <Modal
-        visible={showEditModal}
-        onClose={() => {
-          setShowEditModal(false);
-          setFullName(user.profile?.full_name || '');
-          setUsername(user.profile?.username || '');
-          setAvatarUrl(user.profile?.avatar_url || null);
-        }}
-        title="Edit Profile"
-        size="medium"
-        closeOnBackdrop={!loading}
-      >
-        <View style={styles.modalContent}>
-          {/* Avatar Upload */}
-          <View style={styles.modalAvatarContainer}>
-            <ImageUpload
-              type="avatar"
-              currentImageUrl={avatarUrl}
-              onUploadComplete={handleAvatarUpload}
-              onUploadError={handleAvatarError}
-              style={styles.modalAvatarUpload}
-            />
-            <Text style={styles.modalAvatarText}>Tap to change profile picture</Text>
-          </View>
-
-          {/* Form Fields */}
-          <View style={styles.modalForm}>
-            <View style={styles.modalField}>
-              <Text style={styles.modalLabel}>Full Name</Text>
-              <TextInput
-                style={styles.modalInput}
-                value={fullName}
-                onChangeText={setFullName}
-                placeholder="Enter your full name"
-                autoCapitalize="words"
-                autoCorrect={false}
-                placeholderTextColor={colors.icon}
+          visible={showEditModal}
+          onClose={() => {
+            setShowEditModal(false);
+            setFullName(user.profile?.full_name || "");
+            setUsername(user.profile?.username || "");
+            setAvatarUrl(user.profile?.avatar_url || null);
+          }}
+          title="Edit Profile"
+          size="medium"
+          closeOnBackdrop={!loading}
+        >
+          <View style={styles.modalContent}>
+            {/* Avatar Upload */}
+            <View style={styles.modalAvatarContainer}>
+              <ImageUpload
+                type="avatar"
+                currentImageUrl={avatarUrl}
+                onUploadComplete={handleAvatarUpload}
+                onUploadError={handleAvatarError}
+                style={styles.modalAvatarUpload}
               />
+              <Text style={styles.modalAvatarText}>
+                Tap to change profile picture
+              </Text>
             </View>
 
-            <View style={styles.modalField}>
-              <Text style={styles.modalLabel}>Username</Text>
-              <TextInput
-                style={styles.modalInput}
-                value={username}
-                onChangeText={setUsername}
-                placeholder="Enter username"
-                autoCapitalize="none"
-                autoCorrect={false}
-                placeholderTextColor={colors.icon}
-              />
+            {/* Form Fields */}
+            <View style={styles.modalForm}>
+              <View style={styles.modalField}>
+                <Text style={styles.modalLabel}>Full Name</Text>
+                <TextInput
+                  style={styles.modalInput}
+                  value={fullName}
+                  onChangeText={setFullName}
+                  placeholder="Enter your full name"
+                  autoCapitalize="words"
+                  autoCorrect={false}
+                  placeholderTextColor={colors.icon}
+                />
+              </View>
+
+              <View style={styles.modalField}>
+                <Text style={styles.modalLabel}>Username</Text>
+                <TextInput
+                  style={styles.modalInput}
+                  value={username}
+                  onChangeText={setUsername}
+                  placeholder="Enter username"
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  placeholderTextColor={colors.icon}
+                />
+              </View>
+
+              <View style={styles.modalField}>
+                <Text style={styles.modalLabel}>Email</Text>
+                <Text style={styles.modalEmailText}>{user.email}</Text>
+                <Text style={styles.modalEmailSubtext}>
+                  Email cannot be changed
+                </Text>
+              </View>
             </View>
 
-            <View style={styles.modalField}>
-              <Text style={styles.modalLabel}>Email</Text>
-              <Text style={styles.modalEmailText}>{user.email}</Text>
-              <Text style={styles.modalEmailSubtext}>Email cannot be changed</Text>
+            {/* Action Buttons */}
+            <View style={styles.modalButtons}>
+              <TouchableOpacity
+                style={styles.modalCancelButton}
+                onPress={() => {
+                  setShowEditModal(false);
+                  setFullName(user.profile?.full_name || "");
+                  setUsername(user.profile?.username || "");
+                  setAvatarUrl(user.profile?.avatar_url || null);
+                }}
+                disabled={loading}
+              >
+                <IconSymbol name="xmark" size={16} color={colors.text} />
+                <Text style={styles.modalCancelButtonText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.modalSaveButton}
+                onPress={handleUpdateProfile}
+                disabled={loading}
+              >
+                {loading ? (
+                  <ActivityIndicator color="white" size="small" />
+                ) : (
+                  <>
+                    <IconSymbol name="checkmark" size={16} color="white" />
+                    <Text style={styles.modalSaveButtonText}>Save Changes</Text>
+                  </>
+                )}
+              </TouchableOpacity>
             </View>
           </View>
-
-          {/* Action Buttons */}
-          <View style={styles.modalButtons}>
-            <TouchableOpacity
-              style={styles.modalCancelButton}
-              onPress={() => {
-                setShowEditModal(false);
-                setFullName(user.profile?.full_name || '');
-                setUsername(user.profile?.username || '');
-                setAvatarUrl(user.profile?.avatar_url || null);
-              }}
-              disabled={loading}
-            >
-              <IconSymbol name="xmark" size={16} color={colors.text} />
-              <Text style={styles.modalCancelButtonText}>Cancel</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.modalSaveButton}
-              onPress={handleUpdateProfile}
-              disabled={loading}
-            >
-              {loading ? (
-                <ActivityIndicator color="white" size="small" />
-              ) : (
-                <>
-                  <IconSymbol name="checkmark" size={16} color="white" />
-                  <Text style={styles.modalSaveButtonText}>Save Changes</Text>
-                </>
-              )}
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
+        </Modal>
       )}
     </SafeAreaView>
   );

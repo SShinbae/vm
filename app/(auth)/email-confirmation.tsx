@@ -1,7 +1,7 @@
-import { Colors } from '@/constants/theme';
-import { useColorScheme } from '@/hooks/use-color-scheme';
-import { Link, router, useLocalSearchParams } from 'expo-router';
-import React, { useState, useEffect } from 'react';
+import { Colors } from "@/constants/theme";
+import { useColorScheme } from "@/hooks/use-color-scheme";
+import { Link, router, useLocalSearchParams } from "expo-router";
+import React, { useState, useEffect } from "react";
 import {
   ActivityIndicator,
   Dimensions,
@@ -10,11 +10,11 @@ import {
   Text,
   TouchableOpacity,
   View,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { withWebAlert, useAlert } from '@/components/ui';
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { withWebAlert, useAlert } from "@/components/ui";
 
-const { width: screenWidth } = Dimensions.get('window');
+const { width: screenWidth } = Dimensions.get("window");
 
 function EmailConfirmationScreen() {
   const { email } = useLocalSearchParams<{ email: string }>();
@@ -22,11 +22,11 @@ function EmailConfirmationScreen() {
   const [resendCooldown, setResendCooldown] = useState(0);
   const colorScheme = useColorScheme();
   const { showConfirm } = useAlert();
-  const colors = Colors[colorScheme ?? 'light'];
+  const colors = Colors[colorScheme ?? "light"];
 
-  console.log('=== EMAIL CONFIRMATION SCREEN ===');
-  console.log('Email param received:', email);
-  console.log('=================================');
+  console.log("=== EMAIL CONFIRMATION SCREEN ===");
+  console.log("Email param received:", email);
+  console.log("=================================");
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
@@ -46,12 +46,12 @@ function EmailConfirmationScreen() {
     // Note: Since we don't have access to the original password and full name,
     // we'll show a message to go back to registration for now
     showConfirm(
-      'Resend Verification',
-      'To resend the verification email, please go back to the registration form and try again.',
-      () => router.replace('/(auth)/register'),
+      "Resend Verification",
+      "To resend the verification email, please go back to the registration form and try again.",
+      () => router.replace("/(auth)/register"),
       undefined,
-      'Go to Registration',
-      'Cancel'
+      "Go to Registration",
+      "Cancel",
     );
 
     setResendLoading(false);
@@ -70,24 +70,24 @@ function EmailConfirmationScreen() {
     content: {
       flex: 1,
       paddingHorizontal: 20,
-      justifyContent: 'center',
-      maxWidth: screenWidth > 600 ? 400 : '100%',
-      alignSelf: 'center',
-      width: '100%',
+      justifyContent: "center",
+      maxWidth: screenWidth > 600 ? 400 : "100%",
+      alignSelf: "center",
+      width: "100%",
     },
     iconContainer: {
-      alignItems: 'center',
+      alignItems: "center",
       marginBottom: 32,
     },
     successIcon: {
       width: 80,
       height: 80,
       borderRadius: 40,
-      backgroundColor: colors.facebook?.secondary || '#4CAF50',
-      alignItems: 'center',
-      justifyContent: 'center',
+      backgroundColor: colors.facebook?.secondary || "#4CAF50",
+      alignItems: "center",
+      justifyContent: "center",
       marginBottom: 24,
-      shadowColor: colors.facebook?.secondary || '#4CAF50',
+      shadowColor: colors.facebook?.secondary || "#4CAF50",
       shadowOffset: {
         width: 0,
         height: 4,
@@ -98,35 +98,35 @@ function EmailConfirmationScreen() {
     },
     checkIcon: {
       fontSize: 40,
-      color: '#FFFFFF',
-      fontWeight: 'bold',
+      color: "#FFFFFF",
+      fontWeight: "bold",
     },
     title: {
       fontSize: 28,
-      fontWeight: 'bold',
+      fontWeight: "bold",
       color: colors.text,
-      textAlign: 'center',
+      textAlign: "center",
       marginBottom: 12,
     },
     subtitle: {
       fontSize: 16,
       color: colors.facebook?.gray || colors.icon,
-      textAlign: 'center',
+      textAlign: "center",
       lineHeight: 24,
       marginBottom: 8,
     },
     emailText: {
       fontSize: 16,
       color: colors.facebook?.primary || colors.tint,
-      textAlign: 'center',
-      fontWeight: '600',
+      textAlign: "center",
+      fontWeight: "600",
       marginBottom: 32,
     },
     card: {
       backgroundColor: colors.facebook?.card || colors.background,
       borderRadius: 12,
       padding: 24,
-      shadowColor: '#000',
+      shadowColor: "#000",
       shadowOffset: {
         width: 0,
         height: 2,
@@ -138,17 +138,17 @@ function EmailConfirmationScreen() {
     },
     instructionTitle: {
       fontSize: 18,
-      fontWeight: '600',
+      fontWeight: "600",
       color: colors.text,
       marginBottom: 16,
-      textAlign: 'center',
+      textAlign: "center",
     },
     instructionList: {
       marginBottom: 20,
     },
     instructionItem: {
-      flexDirection: 'row',
-      alignItems: 'flex-start',
+      flexDirection: "row",
+      alignItems: "flex-start",
       marginBottom: 12,
     },
     instructionNumber: {
@@ -156,15 +156,15 @@ function EmailConfirmationScreen() {
       height: 24,
       borderRadius: 12,
       backgroundColor: colors.facebook?.primary || colors.tint,
-      alignItems: 'center',
-      justifyContent: 'center',
+      alignItems: "center",
+      justifyContent: "center",
       marginRight: 12,
       marginTop: 2,
     },
     instructionNumberText: {
       fontSize: 12,
-      color: '#FFFFFF',
-      fontWeight: 'bold',
+      color: "#FFFFFF",
+      fontWeight: "bold",
     },
     instructionText: {
       fontSize: 14,
@@ -179,7 +179,7 @@ function EmailConfirmationScreen() {
       backgroundColor: colors.facebook?.primary || colors.tint,
       borderRadius: 8,
       paddingVertical: 16,
-      alignItems: 'center',
+      alignItems: "center",
       minHeight: 52,
       shadowColor: colors.facebook?.primary || colors.tint,
       shadowOffset: {
@@ -196,34 +196,34 @@ function EmailConfirmationScreen() {
       elevation: 0,
     },
     primaryButtonText: {
-      color: '#FFFFFF',
+      color: "#FFFFFF",
       fontSize: 16,
-      fontWeight: '600',
+      fontWeight: "600",
     },
     secondaryButton: {
-      backgroundColor: 'transparent',
+      backgroundColor: "transparent",
       borderWidth: 1,
       borderColor: colors.facebook?.divider || colors.border,
       borderRadius: 8,
       paddingVertical: 14,
-      alignItems: 'center',
+      alignItems: "center",
       minHeight: 48,
     },
     secondaryButtonText: {
       color: colors.facebook?.gray || colors.icon,
       fontSize: 14,
-      fontWeight: '500',
+      fontWeight: "500",
     },
     footerText: {
       fontSize: 12,
       color: colors.facebook?.gray || colors.icon,
-      textAlign: 'center',
+      textAlign: "center",
       lineHeight: 18,
       marginTop: 20,
     },
     linkText: {
       color: colors.facebook?.primary || colors.tint,
-      textDecorationLine: 'underline',
+      textDecorationLine: "underline",
     },
   });
 
@@ -280,7 +280,8 @@ function EmailConfirmationScreen() {
               <TouchableOpacity
                 style={[
                   styles.primaryButton,
-                  (resendLoading || resendCooldown > 0) && styles.primaryButtonDisabled,
+                  (resendLoading || resendCooldown > 0) &&
+                    styles.primaryButtonDisabled,
                 ]}
                 onPress={handleResendEmail}
                 disabled={resendLoading || resendCooldown > 0}
@@ -291,23 +292,27 @@ function EmailConfirmationScreen() {
                   <Text style={styles.primaryButtonText}>
                     {resendCooldown > 0
                       ? `Resend email (${resendCooldown}s)`
-                      : 'Resend verification email'}
+                      : "Resend verification email"}
                   </Text>
                 )}
               </TouchableOpacity>
 
               <Link href="/(auth)/login" asChild>
                 <TouchableOpacity style={styles.secondaryButton}>
-                  <Text style={styles.secondaryButtonText}>Back to Sign In</Text>
+                  <Text style={styles.secondaryButtonText}>
+                    Back to Sign In
+                  </Text>
                 </TouchableOpacity>
               </Link>
             </View>
           </View>
 
           <Text style={styles.footerText}>
-            Didn&apos;t receive the email? Check your spam folder or{' '}
+            Didn&apos;t receive the email? Check your spam folder or{" "}
             <Link href="/(auth)/register" asChild>
-              <Text style={styles.linkText}>try again with a different email</Text>
+              <Text style={styles.linkText}>
+                try again with a different email
+              </Text>
             </Link>
           </Text>
         </View>

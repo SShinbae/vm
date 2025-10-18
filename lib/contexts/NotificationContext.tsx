@@ -1,8 +1,19 @@
-import React, { createContext, useContext, useEffect, useState, useCallback, ReactNode } from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { notificationService, NotificationData, NotificationCallback } from '../services/notificationService';
-import { pushNotificationService } from '../services/pushNotificationService';
-import { supabase } from '../../services/supabaseClient';
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  useCallback,
+  ReactNode,
+} from "react";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import {
+  notificationService,
+  NotificationData,
+  NotificationCallback,
+} from "../services/notificationService";
+import { pushNotificationService } from "../services/pushNotificationService";
+import { supabase } from "../../services/supabaseClient";
 
 interface NotificationContextType {
   notifications: NotificationData[];
@@ -15,9 +26,11 @@ interface NotificationContextType {
   refreshNotifications: () => Promise<void>;
 }
 
-const NotificationContext = createContext<NotificationContextType | undefined>(undefined);
+const NotificationContext = createContext<NotificationContextType | undefined>(
+  undefined,
+);
 
-const NOTIFICATIONS_STORAGE_KEY = 'notifications';
+const NOTIFICATIONS_STORAGE_KEY = "notifications";
 const MAX_NOTIFICATIONS = 50;
 
 interface NotificationProviderProps {
@@ -37,34 +50,48 @@ export function NotificationProvider({ children }: NotificationProviderProps) {
         setNotifications(parsedNotifications);
       }
     } catch (error) {
-      console.error('Error loading notifications from storage:', error);
+      console.error("Error loading notifications from storage:", error);
     }
   }, []);
 
   // Save notifications to storage
-  const saveNotifications = useCallback(async (notificationsToSave: NotificationData[]) => {
-    try {
-      await AsyncStorage.setItem(NOTIFICATIONS_STORAGE_KEY, JSON.stringify(notificationsToSave));
-    } catch (error) {
-      console.error('Error saving notifications to storage:', error);
-    }
-  }, []);
+  const saveNotifications = useCallback(
+    async (notificationsToSave: NotificationData[]) => {
+      try {
+        await AsyncStorage.setItem(
+          NOTIFICATIONS_STORAGE_KEY,
+          JSON.stringify(notificationsToSave),
+        );
+      } catch (error) {
+        console.error("Error saving notifications to storage:", error);
+      }
+    },
+    [],
+  );
 
   // Add new notification
-  const addNotification = useCallback((notification: NotificationData) => {
-    setNotifications(prev => {
-      const newNotifications = [notification, ...prev];
-      // Keep only the latest MAX_NOTIFICATIONS
-      const trimmedNotifications = newNotifications.slice(0, MAX_NOTIFICATIONS);
-      saveNotifications(trimmedNotifications);
-      return trimmedNotifications;
-    });
-  }, [saveNotifications]);
+  const addNotification = useCallback(
+    (notification: NotificationData) => {
+      setNotifications((prev) => {
+        const newNotifications = [notification, ...prev];
+        // Keep only the latest MAX_NOTIFICATIONS
+        const trimmedNotifications = newNotifications.slice(
+          0,
+          MAX_NOTIFICATIONS,
+        );
+        saveNotifications(trimmedNotifications);
+        return trimmedNotifications;
+      });
+    },
+    [saveNotifications],
+  );
 
   // Initialize notification service
   const initializeNotifications = useCallback(async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       if (!user) return;
 
       // Load existing notifications
@@ -79,40 +106,51 @@ export function NotificationProvider({ children }: NotificationProviderProps) {
 
       setIsInitialized(true);
     } catch (error) {
-      console.error('Error initializing notifications:', error);
+      console.error("Error initializing notifications:", error);
     }
   }, [loadNotifications, addNotification]);
 
   // Mark notification as read
-  const markAsRead = useCallback((notificationId: string) => {
-    setNotifications(prev => {
-      const updated = prev.map(notification =>
-        notification.id === notificationId
-          ? { ...notification, read: true }
-          : notification
-      );
-      saveNotifications(updated);
-      return updated;
-    });
-  }, [saveNotifications]);
+  const markAsRead = useCallback(
+    (notificationId: string) => {
+      setNotifications((prev) => {
+        const updated = prev.map((notification) =>
+          notification.id === notificationId
+            ? { ...notification, read: true }
+            : notification,
+        );
+        saveNotifications(updated);
+        return updated;
+      });
+    },
+    [saveNotifications],
+  );
 
   // Mark all notifications as read
   const markAllAsRead = useCallback(() => {
-    setNotifications(prev => {
-      const updated = prev.map(notification => ({ ...notification, read: true }));
+    setNotifications((prev) => {
+      const updated = prev.map((notification) => ({
+        ...notification,
+        read: true,
+      }));
       saveNotifications(updated);
       return updated;
     });
   }, [saveNotifications]);
 
   // Clear single notification
-  const clearNotification = useCallback((notificationId: string) => {
-    setNotifications(prev => {
-      const updated = prev.filter(notification => notification.id !== notificationId);
-      saveNotifications(updated);
-      return updated;
-    });
-  }, [saveNotifications]);
+  const clearNotification = useCallback(
+    (notificationId: string) => {
+      setNotifications((prev) => {
+        const updated = prev.filter(
+          (notification) => notification.id !== notificationId,
+        );
+        saveNotifications(updated);
+        return updated;
+      });
+    },
+    [saveNotifications],
+  );
 
   // Clear all notifications
   const clearAllNotifications = useCallback(() => {
@@ -125,12 +163,14 @@ export function NotificationProvider({ children }: NotificationProviderProps) {
     try {
       await notificationService.refreshUserData();
     } catch (error) {
-      console.error('Error refreshing notifications:', error);
+      console.error("Error refreshing notifications:", error);
     }
   }, []);
 
   // Calculate unread count
-  const unreadCount = notifications.filter(notification => !notification.read).length;
+  const unreadCount = notifications.filter(
+    (notification) => !notification.read,
+  ).length;
 
   // Initialize on mount and when auth state changes
   useEffect(() => {
@@ -138,10 +178,12 @@ export function NotificationProvider({ children }: NotificationProviderProps) {
       await initializeNotifications();
 
       // Listen for auth state changes
-      const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-        if (event === 'SIGNED_IN' && session?.user) {
+      const {
+        data: { subscription },
+      } = supabase.auth.onAuthStateChange(async (event, session) => {
+        if (event === "SIGNED_IN" && session?.user) {
           await initializeNotifications();
-        } else if (event === 'SIGNED_OUT') {
+        } else if (event === "SIGNED_OUT") {
           notificationService.cleanup();
           pushNotificationService.cleanup();
           setNotifications([]);
@@ -184,7 +226,9 @@ export function NotificationProvider({ children }: NotificationProviderProps) {
 export function useNotifications() {
   const context = useContext(NotificationContext);
   if (context === undefined) {
-    throw new Error('useNotifications must be used within a NotificationProvider');
+    throw new Error(
+      "useNotifications must be used within a NotificationProvider",
+    );
   }
   return context;
 }

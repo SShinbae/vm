@@ -1,6 +1,6 @@
-import { Colors } from '@/constants/theme';
-import { useColorScheme } from '@/hooks/use-color-scheme';
-import { Stack } from 'expo-router';
+import { Colors } from "@/constants/theme";
+import { useColorScheme } from "@/hooks/use-color-scheme";
+import { Stack } from "expo-router";
 
 export default function VehiclesLayout() {
   const colorScheme = useColorScheme();
@@ -10,11 +10,11 @@ export default function VehiclesLayout() {
       screenOptions={{
         headerShown: false,
         headerStyle: {
-          backgroundColor: Colors[colorScheme ?? 'light'].background,
+          backgroundColor: Colors[colorScheme ?? "light"].background,
         },
-        headerTintColor: Colors[colorScheme ?? 'light'].text,
+        headerTintColor: Colors[colorScheme ?? "light"].text,
         headerTitleStyle: {
-          fontWeight: '600',
+          fontWeight: "600",
         },
       }}
     >
@@ -23,7 +23,6 @@ export default function VehiclesLayout() {
         name="[id]"
         options={{
           headerShown: false,
-
         }}
       />
       <Stack.Screen name="[id]/edit" />

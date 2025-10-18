@@ -1,9 +1,9 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { useColorScheme } from '@/hooks/use-color-scheme';
-import { Colors } from '@/constants/theme';
-import { IconSymbol } from './icon-symbol';
-import { LinearGradient } from 'expo-linear-gradient';
+import React from "react";
+import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
+import { useColorScheme } from "@/hooks/use-color-scheme";
+import { Colors } from "@/constants/theme";
+import { IconSymbol } from "./icon-symbol";
+import { LinearGradient } from "expo-linear-gradient";
 
 interface TrendCardProps {
   title: string;
@@ -22,18 +22,18 @@ export function TrendCard({
   subtitle,
   icon,
   gradientColors,
-  onPress
+  onPress,
 }: TrendCardProps) {
   const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? 'light'];
+  const colors = Colors[colorScheme ?? "light"];
 
   const defaultGradient = gradientColors || colors.gradients.primary;
 
   const styles = StyleSheet.create({
     container: {
       borderRadius: 16,
-      overflow: 'hidden',
-      shadowColor: '#000',
+      overflow: "hidden",
+      shadowColor: "#000",
       shadowOffset: {
         width: 0,
         height: 4,
@@ -50,14 +50,14 @@ export function TrendCard({
       transform: [{ scale: 0.98 }],
     },
     header: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
       marginBottom: 16,
     },
     titleContainer: {
-      flexDirection: 'row',
-      alignItems: 'center',
+      flexDirection: "row",
+      alignItems: "center",
       gap: 8,
       flex: 1,
     },
@@ -65,14 +65,14 @@ export function TrendCard({
       width: 40,
       height: 40,
       borderRadius: 20,
-      backgroundColor: 'rgba(255, 255, 255, 0.2)',
-      alignItems: 'center',
-      justifyContent: 'center',
+      backgroundColor: "rgba(255, 255, 255, 0.2)",
+      alignItems: "center",
+      justifyContent: "center",
     },
     title: {
       fontSize: 14,
-      fontWeight: '600',
-      color: 'rgba(255, 255, 255, 0.9)',
+      fontWeight: "600",
+      color: "rgba(255, 255, 255, 0.9)",
       flex: 1,
     },
     valueContainer: {
@@ -80,38 +80,38 @@ export function TrendCard({
     },
     value: {
       fontSize: 28,
-      fontWeight: '700',
-      color: '#FFFFFF',
+      fontWeight: "700",
+      color: "#FFFFFF",
       lineHeight: 34,
     },
     footer: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
     },
     trendContainer: {
-      flexDirection: 'row',
-      alignItems: 'center',
+      flexDirection: "row",
+      alignItems: "center",
       gap: 4,
-      backgroundColor: 'rgba(255, 255, 255, 0.15)',
+      backgroundColor: "rgba(255, 255, 255, 0.15)",
       paddingHorizontal: 8,
       paddingVertical: 4,
       borderRadius: 12,
     },
     trendText: {
       fontSize: 12,
-      fontWeight: '600',
-      color: '#FFFFFF',
+      fontWeight: "600",
+      color: "#FFFFFF",
     },
     subtitle: {
       fontSize: 12,
-      color: 'rgba(255, 255, 255, 0.7)',
+      color: "rgba(255, 255, 255, 0.7)",
     },
   });
 
   const getTrendIcon = (trend: number) => {
-    if (trend === 0) return 'minus';
-    return trend > 0 ? 'arrow.up.right' : 'arrow.down.right';
+    if (trend === 0) return "minus";
+    return trend > 0 ? "arrow.up.right" : "arrow.down.right";
   };
 
   const renderCard = () => (
@@ -126,11 +126,7 @@ export function TrendCard({
           <View style={styles.titleContainer}>
             {icon && (
               <View style={styles.iconContainer}>
-                <IconSymbol
-                  name={icon}
-                  size={20}
-                  color="#FFFFFF"
-                />
+                <IconSymbol name={icon} size={20} color="#FFFFFF" />
               </View>
             )}
             <Text style={styles.title}>{title}</Text>
@@ -143,14 +139,8 @@ export function TrendCard({
 
         <View style={styles.footer}>
           <View style={styles.trendContainer}>
-            <IconSymbol
-              name={getTrendIcon(trend)}
-              size={12}
-              color="#FFFFFF"
-            />
-            <Text style={styles.trendText}>
-              {Math.abs(trend).toFixed(1)}%
-            </Text>
+            <IconSymbol name={getTrendIcon(trend)} size={12} color="#FFFFFF" />
+            <Text style={styles.trendText}>{Math.abs(trend).toFixed(1)}%</Text>
           </View>
           {subtitle && <Text style={styles.subtitle}>{subtitle}</Text>}
         </View>

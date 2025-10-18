@@ -1,18 +1,21 @@
-import { ResponsiveGrid } from '@/components/layout/ResponsiveGrid';
-import { WebLayout } from '@/components/layout/WebLayout';
-import { IconSymbol } from '@/components/ui/icon-symbol';
-import { MetricCard } from '@/components/ui/MetricCard';
-import { TrendCard } from '@/components/ui/TrendCard';
-import { Colors } from '@/constants/theme';
-import { useColorScheme } from '@/hooks/use-color-scheme';
-import { useResponsiveLayout } from '@/hooks/use-responsive-layout';
-import { useAuth } from '@/lib/contexts/AuthContext';
-import { FuelLogService, ServiceLogService } from '@/lib/services/loggingService';
-import { VehicleService } from '@/lib/services/vehicleService';
-import { AnalyticsService } from '@/lib/services/analyticsService';
-import { Vehicle } from '@/types';
-import { router } from 'expo-router';
-import React, { useCallback, useEffect, useState } from 'react';
+import { ResponsiveGrid } from "@/components/layout/ResponsiveGrid";
+import { WebLayout } from "@/components/layout/WebLayout";
+import { IconSymbol } from "@/components/ui/icon-symbol";
+import { MetricCard } from "@/components/ui/MetricCard";
+import { TrendCard } from "@/components/ui/TrendCard";
+import { Colors } from "@/constants/theme";
+import { useColorScheme } from "@/hooks/use-color-scheme";
+import { useResponsiveLayout } from "@/hooks/use-responsive-layout";
+import { useAuth } from "@/lib/contexts/AuthContext";
+import {
+  FuelLogService,
+  ServiceLogService,
+} from "@/lib/services/loggingService";
+import { VehicleService } from "@/lib/services/vehicleService";
+import { AnalyticsService } from "@/lib/services/analyticsService";
+import { Vehicle } from "@/types";
+import { router } from "expo-router";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
   RefreshControl,
@@ -21,9 +24,9 @@ import {
   Text,
   TouchableOpacity,
   View,
-} from 'react-native';
-import { Image } from 'expo-image';
-import { SafeAreaView } from 'react-native-safe-area-context';
+} from "react-native";
+import { Image } from "expo-image";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function DashboardScreen() {
   const { user } = useAuth();
@@ -32,15 +35,15 @@ export default function DashboardScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? 'light'];
+  const colors = Colors[colorScheme ?? "light"];
   const layout = useResponsiveLayout();
 
   const loadAnalytics = useCallback(async () => {
     try {
-      const data = await AnalyticsService.getAnalytics('last6months');
+      const data = await AnalyticsService.getAnalytics("last6months");
       setAnalyticsData(data);
     } catch (error) {
-      console.error('Error loading analytics:', error);
+      console.error("Error loading analytics:", error);
       setAnalyticsData(null);
     }
   }, []);
@@ -64,10 +67,12 @@ export default function DashboardScreen() {
     fetchData();
   }, [fetchData]);
 
-
   const QuickActionCard = ({ title, icon, onPress, color }: any) => (
-    <TouchableOpacity style={[styles.quickActionCard, { borderColor: color + '30' }]} onPress={onPress}>
-      <View style={[styles.quickActionIcon, { backgroundColor: color + '20' }]}>
+    <TouchableOpacity
+      style={[styles.quickActionCard, { borderColor: color + "30" }]}
+      onPress={onPress}
+    >
+      <View style={[styles.quickActionIcon, { backgroundColor: color + "20" }]}>
         <IconSymbol name={icon} size={24} color={color} />
       </View>
       <Text style={styles.quickActionTitle}>{title}</Text>
@@ -91,12 +96,19 @@ export default function DashboardScreen() {
               cachePolicy="memory-disk"
               transition={200}
               onError={(error) => {
-                console.error('Dashboard - Image load error for vehicle:', vehicle.id, error);
-                console.log('Dashboard - Failed URL:', vehicle.main_image_url);
+                console.error(
+                  "Dashboard - Image load error for vehicle:",
+                  vehicle.id,
+                  error,
+                );
+                console.log("Dashboard - Failed URL:", vehicle.main_image_url);
                 setImageError(true);
               }}
               onLoad={() => {
-                console.log('Dashboard - Image loaded successfully for vehicle:', vehicle.id);
+                console.log(
+                  "Dashboard - Image loaded successfully for vehicle:",
+                  vehicle.id,
+                );
               }}
             />
           ) : (
@@ -104,15 +116,15 @@ export default function DashboardScreen() {
               <IconSymbol name="car.fill" size={20} color={colors.tint} />
             </View>
           )}
-        <View style={styles.vehicleInfo}>
-          <Text style={styles.vehicleName}>
-            {vehicle.year} {vehicle.make} {vehicle.model}
-          </Text>
-          <Text style={styles.vehiclePlate}>{vehicle.license_plate}</Text>
+          <View style={styles.vehicleInfo}>
+            <Text style={styles.vehicleName}>
+              {vehicle.year} {vehicle.make} {vehicle.model}
+            </Text>
+            <Text style={styles.vehiclePlate}>{vehicle.license_plate}</Text>
+          </View>
+          <IconSymbol name="chevron.right" size={16} color={colors.icon} />
         </View>
-        <IconSymbol name="chevron.right" size={16} color={colors.icon} />
-      </View>
-    </TouchableOpacity>
+      </TouchableOpacity>
     );
   };
 
@@ -130,7 +142,7 @@ export default function DashboardScreen() {
     },
     greeting: {
       fontSize: 32,
-      fontWeight: '700',
+      fontWeight: "700",
       color: colors.text,
       marginBottom: 4,
     },
@@ -149,7 +161,7 @@ export default function DashboardScreen() {
     },
     sectionTitle: {
       fontSize: 22,
-      fontWeight: '600',
+      fontWeight: "600",
       color: colors.text,
       marginBottom: 20,
     },
@@ -161,16 +173,16 @@ export default function DashboardScreen() {
       gap: 16,
     },
     quickActionsFixed: {
-      flexDirection: 'row',
-      flexWrap: 'wrap',
-      justifyContent: 'space-between',
+      flexDirection: "row",
+      flexWrap: "wrap",
+      justifyContent: "space-between",
       gap: 16,
     },
     overviewLayout: {
       gap: 16,
     },
     metricsRow: {
-      flexDirection: 'row',
+      flexDirection: "row",
       gap: 16,
     },
     metricCardHalf: {
@@ -182,9 +194,9 @@ export default function DashboardScreen() {
       padding: 20,
       borderWidth: 1,
       borderColor: colors.cardBorder,
-      alignItems: 'center',
+      alignItems: "center",
       gap: 12,
-      shadowColor: '#000',
+      shadowColor: "#000",
       shadowOffset: {
         width: 0,
         height: 2,
@@ -192,20 +204,20 @@ export default function DashboardScreen() {
       shadowOpacity: 0.1,
       shadowRadius: 8,
       elevation: 4,
-      width: '47%',
+      width: "47%",
     },
     quickActionIcon: {
       width: 56,
       height: 56,
       borderRadius: 28,
-      alignItems: 'center',
-      justifyContent: 'center',
+      alignItems: "center",
+      justifyContent: "center",
     },
     quickActionTitle: {
       fontSize: 14,
-      fontWeight: '600',
+      fontWeight: "600",
       color: colors.text,
-      textAlign: 'center',
+      textAlign: "center",
     },
     vehicleCard: {
       backgroundColor: colors.card,
@@ -214,7 +226,7 @@ export default function DashboardScreen() {
       marginBottom: 12,
       borderWidth: 1,
       borderColor: colors.cardBorder,
-      shadowColor: '#000',
+      shadowColor: "#000",
       shadowOffset: {
         width: 0,
         height: 2,
@@ -224,16 +236,16 @@ export default function DashboardScreen() {
       elevation: 4,
     },
     vehicleHeader: {
-      flexDirection: 'row',
-      alignItems: 'center',
+      flexDirection: "row",
+      alignItems: "center",
     },
     vehicleIcon: {
       width: 48,
       height: 48,
       borderRadius: 24,
-      backgroundColor: colors.tint + '20',
-      alignItems: 'center',
-      justifyContent: 'center',
+      backgroundColor: colors.tint + "20",
+      alignItems: "center",
+      justifyContent: "center",
       marginRight: 16,
     },
     vehicleImage: {
@@ -248,7 +260,7 @@ export default function DashboardScreen() {
     },
     vehicleName: {
       fontSize: 16,
-      fontWeight: '600',
+      fontWeight: "600",
       color: colors.text,
       marginBottom: 4,
     },
@@ -257,7 +269,7 @@ export default function DashboardScreen() {
       color: colors.textSecondary,
     },
     emptyState: {
-      alignItems: 'center',
+      alignItems: "center",
       paddingVertical: 40,
     },
     emptyIcon: {
@@ -265,20 +277,20 @@ export default function DashboardScreen() {
       height: 80,
       borderRadius: 40,
       backgroundColor: colors.backgroundSecondary,
-      alignItems: 'center',
-      justifyContent: 'center',
+      alignItems: "center",
+      justifyContent: "center",
       marginBottom: 20,
     },
     emptyTitle: {
       fontSize: 20,
-      fontWeight: '600',
+      fontWeight: "600",
       color: colors.text,
       marginBottom: 8,
     },
     emptyDescription: {
       fontSize: 14,
       color: colors.textSecondary,
-      textAlign: 'center',
+      textAlign: "center",
       lineHeight: 20,
       marginBottom: 24,
       maxWidth: 300,
@@ -288,31 +300,31 @@ export default function DashboardScreen() {
       paddingHorizontal: 24,
       paddingVertical: 12,
       borderRadius: 12,
-      flexDirection: 'row',
-      alignItems: 'center',
+      flexDirection: "row",
+      alignItems: "center",
       gap: 8,
     },
     emptyButtonText: {
-      color: 'white',
+      color: "white",
       fontSize: 14,
-      fontWeight: '600',
+      fontWeight: "600",
     },
     viewAllButton: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
       paddingVertical: 12,
       marginTop: 8,
     },
     viewAllText: {
       fontSize: 16,
       color: colors.tint,
-      fontWeight: '500',
+      fontWeight: "500",
     },
     loadingContainer: {
       flex: 1,
-      justifyContent: 'center',
-      alignItems: 'center',
+      justifyContent: "center",
+      alignItems: "center",
     },
   });
 
@@ -331,26 +343,26 @@ export default function DashboardScreen() {
       title: "Add Vehicle",
       icon: "plus.circle.fill",
       color: colors.tint,
-      onPress: () => router.push('/vehicles/add' as any)
+      onPress: () => router.push("/vehicles/add" as any),
     },
     {
       title: "Log Mileage",
       icon: "speedometer",
       color: colors.chart.mileage,
-      onPress: () => router.push('/logs/mileage/add' as any)
+      onPress: () => router.push("/logs/mileage/add" as any),
     },
     {
       title: "Log Fuel",
       icon: "fuelpump.fill",
       color: colors.chart.fuel,
-      onPress: () => router.push('/logs/fuel/add' as any)
+      onPress: () => router.push("/logs/fuel/add" as any),
     },
     {
       title: "Log Service",
       icon: "wrench.fill",
       color: colors.chart.service,
-      onPress: () => router.push('/logs/service/add' as any)
-    }
+      onPress: () => router.push("/logs/service/add" as any),
+    },
   ];
 
   return (
@@ -358,15 +370,23 @@ export default function DashboardScreen() {
       <WebLayout>
         <View style={styles.header}>
           <Text style={styles.greeting}>
-            Welcome{user?.profile?.full_name ? `, ${user.profile.full_name.split(' ')[0]}` : ''}!
+            Welcome
+            {user?.profile?.full_name
+              ? `, ${user.profile.full_name.split(" ")[0]}`
+              : ""}
+            !
           </Text>
-          <Text style={styles.subtitle}>Manage your vehicles and track your data</Text>
+          <Text style={styles.subtitle}>
+            Manage your vehicles and track your data
+          </Text>
         </View>
 
         <ScrollView
           style={styles.content}
           contentContainerStyle={styles.scrollContent}
-          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          }
           showsVerticalScrollIndicator={false}
         >
           {/* Analytics Overview */}
@@ -379,11 +399,13 @@ export default function DashboardScreen() {
                 <TrendCard
                   title="Total Expenses"
                   value={`RM${analyticsData.totalExpenses.toFixed(2)}`}
-                  trend={(analyticsData.fuelTrend + analyticsData.serviceTrend) / 2}
+                  trend={
+                    (analyticsData.fuelTrend + analyticsData.serviceTrend) / 2
+                  }
                   subtitle="Last 6 months"
                   icon="dollarsign.circle.fill"
                   gradientColors={colors.gradients.primary}
-                  onPress={() => router.push('/analytics')}
+                  onPress={() => router.push("/analytics")}
                 />
 
                 {/* Fuel and Service - Two Column Row */}
@@ -391,7 +413,7 @@ export default function DashboardScreen() {
                   <View style={styles.metricCardHalf}>
                     <MetricCard
                       title="Fuel Expenses"
-                      value={`RM${analyticsData.expenseBreakdown.find((e: any) => e.category === 'Fuel')?.amount.toFixed(2) || '0.00'}`}
+                      value={`RM${analyticsData.expenseBreakdown.find((e: any) => e.category === "Fuel")?.amount.toFixed(2) || "0.00"}`}
                       trend={analyticsData.fuelTrend}
                       icon="fuelpump.fill"
                       color={colors.chart.fuel}
@@ -401,7 +423,7 @@ export default function DashboardScreen() {
                   <View style={styles.metricCardHalf}>
                     <MetricCard
                       title="Service Expenses"
-                      value={`RM${analyticsData.expenseBreakdown.find((e: any) => e.category === 'Service')?.amount.toFixed(2) || '0.00'}`}
+                      value={`RM${analyticsData.expenseBreakdown.find((e: any) => e.category === "Service")?.amount.toFixed(2) || "0.00"}`}
                       trend={analyticsData.serviceTrend}
                       icon="wrench.fill"
                       color={colors.chart.service}
@@ -432,7 +454,7 @@ export default function DashboardScreen() {
             <View style={styles.viewAllButton}>
               <Text style={styles.sectionTitle}>My Vehicles</Text>
               {vehicles.length > 0 && (
-                <TouchableOpacity onPress={() => router.push('/vehicles')}>
+                <TouchableOpacity onPress={() => router.push("/vehicles")}>
                   <Text style={styles.viewAllText}>View All</Text>
                 </TouchableOpacity>
               )}
@@ -445,11 +467,12 @@ export default function DashboardScreen() {
                 </View>
                 <Text style={styles.emptyTitle}>No vehicles yet</Text>
                 <Text style={styles.emptyDescription}>
-                  Add your first vehicle to start tracking mileage, fuel, and maintenance
+                  Add your first vehicle to start tracking mileage, fuel, and
+                  maintenance
                 </Text>
                 <TouchableOpacity
                   style={styles.emptyButton}
-                  onPress={() => router.push('/vehicles/add' as any)}
+                  onPress={() => router.push("/vehicles/add" as any)}
                 >
                   <IconSymbol name="plus" size={16} color="white" />
                   <Text style={styles.emptyButtonText}>Add Vehicle</Text>
@@ -457,14 +480,16 @@ export default function DashboardScreen() {
               </View>
             ) : layout.isDesktop ? (
               <ResponsiveGrid minItemWidth={300} spacing={16}>
-                {vehicles.slice(0, 3).map(vehicle => (
+                {vehicles.slice(0, 3).map((vehicle) => (
                   <VehicleCard key={vehicle.id} vehicle={vehicle} />
                 ))}
               </ResponsiveGrid>
             ) : (
-              vehicles.slice(0, 3).map(vehicle => (
-                <VehicleCard key={vehicle.id} vehicle={vehicle} />
-              ))
+              vehicles
+                .slice(0, 3)
+                .map((vehicle) => (
+                  <VehicleCard key={vehicle.id} vehicle={vehicle} />
+                ))
             )}
           </View>
         </ScrollView>

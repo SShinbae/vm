@@ -1,7 +1,7 @@
-import { Stack } from 'expo-router';
-import { StyleSheet } from 'react-native';
-import { Colors } from '@/constants/theme';
-import { useColorScheme } from '@/hooks/use-color-scheme';
+import { Stack } from "expo-router";
+import { StyleSheet } from "react-native";
+import { Colors } from "@/constants/theme";
+import { useColorScheme } from "@/hooks/use-color-scheme";
 
 export default function AuthLayout() {
   const colorScheme = useColorScheme();
@@ -10,19 +10,19 @@ export default function AuthLayout() {
     <Stack
       screenOptions={{
         headerStyle: {
-          backgroundColor: Colors[colorScheme ?? 'light'].background,
+          backgroundColor: Colors[colorScheme ?? "light"].background,
         },
-        headerTintColor: Colors[colorScheme ?? 'light'].text,
+        headerTintColor: Colors[colorScheme ?? "light"].text,
         headerTitleStyle: {
-          fontWeight: '600',
+          fontWeight: "600",
         },
       }}
     >
       <Stack.Screen
         name="confirm"
         options={{
-          title: 'Email Confirmation',
-          headerShown: false
+          title: "Email Confirmation",
+          headerShown: false,
         }}
       />
     </Stack>

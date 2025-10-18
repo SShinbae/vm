@@ -29,12 +29,12 @@ You now use the `StyleSheet.create()` API with theme support:
 
 ```tsx
 // ✅ NEW (Unistyles)
-import { View, Text } from 'react-native';
-import { StyleSheet } from 'react-native-unistyles';
+import { View, Text } from "react-native";
+import { StyleSheet } from "react-native-unistyles";
 
 function MyComponent() {
   const { styles, theme } = StyleSheet.create(stylesheet);
-  
+
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Hello</Text>
@@ -61,7 +61,7 @@ const stylesheet = (theme) => ({
 Access theme values directly:
 
 ```tsx
-import { StyleSheet } from 'react-native-unistyles';
+import { StyleSheet } from "react-native-unistyles";
 
 const { theme } = StyleSheet.create({});
 
@@ -76,8 +76,8 @@ const mySpacing = theme.spacing.md;
 const stylesheet = (theme) => ({
   container: {
     padding: {
-      xs: theme.spacing.sm,  // Mobile
-      md: theme.spacing.lg,  // Tablet
+      xs: theme.spacing.sm, // Mobile
+      md: theme.spacing.lg, // Tablet
       xl: theme.spacing.xxl, // Desktop
     },
   },
@@ -90,8 +90,8 @@ const stylesheet = (theme) => ({
 const stylesheet = (theme, runtime) => ({
   button: {
     padding: theme.spacing.md,
-    backgroundColor: runtime.primary 
-      ? theme.colors.primary 
+    backgroundColor: runtime.primary
+      ? theme.colors.primary
       : theme.colors.secondary,
   },
 });
@@ -116,6 +116,7 @@ Your theme is defined in `/unistyles.ts`:
 ## Common Patterns
 
 ### Flex Layout
+
 ```tsx
 // NativeWind: className="flex-1 flex-row items-center justify-between"
 // Unistyles:
@@ -128,6 +129,7 @@ Your theme is defined in `/unistyles.ts`:
 ```
 
 ### Padding/Margin
+
 ```tsx
 // NativeWind: className="p-4 mx-2"
 // Unistyles:
@@ -138,6 +140,7 @@ Your theme is defined in `/unistyles.ts`:
 ```
 
 ### Text Styles
+
 ```tsx
 // NativeWind: className="text-xl font-bold text-gray-800"
 // Unistyles:
@@ -149,6 +152,7 @@ Your theme is defined in `/unistyles.ts`:
 ```
 
 ### Background & Border
+
 ```tsx
 // NativeWind: className="bg-white border border-gray-300 rounded-lg"
 // Unistyles:

@@ -1,7 +1,7 @@
-import { Colors } from '@/constants/theme';
-import { useColorScheme } from '@/hooks/use-color-scheme';
-import { router } from 'expo-router';
-import React, { useState, useEffect } from 'react';
+import { Colors } from "@/constants/theme";
+import { useColorScheme } from "@/hooks/use-color-scheme";
+import { router } from "expo-router";
+import React, { useState, useEffect } from "react";
 import {
   ActivityIndicator,
   Dimensions,
@@ -10,16 +10,16 @@ import {
   Text,
   TouchableOpacity,
   View,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
-const { width: screenWidth } = Dimensions.get('window');
+const { width: screenWidth } = Dimensions.get("window");
 
 export default function ConfirmationSuccessScreen() {
   const [redirecting, setRedirecting] = useState(false);
   const [countdown, setCountdown] = useState(5);
   const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? 'light'];
+  const colors = Colors[colorScheme ?? "light"];
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -34,13 +34,13 @@ export default function ConfirmationSuccessScreen() {
     }, 1000);
 
     return () => clearInterval(timer);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleGoToLogin = () => {
     if (redirecting) return;
     setRedirecting(true);
-    router.replace('/(auth)/login');
+    router.replace("/(auth)/login");
   };
 
   const styles = StyleSheet.create({
@@ -55,24 +55,24 @@ export default function ConfirmationSuccessScreen() {
     content: {
       flex: 1,
       paddingHorizontal: 20,
-      justifyContent: 'center',
-      maxWidth: screenWidth > 600 ? 400 : '100%',
-      alignSelf: 'center',
-      width: '100%',
+      justifyContent: "center",
+      maxWidth: screenWidth > 600 ? 400 : "100%",
+      alignSelf: "center",
+      width: "100%",
     },
     iconContainer: {
-      alignItems: 'center',
+      alignItems: "center",
       marginBottom: 32,
     },
     successIcon: {
       width: 100,
       height: 100,
       borderRadius: 50,
-      backgroundColor: '#4CAF50',
-      alignItems: 'center',
-      justifyContent: 'center',
+      backgroundColor: "#4CAF50",
+      alignItems: "center",
+      justifyContent: "center",
       marginBottom: 24,
-      shadowColor: '#4CAF50',
+      shadowColor: "#4CAF50",
       shadowOffset: {
         width: 0,
         height: 6,
@@ -83,35 +83,35 @@ export default function ConfirmationSuccessScreen() {
     },
     checkIcon: {
       fontSize: 50,
-      color: '#FFFFFF',
-      fontWeight: 'bold',
+      color: "#FFFFFF",
+      fontWeight: "bold",
     },
     title: {
       fontSize: 32,
-      fontWeight: 'bold',
+      fontWeight: "bold",
       color: colors.text,
-      textAlign: 'center',
+      textAlign: "center",
       marginBottom: 12,
     },
     subtitle: {
       fontSize: 18,
       color: colors.facebook?.gray || colors.icon,
-      textAlign: 'center',
+      textAlign: "center",
       lineHeight: 26,
       marginBottom: 8,
     },
     emailText: {
       fontSize: 16,
       color: colors.facebook?.primary || colors.tint,
-      textAlign: 'center',
-      fontWeight: '600',
+      textAlign: "center",
+      fontWeight: "600",
       marginBottom: 40,
     },
     card: {
       backgroundColor: colors.facebook?.card || colors.background,
       borderRadius: 16,
       padding: 32,
-      shadowColor: '#000',
+      shadowColor: "#000",
       shadowOffset: {
         width: 0,
         height: 4,
@@ -123,15 +123,15 @@ export default function ConfirmationSuccessScreen() {
     },
     celebrationText: {
       fontSize: 20,
-      fontWeight: '600',
+      fontWeight: "600",
       color: colors.text,
-      textAlign: 'center',
+      textAlign: "center",
       marginBottom: 16,
     },
     descriptionText: {
       fontSize: 16,
       color: colors.facebook?.gray || colors.icon,
-      textAlign: 'center',
+      textAlign: "center",
       lineHeight: 24,
       marginBottom: 32,
     },
@@ -139,7 +139,7 @@ export default function ConfirmationSuccessScreen() {
       backgroundColor: colors.facebook?.primary || colors.tint,
       borderRadius: 12,
       paddingVertical: 18,
-      alignItems: 'center',
+      alignItems: "center",
       minHeight: 56,
       shadowColor: colors.facebook?.primary || colors.tint,
       shadowOffset: {
@@ -157,15 +157,15 @@ export default function ConfirmationSuccessScreen() {
       elevation: 0,
     },
     primaryButtonText: {
-      color: '#FFFFFF',
+      color: "#FFFFFF",
       fontSize: 18,
-      fontWeight: '600',
+      fontWeight: "600",
     },
     countdownText: {
       fontSize: 14,
       color: colors.facebook?.gray || colors.icon,
-      textAlign: 'center',
-      fontStyle: 'italic',
+      textAlign: "center",
+      fontStyle: "italic",
     },
     featuresList: {
       marginTop: 24,
@@ -174,13 +174,13 @@ export default function ConfirmationSuccessScreen() {
       borderTopColor: colors.facebook?.divider || colors.border,
     },
     featureItem: {
-      flexDirection: 'row',
-      alignItems: 'center',
+      flexDirection: "row",
+      alignItems: "center",
       marginBottom: 12,
     },
     featureIcon: {
       fontSize: 18,
-      color: '#4CAF50',
+      color: "#4CAF50",
       marginRight: 12,
       width: 20,
     },
@@ -211,12 +211,11 @@ export default function ConfirmationSuccessScreen() {
 
           {/* Success Card */}
           <View style={styles.card}>
-            <Text style={styles.celebrationText}>
-              🎉 Account Confirmed!
-            </Text>
+            <Text style={styles.celebrationText}>🎉 Account Confirmed!</Text>
             <Text style={styles.descriptionText}>
-              Your email has been successfully verified! You can now sign in to your account
-              and start managing your vehicles, tracking maintenance, and accessing all features.
+              Your email has been successfully verified! You can now sign in to
+              your account and start managing your vehicles, tracking
+              maintenance, and accessing all features.
             </Text>
 
             <TouchableOpacity
@@ -230,13 +229,16 @@ export default function ConfirmationSuccessScreen() {
               {redirecting ? (
                 <ActivityIndicator color="white" size="small" />
               ) : (
-                <Text style={styles.primaryButtonText}>Continue to Sign In</Text>
+                <Text style={styles.primaryButtonText}>
+                  Continue to Sign In
+                </Text>
               )}
             </TouchableOpacity>
 
             {!redirecting && countdown > 0 && (
               <Text style={styles.countdownText}>
-                Redirecting automatically in {countdown} second{countdown !== 1 ? 's' : ''}...
+                Redirecting automatically in {countdown} second
+                {countdown !== 1 ? "s" : ""}...
               </Text>
             )}
 
@@ -244,19 +246,27 @@ export default function ConfirmationSuccessScreen() {
             <View style={styles.featuresList}>
               <View style={styles.featureItem}>
                 <Text style={styles.featureIcon}>🚗</Text>
-                <Text style={styles.featureText}>Add and manage multiple vehicles</Text>
+                <Text style={styles.featureText}>
+                  Add and manage multiple vehicles
+                </Text>
               </View>
               <View style={styles.featureItem}>
                 <Text style={styles.featureIcon}>🔧</Text>
-                <Text style={styles.featureText}>Track maintenance and service records</Text>
+                <Text style={styles.featureText}>
+                  Track maintenance and service records
+                </Text>
               </View>
               <View style={styles.featureItem}>
                 <Text style={styles.featureIcon}>⛽</Text>
-                <Text style={styles.featureText}>Monitor fuel consumption and costs</Text>
+                <Text style={styles.featureText}>
+                  Monitor fuel consumption and costs
+                </Text>
               </View>
               <View style={styles.featureItem}>
                 <Text style={styles.featureIcon}>📊</Text>
-                <Text style={styles.featureText}>View analytics and reports</Text>
+                <Text style={styles.featureText}>
+                  View analytics and reports
+                </Text>
               </View>
             </View>
           </View>

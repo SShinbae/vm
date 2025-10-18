@@ -38,6 +38,7 @@ I've successfully migrated your project from **NativeWind** to **React Native Un
 ## ⚠️ Known Issues
 
 The TypeScript compiler shows type compatibility warnings between Unistyles and React Native types. However:
+
 - **The app runs perfectly fine** despite these warnings
 - These are TypeScript linting issues, not runtime errors
 - The warnings can be safely ignored OR you can use `// @ts-ignore` if needed
@@ -47,12 +48,12 @@ The TypeScript compiler shows type compatibility warnings between Unistyles and 
 ### Basic Example:
 
 ```tsx
-import { View, Text } from 'react-native';
-import { createStyleSheet, useStyles } from 'react-native-unistyles';
+import { View, Text } from "react-native";
+import { createStyleSheet, useStyles } from "react-native-unistyles";
 
 function MyComponent() {
   const { styles, theme } = useStyles(stylesheet);
-  
+
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Hello Unistyles!</Text>
@@ -77,6 +78,7 @@ const stylesheet = createStyleSheet((theme) => ({
 ### Migration from NativeWind:
 
 **Before (NativeWind):**
+
 ```tsx
 <View className="flex-1 bg-white p-4">
   <Text className="text-xl font-bold text-blue-500">Hello</Text>
@@ -84,12 +86,13 @@ const stylesheet = createStyleSheet((theme) => ({
 ```
 
 **After (Unistyles):**
+
 ```tsx
 const { styles, theme } = useStyles(stylesheet);
 
 <View style={styles.container}>
   <Text style={styles.title}>Hello</Text>
-</View>
+</View>;
 
 const stylesheet = createStyleSheet((theme) => ({
   container: {
@@ -110,32 +113,32 @@ const stylesheet = createStyleSheet((theme) => ({
 Your theme is configured in `/unistyles.ts` and includes:
 
 ```typescript
-theme.colors.primary        // '#007AFF' (light) / '#0A84FF' (dark)
-theme.colors.background     // '#FFFFFF' (light) / '#000000' (dark)
-theme.colors.text           // '#000000' (light) / '#FFFFFF' (dark)
-theme.colors.gray[100-900]  // Gray color palette
+theme.colors.primary; // '#007AFF' (light) / '#0A84FF' (dark)
+theme.colors.background; // '#FFFFFF' (light) / '#000000' (dark)
+theme.colors.text; // '#000000' (light) / '#FFFFFF' (dark)
+theme.colors.gray[100 - 900]; // Gray color palette
 
-theme.spacing.xs            // 4
-theme.spacing.sm            // 8
-theme.spacing.md            // 12
-theme.spacing.lg            // 16
-theme.spacing.xl            // 24
+theme.spacing.xs; // 4
+theme.spacing.sm; // 8
+theme.spacing.md; // 12
+theme.spacing.lg; // 16
+theme.spacing.xl; // 24
 
-theme.fontSize.xs           // 12
-theme.fontSize.sm           // 14
-theme.fontSize.base         // 16
-theme.fontSize.lg           // 18
-theme.fontSize.xl           // 20
-theme.fontSize['2xl']       // 24
+theme.fontSize.xs; // 12
+theme.fontSize.sm; // 14
+theme.fontSize.base; // 16
+theme.fontSize.lg; // 18
+theme.fontSize.xl; // 20
+theme.fontSize["2xl"]; // 24
 
-theme.borderRadius.sm       // 4
-theme.borderRadius.md       // 8
-theme.borderRadius.lg       // 12
-theme.borderRadius.full     // 9999
+theme.borderRadius.sm; // 4
+theme.borderRadius.md; // 8
+theme.borderRadius.lg; // 12
+theme.borderRadius.full; // 9999
 
-theme.fontWeight.normal     // '400'
-theme.fontWeight.semibold   // '600'
-theme.fontWeight.bold       // '700'
+theme.fontWeight.normal; // '400'
+theme.fontWeight.semibold; // '600'
+theme.fontWeight.bold; // '700'
 ```
 
 ## Next Steps

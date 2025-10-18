@@ -1,5 +1,5 @@
-import Constants from 'expo-constants';
-import { ApiResponse } from '../../types';
+import Constants from "expo-constants";
+import { ApiResponse } from "../../types";
 
 // Google Vision API configuration
 interface GoogleVisionConfig {
@@ -32,8 +32,8 @@ interface GoogleVisionResponse {
 
 export class GoogleVisionService {
   private static config: GoogleVisionConfig = {
-    apiKey: Constants.expoConfig?.extra?.googleVisionApiKey || '',
-    endpoint: 'https://vision.googleapis.com/v1/images:annotate'
+    apiKey: Constants.expoConfig?.extra?.googleVisionApiKey || "",
+    endpoint: "https://vision.googleapis.com/v1/images:annotate",
   };
 
   /**
@@ -54,7 +54,7 @@ export class GoogleVisionService {
 
       // Convert ArrayBuffer to base64
       const bytes = new Uint8Array(arrayBuffer);
-      let binary = '';
+      let binary = "";
       for (let i = 0; i < bytes.byteLength; i++) {
         binary += String.fromCharCode(bytes[i]);
       }
@@ -62,18 +62,26 @@ export class GoogleVisionService {
 
       return base64;
     } catch (error) {
-      console.error('Error converting image to base64:', error);
-      throw new Error('Failed to process image for OCR');
+      console.error("Error converting image to base64:", error);
+      throw new Error("Failed to process image for OCR");
     }
   }
 
   /**
    * Validate image quality for OCR processing
    */
-  private static validateImageForOCR(imageUri: string): { isValid: boolean; suggestion?: string } {
+  private static validateImageForOCR(imageUri: string): {
+    isValid: boolean;
+    suggestion?: string;
+  } {
     // Basic validation - in a real app, you might want to analyze the actual image
-    if (!imageUri || !imageUri.includes('file://') && !imageUri.includes('content://') && !imageUri.includes('http')) {
-      return { isValid: false, suggestion: 'Invalid image format' };
+    if (
+      !imageUri ||
+      (!imageUri.includes("file://") &&
+        !imageUri.includes("content://") &&
+        !imageUri.includes("http"))
+    ) {
+      return { isValid: false, suggestion: "Invalid image format" };
     }
 
     // For now, we'll assume the image is valid
@@ -87,40 +95,47 @@ export class GoogleVisionService {
   /**
    * Extract text with multiple detection methods for better accuracy
    */
-  private static async extractTextWithMultipleMethods(base64Image: string): Promise<{text: string; confidence: number}> {
+  private static async extractTextWithMultipleMethods(
+    base64Image: string,
+  ): Promise<{ text: string; confidence: number }> {
     const methods = [
       {
-        name: 'DOCUMENT_TEXT_DETECTION',
-        features: [{ type: 'DOCUMENT_TEXT_DETECTION', maxResults: 1 }]
+        name: "DOCUMENT_TEXT_DETECTION",
+        features: [{ type: "DOCUMENT_TEXT_DETECTION", maxResults: 1 }],
       },
       {
-        name: 'TEXT_DETECTION',
-        features: [{ type: 'TEXT_DETECTION', maxResults: 50 }]
-      }
+        name: "TEXT_DETECTION",
+        features: [{ type: "TEXT_DETECTION", maxResults: 50 }],
+      },
     ];
 
-    let bestResult = { text: '', confidence: 0 };
+    let bestResult = { text: "", confidence: 0 };
 
     for (const method of methods) {
       try {
         const requestPayload = {
-          requests: [{
-            image: { content: base64Image },
-            features: method.features,
-            imageContext: {
-              languageHints: ['en'],
-              textDetectionParams: {
-                enableTextDetectionConfidenceScore: true
-              }
-            }
-          }]
+          requests: [
+            {
+              image: { content: base64Image },
+              features: method.features,
+              imageContext: {
+                languageHints: ["en"],
+                textDetectionParams: {
+                  enableTextDetectionConfidenceScore: true,
+                },
+              },
+            },
+          ],
         };
 
-        const response = await fetch(`${this.config.endpoint}?key=${this.config.apiKey}`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(requestPayload)
-        });
+        const response = await fetch(
+          `${this.config.endpoint}?key=${this.config.apiKey}`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(requestPayload),
+          },
+        );
 
         if (!response.ok) continue;
 
@@ -128,36 +143,46 @@ export class GoogleVisionService {
         if (result.responses?.[0]?.error) continue;
 
         const responseData = result.responses[0];
-        let extractedText = '';
+        let extractedText = "";
         let confidence = 0;
 
-        if (method.name === 'DOCUMENT_TEXT_DETECTION' && responseData.fullTextAnnotation) {
-          extractedText = responseData.fullTextAnnotation.text || '';
+        if (
+          method.name === "DOCUMENT_TEXT_DETECTION" &&
+          responseData.fullTextAnnotation
+        ) {
+          extractedText = responseData.fullTextAnnotation.text || "";
           confidence = responseData.fullTextAnnotation.confidence || 0;
           // For pages-based confidence
           if (responseData.fullTextAnnotation.pages?.length) {
             const pageConfidences = responseData.fullTextAnnotation.pages
-              .map(p => p.confidence || 0)
-              .filter(c => c > 0);
+              .map((p) => p.confidence || 0)
+              .filter((c) => c > 0);
             if (pageConfidences.length) {
-              confidence = pageConfidences.reduce((a, b) => a + b) / pageConfidences.length;
+              confidence =
+                pageConfidences.reduce((a, b) => a + b) /
+                pageConfidences.length;
             }
           }
         } else if (responseData.textAnnotations?.length) {
-          extractedText = responseData.textAnnotations[0].description || '';
+          extractedText = responseData.textAnnotations[0].description || "";
           confidence = responseData.textAnnotations[0].confidence || 0;
           // Calculate average confidence from all text annotations
           const confidenceScores = responseData.textAnnotations
-            .map(ta => ta.confidence || 0)
-            .filter(c => c > 0);
+            .map((ta) => ta.confidence || 0)
+            .filter((c) => c > 0);
           if (confidenceScores.length) {
-            confidence = confidenceScores.reduce((a, b) => a + b) / confidenceScores.length;
+            confidence =
+              confidenceScores.reduce((a, b) => a + b) /
+              confidenceScores.length;
           }
         }
 
         // Prefer results with higher confidence and longer text
         const score = confidence * 0.7 + (extractedText.length / 1000) * 0.3;
-        if (score > (bestResult.confidence * 0.7 + (bestResult.text.length / 1000) * 0.3)) {
+        if (
+          score >
+          bestResult.confidence * 0.7 + (bestResult.text.length / 1000) * 0.3
+        ) {
           bestResult = { text: extractedText, confidence: confidence * 100 };
         }
       } catch (error) {
@@ -172,23 +197,26 @@ export class GoogleVisionService {
   /**
    * Extract text from image using Google Vision API
    */
-  static async extractTextFromImage(imageUri: string): Promise<ApiResponse<string>> {
+  static async extractTextFromImage(
+    imageUri: string,
+  ): Promise<ApiResponse<string>> {
     try {
       // Validate API key
       if (!this.config.apiKey) {
         return {
           data: null,
-          error: 'Google Vision API key not configured. Please set GOOGLE_VISION_API_KEY in your environment variables.',
-          loading: false
+          error:
+            "Google Vision API key not configured. Please set GOOGLE_VISION_API_KEY in your environment variables.",
+          loading: false,
         };
       }
 
       // Validate image URI
-      if (!imageUri || typeof imageUri !== 'string') {
+      if (!imageUri || typeof imageUri !== "string") {
         return {
           data: null,
-          error: 'Invalid image URI provided',
-          loading: false
+          error: "Invalid image URI provided",
+          loading: false,
         };
       }
 
@@ -197,8 +225,9 @@ export class GoogleVisionService {
       if (!validation.isValid) {
         return {
           data: null,
-          error: validation.suggestion || 'Image quality is not suitable for OCR',
-          loading: false
+          error:
+            validation.suggestion || "Image quality is not suitable for OCR",
+          loading: false,
         };
       }
 
@@ -206,38 +235,48 @@ export class GoogleVisionService {
       const base64Image = await this.imageToBase64(imageUri);
 
       // Use enhanced multi-method text extraction
-      const extractionResult = await this.extractTextWithMultipleMethods(base64Image);
+      const extractionResult =
+        await this.extractTextWithMultipleMethods(base64Image);
 
       if (!extractionResult.text || extractionResult.text.trim().length === 0) {
         return {
           data: null,
-          error: 'No text was detected in the image. Please ensure the receipt is clearly visible and try again.',
-          loading: false
+          error:
+            "No text was detected in the image. Please ensure the receipt is clearly visible and try again.",
+          loading: false,
         };
       }
 
       // Log confidence for debugging
-      console.log(`OCR completed with ${extractionResult.confidence.toFixed(1)}% confidence`);
-      console.log(`Extracted text length: ${extractionResult.text.length} characters`);
+      console.log(
+        `OCR completed with ${extractionResult.confidence.toFixed(1)}% confidence`,
+      );
+      console.log(
+        `Extracted text length: ${extractionResult.text.length} characters`,
+      );
 
       return {
         data: extractionResult.text,
         error: null,
         loading: false,
-        confidence: extractionResult.confidence
+        confidence: extractionResult.confidence,
       };
-
     } catch (error) {
-      console.error('Error in Google Vision OCR:', error);
+      console.error("Error in Google Vision OCR:", error);
 
       // Provide specific error messages for common issues
-      let errorMessage = 'Failed to extract text from image';
+      let errorMessage = "Failed to extract text from image";
 
       if (error instanceof Error) {
-        if (error.message.includes('network') || error.message.includes('fetch')) {
-          errorMessage = 'Network error. Please check your internet connection and try again.';
-        } else if (error.message.includes('base64')) {
-          errorMessage = 'Failed to process image. Please try taking a new photo.';
+        if (
+          error.message.includes("network") ||
+          error.message.includes("fetch")
+        ) {
+          errorMessage =
+            "Network error. Please check your internet connection and try again.";
+        } else if (error.message.includes("base64")) {
+          errorMessage =
+            "Failed to process image. Please try taking a new photo.";
         } else {
           errorMessage = error.message;
         }
@@ -246,7 +285,7 @@ export class GoogleVisionService {
       return {
         data: null,
         error: errorMessage,
-        loading: false
+        loading: false,
       };
     }
   }
@@ -259,8 +298,8 @@ export class GoogleVisionService {
       if (!this.config.apiKey) {
         return {
           data: false,
-          error: 'Google Vision API key not configured',
-          loading: false
+          error: "Google Vision API key not configured",
+          loading: false,
         };
       }
 
@@ -269,46 +308,50 @@ export class GoogleVisionService {
         requests: [
           {
             image: {
-              content: 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==' // 1x1 transparent PNG
+              content:
+                "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==", // 1x1 transparent PNG
             },
             features: [
               {
-                type: 'TEXT_DETECTION',
-                maxResults: 1
-              }
-            ]
-          }
-        ]
+                type: "TEXT_DETECTION",
+                maxResults: 1,
+              },
+            ],
+          },
+        ],
       };
 
-      const response = await fetch(`${this.config.endpoint}?key=${this.config.apiKey}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
+      const response = await fetch(
+        `${this.config.endpoint}?key=${this.config.apiKey}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(testPayload),
         },
-        body: JSON.stringify(testPayload)
-      });
+      );
 
       if (!response.ok) {
         return {
           data: false,
           error: `API connection failed: ${response.status}`,
-          loading: false
+          loading: false,
         };
       }
 
       return {
         data: true,
         error: null,
-        loading: false
+        loading: false,
       };
-
     } catch (error) {
-      console.error('Error testing Google Vision API connection:', error);
+      console.error("Error testing Google Vision API connection:", error);
       return {
         data: false,
-        error: error instanceof Error ? error.message : 'Connection test failed',
-        loading: false
+        error:
+          error instanceof Error ? error.message : "Connection test failed",
+        loading: false,
       };
     }
   }
@@ -321,13 +364,13 @@ export class GoogleVisionService {
       apiKeyConfigured: !!this.config.apiKey,
       endpoint: this.config.endpoint,
       documentsPerMonth: 1000, // Free tier limit
-      costPer1000: 1.50, // USD
+      costPer1000: 1.5, // USD
       features: [
-        'Text Detection',
-        'Document Text Detection',
-        'Handwriting Detection',
-        'Multi-language Support'
-      ]
+        "Text Detection",
+        "Document Text Detection",
+        "Handwriting Detection",
+        "Multi-language Support",
+      ],
     };
   }
 }

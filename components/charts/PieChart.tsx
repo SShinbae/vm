@@ -1,9 +1,9 @@
-import React from 'react';
-import { View, Text, StyleSheet, Dimensions } from 'react-native';
-import { PieChart as RNPieChart } from 'react-native-chart-kit';
-import { useColorScheme } from '@/hooks/use-color-scheme';
-import { Colors } from '@/constants/theme';
-import { ChartDataPoint } from '@/lib/services/analyticsService';
+import React from "react";
+import { View, Text, StyleSheet, Dimensions } from "react-native";
+import { PieChart as RNPieChart } from "react-native-chart-kit";
+import { useColorScheme } from "@/hooks/use-color-scheme";
+import { Colors } from "@/constants/theme";
+import { ChartDataPoint } from "@/lib/services/analyticsService";
 
 interface PieChartProps {
   data: ChartDataPoint[];
@@ -18,13 +18,18 @@ export function PieChart({
   title,
   height = 200,
   colors: customColors,
-  showLegend = true
+  showLegend = true,
 }: PieChartProps) {
   const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? 'light'];
-  const screenWidth = Dimensions.get('window').width;
+  const colors = Colors[colorScheme ?? "light"];
+  const screenWidth = Dimensions.get("window").width;
 
-  const defaultColors = [colors.chart.fuel, colors.chart.service, colors.chart.mileage, colors.chart.primary];
+  const defaultColors = [
+    colors.chart.fuel,
+    colors.chart.service,
+    colors.chart.mileage,
+    colors.chart.primary,
+  ];
 
   const styles = StyleSheet.create({
     container: {
@@ -37,18 +42,18 @@ export function PieChart({
     },
     title: {
       fontSize: 18,
-      fontWeight: '600',
+      fontWeight: "600",
       color: colors.text,
       marginBottom: 16,
-      textAlign: 'center',
+      textAlign: "center",
     },
     chartContainer: {
-      alignItems: 'center',
+      alignItems: "center",
     },
     emptyState: {
       height,
-      justifyContent: 'center',
-      alignItems: 'center',
+      justifyContent: "center",
+      alignItems: "center",
     },
     emptyText: {
       fontSize: 14,
@@ -56,14 +61,14 @@ export function PieChart({
     },
     legendContainer: {
       marginTop: 16,
-      flexDirection: 'row',
-      flexWrap: 'wrap',
-      justifyContent: 'center',
+      flexDirection: "row",
+      flexWrap: "wrap",
+      justifyContent: "center",
       gap: 16,
     },
     legendItem: {
-      flexDirection: 'row',
-      alignItems: 'center',
+      flexDirection: "row",
+      alignItems: "center",
       gap: 8,
     },
     legendColor: {
@@ -104,8 +109,16 @@ export function PieChart({
     backgroundColor: colors.card,
     backgroundGradientFrom: colors.card,
     backgroundGradientTo: colors.card,
-    color: (opacity = 1) => colors.text + Math.floor(opacity * 255).toString(16).padStart(2, '0'),
-    labelColor: (opacity = 1) => colors.textSecondary + Math.floor(opacity * 255).toString(16).padStart(2, '0'),
+    color: (opacity = 1) =>
+      colors.text +
+      Math.floor(opacity * 255)
+        .toString(16)
+        .padStart(2, "0"),
+    labelColor: (opacity = 1) =>
+      colors.textSecondary +
+      Math.floor(opacity * 255)
+        .toString(16)
+        .padStart(2, "0"),
   };
 
   return (

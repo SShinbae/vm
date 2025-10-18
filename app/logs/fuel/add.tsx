@@ -1,16 +1,16 @@
-import { Button } from '@/components/ui/Button';
-import { IconSymbol } from '@/components/ui/icon-symbol';
-import { Input } from '@/components/ui/Input';
-import { AlertModal } from '@/components/ui/Modal';
-import { Colors } from '@/constants/theme';
-import { useColorScheme } from '@/hooks/use-color-scheme';
-import { FuelLogService } from '@/lib/services/loggingService';
-import { VehicleService } from '@/lib/services/vehicleService';
-import { FuelLogFormData } from '@/types';
-import { VehicleWithDetails } from '@/types/database-v2';
-import { Image } from 'expo-image';
-import { router, useLocalSearchParams } from 'expo-router';
-import React, { useEffect, useState } from 'react';
+import { Button } from "@/components/ui/Button";
+import { IconSymbol } from "@/components/ui/icon-symbol";
+import { Input } from "@/components/ui/Input";
+import { AlertModal } from "@/components/ui/Modal";
+import { Colors } from "@/constants/theme";
+import { useColorScheme } from "@/hooks/use-color-scheme";
+import { FuelLogService } from "@/lib/services/loggingService";
+import { VehicleService } from "@/lib/services/vehicleService";
+import { FuelLogFormData } from "@/types";
+import { VehicleWithDetails } from "@/types/database-v2";
+import { Image } from "expo-image";
+import { router, useLocalSearchParams } from "expo-router";
+import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -20,8 +20,8 @@ import {
   Text,
   TouchableOpacity,
   View,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 // Separate component to handle vehicle option rendering with proper hook usage
 const VehicleOption: React.FC<{
@@ -34,10 +34,7 @@ const VehicleOption: React.FC<{
 
   return (
     <TouchableOpacity
-      style={[
-        styles.vehicleOption,
-        isSelected && styles.vehicleOptionSelected,
-      ]}
+      style={[styles.vehicleOption, isSelected && styles.vehicleOptionSelected]}
       onPress={onPress}
     >
       {vehicle.main_image_url && !imageError ? (
@@ -54,16 +51,20 @@ const VehicleOption: React.FC<{
           <IconSymbol name="car.fill" size={16} color="white" />
         </View>
       )}
-      <Text style={[
-        styles.vehicleOptionText,
-        isSelected && styles.vehicleOptionTextSelected,
-      ]}>
+      <Text
+        style={[
+          styles.vehicleOptionText,
+          isSelected && styles.vehicleOptionTextSelected,
+        ]}
+      >
         {vehicle.year} {vehicle.make}
       </Text>
-      <Text style={[
-        styles.vehiclePlateText,
-        isSelected && styles.vehiclePlateTextSelected,
-      ]}>
+      <Text
+        style={[
+          styles.vehiclePlateText,
+          isSelected && styles.vehiclePlateTextSelected,
+        ]}
+      >
         {vehicle.license_plate}
       </Text>
     </TouchableOpacity>
@@ -74,22 +75,22 @@ export default function AddFuelLogScreen() {
   const { vehicleId } = useLocalSearchParams<{ vehicleId?: string }>();
   const [vehicles, setVehicles] = useState<VehicleWithDetails[]>([]);
   const [formData, setFormData] = useState<FuelLogFormData>({
-    vehicle_id: vehicleId || '',
+    vehicle_id: vehicleId || "",
     liters_filled: 0,
     cost: 0,
     fuel_price: 1.99,
-    date: new Date().toISOString().split('T')[0],
+    date: new Date().toISOString().split("T")[0],
     odometer_reading: 0,
-    location: '',
+    location: "",
   });
   const [loading, setLoading] = useState(false);
   const [vehiclesLoading, setVehiclesLoading] = useState(true);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [showErrorModal, setShowErrorModal] = useState(false);
-  const [errorMessage, setErrorMessage] = useState('');
+  const [errorMessage, setErrorMessage] = useState("");
   const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? 'light'];
-  const isWeb = Platform.OS === 'web';
+  const colors = Colors[colorScheme ?? "light"];
+  const isWeb = Platform.OS === "web";
 
   useEffect(() => {
     const fetchVehicles = async () => {
@@ -98,7 +99,7 @@ export default function AddFuelLogScreen() {
         const allVehicles = [...data.ownVehicles, ...data.sharedVehicles];
         setVehicles(allVehicles);
         if (!vehicleId && allVehicles.length > 0) {
-          setFormData(prev => ({ ...prev, vehicle_id: allVehicles[0].id }));
+          setFormData((prev) => ({ ...prev, vehicle_id: allVehicles[0].id }));
         }
       }
       setVehiclesLoading(false);
@@ -116,27 +117,27 @@ export default function AddFuelLogScreen() {
 
   const handleSave = async () => {
     if (!formData.vehicle_id) {
-      setErrorMessage('Please select a vehicle');
+      setErrorMessage("Please select a vehicle");
       setShowErrorModal(true);
       return;
     }
     if (!formData.cost || formData.cost <= 0) {
-      setErrorMessage('Please enter a valid cost amount');
+      setErrorMessage("Please enter a valid cost amount");
       setShowErrorModal(true);
       return;
     }
     if (!formData.fuel_price || formData.fuel_price <= 0) {
-      setErrorMessage('Please select a fuel price');
+      setErrorMessage("Please select a fuel price");
       setShowErrorModal(true);
       return;
     }
     if (formData.odometer_reading <= 0) {
-      setErrorMessage('Please enter a valid odometer reading');
+      setErrorMessage("Please enter a valid odometer reading");
       setShowErrorModal(true);
       return;
     }
     if (!formData.date) {
-      setErrorMessage('Please select a date');
+      setErrorMessage("Please select a date");
       setShowErrorModal(true);
       return;
     }
@@ -166,33 +167,35 @@ export default function AddFuelLogScreen() {
 
   const handleSuccessModalClose = () => {
     setShowSuccessModal(false);
-    router.push('/(tabs)/logs');
+    router.push("/(tabs)/logs");
   };
 
   const validateCost = (value: string) => {
     const num = parseFloat(value);
-    if (isNaN(num) || num <= 0) return 'Please enter a valid cost';
+    if (isNaN(num) || num <= 0) return "Please enter a valid cost";
     return undefined;
   };
 
   const validateOdometer = (value: string) => {
-    const num = parseInt(value.replace(/,/g, ''));
-    if (isNaN(num) || num <= 0) return 'Please enter a valid odometer reading';
+    const num = parseInt(value.replace(/,/g, ""));
+    if (isNaN(num) || num <= 0) return "Please enter a valid odometer reading";
     return undefined;
   };
 
   const isFormValid = () => {
     return (
       formData.vehicle_id &&
-      formData.cost && formData.cost > 0 &&
-      formData.fuel_price && formData.fuel_price > 0 &&
+      formData.cost &&
+      formData.cost > 0 &&
+      formData.fuel_price &&
+      formData.fuel_price > 0 &&
       formData.odometer_reading > 0 &&
       formData.date
     );
   };
 
   const VehicleSelector = () => {
-    const selectedVehicle = vehicles.find(v => v.id === formData.vehicle_id);
+    const selectedVehicle = vehicles.find((v) => v.id === formData.vehicle_id);
     const isLocked = !!vehicleId;
     const [imageError, setImageError] = React.useState(false);
 
@@ -220,7 +223,8 @@ export default function AddFuelLogScreen() {
               )}
               <View style={styles.lockedVehicleInfo}>
                 <Text style={styles.lockedVehicleText}>
-                  {selectedVehicle.year} {selectedVehicle.make} {selectedVehicle.model}
+                  {selectedVehicle.year} {selectedVehicle.make}{" "}
+                  {selectedVehicle.model}
                 </Text>
                 <Text style={styles.lockedVehiclePlate}>
                   {selectedVehicle.license_plate}
@@ -254,7 +258,9 @@ export default function AddFuelLogScreen() {
               key={vehicle.id}
               vehicle={vehicle}
               isSelected={formData.vehicle_id === vehicle.id}
-              onPress={() => setFormData(prev => ({ ...prev, vehicle_id: vehicle.id }))}
+              onPress={() =>
+                setFormData((prev) => ({ ...prev, vehicle_id: vehicle.id }))
+              }
               styles={styles}
             />
           ))}
@@ -266,15 +272,15 @@ export default function AddFuelLogScreen() {
   const styles = StyleSheet.create({
     container: {
       flex: 1,
-      backgroundColor: isWeb ? colors.icon + '08' : colors.background,
+      backgroundColor: isWeb ? colors.icon + "08" : colors.background,
     },
     header: {
-      flexDirection: 'row',
-      alignItems: 'center',
+      flexDirection: "row",
+      alignItems: "center",
       paddingHorizontal: 20,
       paddingVertical: 16,
       borderBottomWidth: 1,
-      borderBottomColor: colors.icon + '20',
+      borderBottomColor: colors.icon + "20",
       backgroundColor: colors.background,
     },
     backButton: {
@@ -283,7 +289,7 @@ export default function AddFuelLogScreen() {
     },
     headerTitle: {
       fontSize: 24,
-      fontWeight: 'bold',
+      fontWeight: "bold",
       color: colors.text,
       flex: 1,
     },
@@ -295,47 +301,47 @@ export default function AddFuelLogScreen() {
       paddingBottom: 100,
       ...(isWeb && {
         maxWidth: 600,
-        width: '100%',
-        alignSelf: 'center',
+        width: "100%",
+        alignSelf: "center",
       }),
     },
     title: {
       fontSize: 32,
-      fontWeight: 'bold',
+      fontWeight: "bold",
       color: colors.text,
       marginBottom: 8,
-      textAlign: isWeb ? 'center' : 'left',
+      textAlign: isWeb ? "center" : "left",
     },
     subtitle: {
       fontSize: 16,
       color: colors.icon,
       marginBottom: 32,
-      textAlign: isWeb ? 'center' : 'left',
+      textAlign: isWeb ? "center" : "left",
     },
     card: {
       backgroundColor: colors.background,
       borderRadius: isWeb ? 16 : 12,
       padding: isWeb ? 32 : 20,
       ...(isWeb && {
-        shadowColor: colorScheme === 'dark' ? '#ffffff' : '#000000',
+        shadowColor: colorScheme === "dark" ? "#ffffff" : "#000000",
         shadowOffset: {
           width: 0,
           height: 4,
         },
-        shadowOpacity: colorScheme === 'dark' ? 0.1 : 0.08,
+        shadowOpacity: colorScheme === "dark" ? 0.1 : 0.08,
         shadowRadius: 12,
         elevation: 4,
       }),
     },
     row: {
-      flexDirection: isWeb ? 'row' : 'column',
+      flexDirection: isWeb ? "row" : "column",
       gap: 16,
     },
     flex1: {
       flex: 1,
     },
     buttonContainer: {
-      flexDirection: 'row',
+      flexDirection: "row",
       gap: 12,
       marginTop: 32,
     },
@@ -347,20 +353,20 @@ export default function AddFuelLogScreen() {
     },
     loadingContainer: {
       flex: 1,
-      justifyContent: 'center',
-      alignItems: 'center',
+      justifyContent: "center",
+      alignItems: "center",
     },
     inputContainer: {
       marginBottom: 20,
     },
     label: {
       fontSize: 16,
-      fontWeight: '500',
+      fontWeight: "500",
       color: colors.text,
       marginBottom: 8,
     },
     requiredLabel: {
-      color: '#ff4444',
+      color: "#ff4444",
     },
     vehicleSelector: {
       maxHeight: 120,
@@ -371,30 +377,30 @@ export default function AddFuelLogScreen() {
     vehicleOption: {
       backgroundColor: colors.background,
       borderWidth: 1,
-      borderColor: colors.icon + '30',
+      borderColor: colors.icon + "30",
       borderRadius: 8,
       padding: 12,
       minWidth: 120,
-      alignItems: 'center',
+      alignItems: "center",
       gap: 8,
     },
     vehicleOptionSelected: {
       borderColor: colors.tint,
-      backgroundColor: colors.tint + '10',
+      backgroundColor: colors.tint + "10",
     },
     vehicleIcon: {
       width: 32,
       height: 32,
       borderRadius: 16,
       backgroundColor: colors.tint,
-      alignItems: 'center',
-      justifyContent: 'center',
+      alignItems: "center",
+      justifyContent: "center",
     },
     vehicleOptionText: {
       fontSize: 14,
-      fontWeight: '600',
+      fontWeight: "600",
       color: colors.text,
-      textAlign: 'center',
+      textAlign: "center",
     },
     vehicleOptionTextSelected: {
       color: colors.tint,
@@ -402,7 +408,7 @@ export default function AddFuelLogScreen() {
     vehiclePlateText: {
       fontSize: 12,
       color: colors.icon,
-      textAlign: 'center',
+      textAlign: "center",
     },
     vehiclePlateTextSelected: {
       color: colors.tint,
@@ -416,8 +422,8 @@ export default function AddFuelLogScreen() {
       borderColor: colors.tint,
       borderRadius: 8,
       padding: 16,
-      flexDirection: 'row',
-      alignItems: 'center',
+      flexDirection: "row",
+      alignItems: "center",
       gap: 12,
     },
     lockedVehicleInfo: {
@@ -425,7 +431,7 @@ export default function AddFuelLogScreen() {
     },
     lockedVehicleText: {
       fontSize: 16,
-      fontWeight: '600',
+      fontWeight: "600",
       color: colors.text,
     },
     lockedVehiclePlate: {
@@ -439,29 +445,29 @@ export default function AddFuelLogScreen() {
     lockedHelpText: {
       fontSize: 12,
       color: colors.icon,
-      fontStyle: 'italic',
+      fontStyle: "italic",
     },
     fuelPriceSelector: {
-      flexDirection: 'row',
+      flexDirection: "row",
       gap: 8,
     },
     fuelPriceOption: {
       flex: 1,
       backgroundColor: colors.background,
       borderWidth: 1,
-      borderColor: colors.icon + '30',
+      borderColor: colors.icon + "30",
       borderRadius: 8,
       paddingVertical: 12,
       paddingHorizontal: 16,
-      alignItems: 'center',
+      alignItems: "center",
     },
     fuelPriceOptionSelected: {
       borderColor: colors.tint,
-      backgroundColor: colors.tint + '10',
+      backgroundColor: colors.tint + "10",
     },
     fuelPriceOptionText: {
       fontSize: 16,
-      fontWeight: '600',
+      fontWeight: "600",
       color: colors.text,
     },
     fuelPriceOptionTextSelected: {
@@ -474,7 +480,10 @@ export default function AddFuelLogScreen() {
       <SafeAreaView style={styles.container}>
         {!isWeb && (
           <View style={styles.header}>
-            <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+            <TouchableOpacity
+              style={styles.backButton}
+              onPress={() => router.back()}
+            >
               <IconSymbol name="chevron.left" size={24} color={colors.text} />
             </TouchableOpacity>
             <Text style={styles.headerTitle}>Add Fuel Log</Text>
@@ -492,19 +501,22 @@ export default function AddFuelLogScreen() {
       <SafeAreaView style={styles.container}>
         {!isWeb && (
           <View style={styles.header}>
-            <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+            <TouchableOpacity
+              style={styles.backButton}
+              onPress={() => router.back()}
+            >
               <IconSymbol name="chevron.left" size={24} color={colors.text} />
             </TouchableOpacity>
             <Text style={styles.headerTitle}>Add Fuel Log</Text>
           </View>
         )}
         <View style={styles.loadingContainer}>
-          <Text style={[styles.label, { textAlign: 'center' }]}>
+          <Text style={[styles.label, { textAlign: "center" }]}>
             No vehicles found. Please add a vehicle first.
           </Text>
           <Button
             title="Add Vehicle"
-            onPress={() => router.push('/vehicles/add' as any)}
+            onPress={() => router.push("/vehicles/add" as any)}
             icon="plus"
             style={{ marginTop: 20 }}
           />
@@ -524,16 +536,15 @@ export default function AddFuelLogScreen() {
             <IconSymbol name="chevron.left" size={24} color={colors.text} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>
-            {vehicleId && vehicles.find(v => v.id === vehicleId)
-              ? `Add Fuel - ${vehicles.find(v => v.id === vehicleId)?.year} ${vehicles.find(v => v.id === vehicleId)?.make}`
-              : 'Add Fuel Log'
-            }
+            {vehicleId && vehicles.find((v) => v.id === vehicleId)
+              ? `Add Fuel - ${vehicles.find((v) => v.id === vehicleId)?.year} ${vehicles.find((v) => v.id === vehicleId)?.make}`
+              : "Add Fuel Log"}
           </Text>
         </View>
       )}
 
       <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={styles.content}
       >
         <ScrollView
@@ -553,30 +564,38 @@ export default function AddFuelLogScreen() {
 
             <View style={styles.inputContainer}>
               <Text style={styles.label}>
-                Fuel Price (RM per liter) <Text style={styles.requiredLabel}>*</Text>
+                Fuel Price (RM per liter){" "}
+                <Text style={styles.requiredLabel}>*</Text>
               </Text>
               <View style={styles.fuelPriceSelector}>
-                {[1.99, 2.60, 3.21].map((price) => (
+                {[1.99, 2.6, 3.21].map((price) => (
                   <TouchableOpacity
                     key={price}
                     style={[
                       styles.fuelPriceOption,
-                      formData.fuel_price === price && styles.fuelPriceOptionSelected,
+                      formData.fuel_price === price &&
+                        styles.fuelPriceOptionSelected,
                     ]}
                     onPress={() => {
-                      setFormData(prev => {
+                      setFormData((prev) => {
                         const newData = { ...prev, fuel_price: price };
                         if (prev.cost && prev.cost > 0) {
-                          newData.liters_filled = calculateLiters(prev.cost, price);
+                          newData.liters_filled = calculateLiters(
+                            prev.cost,
+                            price,
+                          );
                         }
                         return newData;
                       });
                     }}
                   >
-                    <Text style={[
-                      styles.fuelPriceOptionText,
-                      formData.fuel_price === price && styles.fuelPriceOptionTextSelected,
-                    ]}>
+                    <Text
+                      style={[
+                        styles.fuelPriceOptionText,
+                        formData.fuel_price === price &&
+                          styles.fuelPriceOptionTextSelected,
+                      ]}
+                    >
                       RM{price.toFixed(2)}
                     </Text>
                   </TouchableOpacity>
@@ -588,13 +607,16 @@ export default function AddFuelLogScreen() {
               <View style={styles.flex1}>
                 <Input
                   label="Cost (RM)"
-                  value={formData.cost > 0 ? formData.cost.toString() : ''}
+                  value={formData.cost > 0 ? formData.cost.toString() : ""}
                   onChangeText={(text) => {
                     const cost = parseFloat(text) || 0;
-                    setFormData(prev => {
+                    setFormData((prev) => {
                       const newData = { ...prev, cost };
                       if (prev.fuel_price && prev.fuel_price > 0 && cost > 0) {
-                        newData.liters_filled = calculateLiters(cost, prev.fuel_price);
+                        newData.liters_filled = calculateLiters(
+                          cost,
+                          prev.fuel_price,
+                        );
                       }
                       return newData;
                     });
@@ -602,7 +624,11 @@ export default function AddFuelLogScreen() {
                   placeholder="65.00"
                   keyboardType="numeric"
                   required
-                  error={formData.cost ? validateCost(formData.cost.toString()) : undefined}
+                  error={
+                    formData.cost
+                      ? validateCost(formData.cost.toString())
+                      : undefined
+                  }
                   leftIcon="dollarsign.circle"
                 />
               </View>
@@ -621,15 +647,23 @@ export default function AddFuelLogScreen() {
 
             <Input
               label="Odometer Reading (km)"
-              value={formData.odometer_reading > 0 ? formData.odometer_reading.toString() : ''}
+              value={
+                formData.odometer_reading > 0
+                  ? formData.odometer_reading.toString()
+                  : ""
+              }
               onChangeText={(text) => {
-                const reading = parseInt(text.replace(/,/g, '')) || 0;
-                setFormData(prev => ({ ...prev, odometer_reading: reading }));
+                const reading = parseInt(text.replace(/,/g, "")) || 0;
+                setFormData((prev) => ({ ...prev, odometer_reading: reading }));
               }}
               placeholder="150,000"
               keyboardType="numeric"
               required
-              error={formData.odometer_reading ? validateOdometer(formData.odometer_reading.toString()) : undefined}
+              error={
+                formData.odometer_reading
+                  ? validateOdometer(formData.odometer_reading.toString())
+                  : undefined
+              }
               helperText="Odometer reading at the time of fuel fill-up"
               leftIcon="speedometer"
             />
@@ -637,7 +671,9 @@ export default function AddFuelLogScreen() {
             <Input
               label="Date"
               value={formData.date}
-              onChangeText={(text) => setFormData(prev => ({ ...prev, date: text }))}
+              onChangeText={(text) =>
+                setFormData((prev) => ({ ...prev, date: text }))
+              }
               placeholder="2024-01-01"
               required
               helperText="Date format: YYYY-MM-DD"
@@ -646,8 +682,10 @@ export default function AddFuelLogScreen() {
 
             <Input
               label="Location (Optional)"
-              value={formData.location || ''}
-              onChangeText={(text) => setFormData(prev => ({ ...prev, location: text }))}
+              value={formData.location || ""}
+              onChangeText={(text) =>
+                setFormData((prev) => ({ ...prev, location: text }))
+              }
               placeholder="Shell Station, Main St"
               helperText="Gas station or location where fuel was purchased"
               leftIcon="location"

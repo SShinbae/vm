@@ -1,37 +1,45 @@
-import { Database } from './database';
+import { Database } from "./database";
 
 // Database table types
-export type Profile = Database['public']['Tables']['profiles']['Row'];
-export type Vehicle = Database['public']['Tables']['vehicles']['Row'];
-export type Group = Database['public']['Tables']['groups']['Row'];
-export type GroupMember = Database['public']['Tables']['group_members']['Row'];
-export type GroupInvitation = Database['public']['Tables']['group_invitations']['Row'];
-export type MileageLog = Database['public']['Tables']['mileage_logs']['Row'];
-export type FuelLog = Database['public']['Tables']['fuel_logs']['Row'];
-export type ServiceLog = Database['public']['Tables']['service_logs']['Row'];
+export type Profile = Database["public"]["Tables"]["profiles"]["Row"];
+export type Vehicle = Database["public"]["Tables"]["vehicles"]["Row"];
+export type Group = Database["public"]["Tables"]["groups"]["Row"];
+export type GroupMember = Database["public"]["Tables"]["group_members"]["Row"];
+export type GroupInvitation =
+  Database["public"]["Tables"]["group_invitations"]["Row"];
+export type MileageLog = Database["public"]["Tables"]["mileage_logs"]["Row"];
+export type FuelLog = Database["public"]["Tables"]["fuel_logs"]["Row"];
+export type ServiceLog = Database["public"]["Tables"]["service_logs"]["Row"];
 
 // Insert types
-export type ProfileInsert = Database['public']['Tables']['profiles']['Insert'];
-export type VehicleInsert = Database['public']['Tables']['vehicles']['Insert'];
-export type GroupInsert = Database['public']['Tables']['groups']['Insert'];
-export type GroupMemberInsert = Database['public']['Tables']['group_members']['Insert'];
-export type GroupInvitationInsert = Database['public']['Tables']['group_invitations']['Insert'];
-export type MileageLogInsert = Database['public']['Tables']['mileage_logs']['Insert'];
-export type FuelLogInsert = Database['public']['Tables']['fuel_logs']['Insert'];
-export type ServiceLogInsert = Database['public']['Tables']['service_logs']['Insert'];
+export type ProfileInsert = Database["public"]["Tables"]["profiles"]["Insert"];
+export type VehicleInsert = Database["public"]["Tables"]["vehicles"]["Insert"];
+export type GroupInsert = Database["public"]["Tables"]["groups"]["Insert"];
+export type GroupMemberInsert =
+  Database["public"]["Tables"]["group_members"]["Insert"];
+export type GroupInvitationInsert =
+  Database["public"]["Tables"]["group_invitations"]["Insert"];
+export type MileageLogInsert =
+  Database["public"]["Tables"]["mileage_logs"]["Insert"];
+export type FuelLogInsert = Database["public"]["Tables"]["fuel_logs"]["Insert"];
+export type ServiceLogInsert =
+  Database["public"]["Tables"]["service_logs"]["Insert"];
 
 // Update types
-export type ProfileUpdate = Database['public']['Tables']['profiles']['Update'];
-export type VehicleUpdate = Database['public']['Tables']['vehicles']['Update'];
-export type GroupUpdate = Database['public']['Tables']['groups']['Update'];
-export type GroupInvitationUpdate = Database['public']['Tables']['group_invitations']['Update'];
-export type MileageLogUpdate = Database['public']['Tables']['mileage_logs']['Update'];
-export type FuelLogUpdate = Database['public']['Tables']['fuel_logs']['Update'];
-export type ServiceLogUpdate = Database['public']['Tables']['service_logs']['Update'];
+export type ProfileUpdate = Database["public"]["Tables"]["profiles"]["Update"];
+export type VehicleUpdate = Database["public"]["Tables"]["vehicles"]["Update"];
+export type GroupUpdate = Database["public"]["Tables"]["groups"]["Update"];
+export type GroupInvitationUpdate =
+  Database["public"]["Tables"]["group_invitations"]["Update"];
+export type MileageLogUpdate =
+  Database["public"]["Tables"]["mileage_logs"]["Update"];
+export type FuelLogUpdate = Database["public"]["Tables"]["fuel_logs"]["Update"];
+export type ServiceLogUpdate =
+  Database["public"]["Tables"]["service_logs"]["Update"];
 
 // Enum types
-export type InvitationStatus = Database['public']['Enums']['invitation_status'];
-export type ServiceType = Database['public']['Enums']['service_type'];
+export type InvitationStatus = Database["public"]["Enums"]["invitation_status"];
+export type ServiceType = Database["public"]["Enums"]["service_type"];
 
 // Extended types with joins
 export interface VehicleWithLogs extends Vehicle {
@@ -41,7 +49,6 @@ export interface VehicleWithLogs extends Vehicle {
 }
 
 export interface VehicleWithGroupInfo extends Vehicle {
-  
   is_group_vehicle?: boolean;
   owner_profile?: {
     id: string;
@@ -196,9 +203,9 @@ export interface ApiResponse<T> {
 
 // Navigation types
 export type RootStackParamList = {
-  '(tabs)': undefined;
+  "(tabs)": undefined;
   modal: undefined;
-  '(auth)': undefined;
+  "(auth)": undefined;
 };
 
 export type TabStackParamList = {
@@ -212,5 +219,5 @@ export type TabStackParamList = {
 export type AuthStackParamList = {
   login: undefined;
   register: undefined;
-  'forgot-password': undefined;
+  "forgot-password": undefined;
 };

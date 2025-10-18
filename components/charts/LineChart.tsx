@@ -1,9 +1,9 @@
-import React from 'react';
-import { View, Text, StyleSheet, Dimensions } from 'react-native';
-import { LineChart as RNLineChart } from 'react-native-chart-kit';
-import { useColorScheme } from '@/hooks/use-color-scheme';
-import { Colors } from '@/constants/theme';
-import { ChartDataPoint } from '@/lib/services/analyticsService';
+import React from "react";
+import { View, Text, StyleSheet, Dimensions } from "react-native";
+import { LineChart as RNLineChart } from "react-native-chart-kit";
+import { useColorScheme } from "@/hooks/use-color-scheme";
+import { Colors } from "@/constants/theme";
+import { ChartDataPoint } from "@/lib/services/analyticsService";
 
 interface LineChartProps {
   data: ChartDataPoint[];
@@ -20,14 +20,14 @@ export function LineChart({
   height = 200,
   color,
   showArea = false,
-  formatY = (value: number) => `RM${value.toFixed(0)}`
+  formatY = (value: number) => `RM${value.toFixed(0)}`,
 }: LineChartProps) {
   const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? 'light'];
-  const screenWidth = Dimensions.get('window').width;
+  const colors = Colors[colorScheme ?? "light"];
+  const screenWidth = Dimensions.get("window").width;
 
   const chartColor = color || colors.chart.fuel;
-  const areaColor = chartColor + '20'; // 20% opacity
+  const areaColor = chartColor + "20"; // 20% opacity
 
   const styles = StyleSheet.create({
     container: {
@@ -40,17 +40,17 @@ export function LineChart({
     },
     title: {
       fontSize: 18,
-      fontWeight: '600',
+      fontWeight: "600",
       color: colors.text,
       marginBottom: 16,
     },
     chartContainer: {
-      alignItems: 'center',
+      alignItems: "center",
     },
     emptyState: {
       height,
-      justifyContent: 'center',
-      alignItems: 'center',
+      justifyContent: "center",
+      alignItems: "center",
     },
     emptyText: {
       fontSize: 14,
@@ -71,11 +71,15 @@ export function LineChart({
 
   // Prepare data for react-native-chart-kit
   const chartData = {
-    labels: data.map(point => point.label?.split(' ')[0] || ''),
+    labels: data.map((point) => point.label?.split(" ")[0] || ""),
     datasets: [
       {
-        data: data.map(point => point.y),
-        color: (opacity = 1) => chartColor + Math.floor(opacity * 255).toString(16).padStart(2, '0'),
+        data: data.map((point) => point.y),
+        color: (opacity = 1) =>
+          chartColor +
+          Math.floor(opacity * 255)
+            .toString(16)
+            .padStart(2, "0"),
         strokeWidth: 3,
       },
     ],
@@ -86,14 +90,22 @@ export function LineChart({
     backgroundGradientFrom: colors.card,
     backgroundGradientTo: colors.card,
     decimalPlaces: 0,
-    color: (opacity = 1) => colors.text + Math.floor(opacity * 255).toString(16).padStart(2, '0'),
-    labelColor: (opacity = 1) => colors.textSecondary + Math.floor(opacity * 255).toString(16).padStart(2, '0'),
+    color: (opacity = 1) =>
+      colors.text +
+      Math.floor(opacity * 255)
+        .toString(16)
+        .padStart(2, "0"),
+    labelColor: (opacity = 1) =>
+      colors.textSecondary +
+      Math.floor(opacity * 255)
+        .toString(16)
+        .padStart(2, "0"),
     style: {
       borderRadius: 16,
     },
     propsForDots: {
-      r: '4',
-      strokeWidth: '2',
+      r: "4",
+      strokeWidth: "2",
       stroke: chartColor,
     },
     formatYLabel: formatY,

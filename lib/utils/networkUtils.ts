@@ -8,9 +8,15 @@
  * @param timeoutMs Timeout in milliseconds (default: 10000ms)
  * @returns Promise that resolves/rejects within the timeout period
  */
-export function withTimeout<T>(promise: Promise<T>, timeoutMs: number = 10000): Promise<T> {
+export function withTimeout<T>(
+  promise: Promise<T>,
+  timeoutMs: number = 10000,
+): Promise<T> {
   const timeoutPromise = new Promise<never>((_, reject) =>
-    setTimeout(() => reject(new Error(`Request timeout after ${timeoutMs}ms`)), timeoutMs)
+    setTimeout(
+      () => reject(new Error(`Request timeout after ${timeoutMs}ms`)),
+      timeoutMs,
+    ),
   );
   return Promise.race([promise, timeoutPromise]);
 }
@@ -24,9 +30,11 @@ export function withTimeout<T>(promise: Promise<T>, timeoutMs: number = 10000): 
  */
 export async function safePromiseAll<T>(
   promises: Promise<T>[],
-  timeoutMs: number = 8000
+  timeoutMs: number = 8000,
 ): Promise<PromiseSettledResult<T>[]> {
-  const wrappedPromises = promises.map(promise => withTimeout(promise, timeoutMs));
+  const wrappedPromises = promises.map((promise) =>
+    withTimeout(promise, timeoutMs),
+  );
   return Promise.allSettled(wrappedPromises);
 }
 
@@ -42,7 +50,7 @@ export async function withRetry<T>(
   promiseFactory: () => Promise<T>,
   maxRetries: number = 2,
   timeoutMs: number = 8000,
-  retryDelay: number = 1000
+  retryDelay: number = 1000,
 ): Promise<T> {
   let lastError: Error | null = null;
 
@@ -54,12 +62,12 @@ export async function withRetry<T>(
 
       // Don't delay after the last attempt
       if (attempt < maxRetries) {
-        await new Promise(resolve => setTimeout(resolve, retryDelay));
+        await new Promise((resolve) => setTimeout(resolve, retryDelay));
       }
     }
   }
 
-  throw lastError || new Error('Max retries exceeded');
+  throw lastError || new Error("Max retries exceeded");
 }
 
 /**
@@ -67,8 +75,10 @@ export async function withRetry<T>(
  * @param result The PromiseSettledResult to check
  * @returns true if the result is fulfilled
  */
-export function isFulfilled<T>(result: PromiseSettledResult<T>): result is PromiseFulfilledResult<T> {
-  return result.status === 'fulfilled';
+export function isFulfilled<T>(
+  result: PromiseSettledResult<T>,
+): result is PromiseFulfilledResult<T> {
+  return result.status === "fulfilled";
 }
 
 /**
@@ -76,6 +86,8 @@ export function isFulfilled<T>(result: PromiseSettledResult<T>): result is Promi
  * @param result The PromiseSettledResult to check
  * @returns true if the result is rejected
  */
-export function isRejected<T>(result: PromiseSettledResult<T>): result is PromiseRejectedResult {
-  return result.status === 'rejected';
+export function isRejected<T>(
+  result: PromiseSettledResult<T>,
+): result is PromiseRejectedResult {
+  return result.status === "rejected";
 }
