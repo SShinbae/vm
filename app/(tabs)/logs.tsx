@@ -96,7 +96,10 @@ export default function LogsScreen() {
       // Process results individually using utility type guards
       const [mileageResult, fuelResult, serviceResult] = results;
 
-      if (isFulfilled(mileageResult) && (mileageResult.value as { data: MileageLog[] }).data) {
+      if (
+        isFulfilled(mileageResult) &&
+        (mileageResult.value as { data: MileageLog[] }).data
+      ) {
         setMileageLogs((mileageResult.value as { data: MileageLog[] }).data);
       } else {
         console.warn(
@@ -108,7 +111,10 @@ export default function LogsScreen() {
         setMileageLogs([]);
       }
 
-      if (isFulfilled(fuelResult) && (fuelResult.value as { data: FuelLog[] }).data) {
+      if (
+        isFulfilled(fuelResult) &&
+        (fuelResult.value as { data: FuelLog[] }).data
+      ) {
         setFuelLogs((fuelResult.value as { data: FuelLog[] }).data);
       } else {
         console.warn(
@@ -118,7 +124,10 @@ export default function LogsScreen() {
         setFuelLogs([]);
       }
 
-      if (isFulfilled(serviceResult) && (serviceResult.value as { data: ServiceLog[] }).data) {
+      if (
+        isFulfilled(serviceResult) &&
+        (serviceResult.value as { data: ServiceLog[] }).data
+      ) {
         setServiceLogs((serviceResult.value as { data: ServiceLog[] }).data);
       } else {
         console.warn(

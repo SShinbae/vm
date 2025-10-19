@@ -432,7 +432,7 @@ export default function EditFuelLogScreen() {
 
           <View style={styles.card}>
             <View style={styles.inputContainer}>
-              <Text style={styles.label}>Vehicle</Text> 
+              <Text style={styles.label}>Vehicle</Text>
               {fuelLog?.vehicles && (
                 <View style={styles.vehicleInfo}>
                   <View style={styles.vehicleIcon}>
