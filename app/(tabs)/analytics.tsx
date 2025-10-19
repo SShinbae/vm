@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, Suspense, lazy } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   View,
   Text,
@@ -28,18 +28,10 @@ import {
   safeNumericValue,
 } from "@/lib/utils/formatUtils";
 
-// Lazy load chart components for better performance
-const LineChart = lazy(() =>
-  import("@/components/charts/LineChart").then((m) => ({
-    default: m.LineChart,
-  })),
-);
-const BarChart = lazy(() =>
-  import("@/components/charts/BarChart").then((m) => ({ default: m.BarChart })),
-);
-const PieChart = lazy(() =>
-  import("@/components/charts/PieChart").then((m) => ({ default: m.PieChart })),
-);
+// Import chart components directly
+import { LineChart } from "@/components/charts/LineChart";
+import { BarChart } from "@/components/charts/BarChart";
+import { PieChart } from "@/components/charts/PieChart";
 
 export default function AnalyticsScreen() {
   const [analyticsData, setAnalyticsData] = useState<AnalyticsData | null>(
@@ -405,147 +397,75 @@ export default function AnalyticsScreen() {
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Trends & Analysis</Text>
             <View style={styles.chartsSection}>
-              <Suspense
-                fallback={
-                  <View style={styles.chartLoader}>
-                    <ActivityIndicator size="large" color={colors.tint} />
-                  </View>
-                }
-              >
-                <LineChart
-                  data={monthlyTrendData}
-                  title="Total Expenses Over Time"
-                  color={colors.chart.primary}
-                  showArea={true}
-                />
-              </Suspense>
+              <LineChart
+                data={monthlyTrendData}
+                title="Total Expenses Over Time"
+                color={colors.chart.primary}
+                showArea={true}
+              />
 
               {layout.isDesktop ? (
                 <ResponsiveGrid minItemWidth={400} spacing={16}>
-                  <Suspense
-                    fallback={
-                      <View style={styles.chartLoader}>
-                        <ActivityIndicator color={colors.tint} />
-                      </View>
-                    }
-                  >
-                    <LineChart
-                      data={fuelTrendData}
-                      title="Fuel Expenses"
-                      color={colors.chart.fuel}
-                      height={180}
-                    />
-                  </Suspense>
-                  <Suspense
-                    fallback={
-                      <View style={styles.chartLoader}>
-                        <ActivityIndicator color={colors.tint} />
-                      </View>
-                    }
-                  >
-                    <LineChart
-                      data={serviceTrendData}
-                      title="Service Expenses"
-                      color={colors.chart.service}
-                      height={180}
-                    />
-                  </Suspense>
+                  <LineChart
+                    data={fuelTrendData}
+                    title="Fuel Expenses"
+                    color={colors.chart.fuel}
+                    height={180}
+                  />
+                  <LineChart
+                    data={serviceTrendData}
+                    title="Service Expenses"
+                    color={colors.chart.service}
+                    height={180}
+                  />
                 </ResponsiveGrid>
               ) : (
                 <>
-                  <Suspense
-                    fallback={
-                      <View style={styles.chartLoader}>
-                        <ActivityIndicator color={colors.tint} />
-                      </View>
-                    }
-                  >
-                    <LineChart
-                      data={fuelTrendData}
-                      title="Fuel Expenses"
-                      color={colors.chart.fuel}
-                      height={180}
-                    />
-                  </Suspense>
-                  <Suspense
-                    fallback={
-                      <View style={styles.chartLoader}>
-                        <ActivityIndicator color={colors.tint} />
-                      </View>
-                    }
-                  >
-                    <LineChart
-                      data={serviceTrendData}
-                      title="Service Expenses"
-                      color={colors.chart.service}
-                      height={180}
-                    />
-                  </Suspense>
+                  <LineChart
+                    data={fuelTrendData}
+                    title="Fuel Expenses"
+                    color={colors.chart.fuel}
+                    height={180}
+                  />
+                  <LineChart
+                    data={serviceTrendData}
+                    title="Service Expenses"
+                    color={colors.chart.service}
+                    height={180}
+                  />
                 </>
               )}
 
               {layout.isDesktop ? (
                 <ResponsiveGrid minItemWidth={400} spacing={16}>
-                  <Suspense
-                    fallback={
-                      <View style={styles.chartLoader}>
-                        <ActivityIndicator color={colors.tint} />
-                      </View>
-                    }
-                  >
-                    <PieChart
-                      data={expenseBreakdownData}
-                      title="Expense Breakdown"
+                  <PieChart
+                    data={expenseBreakdownData}
+                    title="Expense Breakdown"
+                    height={250}
+                  />
+                  {vehicleComparisonData.length > 0 && (
+                    <BarChart
+                      data={vehicleComparisonData}
+                      title="Expenses by Vehicle"
+                      color={colors.chart.primary}
                       height={250}
                     />
-                  </Suspense>
-                  {vehicleComparisonData.length > 0 && (
-                    <Suspense
-                      fallback={
-                        <View style={styles.chartLoader}>
-                          <ActivityIndicator color={colors.tint} />
-                        </View>
-                      }
-                    >
-                      <BarChart
-                        data={vehicleComparisonData}
-                        title="Expenses by Vehicle"
-                        color={colors.chart.primary}
-                        height={250}
-                      />
-                    </Suspense>
                   )}
                 </ResponsiveGrid>
               ) : (
                 <>
-                  <Suspense
-                    fallback={
-                      <View style={styles.chartLoader}>
-                        <ActivityIndicator color={colors.tint} />
-                      </View>
-                    }
-                  >
-                    <PieChart
-                      data={expenseBreakdownData}
-                      title="Expense Breakdown"
+                  <PieChart
+                    data={expenseBreakdownData}
+                    title="Expense Breakdown"
+                    height={250}
+                  />
+                  {vehicleComparisonData.length > 0 && (
+                    <BarChart
+                      data={vehicleComparisonData}
+                      title="Expenses by Vehicle"
+                      color={colors.chart.primary}
                       height={250}
                     />
-                  </Suspense>
-                  {vehicleComparisonData.length > 0 && (
-                    <Suspense
-                      fallback={
-                        <View style={styles.chartLoader}>
-                          <ActivityIndicator color={colors.tint} />
-                        </View>
-                      }
-                    >
-                      <BarChart
-                        data={vehicleComparisonData}
-                        title="Expenses by Vehicle"
-                        color={colors.chart.primary}
-                        height={250}
-                      />
-                    </Suspense>
                   )}
                 </>
               )}
