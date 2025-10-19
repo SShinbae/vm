@@ -394,7 +394,9 @@ export default function ServiceLogDetailScreen() {
             <View style={styles.serviceTypeIcon}>
               <IconSymbol
                 name={
-                  SERVICE_TYPE_ICONS[serviceLog.service_type as ServiceType] as any
+                  SERVICE_TYPE_ICONS[
+                    serviceLog.service_type as ServiceType
+                  ] as any
                 }
                 size={24}
                 color="white"

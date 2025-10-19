@@ -569,7 +569,7 @@ export default function EditServiceLogScreen() {
                 <View style={styles.flex1}>
                   <DatePicker
                     label="Next Service Due"
-                  value={formData.next_service_due || ""}
+                    value={formData.next_service_due || ""}
                     onDateChange={(date) =>
                       setFormData((prev) => ({
                         ...prev,
