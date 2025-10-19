@@ -99,11 +99,5 @@
   "engines": {
     "node": ">=20.0.0"
   },
-  "husky": {
-    "hooks": {
-      "pre-commit": "lint-staged",
-      "pre-push": "npm test"
-    }
-  },
   "private": true
 }
