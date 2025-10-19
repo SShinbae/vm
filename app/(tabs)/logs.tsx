@@ -8,15 +8,17 @@ import {
   MileageLogService,
   ServiceLogService,
 } from "@/lib/services/loggingService";
-import { safePromiseAll, isFulfilled } from "@/lib/utils/networkUtils";
 import { formatDate } from "@/lib/utils/dateUtils";
+import { isFulfilled, safePromiseAll } from "@/lib/utils/networkUtils";
 import {
   canUserAccessVehicle,
   formatServiceItems,
 } from "@/lib/utils/serviceUtils";
 import { supabase } from "@/services/supabaseClient";
 import { FuelLog, MileageLog, ServiceLog } from "@/types";
+import { VehicleWithDetails } from "@/types/database-v2";
 import { useFocusEffect } from "@react-navigation/native";
+import { Image } from "expo-image";
 import { router } from "expo-router";
 import React, { useCallback, useEffect, useState } from "react";
 import {
@@ -28,8 +30,11 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { Image } from "expo-image";
 import { SafeAreaView } from "react-native-safe-area-context";
+
+type CombinedLog = (MileageLog | FuelLog | ServiceLog) & {
+  vehicles?: VehicleWithDetails;
+};
 
 type LogType = "mileage" | "fuel" | "service";
 
@@ -82,8 +87,8 @@ export default function LogsScreen() {
       const results = await safePromiseAll(
         [
           MileageLogService.getMileageLogs(),
-          FuelLogService.getFuelLogs(),
-          ServiceLogService.getServiceLogs(),
+          FuelLogService.getFuelLogs() as any,
+          ServiceLogService.getServiceLogs() as any,
         ],
         8000,
       );
@@ -91,8 +96,8 @@ export default function LogsScreen() {
       // Process results individually using utility type guards
       const [mileageResult, fuelResult, serviceResult] = results;
 
-      if (isFulfilled(mileageResult) && mileageResult.value.data) {
-        setMileageLogs(mileageResult.value.data);
+      if (isFulfilled(mileageResult) && (mileageResult.value as { data: MileageLog[] }).data) {
+        setMileageLogs((mileageResult.value as { data: MileageLog[] }).data);
       } else {
         console.warn(
           "Failed to fetch mileage logs:",
@@ -103,8 +108,8 @@ export default function LogsScreen() {
         setMileageLogs([]);
       }
 
-      if (isFulfilled(fuelResult) && fuelResult.value.data) {
-        setFuelLogs(fuelResult.value.data);
+      if (isFulfilled(fuelResult) && (fuelResult.value as { data: FuelLog[] }).data) {
+        setFuelLogs((fuelResult.value as { data: FuelLog[] }).data);
       } else {
         console.warn(
           "Failed to fetch fuel logs:",
@@ -113,8 +118,8 @@ export default function LogsScreen() {
         setFuelLogs([]);
       }
 
-      if (isFulfilled(serviceResult) && serviceResult.value.data) {
-        setServiceLogs(serviceResult.value.data);
+      if (isFulfilled(serviceResult) && (serviceResult.value as { data: ServiceLog[] }).data) {
+        setServiceLogs((serviceResult.value as { data: ServiceLog[] }).data);
       } else {
         console.warn(
           "Failed to fetch service logs:",
@@ -274,7 +279,7 @@ export default function LogsScreen() {
       onPress={() => setActiveTab(type)}
     >
       <IconSymbol
-        name={icon}
+        name={icon as any}
         size={20}
         color={activeTab === type ? "white" : colors.icon}
       />
@@ -431,7 +436,11 @@ export default function LogsScreen() {
           <View
             style={[styles.logIcon, { backgroundColor: details.color + "20" }]}
           >
-            <IconSymbol name={details.icon} size={20} color={details.color} />
+            <IconSymbol
+              name={details.icon as any}
+              size={20}
+              color={details.color}
+            />
           </View>
           <View style={styles.logInfo}>
             <View style={styles.logTitleRow}>

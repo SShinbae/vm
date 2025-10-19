@@ -72,7 +72,7 @@ export function BarChart({
   // Prepare data for react-native-chart-kit
   const chartData = {
     labels: data.map((point) => {
-      const label = point.label || point.x;
+      const label = point.label || String(point.x);
       // Truncate long vehicle names for better display
       return label.length > 8 ? label.substring(0, 6) + "..." : label;
     }),
@@ -105,7 +105,7 @@ export function BarChart({
     style: {
       borderRadius: 16,
     },
-    formatYLabel: formatY,
+    formatYLabel: (yLabel: string) => formatY(parseFloat(yLabel)),
   };
 
   return (
@@ -116,6 +116,8 @@ export function BarChart({
           data={chartData}
           width={screenWidth - 64}
           height={height}
+          yAxisLabel=""
+          yAxisSuffix=""
           chartConfig={chartConfig}
           style={{
             marginVertical: 8,

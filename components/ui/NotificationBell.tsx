@@ -22,12 +22,12 @@ export function NotificationBell({
       <Ionicons
         name={unreadCount > 0 ? "notifications" : "notifications-outline"}
         size={size}
-        color={iconColor}
+        color={iconColor as string}
       />
       {unreadCount > 0 && (
         <View
           className="absolute -top-1 -right-1 min-w-[18px] h-[18px] rounded-full items-center justify-center"
-          style={{ backgroundColor: badgeColor }}
+          style={{ backgroundColor: badgeColor as string }}
         >
           <Text className="text-white text-xs font-bold">
             {unreadCount > 99 ? "99+" : unreadCount.toString()}

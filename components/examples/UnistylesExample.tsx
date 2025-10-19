@@ -1,6 +1,6 @@
 import React from "react";
 import { ScrollView, Text, TouchableOpacity, View } from "react-native";
-import { useStyles } from "react-native-unistyles";
+import { createStyleSheet, useStyles } from "react-native-unistyles";
 
 /**
  * Example component demonstrating React Native Unistyles usage
@@ -59,7 +59,7 @@ export function UnistylesExample() {
 }
 
 // Stylesheet using Unistyles theme
-const stylesheet = (theme: any) => ({
+const stylesheet = createStyleSheet((theme) => ({
   container: {
     flex: 1,
     backgroundColor: theme.colors.background,
@@ -67,11 +67,11 @@ const stylesheet = (theme: any) => ({
   header: {
     padding: theme.spacing.xl,
     backgroundColor: theme.colors.primary,
-    alignItems: "center",
+    alignItems: "center" as const,
   },
   title: {
     fontSize: theme.fontSize["3xl"],
-    fontWeight: theme.fontWeight.bold,
+    fontWeight: theme.fontWeight.bold as any,
     color: theme.colors.white,
     marginBottom: theme.spacing.xs,
   },
@@ -102,7 +102,7 @@ const stylesheet = (theme: any) => ({
   },
   cardTitle: {
     fontSize: theme.fontSize.lg,
-    fontWeight: theme.fontWeight.semibold,
+    fontWeight: theme.fontWeight.semibold as any,
     color: theme.colors.text,
     marginBottom: theme.spacing.sm,
   },
@@ -119,25 +119,25 @@ const stylesheet = (theme: any) => ({
     backgroundColor: theme.colors.primary,
     padding: theme.spacing.lg,
     borderRadius: theme.borderRadius.md,
-    alignItems: "center",
+    alignItems: "center" as const,
   },
   buttonText: {
     color: theme.colors.white,
     fontSize: theme.fontSize.base,
-    fontWeight: theme.fontWeight.semibold,
+    fontWeight: theme.fontWeight.semibold as any,
   },
   secondaryButton: {
     backgroundColor: "transparent",
     padding: theme.spacing.lg,
     borderRadius: theme.borderRadius.md,
-    alignItems: "center",
+    alignItems: "center" as const,
     borderWidth: 2,
     borderColor: theme.colors.primary,
   },
   secondaryButtonText: {
     color: theme.colors.primary,
     fontSize: theme.fontSize.base,
-    fontWeight: theme.fontWeight.semibold,
+    fontWeight: theme.fontWeight.semibold as any,
   },
   infoBox: {
     margin: theme.spacing.lg,
@@ -149,7 +149,7 @@ const stylesheet = (theme: any) => ({
   },
   infoTitle: {
     fontSize: theme.fontSize.lg,
-    fontWeight: theme.fontWeight.bold,
+    fontWeight: theme.fontWeight.bold as any,
     color: theme.colors.text,
     marginBottom: theme.spacing.sm,
   },
@@ -158,4 +158,4 @@ const stylesheet = (theme: any) => ({
     color: theme.colors.textSecondary,
     marginBottom: theme.spacing.xs,
   },
-});
+}));

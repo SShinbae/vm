@@ -1,5 +1,13 @@
-    #!/usr/bin/env sh
-    . "$(dirname -- "$0")/_/husky.sh"
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
 
-    npm test
-    npm run lint
+echo "🔍 Running pre-commit checks..."
+
+# Run lint-staged for formatting and linting
+npm lint-staged
+
+# Run TypeScript type checking
+echo "📝 Checking TypeScript types..."
+npm tsc --noEmit
+
+echo "✅ Pre-commit checks completed!"

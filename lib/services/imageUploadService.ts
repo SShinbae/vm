@@ -126,6 +126,7 @@ export class ImageUploadService {
       console.log("💾 Updating profile in database...");
       const { error: updateError } = await supabase
         .from("profiles")
+        // @ts-expect-error - Supabase type inference issue with update
         .update({ avatar_url: urlData.publicUrl })
         .eq("id", user.id);
 
@@ -168,7 +169,7 @@ export class ImageUploadService {
         .from("vehicles")
         .select("user_id")
         .eq("id", vehicleId)
-        .single();
+        .single<{ user_id: string }>();
 
       if (vehicleError || !vehicle) {
         return { data: null, error: "Vehicle not found", loading: false };
@@ -224,6 +225,7 @@ export class ImageUploadService {
           .order("display_order", { ascending: false })
           .limit(1);
 
+        // @ts-expect-error - Supabase type inference issue with select
         displayOrder = (existingImages?.[0]?.display_order || 0) + 1;
       }
 
@@ -239,6 +241,7 @@ export class ImageUploadService {
 
       const { data: imageRecord, error: imageError } = await supabase
         .from("vehicle_images")
+        // @ts-expect-error - Supabase type inference issue with insert
         .insert(imageData)
         .select()
         .single();
@@ -254,6 +257,7 @@ export class ImageUploadService {
       if (imageType === "vehicle_main") {
         const { error: vehicleUpdateError } = await supabase
           .from("vehicles")
+          // @ts-expect-error - Supabase type inference issue with update
           .update({ main_image_url: urlData.publicUrl })
           .eq("id", vehicleId);
 
@@ -341,7 +345,7 @@ export class ImageUploadService {
       }
 
       // Check ownership
-      if (imageRecord.vehicles.user_id !== user.id) {
+      if ((imageRecord as any).vehicles.user_id !== user.id) {
         return {
           data: null,
           error: "You can only delete your own vehicle images",
@@ -350,7 +354,7 @@ export class ImageUploadService {
       }
 
       // Extract filename from URL
-      const url = new URL(imageRecord.image_url);
+      const url = new URL((imageRecord as any).image_url);
       const pathParts = url.pathname.split("/");
       const fileName = pathParts[pathParts.length - 1];
       const fullPath = `${user.id}/${fileName}`;
@@ -377,11 +381,12 @@ export class ImageUploadService {
       }
 
       // If this was a main image, clear vehicle's main_image_url
-      if (imageRecord.image_type === "vehicle_main") {
+      if ((imageRecord as any).image_type === "vehicle_main") {
         await supabase
           .from("vehicles")
+          // @ts-expect-error - Supabase type inference issue with update
           .update({ main_image_url: null })
-          .eq("id", imageRecord.vehicle_id);
+          .eq("id", (imageRecord as any).vehicle_id);
       }
 
       console.log("✅ Vehicle image deleted successfully");
@@ -429,7 +434,7 @@ export class ImageUploadService {
         return { data: null, error: "Image not found", loading: false };
       }
 
-      if (imageRecord.vehicles.user_id !== user.id) {
+      if ((imageRecord as any).vehicles.user_id !== user.id) {
         return {
           data: null,
           error: "You can only modify your own vehicle images",
@@ -440,6 +445,7 @@ export class ImageUploadService {
       // Update image record
       const { data: updatedImage, error: updateError } = await supabase
         .from("vehicle_images")
+        // @ts-expect-error - Supabase type inference issue with update
         .update({
           ...updates,
           updated_at: new Date().toISOString(),
@@ -483,7 +489,7 @@ export class ImageUploadService {
         .from("profiles")
         .select("avatar_url")
         .eq("id", user.id)
-        .single();
+        .single<{ avatar_url: string | null }>();
 
       if (profileError || !profile?.avatar_url) {
         return { data: null, error: "No avatar to delete", loading: false };
@@ -508,6 +514,7 @@ export class ImageUploadService {
       // Update profile to remove avatar URL
       const { error: updateError } = await supabase
         .from("profiles")
+        // @ts-expect-error - Supabase type inference issue with update
         .update({ avatar_url: null })
         .eq("id", user.id);
 

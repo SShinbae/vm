@@ -1,16 +1,16 @@
-import React, { useState, forwardRef } from "react";
-import {
-  TextInput,
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-  ViewStyle,
-  TextStyle,
-  TextInputProps,
-} from "react-native";
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
+import React, { forwardRef, useState } from "react";
+import {
+  StyleSheet,
+  Text,
+  TextInput,
+  TextInputProps,
+  TextStyle,
+  TouchableOpacity,
+  View,
+  ViewStyle,
+} from "react-native";
 import { IconSymbol } from "./icon-symbol";
 
 interface InputProps extends Omit<TextInputProps, "style"> {
@@ -68,7 +68,7 @@ export const Input = forwardRef<TextInput, InputProps>(
     const [isFocused, setIsFocused] = useState(false);
 
     const getContainerStyle = (): ViewStyle[] => {
-      const baseStyle = [styles.container];
+      const baseStyle: ViewStyle[] = [styles.container];
 
       if (containerStyle) {
         baseStyle.push(containerStyle);
@@ -78,7 +78,7 @@ export const Input = forwardRef<TextInput, InputProps>(
     };
 
     const getInputContainerStyle = (): ViewStyle[] => {
-      const baseStyle = [styles.inputContainer];
+      const baseStyle: ViewStyle[] = [styles.inputContainer];
 
       // Size styles
       switch (size) {
@@ -135,7 +135,7 @@ export const Input = forwardRef<TextInput, InputProps>(
     };
 
     const getInputStyle = (): TextStyle[] => {
-      const baseStyle = [styles.input, { color: colors.text }];
+      const baseStyle: TextStyle[] = [styles.input, { color: colors.text }];
 
       // Size text styles
       switch (size) {
@@ -169,7 +169,7 @@ export const Input = forwardRef<TextInput, InputProps>(
     };
 
     const getLabelStyle = (): TextStyle[] => {
-      const baseStyle = [styles.label, { color: colors.text }];
+      const baseStyle: TextStyle[] = [styles.label, { color: colors.text }];
 
       if (required) {
         baseStyle.push(styles.requiredLabel);
@@ -226,7 +226,7 @@ export const Input = forwardRef<TextInput, InputProps>(
           {leftIcon && (
             <View style={styles.leftIconContainer}>
               <IconSymbol
-                name={leftIcon}
+                name={leftIcon as any}
                 size={getIconSize()}
                 color={getIconColor()}
               />
@@ -255,7 +255,7 @@ export const Input = forwardRef<TextInput, InputProps>(
               disabled={!onRightIconPress}
             >
               <IconSymbol
-                name={rightIcon}
+                name={rightIcon as any}
                 size={getIconSize()}
                 color={getIconColor()}
               />

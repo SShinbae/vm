@@ -6,7 +6,7 @@ import { AlertModal } from "@/components/ui/Modal";
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { FuelLogService } from "@/lib/services/loggingService";
-import { FuelLog, FuelLogFormData } from "@/types";
+import { FuelLog, FuelLogFormData, Vehicle } from "@/types";
 import { router, useLocalSearchParams } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
@@ -21,9 +21,13 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+type FuelLogWithVehicle = FuelLog & {
+  vehicles: Vehicle | null;
+};
+
 export default function EditFuelLogScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const [fuelLog, setFuelLog] = useState<FuelLog | null>(null);
+  const [fuelLog, setFuelLog] = useState<FuelLogWithVehicle | null>(null);
   const [formData, setFormData] = useState<FuelLogFormData>({
     vehicle_id: "",
     liters_filled: 0,
@@ -60,9 +64,9 @@ export default function EditFuelLogScreen() {
       }
 
       try {
-        const { data: logs, error } = await FuelLogService.getFuelLogs();
+        const { data: log, error } = await FuelLogService.getFuelLogById(id);
         if (error) {
-          console.error("Error fetching fuel logs:", error);
+          console.error("Error fetching fuel log:", error);
           let errorMsg = "Failed to load fuel log";
           if (error.includes("User not authenticated")) {
             errorMsg = "Your session has expired. Please log in again.";
@@ -76,7 +80,6 @@ export default function EditFuelLogScreen() {
           return;
         }
 
-        const log = logs?.find((l) => l.id === id);
         if (!log) {
           console.error("No fuel log found with ID:", id);
           setErrorMessage(
@@ -87,9 +90,9 @@ export default function EditFuelLogScreen() {
           return;
         }
 
-        setFuelLog(log);
+        setFuelLog(log as FuelLogWithVehicle);
         setFormData({
-          vehicle_id: log.vehicle_id,
+          vehicle_id: log.vehicle_id!,
           liters_filled: log.liters_filled,
           cost: log.cost || 0,
           fuel_price: (log as any).fuel_price || 1.99, // Default if not set
@@ -429,20 +432,19 @@ export default function EditFuelLogScreen() {
 
           <View style={styles.card}>
             <View style={styles.inputContainer}>
-              <Text style={styles.label}>Vehicle</Text>
-              {(fuelLog as any)?.vehicles && (
+              <Text style={styles.label}>Vehicle</Text> 
+              {fuelLog?.vehicles && (
                 <View style={styles.vehicleInfo}>
                   <View style={styles.vehicleIcon}>
                     <IconSymbol name="car.fill" size={16} color="white" />
                   </View>
                   <View>
                     <Text style={styles.vehicleText}>
-                      {(fuelLog as any).vehicles.year}{" "}
-                      {(fuelLog as any).vehicles.make}{" "}
-                      {(fuelLog as any).vehicles.model}
+                      {fuelLog.vehicles.year} {fuelLog.vehicles.make}{" "}
+                      {fuelLog.vehicles.model}
                     </Text>
                     <Text style={styles.vehiclePlate}>
-                      {(fuelLog as any).vehicles.license_plate}
+                      {fuelLog.vehicles.license_plate}
                     </Text>
                   </View>
                 </View>
@@ -538,6 +540,7 @@ export default function EditFuelLogScreen() {
                     label="Liters Filled"
                     value={formData.liters_filled.toString()}
                     placeholder="Auto-calculated"
+                    onChangeText={() => {}}
                     editable={false}
                     helperText="Calculated from cost and fuel price"
                     leftIcon="drop"
@@ -585,7 +588,7 @@ export default function EditFuelLogScreen() {
 
               <Input
                 label="Location (Optional)"
-                value={formData.location}
+                value={formData.location || ""}
                 onChangeText={(text) =>
                   setFormData((prev) => ({ ...prev, location: text }))
                 }

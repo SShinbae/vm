@@ -274,7 +274,7 @@ export function Modal(props: ModalProps) {
   } = props;
 
   const getContainerStyle = (): ViewStyle[] => {
-    const baseStyle = [styles.container];
+    const baseStyle: ViewStyle[] = [styles.container];
 
     if (variant === "fullscreen") {
       baseStyle.push(styles.fullscreenContainer);
@@ -290,7 +290,7 @@ export function Modal(props: ModalProps) {
   };
 
   const getContentStyle = (): ViewStyle[] => {
-    const baseStyle = [
+    const baseStyle: ViewStyle[] = [
       styles.content,
       {
         backgroundColor: colors.background,
@@ -333,7 +333,7 @@ export function Modal(props: ModalProps) {
   };
 
   const getTitleStyle = (): TextStyle[] => {
-    const baseStyle = [styles.title, { color: colors.text }];
+    const baseStyle: TextStyle[] = [styles.title, { color: colors.text }];
 
     if (titleStyle) {
       baseStyle.push(titleStyle);

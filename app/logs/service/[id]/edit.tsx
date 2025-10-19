@@ -244,7 +244,7 @@ export default function EditServiceLogScreen() {
             }
           >
             <IconSymbol
-              name={type.icon}
+              name={type.icon as any}
               size={20}
               color={
                 formData.service_type === type.value ? colors.tint : colors.icon
@@ -486,18 +486,19 @@ export default function EditServiceLogScreen() {
           <View style={styles.card}>
             <View style={styles.inputContainer}>
               <Text style={styles.label}>Vehicle</Text>
-              {serviceLog?.vehicles && (
+              {(serviceLog as any)?.vehicles && (
                 <View style={styles.vehicleInfo}>
                   <View style={styles.vehicleIcon}>
                     <IconSymbol name="car.fill" size={16} color="white" />
                   </View>
                   <View>
                     <Text style={styles.vehicleText}>
-                      {serviceLog.vehicles.year} {serviceLog.vehicles.make}{" "}
-                      {serviceLog.vehicles.model}
+                      {(serviceLog as any).vehicles.year}{" "}
+                      {(serviceLog as any).vehicles.make}{" "}
+                      {(serviceLog as any).vehicles.model}
                     </Text>
                     <Text style={styles.vehiclePlate}>
-                      {serviceLog.vehicles.license_plate}
+                      {(serviceLog as any).vehicles.license_plate}
                     </Text>
                   </View>
                 </View>
@@ -568,7 +569,7 @@ export default function EditServiceLogScreen() {
                 <View style={styles.flex1}>
                   <DatePicker
                     label="Next Service Due"
-                    value={formData.next_service_due}
+                  value={formData.next_service_due || ""}
                     onDateChange={(date) =>
                       setFormData((prev) => ({
                         ...prev,

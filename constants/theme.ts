@@ -83,9 +83,21 @@ export const Colors = {
 
     // Gradients
     gradients: {
-      primary: [mutedBrown, warmBeige],
-      secondary: [warmBeige, "#F5F0E8"],
-      card: ["#FFFFFF", "#FEFEFE"],
+      primary: [mutedBrown, warmBeige] as const,
+      secondary: [warmBeige, "#F5F0E8"] as const,
+      card: ["#FFFFFF", "#FEFEFE"] as const,
+    },
+    facebook: {
+      primary: "#1877F2",
+      secondary: "#42B72A",
+      background: "#F0F2F5",
+      card: "#FFFFFF",
+      divider: "#E5E7EB",
+      gray: "#8A8D91",
+      lightGray: "#F0F2F5",
+      placeholder: "#A0A3A7",
+      error: "#F02849",
+      success: "#42B72A",
     },
   },
   dark: {
@@ -134,9 +146,21 @@ export const Colors = {
 
     // Gradients
     gradients: {
-      primary: [warmBeige, "#C4B5A0"],
-      secondary: [slateGray, "#4A5568"],
-      card: [slateGray, "#4A5568"],
+      primary: [warmBeige, "#C4B5A0"] as const,
+      secondary: [slateGray, "#4A5568"] as const,
+      card: [slateGray, "#4A5568"] as const,
+    },
+    facebook: {
+      primary: "#1877F2",
+      secondary: "#42B72A",
+      background: "#18191A",
+      card: "#242526",
+      divider: "#3E4042",
+      gray: "#B0B3B8",
+      lightGray: "#3A3B3C",
+      placeholder: "#8A8D91",
+      error: "#F02849",
+      success: "#42B72A",
     },
   },
 };

@@ -29,7 +29,7 @@ function EmailConfirmationScreen() {
   console.log("=================================");
 
   useEffect(() => {
-    let interval: NodeJS.Timeout;
+    let interval: any;
     if (resendCooldown > 0) {
       interval = setInterval(() => {
         setResendCooldown((prev) => prev - 1);

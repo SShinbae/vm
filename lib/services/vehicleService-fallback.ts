@@ -42,7 +42,7 @@ export class VehicleServiceFallback {
 
       if (groupMemberships && groupMemberships.length > 0) {
         // Get all group IDs where user is a member
-        const groupIds = groupMemberships.map((gm) => gm.group_id);
+        const groupIds = groupMemberships.map((gm: { group_id: string }) => gm.group_id);
 
         // Get all other members of these groups
         const { data: allGroupMembers } = await supabase
@@ -53,7 +53,7 @@ export class VehicleServiceFallback {
 
         if (allGroupMembers && allGroupMembers.length > 0) {
           const memberUserIds = [
-            ...new Set(allGroupMembers.map((gm) => gm.user_id)),
+            ...new Set(allGroupMembers.map((gm: { user_id: string }) => gm.user_id)),
           ];
 
           // Check if shared_with_groups column exists by trying to query it
@@ -89,10 +89,10 @@ export class VehicleServiceFallback {
               .in("id", memberUserIds);
 
             // Add owner information to vehicles
-            groupVehicles = memberVehicles.map((vehicle) => ({
+            groupVehicles = memberVehicles.map((vehicle: Vehicle) => ({
               ...vehicle,
               owner_profile:
-                ownerProfiles?.find((p) => p.id === vehicle.user_id) || null,
+                ownerProfiles?.find((p: { id: string; full_name: string | null; email: string }) => p.id === vehicle.user_id) || null,
               is_group_vehicle: true,
             }));
           }
@@ -101,7 +101,7 @@ export class VehicleServiceFallback {
 
       // Mark own vehicles
       const ownVehiclesMarked: VehicleWithGroupInfo[] = (ownVehicles || []).map(
-        (vehicle) => ({
+        (vehicle: Vehicle) => ({
           ...vehicle,
           is_group_vehicle: false,
           owner_profile: null,
@@ -264,12 +264,14 @@ export class VehicleServiceFallback {
         }
       }
 
-      const { data, error } = await supabase
-        .from("vehicles")
-        .update({
-          ...updates,
-          updated_at: new Date().toISOString(),
-        })
+      const updateData: any = {
+        ...updates,
+        updated_at: new Date().toISOString(),
+      };
+
+      const { data, error } = await (supabase
+        .from("vehicles") as any)
+        .update(updateData)
         .eq("id", id)
         .select()
         .single();
@@ -312,6 +314,8 @@ export class VehicleServiceFallback {
         .order("date", { ascending: false })
         .limit(1);
 
+      type MileageResult = { odometer_reading: number };
+
       // Get fuel efficiency (last 5 fuel-ups)
       const { data: fuelLogs } = await supabase
         .from("fuel_logs")
@@ -330,7 +334,7 @@ export class VehicleServiceFallback {
         .limit(1);
 
       return {
-        currentMileage: latestMileage?.[0]?.odometer_reading || 0,
+        currentMileage: (latestMileage as MileageResult[] | null)?.[0]?.odometer_reading || 0,
         fuelLogs: fuelLogs || [],
         nextService: nextService?.[0] || null,
       };
@@ -370,7 +374,8 @@ export class VehicleServiceFallback {
         return { data: null, error: "Vehicle not found", loading: false };
       }
 
-      if (vehicle.user_id !== user.id) {
+      type VehicleUserIdResult = { user_id: string };
+      if ((vehicle as VehicleUserIdResult).user_id !== user.id) {
         return {
           data: null,
           error: "You can only modify your own vehicles",
@@ -386,12 +391,14 @@ export class VehicleServiceFallback {
           .limit(1);
 
         // Column exists, update it
-        const { data, error } = await supabase
-          .from("vehicles")
-          .update({
-            shared_with_groups: shared,
-            updated_at: new Date().toISOString(),
-          })
+        const updateData: any = {
+          shared_with_groups: shared,
+          updated_at: new Date().toISOString(),
+        };
+
+        const { data, error } = await (supabase
+          .from("vehicles") as any)
+          .update(updateData)
           .eq("id", vehicleId)
           .select()
           .single();

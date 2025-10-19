@@ -2,14 +2,17 @@ import { supabase } from "../../services/supabaseClient";
 import { ServiceTemplate, ServiceTemplateFormData } from "../../types";
 import {
   ApiResponse,
+  FuelLog,
   Group,
+  MileageLog,
+  ServiceLog,
   Vehicle,
   VehicleInsert,
   VehicleSharingConfig,
   VehicleUpdate,
-  VehicleWithDetails,
+  VehicleWithDetails
 } from "../../types/database-v2";
-import { uploadImage, updateVehicleImage } from "../utils/imageUpload";
+import { uploadImage } from "../utils/imageUpload";
 // Service templates now use Supabase database storage
 
 export class VehicleService {
@@ -38,22 +41,40 @@ export class VehicleService {
 
       console.log("🔍 Fetching vehicles with sharing info for user:", user.id);
 
+      // Define the expected return type from the RPC
+      type VehicleSharingInfo = {
+        vehicle_id: string;
+        make: string;
+        model: string;
+        year: number;
+        license_plate: string;
+        vin: string | null;
+        main_image_url: string | null;
+        color: string | null;
+        current_mileage: number | null;
+        created_at: string;
+        updated_at: string;
+        is_own_vehicle: boolean;
+        owner_name: string | null;
+        owner_email: string;
+        shared_groups: string[];
+      };
+
       // Use the database function for optimized query
-      const { data: vehicleData, error: vehicleError } = await supabase.rpc(
-        "get_user_vehicles_with_sharing",
-        { user_uuid: user.id },
-      );
+      const { data: vehicleData, error: vehicleError } = await (supabase as any)
+        .rpc("get_user_vehicles_with_sharing", { user_uuid: user.id });
 
       if (vehicleError) {
         console.error("❌ Error fetching vehicles:", vehicleError);
         return { data: null, error: vehicleError.message, loading: false };
       }
 
-      console.log("✅ Raw vehicle data received:", vehicleData?.length || 0);
+      const typedVehicleData = vehicleData as VehicleSharingInfo[] | null;
+      console.log("✅ Raw vehicle data received:", typedVehicleData?.length || 0);
 
       // Enhance the data with additional information
       const enhancedVehicles: VehicleWithDetails[] = await Promise.all(
-        (vehicleData || []).map(async (vehicle) => {
+        (typedVehicleData || []).map(async (vehicle: VehicleSharingInfo) => {
           // Get vehicle images
           const { data: images } = await supabase
             .from("vehicle_images")
@@ -63,7 +84,7 @@ export class VehicleService {
             .order("display_order", { ascending: true });
 
           // Get sharing groups for owned vehicles
-          let sharedGroups: any[] = [];
+          let sharedGroups: Group[] = [];
           if (vehicle.is_own_vehicle) {
             const { data: shares } = await supabase
               .from("vehicle_group_shares")
@@ -72,11 +93,11 @@ export class VehicleService {
                 group_id,
                 shared_at,
                 groups!inner(id, name, description)
-              `,
+              `
               )
               .eq("vehicle_id", vehicle.vehicle_id);
 
-            sharedGroups = shares?.map((share) => share.groups) || [];
+            sharedGroups = shares?.map((share: any) => share.groups).filter(Boolean) || [];
           }
 
           // Get latest logs for stats
@@ -86,19 +107,22 @@ export class VehicleService {
               .select("*")
               .eq("vehicle_id", vehicle.vehicle_id)
               .order("date", { ascending: false })
-              .limit(1),
+              .limit(1)
+              .returns<MileageLog[]>(),
             supabase
               .from("fuel_logs")
               .select("*")
               .eq("vehicle_id", vehicle.vehicle_id)
               .order("date", { ascending: false })
-              .limit(1),
+              .limit(1)
+              .returns<FuelLog[]>(),
             supabase
               .from("service_logs")
               .select("*")
               .eq("vehicle_id", vehicle.vehicle_id)
               .order("date", { ascending: false })
-              .limit(1),
+              .limit(1)
+              .returns<ServiceLog[]>(),
           ]);
 
           // Calculate current mileage: use database field or fall back to latest mileage log
@@ -219,11 +243,11 @@ export class VehicleService {
 
       console.log("🔄 Sharing vehicle with groups:", { vehicleId, groupIds });
 
-      // Use the database function for atomic operation
-      const { data, error } = await supabase.rpc("share_vehicle_with_groups", {
-        vehicle_uuid: vehicleId,
-        group_uuids: groupIds,
-      });
+            // Use the database function for atomic operation
+      const { error } = await (supabase as any).rpc(
+        "share_vehicle_with_groups",
+        { vehicle_uuid: vehicleId, group_uuids: groupIds }
+      );
 
       if (error) {
         console.error("❌ Error sharing vehicle:", error);
@@ -259,11 +283,13 @@ export class VehicleService {
       }
 
       // Verify user owns the vehicle
-      const { data: vehicle, error: vehicleError } = await supabase
+      const vehicleResult = await supabase
         .from("vehicles")
         .select("user_id")
         .eq("id", vehicleId)
         .single();
+        
+      const { data: vehicle, error: vehicleError } = vehicleResult as any;
 
       if (vehicleError || !vehicle) {
         return { data: null, error: "Vehicle not found", loading: false };
@@ -285,7 +311,7 @@ export class VehicleService {
           group_id,
           shared_at,
           groups!inner(id, name, description)
-        `,
+        `
         )
         .eq("vehicle_id", vehicleId);
 
@@ -296,7 +322,7 @@ export class VehicleService {
 
       // Get member counts for each shared group separately
       const sharedGroupsWithCounts = await Promise.all(
-        (shares || []).map(async (share) => {
+        (shares || []).map(async (share: any) => {
           // Get member count for this group using a simpler count query
           const { data: members, error: countError } = await supabase
             .from("group_members")
@@ -308,7 +334,7 @@ export class VehicleService {
           }
 
           return {
-            group_id: share.group_id,
+            group_id: share.group_id!,
             group_name: share.groups.name,
             member_count: members?.length || 0,
             shared_at: share.shared_at,
@@ -401,17 +427,19 @@ export class VehicleService {
       }
 
       // Create vehicle
-      const { data: vehicle, error: vehicleError } = await supabase
+      const vehicleResult = await supabase
         .from("vehicles")
         .insert({
           ...vehicleData,
           main_image_url: imageUrl,
           user_id: user.id,
-        })
+        } as any)
         .select()
         .single();
+        
+      const { data: vehicle, error: vehicleError } = vehicleResult as any;
 
-      if (vehicleError) {
+      if (vehicleError || !vehicle) {
         console.error("Error creating vehicle:", vehicleError);
         return { data: null, error: vehicleError.message, loading: false };
       }
@@ -473,17 +501,21 @@ export class VehicleService {
       }
 
       // Update vehicle
-      const { data: vehicle, error: vehicleError } = await supabase
+      const updateData = {
+        ...updates,
+        updated_at: new Date().toISOString(),
+      };
+      
+      const vehicleUpdateResult = await (supabase as any)
         .from("vehicles")
-        .update({
-          ...updates,
-          updated_at: new Date().toISOString(),
-        })
+        .update(updateData)
         .eq("id", id)
         .select()
         .single();
+        
+      const { data: vehicle, error: vehicleError } = vehicleUpdateResult as any;
 
-      if (vehicleError) {
+      if (vehicleError || !vehicle) {
         console.error("Error updating vehicle:", vehicleError);
         return { data: null, error: vehicleError.message, loading: false };
       }
@@ -523,11 +555,13 @@ export class VehicleService {
       }
 
       // Verify ownership
-      const { data: vehicle, error: vehicleError } = await supabase
+      const vehicleResult = await supabase
         .from("vehicles")
         .select("user_id")
         .eq("id", id)
         .single();
+        
+      const { data: vehicle, error: vehicleError } = vehicleResult as any;
 
       if (vehicleError || !vehicle) {
         return { data: null, error: "Vehicle not found", loading: false };
@@ -577,7 +611,7 @@ export class VehicleService {
       }
 
       // Get vehicle with logs
-      const { data: vehicle, error: vehicleError } = await supabase
+      const vehicleResult = await supabase
         .from("vehicles")
         .select(
           `
@@ -585,10 +619,12 @@ export class VehicleService {
           mileage_logs(*, created_at),
           fuel_logs(*, created_at),
           service_logs(*, created_at)
-        `,
+        `
         )
         .eq("id", id)
         .single();
+        
+      const { data: vehicle, error: vehicleError } = vehicleResult as any;
 
       if (vehicleError) {
         console.error("Error fetching vehicle:", vehicleError);
@@ -661,11 +697,11 @@ export class VehicleService {
           : undefined,
         // Use detailed logs from separate queries, fall back to nested query logs
         mileage_logs:
-          detailedLogsResult.data?.mileage_logs || vehicle.mileage_logs || [],
+          detailedLogsResult.data?.mileage_logs || (vehicle as any).mileage_logs || [],
         fuel_logs:
-          detailedLogsResult.data?.fuel_logs || vehicle.fuel_logs || [],
+          detailedLogsResult.data?.fuel_logs || (vehicle as any).fuel_logs || [],
         service_logs:
-          detailedLogsResult.data?.service_logs || vehicle.service_logs || [],
+          detailedLogsResult.data?.service_logs || (vehicle as any).service_logs || [],
         logs: {
           latest_mileage:
             detailedLogsResult.data?.mileage_logs?.[0] ||
@@ -703,23 +739,27 @@ export class VehicleService {
   ): Promise<boolean> {
     try {
       // Check if vehicle is shared with any groups the user is a member of
-      const { data: shares, error } = await supabase
+      const sharesResult = await supabase
         .from("vehicle_group_shares")
         .select("group_id")
         .eq("vehicle_id", vehicleId);
+        
+      const { data: shares, error } = sharesResult as any;
 
       if (error || !shares || shares.length === 0) {
         return false;
       }
 
-      const sharedGroupIds = shares.map((share) => share.group_id);
+      const sharedGroupIds = shares.map((share: any) => share.group_id);
 
       // Check if user is a member of any of these groups
-      const { data: memberships, error: membershipError } = await supabase
+      const membershipsResult = await supabase
         .from("group_members")
         .select("group_id")
         .eq("user_id", userId)
         .in("group_id", sharedGroupIds);
+        
+      const { data: memberships, error: membershipError } = membershipsResult as any;
 
       return !membershipError && memberships && memberships.length > 0;
     } catch (error) {
@@ -736,29 +776,35 @@ export class VehicleService {
       // This method remains largely the same but could be enhanced with sharing awareness
 
       // Get latest mileage
-      const { data: latestMileage } = await supabase
+      const latestMileageResult = await supabase
         .from("mileage_logs")
         .select("odometer_reading")
         .eq("vehicle_id", vehicleId)
         .order("date", { ascending: false })
         .limit(1);
+        
+      const { data: latestMileage } = latestMileageResult as any;
 
       // Get fuel efficiency (last 5 fuel-ups)
-      const { data: fuelLogs } = await supabase
+      const fuelLogsResult = await supabase
         .from("fuel_logs")
         .select("liters_filled, odometer_reading")
         .eq("vehicle_id", vehicleId)
         .order("date", { ascending: false })
         .limit(5);
+        
+      const { data: fuelLogs } = fuelLogsResult as any;
 
       // Get next service due
-      const { data: nextService } = await supabase
+      const nextServiceResult = await supabase
         .from("service_logs")
         .select("next_service_due, service_type")
         .eq("vehicle_id", vehicleId)
         .not("next_service_due", "is", null)
         .order("next_service_due", { ascending: true })
         .limit(1);
+        
+      const { data: nextService } = nextServiceResult as any;
 
       return {
         currentMileage: latestMileage?.[0]?.odometer_reading || 0,
@@ -783,12 +829,14 @@ export class VehicleService {
   ): Promise<ApiResponse<boolean>> {
     try {
       // Get the latest mileage log
-      const { data: latestMileage, error: mileageError } = await supabase
+      const latestMileageResult = await supabase
         .from("mileage_logs")
         .select("odometer_reading")
         .eq("vehicle_id", vehicleId)
         .order("date", { ascending: false })
         .limit(1);
+        
+      const { data: latestMileage, error: mileageError } = latestMileageResult as any;
 
       if (mileageError) {
         console.error("Error fetching latest mileage:", mileageError);
@@ -799,10 +847,12 @@ export class VehicleService {
         const newMileage = latestMileage[0].odometer_reading;
 
         // Update the vehicle's current_mileage
-        const { error: updateError } = await supabase
+        const updateResult = (supabase as any)
           .from("vehicles")
           .update({ current_mileage: newMileage })
           .eq("id", vehicleId);
+          
+        const { error: updateError } = updateResult as any;
 
         if (updateError) {
           console.error("Error updating current mileage:", updateError);
@@ -852,7 +902,7 @@ export class VehicleService {
       }
 
       // Get groups where user is a member
-      const { data: memberGroups, error: memberError } = await supabase
+      const memberGroupsResult = await supabase
         .from("group_members")
         .select(
           `
@@ -864,9 +914,11 @@ export class VehicleService {
             created_at,
             updated_at
           )
-        `,
+        `
         )
         .eq("user_id", user.id);
+        
+      const { data: memberGroups, error: memberError } = memberGroupsResult as any;
 
       if (memberError) {
         console.error("Error fetching member groups:", memberError);
@@ -875,14 +927,14 @@ export class VehicleService {
 
       // Combine owned and member groups, avoiding duplicates
       const memberGroupData = (memberGroups || [])
-        .map((item) => item.groups)
-        .filter((group) => group !== null);
+        .map((item: any) => item.groups)
+        .filter((group: any) => group !== null);
 
-      const allGroups = [...(ownedGroups || [])];
+      const allGroups: any[] = [...(ownedGroups || [])];
 
       // Add member groups that aren't already in owned groups
-      memberGroupData.forEach((group) => {
-        if (!allGroups.find((g) => g.id === group.id)) {
+      memberGroupData.forEach((group: any) => {
+        if (!allGroups.find((g: any) => g.id === group.id)) {
           allGroups.push(group);
         }
       });
@@ -1135,16 +1187,18 @@ export class VehicleService {
       console.log("🔍 Fetching service templates for user:", user.id);
 
       // Get templates with their items
-      const { data: templates, error: templatesError } = await (supabase as any)
+      const templatesResult = await supabase
         .from("service_templates")
         .select(
           `
           *,
           service_template_items(*)
-        `,
+        `
         )
         .eq("user_id", user.id)
         .order("created_at", { ascending: false });
+        
+      const { data: templates, error: templatesError } = templatesResult as any;
 
       if (templatesError) {
         console.error("❌ Error fetching service templates:", templatesError);
@@ -1153,13 +1207,13 @@ export class VehicleService {
 
       // Transform the data to match our ServiceTemplate interface
       const serviceTemplates: ServiceTemplate[] = (templates || []).map(
-        (template) => ({
+        (template: any) => ({
           id: template.id,
           name: template.name,
           description: template.description || "",
           items: (template.service_template_items || [])
-            .sort((a, b) => a.display_order - b.display_order)
-            .map((item) => ({
+            .sort((a: any, b: any) => a.display_order - b.display_order)
+            .map((item: any) => ({
               id: item.id,
               description: item.description,
               price: parseFloat(item.price),
@@ -1206,17 +1260,19 @@ export class VehicleService {
       console.log("🔍 Fetching service template:", id);
 
       // Get template with its items
-      const { data: template, error: templateError } = await (supabase as any)
+      const templateResult = await supabase
         .from("service_templates")
         .select(
           `
           *,
           service_template_items(*)
-        `,
+        `
         )
         .eq("id", id)
         .eq("user_id", user.id)
         .single();
+        
+      const { data: template, error: templateError } = templateResult as any;
 
       if (templateError) {
         console.error("❌ Error fetching service template:", templateError);
@@ -1244,8 +1300,8 @@ export class VehicleService {
         name: template.name,
         description: template.description || "",
         items: (template.service_template_items || [])
-          .sort((a, b) => a.display_order - b.display_order)
-          .map((item) => ({
+          .sort((a: any, b: any) => a.display_order - b.display_order)
+          .map((item: any) => ({
             id: item.id,
             description: item.description,
             price: parseFloat(item.price),
@@ -1299,7 +1355,7 @@ export class VehicleService {
             ];
 
       // Create the template first
-      const { data: template, error: templateError } = await (supabase as any)
+      const templateResult = await (supabase as any)
         .from("service_templates")
         .insert({
           user_id: user.id,
@@ -1309,8 +1365,10 @@ export class VehicleService {
         })
         .select()
         .single();
+        
+      const { data: template, error: templateError } = templateResult as any;
 
-      if (templateError) {
+      if (templateError || !template) {
         console.error("❌ Error creating service template:", templateError);
         return { data: null, error: templateError.message, loading: false };
       }
@@ -1324,9 +1382,11 @@ export class VehicleService {
           display_order: index + 1,
         }));
 
-        const { error: itemsError } = await (supabase as any)
+        const itemsResult = (supabase as any)
           .from("service_template_items")
           .insert(templateItems);
+          
+        const { error: itemsError } = itemsResult as any;
 
         if (itemsError) {
           // If items creation fails, clean up the template
@@ -1389,9 +1449,7 @@ export class VehicleService {
       console.log("🔄 Updating service template:", id);
 
       // First, verify the template exists and belongs to the user
-      const { data: existingTemplate, error: templateError } = await (
-        supabase as any
-      )
+      const { data: existingTemplate, error: templateError } = await supabase
         .from("service_templates")
         .select("id")
         .eq("id", id)
@@ -1407,13 +1465,15 @@ export class VehicleService {
       }
 
       // Update the template
-      const { error: updateError } = await (supabase as any)
+      const updateResult = await (supabase as any)
         .from("service_templates")
         .update({
           name: formData.name,
           description: formData.description || "",
         })
         .eq("id", id);
+        
+      const { error: updateError } = updateResult;
 
       if (updateError) {
         console.error("❌ Error updating service template:", updateError);
@@ -1443,9 +1503,11 @@ export class VehicleService {
           display_order: index + 1,
         }));
 
-        const { error: itemsError } = await (supabase as any)
+        const itemsResult = await (supabase as any)
           .from("service_template_items")
           .insert(templateItems);
+          
+        const { error: itemsError } = itemsResult;
 
         if (itemsError) {
           console.error("❌ Error creating new template items:", itemsError);
@@ -1499,7 +1561,7 @@ export class VehicleService {
       console.log("🗑️ Deleting service template:", id);
 
       // Delete the template (cascade will handle items)
-      const { error: deleteError } = await (supabase as any)
+      const { error: deleteError } = await supabase
         .from("service_templates")
         .delete()
         .eq("id", id)

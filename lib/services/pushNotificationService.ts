@@ -10,6 +10,8 @@ Notifications.setNotificationHandler({
     shouldShowAlert: true,
     shouldPlaySound: true,
     shouldSetBadge: true,
+    shouldShowBanner: true,
+    shouldShowList: true,
   }),
 });
 
@@ -98,12 +100,13 @@ class PushNotificationService {
 
       if (!existingTokens || existingTokens.length === 0) {
         // Insert new token
-        const { error } = await supabase.from("push_tokens").insert({
+        const insertData = {
           user_id: user.id,
           token,
-          platform: Platform.OS,
+          platform: Platform.OS as any,
           device_name: Device.deviceName || "Unknown Device",
-        });
+        };
+        const { error } = await (supabase.from("push_tokens").insert(insertData as any) as any);
 
         if (error) {
           console.error("Error saving push token:", error);

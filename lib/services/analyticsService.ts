@@ -3,7 +3,11 @@ import {
   ServiceLogService,
   MileageLogService,
 } from "./loggingService";
-import { FuelLog, ServiceLog, MileageLog } from "../../types";
+import { FuelLog, ServiceLog, MileageLog, Vehicle } from "../../types";
+
+// Extended types with vehicle relation
+type FuelLogWithVehicle = FuelLog & { vehicles?: Vehicle };
+type ServiceLogWithVehicle = ServiceLog & { vehicles?: Vehicle };
 
 export interface ChartDataPoint {
   x: string | number;
@@ -238,8 +242,8 @@ export class AnalyticsService {
    * Calculate analytics per vehicle
    */
   private static calculateVehicleAnalytics(
-    fuelLogs: FuelLog[],
-    serviceLogs: ServiceLog[],
+    fuelLogs: FuelLogWithVehicle[],
+    serviceLogs: ServiceLogWithVehicle[],
   ): VehicleAnalytics[] {
     const vehicleData = new Map<
       string,
@@ -251,7 +255,7 @@ export class AnalyticsService {
     >();
 
     // Aggregate fuel costs by vehicle
-    fuelLogs.forEach((log) => {
+    (fuelLogs as FuelLogWithVehicle[]).forEach((log) => {
       if (log.vehicles) {
         const vehicleKey = log.vehicle_id;
         const vehicleName = `${log.vehicles.year} ${log.vehicles.make} ${log.vehicles.model}`;
@@ -270,7 +274,7 @@ export class AnalyticsService {
     });
 
     // Aggregate service costs by vehicle
-    serviceLogs.forEach((log) => {
+    (serviceLogs as ServiceLogWithVehicle[]).forEach((log) => {
       if (log.vehicles) {
         const vehicleKey = log.vehicle_id;
         const vehicleName = `${log.vehicles.year} ${log.vehicles.make} ${log.vehicles.model}`;

@@ -32,8 +32,8 @@ export function LoadingSpinner({
 
   const spinnerColor = color || colors.tint;
 
-  const getContainerStyle = (): ViewStyle[] => {
-    const baseStyle = [styles.container];
+  const getContainerStyle = () => {
+    const baseStyle: any[] = [styles.container];
 
     switch (variant) {
       case "overlay":
@@ -53,8 +53,8 @@ export function LoadingSpinner({
     return baseStyle;
   };
 
-  const getTextStyle = (): TextStyle[] => {
-    const baseStyle = [styles.text, { color: colors.text }];
+  const getTextStyle = () => {
+    const baseStyle: any[] = [styles.text, { color: colors.text }];
 
     if (textStyle) {
       baseStyle.push(textStyle);

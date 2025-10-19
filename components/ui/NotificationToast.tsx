@@ -31,11 +31,11 @@ export function NotificationToast({
 }: NotificationToastProps) {
   const translateY = useRef(new Animated.Value(-100)).current;
   const opacity = useRef(new Animated.Value(0)).current;
-  const timeoutRef = useRef<NodeJS.Timeout>();
+  const timeoutRef = useRef<number>();
 
-  const backgroundColor = useThemeColor({}, "card");
-  const textColor = useThemeColor({}, "text");
-  const borderColor = useThemeColor({}, "border");
+  const backgroundColor = String(useThemeColor({}, "card"));
+  const textColor = String(useThemeColor({}, "text"));
+  const borderColor = String(useThemeColor({}, "border"));
 
   const handleDismiss = () => {
     Animated.parallel([

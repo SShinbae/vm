@@ -1,22 +1,21 @@
-import React, { useState } from "react";
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-  Platform,
-} from "react-native";
-import { router, usePathname } from "expo-router";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { ConfirmModal } from "@/components/ui/Modal";
-import { useAuth } from "@/lib/contexts/AuthContext";
 import { useResponsiveLayout } from "@/hooks/use-responsive-layout";
-import { Colors } from "@/constants/theme";
-import { useColorScheme } from "@/hooks/use-color-scheme";
+import { useAuth } from "@/lib/contexts/AuthContext";
+import { router, usePathname } from "expo-router";
+import React, { useState } from "react";
+import {
+  Platform,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { createStyleSheet, useStyles } from "react-native-unistyles";
+import type { SFSymbols6_0 } from "sf-symbols-typescript";
 
 interface NavItem {
   name: string;
-  icon: string;
+  icon: SFSymbols6_0;
   path: string;
   label: string;
 }
@@ -31,11 +30,10 @@ const NAV_ITEMS: NavItem[] = [
 
 export function WebNavbar() {
   const layout = useResponsiveLayout();
-  const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? "light"];
   const pathname = usePathname();
   const { user, signOut } = useAuth();
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const { styles, theme } = useStyles(stylesheet);
 
   // Only render on web and larger screens
   if (!layout.isWeb || layout.isMobile) {
@@ -61,7 +59,7 @@ export function WebNavbar() {
         style={[
           styles.navButton,
           {
-            backgroundColor: isActive ? colors.tint : "transparent",
+            backgroundColor: isActive ? theme.colors.primary : "transparent",
           },
         ]}
         onPress={() => router.push(item.path as any)}
@@ -69,13 +67,13 @@ export function WebNavbar() {
         <IconSymbol
           name={item.icon}
           size={20}
-          color={isActive ? "white" : colors.text}
+          color={isActive ? theme.colors.white : theme.colors.text}
         />
         <Text
           style={[
             styles.navButtonText,
             {
-              color: isActive ? "white" : colors.text,
+              color: isActive ? theme.colors.white : theme.colors.text,
             },
           ]}
         >
@@ -85,89 +83,10 @@ export function WebNavbar() {
     );
   };
 
-  const styles = StyleSheet.create({
-    navbar: {
-      height: 64,
-      flexDirection: "row",
-      alignItems: "center",
-      paddingHorizontal: layout.contentPadding,
-      backgroundColor: colors.background,
-      borderBottomWidth: 1,
-      borderBottomColor: colors.icon + "20",
-      ...Platform.select({
-        web: {
-          position: "sticky" as any,
-          top: 0,
-          zIndex: 100,
-        },
-      }),
-    },
-    brand: {
-      flexDirection: "row",
-      alignItems: "center",
-      marginRight: 40,
-    },
-    brandText: {
-      fontSize: 20,
-      fontWeight: "bold",
-      color: colors.text,
-      marginLeft: 8,
-    },
-    nav: {
-      flex: 1,
-      flexDirection: "row",
-      alignItems: "center",
-      gap: 8,
-    },
-    navButton: {
-      flexDirection: "row",
-      alignItems: "center",
-      paddingHorizontal: 16,
-      paddingVertical: 8,
-      borderRadius: 8,
-      gap: 8,
-    },
-    navButtonText: {
-      fontSize: 16,
-      fontWeight: "500",
-    },
-    userSection: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: 16,
-    },
-    userInfo: {
-      alignItems: "flex-end",
-    },
-    userName: {
-      fontSize: 14,
-      fontWeight: "600",
-      color: colors.text,
-    },
-    userEmail: {
-      fontSize: 12,
-      color: colors.icon,
-    },
-    signOutButton: {
-      flexDirection: "row",
-      alignItems: "center",
-      paddingHorizontal: 12,
-      paddingVertical: 6,
-      borderRadius: 6,
-      backgroundColor: "#ff4444",
-      gap: 6,
-    },
-    signOutText: {
-      color: "white",
-      fontSize: 14,
-      fontWeight: "500",
-    },
-  });
-
   return (
-    <View style={styles.navbar}>
+    <View style={[styles.navbar, { paddingHorizontal: layout.contentPadding }]}>
       <View style={styles.brand}>
-        <IconSymbol name="car.fill" size={24} color={colors.tint} />
+        <IconSymbol name="car.fill" size={24} color={theme.colors.primary} />
         <Text style={styles.brandText}>Vehicle Manager</Text>
       </View>
 
@@ -204,3 +123,81 @@ export function WebNavbar() {
     </View>
   );
 }
+
+const stylesheet = createStyleSheet((theme) => ({
+  navbar: {
+    height: 64,
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: theme.colors.background,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.border,
+    ...Platform.select({
+      web: {
+        position: "sticky" as any,
+        top: 0,
+        zIndex: 100,
+      },
+    }),
+  },
+  brand: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginRight: 40,
+  },
+  brandText: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: theme.colors.text,
+    marginLeft: 8,
+  },
+  nav: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  navButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 8,
+    gap: 8,
+  },
+  navButtonText: {
+    fontSize: 16,
+    fontWeight: "500",
+  },
+  userSection: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 16,
+  },
+  userInfo: {
+    alignItems: "flex-end",
+  },
+  userName: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: theme.colors.text,
+  },
+  userEmail: {
+    fontSize: 12,
+    color: theme.colors.textSecondary,
+  },
+  signOutButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 6,
+    backgroundColor: theme.colors.error,
+    gap: 6,
+  },
+  signOutText: {
+    color: "white",
+    fontSize: 14,
+    fontWeight: "500",
+  },
+}));

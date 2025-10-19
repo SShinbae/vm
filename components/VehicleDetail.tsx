@@ -434,7 +434,9 @@ export const VehicleDetail: React.FC<VehicleDetailProps> = ({
                 <View style={styles.sharingStatus}>
                   <Text style={styles.sharingText}>
                     {vehicle.shared_groups?.length
-                      ? `Shared with ${vehicle.shared_groups.length} group${vehicle.shared_groups.length > 1 ? "s" : ""}`
+                      ? `Shared with ${vehicle.shared_groups.length} group${
+                          vehicle.shared_groups.length > 1 ? "s" : ""
+                        }`
                       : "Not shared with any groups"}
                   </Text>
                   <TouchableOpacity
@@ -449,10 +451,13 @@ export const VehicleDetail: React.FC<VehicleDetailProps> = ({
                 {vehicle.shared_groups && vehicle.shared_groups.length > 0 ? (
                   <View style={styles.sharedGroupsList}>
                     {vehicle.shared_groups.map((group) => (
-                      <View key={group.id} style={styles.sharedGroupItem}>
-                        {group.group_image_url ? (
+                      <View
+                        key={(group as any).id}
+                        style={styles.sharedGroupItem}
+                      >
+                        {(group as any).image_url ? (
                           <Image
-                            source={{ uri: group.group_image_url }}
+                            source={{ uri: (group as any).image_url }}
                             style={styles.groupAvatarImage}
                             contentFit="cover"
                             cachePolicy="memory-disk"
@@ -493,11 +498,11 @@ export const VehicleDetail: React.FC<VehicleDetailProps> = ({
                   styles.detailItem,
                   hoveredItem === "mileage" && styles.detailItemHovered,
                 ]}
-                onMouseEnter={
-                  isWeb ? () => setHoveredItem("mileage") : undefined
-                }
-                onMouseLeave={isWeb ? () => setHoveredItem(null) : undefined}
-                activeOpacity={0.7}
+                {...(isWeb ? {
+                  onMouseEnter: () => setHoveredItem("mileage"),
+                  onMouseLeave: () => setHoveredItem(null),
+                } as any : {})}
+                activeOpacity={1}
               >
                 <View style={styles.detailIcon}>
                   <IconSymbol
@@ -527,9 +532,11 @@ export const VehicleDetail: React.FC<VehicleDetailProps> = ({
                   styles.detailItem,
                   hoveredItem === "fuel" && styles.detailItemHovered,
                 ]}
-                onMouseEnter={isWeb ? () => setHoveredItem("fuel") : undefined}
-                onMouseLeave={isWeb ? () => setHoveredItem(null) : undefined}
-                activeOpacity={0.7}
+                {...(isWeb ? {
+                  onMouseEnter: () => setHoveredItem("fuel"),
+                  onMouseLeave: () => setHoveredItem(null),
+                } as any : {})}
+                activeOpacity={1}
               >
                 <View style={styles.detailIcon}>
                   <IconSymbol
@@ -558,7 +565,9 @@ export const VehicleDetail: React.FC<VehicleDetailProps> = ({
                   </Text>
                   <Text style={styles.detailValue}>
                     {vehicle.logs?.latest_fuel
-                      ? `${vehicle.logs.latest_fuel.liters_filled}L on ${formatDate(vehicle.logs.latest_fuel.date)}`
+                      ? `${
+                          vehicle.logs.latest_fuel.liters_filled
+                        }L on ${formatDate(vehicle.logs.latest_fuel.date)}`
                       : "No records"}
                   </Text>
                 </View>
@@ -569,11 +578,11 @@ export const VehicleDetail: React.FC<VehicleDetailProps> = ({
                   styles.detailItem,
                   hoveredItem === "service" && styles.detailItemHovered,
                 ]}
-                onMouseEnter={
-                  isWeb ? () => setHoveredItem("service") : undefined
-                }
-                onMouseLeave={isWeb ? () => setHoveredItem(null) : undefined}
-                activeOpacity={0.7}
+                {...(isWeb ? {
+                  onMouseEnter: () => setHoveredItem("service"),
+                  onMouseLeave: () => setHoveredItem(null),
+                } as any : {})}
+                activeOpacity={1}
               >
                 <View style={styles.detailIcon}>
                   <IconSymbol
@@ -602,7 +611,9 @@ export const VehicleDetail: React.FC<VehicleDetailProps> = ({
                   </Text>
                   <Text style={styles.detailValue}>
                     {vehicle.logs?.latest_service
-                      ? `${vehicle.logs.latest_service.service_type} on ${formatDate(vehicle.logs.latest_service.date)}`
+                      ? `${
+                          vehicle.logs.latest_service.service_type
+                        } on ${formatDate(vehicle.logs.latest_service.date)}`
                       : "No records"}
                   </Text>
                 </View>
@@ -611,13 +622,14 @@ export const VehicleDetail: React.FC<VehicleDetailProps> = ({
               <TouchableOpacity
                 style={[
                   styles.detailItem,
-                  hoveredItem === "mileage-records" && styles.detailItemHovered,
+                  hoveredItem === "mileage-records" &&
+                    styles.detailItemHovered,
                 ]}
-                onMouseEnter={
-                  isWeb ? () => setHoveredItem("mileage-records") : undefined
-                }
-                onMouseLeave={isWeb ? () => setHoveredItem(null) : undefined}
-                activeOpacity={0.7}
+                {...(isWeb ? {
+                  onMouseEnter: () => setHoveredItem("mileage-records"),
+                  onMouseLeave: () => setHoveredItem(null),
+                } as any : {})}
+                activeOpacity={1}
               >
                 <View style={styles.detailIcon}>
                   <IconSymbol
@@ -646,7 +658,9 @@ export const VehicleDetail: React.FC<VehicleDetailProps> = ({
                   </Text>
                   <Text style={styles.detailValue}>
                     {vehicle.logs?.latest_mileage
-                      ? `${vehicle.logs.latest_mileage.odometer_reading.toLocaleString()} km on ${formatDate(vehicle.logs.latest_mileage.date)}`
+                      ? `${vehicle.logs.latest_mileage.odometer_reading.toLocaleString()} km on ${formatDate(
+                          vehicle.logs.latest_mileage.date
+                        )}`
                       : "No records"}
                   </Text>
                 </View>

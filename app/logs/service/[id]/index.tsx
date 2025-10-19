@@ -394,7 +394,7 @@ export default function ServiceLogDetailScreen() {
             <View style={styles.serviceTypeIcon}>
               <IconSymbol
                 name={
-                  SERVICE_TYPE_ICONS[serviceLog.service_type as ServiceType]
+                  SERVICE_TYPE_ICONS[serviceLog.service_type as ServiceType] as any
                 }
                 size={24}
                 color="white"
@@ -410,18 +410,19 @@ export default function ServiceLogDetailScreen() {
             </View>
           </View>
 
-          {serviceLog.vehicles && (
+          {(serviceLog as any).vehicles && (
             <View style={styles.vehicleInfo}>
               <View style={styles.vehicleIcon}>
                 <IconSymbol name="car.fill" size={16} color="white" />
               </View>
               <View>
                 <Text style={styles.vehicleText}>
-                  {serviceLog.vehicles.year} {serviceLog.vehicles.make}{" "}
-                  {serviceLog.vehicles.model}
+                  {(serviceLog as any).vehicles.year}{" "}
+                  {(serviceLog as any).vehicles.make}{" "}
+                  {(serviceLog as any).vehicles.model}
                 </Text>
                 <Text style={styles.vehiclePlate}>
-                  {serviceLog.vehicles.license_plate}
+                  {(serviceLog as any).vehicles.license_plate}
                 </Text>
               </View>
             </View>

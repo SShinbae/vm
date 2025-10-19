@@ -2,7 +2,7 @@ import { Session, User } from "@supabase/supabase-js";
 import Constants from "expo-constants";
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { supabase } from "../../services/supabaseClient";
-import { AuthState, AuthUser, Profile } from "../../types";
+import { AuthState, AuthUser, Profile, ProfileUpdate } from "../../types";
 
 interface AuthContextType extends AuthState {
   signUp: (
@@ -45,7 +45,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   const fetchUserProfile = async (user: User): Promise<AuthUser | null> => {
     try {
-      const { data: profile, error } = await supabase
+      const { data: profile, error }: { data: Profile | null; error: any } = await supabase
         .from("profiles")
         .select("*")
         .eq("id", user.id)
@@ -53,17 +53,18 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
       if (error && error.code !== "PGRST116") {
         console.error("Error fetching user profile:", error);
-        return { id: user.id, email: user.email || "" };
+        return { id: user.id, email: user.email || "", username: null };
       }
 
       return {
         id: user.id,
         email: user.email || "",
         profile: profile || undefined,
+        username: profile?.username || null,
       };
     } catch (error) {
       console.error("Error in fetchUserProfile:", error);
-      return { id: user.id, email: user.email || "" };
+      return { id: user.id, email: user.email || "", username: null };
     }
   };
 
@@ -238,12 +239,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
     setState((prev) => ({ ...prev, loading: true }));
 
     try {
-      const { error } = await supabase
-        .from<Profile>("profiles")
-        .update({
-          ...updates,
-          updated_at: new Date().toISOString(),
-        } as Partial<Profile>)
+      const updateData: any = {
+        ...updates,
+        updated_at: new Date().toISOString()
+      };
+      const { error } = await (supabase
+        .from("profiles") as any)
+        .update(updateData)
         .eq("id", state.user.id);
 
       if (error) {
