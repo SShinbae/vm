@@ -7,13 +7,10 @@ import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useResponsiveLayout } from "@/hooks/use-responsive-layout";
 import { useAuth } from "@/lib/contexts/AuthContext";
-import {
-  FuelLogService,
-  ServiceLogService,
-} from "@/lib/services/loggingService";
-import { VehicleService } from "@/lib/services/vehicleService";
 import { AnalyticsService } from "@/lib/services/analyticsService";
-import { Vehicle } from "@/types";
+import { VehicleService } from "@/lib/services/vehicleService";
+import { VehicleWithDetails } from "@/types/database-v2";
+import { Image } from "expo-image";
 import { router } from "expo-router";
 import React, { useCallback, useEffect, useState } from "react";
 import {
@@ -25,12 +22,11 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { Image } from "expo-image";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function DashboardScreen() {
   const { user } = useAuth();
-  const [vehicles, setVehicles] = useState<Vehicle[]>([]);
+  const [vehicles, setVehicles] = useState<VehicleWithDetails[]>([]);
   const [analyticsData, setAnalyticsData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -79,7 +75,7 @@ export default function DashboardScreen() {
     </TouchableOpacity>
   );
 
-  const VehicleCard = ({ vehicle }: { vehicle: Vehicle }) => {
+  const VehicleCard = ({ vehicle }: { vehicle: VehicleWithDetails }) => {
     const [imageError, setImageError] = React.useState(false);
 
     return (

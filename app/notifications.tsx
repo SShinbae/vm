@@ -1,15 +1,15 @@
-import React from "react";
-import { View, Text, TouchableOpacity, Platform } from "react-native";
-import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import { router } from "expo-router";
+import React from "react";
+import { Platform, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { NotificationList } from "../components/ui/NotificationList";
-import { NotificationData } from "../lib/services/notificationService";
 import { useThemeColor } from "../hooks/use-theme-color";
+import { NotificationData } from "../lib/services/notificationService";
 
 export default function NotificationsScreen() {
-  const backgroundColor = useThemeColor({}, "background");
-  const textColor = useThemeColor({}, "text");
+  const backgroundColor = useThemeColor({}, "background") as string;
+  const textColor = useThemeColor({}, "text") as string;
 
   const handleNotificationPress = (notification: NotificationData) => {
     // Navigate based on notification type

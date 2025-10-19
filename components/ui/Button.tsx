@@ -1,14 +1,14 @@
-import React from "react";
-import {
-  TouchableOpacity,
-  Text,
-  ActivityIndicator,
-  StyleSheet,
-  ViewStyle,
-  TextStyle,
-} from "react-native";
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
+import React from "react";
+import {
+  ActivityIndicator,
+  StyleSheet,
+  Text,
+  TextStyle,
+  TouchableOpacity,
+  ViewStyle,
+} from "react-native";
 import { IconSymbol } from "./icon-symbol";
 
 interface ButtonProps {
@@ -42,7 +42,7 @@ export function Button({
   const colors = Colors[colorScheme ?? "light"];
 
   const getButtonStyle = (): ViewStyle[] => {
-    const baseStyle = [styles.button];
+    const baseStyle: ViewStyle[] = [styles.button];
 
     // Size styles
     switch (size) {
@@ -102,7 +102,7 @@ export function Button({
   };
 
   const getTextStyle = (): TextStyle[] => {
-    const baseStyle = [styles.text];
+    const baseStyle: TextStyle[] = [styles.text];
 
     // Size text styles
     switch (size) {
@@ -180,7 +180,7 @@ export function Button({
     }
 
     const iconElement = icon ? (
-      <IconSymbol name={icon} size={getIconSize()} color={getIconColor()} />
+      <IconSymbol name={icon as any} size={getIconSize()} color={getIconColor()} />
     ) : null;
 
     const textElement = <Text style={getTextStyle()}>{title}</Text>;

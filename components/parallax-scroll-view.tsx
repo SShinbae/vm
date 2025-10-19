@@ -1,15 +1,12 @@
 import type { PropsWithChildren, ReactElement } from "react";
-import { StyleSheet } from "react-native";
+import { useColorScheme, View } from "react-native";
 import Animated, {
   interpolate,
   useAnimatedRef,
   useAnimatedStyle,
   useScrollViewOffset,
 } from "react-native-reanimated";
-
-import { ThemedView } from "@/components/themed-view";
-import { useColorScheme } from "@/hooks/use-color-scheme";
-import { useThemeColor } from "@/hooks/use-theme-color";
+import { createStyleSheet, useStyles } from "react-native-unistyles";
 
 const HEADER_HEIGHT = 250;
 
@@ -23,8 +20,8 @@ export default function ParallaxScrollView({
   headerImage,
   headerBackgroundColor,
 }: Props) {
-  const backgroundColor = useThemeColor({}, "background");
   const colorScheme = useColorScheme() ?? "light";
+  const { styles } = useStyles(stylesheet);
   const scrollRef = useAnimatedRef<Animated.ScrollView>();
   const scrollOffset = useScrollViewOffset(scrollRef);
   const headerAnimatedStyle = useAnimatedStyle(() => {
@@ -51,35 +48,36 @@ export default function ParallaxScrollView({
   return (
     <Animated.ScrollView
       ref={scrollRef}
-      style={{ backgroundColor, flex: 1 }}
+      style={styles.container as any}
       scrollEventThrottle={16}
     >
       <Animated.View
         style={[
-          styles.header,
+          styles.header as any,
           { backgroundColor: headerBackgroundColor[colorScheme] },
           headerAnimatedStyle,
         ]}
       >
         {headerImage}
       </Animated.View>
-      <ThemedView style={styles.content}>{children}</ThemedView>
+      <View style={styles.content as any}>{children}</View>
     </Animated.ScrollView>
   );
 }
 
-const styles = StyleSheet.create({
+const stylesheet = createStyleSheet((theme) => ({
   container: {
     flex: 1,
+    backgroundColor: theme.colors.background,
   },
   header: {
     height: HEADER_HEIGHT,
-    overflow: "hidden",
+    overflow: "hidden" as const,
   },
   content: {
     flex: 1,
     padding: 32,
     gap: 16,
-    overflow: "hidden",
+    overflow: "hidden" as const,
   },
-});
+}));

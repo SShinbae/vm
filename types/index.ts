@@ -184,7 +184,7 @@ export interface AuthUser {
   id: string;
   email: string;
   profile?: Profile;
-  username: string;
+  username: string | null;
 }
 
 export interface AuthState {

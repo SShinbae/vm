@@ -4,8 +4,8 @@ import { IconSymbol } from "@/components/ui/icon-symbol";
 import { Input } from "@/components/ui/Input";
 import { AlertModal } from "@/components/ui/Modal";
 import {
-  ReceiptCapture,
   OCRResultDisplay,
+  ReceiptCapture,
 } from "@/components/ui/ReceiptCapture";
 import { ReceiptViewer } from "@/components/ui/ReceiptViewer";
 import {
@@ -17,8 +17,8 @@ import {
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { ServiceLogService } from "@/lib/services/loggingService";
-import { VehicleService } from "@/lib/services/vehicleService";
 import { OCRService, ReceiptProcessingResult } from "@/lib/services/ocrService";
+import { VehicleService } from "@/lib/services/vehicleService";
 import { ServiceLogFormData, ServiceType } from "@/types";
 import { VehicleWithDetails } from "@/types/database-v2";
 import { Image } from "expo-image";
@@ -448,7 +448,7 @@ export default function AddServiceLogScreen() {
             }
           >
             <IconSymbol
-              name={type.icon}
+              name={type.icon as any}
               size={20}
               color={
                 formData.service_type === type.value ? colors.tint : colors.icon
@@ -896,7 +896,7 @@ export default function AddServiceLogScreen() {
               <View style={styles.flex1}>
                 <DatePicker
                   label="Next Service Due"
-                  value={formData.next_service_due}
+                  value={formData.next_service_due || ""}
                   onDateChange={(date) =>
                     setFormData((prev) => ({ ...prev, next_service_due: date }))
                   }

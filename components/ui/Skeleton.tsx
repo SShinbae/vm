@@ -63,7 +63,7 @@ export function Skeleton({
           height,
           borderRadius,
           backgroundColor,
-        },
+        } as any,
         style,
       ]}
     />

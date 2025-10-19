@@ -22,7 +22,7 @@ import {
   Switch,
   Text,
   TouchableOpacity,
-  View,
+  View
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -809,9 +809,7 @@ export default function VehicleDetailScreen() {
       }),
     },
     statCardWeb: {
-      ...(isDesktopWeb && {
-        transition: "all 0.2s ease",
-      }),
+      // Web-specific transitions should be handled differently
     },
     statCardGradient: {
       backgroundColor: isDesktopWeb ? colors.tint : colors.card,
@@ -988,9 +986,7 @@ export default function VehicleDetailScreen() {
       minHeight: 44,
     },
     logItemWeb: {
-      ...(isDesktopWeb && {
-        transition: "all 0.2s ease",
-      }),
+      // Web-specific transitions should be handled differently
     },
     logItemLeftBorder: {
       position: "absolute",
@@ -1146,7 +1142,7 @@ export default function VehicleDetailScreen() {
 
   if (loading) {
     return (
-      <>
+      <React.Fragment>
         <Head>
           <title>Loading Vehicle - Vehicle Management</title>
         </Head>
@@ -1155,13 +1151,13 @@ export default function VehicleDetailScreen() {
             <ActivityIndicator size="large" color={colors.tint} />
           </View>
         </SafeAreaView>
-      </>
+      </React.Fragment>
     );
   }
 
   if (!vehicle) {
     return (
-      <>
+      <React.Fragment>
         <Head>
           <title>Vehicle Not Found - Vehicle Management</title>
         </Head>
@@ -1170,12 +1166,12 @@ export default function VehicleDetailScreen() {
             <Text style={styles.errorText}>Vehicle not found</Text>
           </View>
         </SafeAreaView>
-      </>
+      </React.Fragment>
     );
   }
 
   return (
-    <>
+    <React.Fragment>
       <Head>
         <title>
           {vehicle
@@ -1662,6 +1658,6 @@ export default function VehicleDetailScreen() {
           variant={alertVariant}
         />
       </SafeAreaView>
-    </>
+    </React.Fragment>
   );
 }

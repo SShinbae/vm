@@ -1,5 +1,6 @@
 import { supabase } from "../../services/supabaseClient";
 import { RealtimeChannel } from "@supabase/supabase-js";
+import { Database } from "../../types/database";
 
 export interface NotificationData {
   id: string;
@@ -44,7 +45,7 @@ class NotificationService {
       .select("group_id")
       .eq("user_id", this.userId);
 
-    this.userGroupIds = userGroups?.map((g) => g.group_id) || [];
+    this.userGroupIds = (userGroups as { group_id: string }[] | null)?.map((g) => g.group_id) || [];
 
     // Get user's vehicles (owned)
     const { data: vehicles } = await supabase
@@ -52,7 +53,7 @@ class NotificationService {
       .select("id")
       .eq("user_id", this.userId);
 
-    this.userVehicleIds = vehicles?.map((v) => v.id) || [];
+    this.userVehicleIds = (vehicles as { id: string }[] | null)?.map((v) => v.id) || [];
 
     // Get shared vehicles through groups
     if (this.userGroupIds.length > 0) {
@@ -61,7 +62,7 @@ class NotificationService {
         .select("vehicle_id")
         .in("group_id", this.userGroupIds);
 
-      const sharedVehicleIds = sharedVehicles?.map((sv) => sv.vehicle_id) || [];
+      const sharedVehicleIds = (sharedVehicles as { vehicle_id: string }[] | null)?.map((sv) => sv.vehicle_id) || [];
       this.userVehicleIds = [...this.userVehicleIds, ...sharedVehicleIds];
     }
   }
@@ -197,10 +198,13 @@ class NotificationService {
       .eq("id", newRecord?.user_id || oldRecord?.user_id)
       .single();
 
-    const vehicleName = vehicle
-      ? `${vehicle.year} ${vehicle.make} ${vehicle.model}`
+    const vehicleData = vehicle as { make: string; model: string; year: number } | null;
+    const userData = user as { full_name: string | null; email: string } | null;
+
+    const vehicleName = vehicleData
+      ? `${vehicleData.year} ${vehicleData.make} ${vehicleData.model}`
       : "Unknown Vehicle";
-    const userName = user?.full_name || user?.email || "Someone";
+    const userName = userData?.full_name || userData?.email || "Someone";
 
     let title = "";
     let message = "";
@@ -265,8 +269,11 @@ class NotificationService {
       .eq("id", newRecord?.user_id || oldRecord?.user_id)
       .single();
 
-    const groupName = group?.name || "Unknown Group";
-    const userName = user?.full_name || user?.email || "Someone";
+    const groupData = group as { name: string } | null;
+    const userData = user as { full_name: string | null; email: string } | null;
+
+    const groupName = groupData?.name || "Unknown Group";
+    const userName = userData?.full_name || userData?.email || "Someone";
 
     let title = "";
     let message = "";
@@ -310,7 +317,9 @@ class NotificationService {
       .eq("id", this.userId!)
       .single();
 
-    if (!userProfile || newRecord.email !== userProfile.email.toLowerCase()) {
+    const userProfileData = userProfile as { email: string } | null;
+
+    if (!userProfileData || newRecord.email !== userProfileData.email.toLowerCase()) {
       return;
     }
 
@@ -327,8 +336,11 @@ class NotificationService {
       .eq("id", newRecord.invited_by)
       .single();
 
-    const groupName = group?.name || "Unknown Group";
-    const inviterName = inviter?.full_name || inviter?.email || "Someone";
+    const groupData = group as { name: string } | null;
+    const inviterData = inviter as { full_name: string | null; email: string } | null;
+
+    const groupName = groupData?.name || "Unknown Group";
+    const inviterName = inviterData?.full_name || inviterData?.email || "Someone";
 
     const notification: NotificationData = {
       id: `invite-${newRecord.id}`,

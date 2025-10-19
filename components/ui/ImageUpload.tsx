@@ -171,8 +171,10 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
         setLocalImageUri(null);
       } else {
         const imageUrl =
-          type === "avatar" ? result.data! : result.data!.image_url;
-        onUploadComplete?.(imageUrl);
+          type === "avatar"
+            ? (typeof result.data === 'string' ? result.data : result.data!.image_url)
+            : (typeof result.data === 'string' ? result.data : result.data!.image_url);
+        onUploadComplete?.(imageUrl as string);
         Alert.alert("Success", "Image uploaded successfully!");
       }
     } catch (error: any) {
@@ -265,9 +267,11 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
         setLocalImageUri(null);
       } else {
         const imageUrl =
-          type === "avatar" ? result.data! : result.data!.image_url;
+          type === "avatar"
+            ? (typeof result.data === 'string' ? result.data : result.data!.image_url)
+            : (typeof result.data === 'string' ? result.data : result.data!.image_url);
         console.log("✅ Upload successful! Image URL:", imageUrl);
-        onUploadComplete?.(imageUrl);
+        onUploadComplete?.(imageUrl as string);
         Alert.alert("Success", "Image uploaded successfully!");
       }
     } catch (error: any) {

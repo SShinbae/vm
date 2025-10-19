@@ -1,8 +1,7 @@
-import React from "react";
-import { View, StyleSheet, ScrollView, Platform } from "react-native";
 import { useResponsiveLayout } from "@/hooks/use-responsive-layout";
-import { Colors } from "@/constants/theme";
-import { useColorScheme } from "@/hooks/use-color-scheme";
+import React from "react";
+import { Platform, ScrollView, View, ViewStyle } from "react-native";
+import { createStyleSheet, useStyles } from "react-native-unistyles";
 
 interface WebLayoutProps {
   children: React.ReactNode;
@@ -16,16 +15,15 @@ export function WebLayout({
   sidebarContent,
 }: WebLayoutProps) {
   const layout = useResponsiveLayout();
-  const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? "light"];
+  const { styles } = useStyles(stylesheet);
 
   // On mobile or when sidebar is disabled, just return children
   if (!layout.isWeb || layout.isMobile || !showSidebar) {
     return (
-      <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <View style={styles.container as ViewStyle}>
         <View
           style={[
-            styles.content,
+            styles.content as ViewStyle,
             {
               maxWidth: layout.maxContentWidth,
               paddingHorizontal: layout.contentPadding,
@@ -40,20 +38,12 @@ export function WebLayout({
 
   // Desktop/tablet layout with sidebar
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <View style={[styles.webLayout, { maxWidth: layout.maxContentWidth }]}>
+    <View style={styles.container as ViewStyle}>
+      <View style={[styles.webLayout as ViewStyle, { maxWidth: layout.maxContentWidth }]}>
         {sidebarContent && (
-          <View
-            style={[
-              styles.sidebar,
-              {
-                backgroundColor: colors.background,
-                borderRightColor: colors.icon + "20",
-              },
-            ]}
-          >
+          <View style={styles.sidebar as ViewStyle}>
             <ScrollView
-              contentContainerStyle={styles.sidebarContent}
+              contentContainerStyle={styles.sidebarContent as ViewStyle}
               showsVerticalScrollIndicator={false}
             >
               {sidebarContent}
@@ -62,7 +52,7 @@ export function WebLayout({
         )}
         <View
           style={[
-            styles.mainContent,
+            styles.mainContent as ViewStyle,
             { paddingHorizontal: layout.contentPadding },
           ]}
         >
@@ -73,10 +63,11 @@ export function WebLayout({
   );
 }
 
-const styles = StyleSheet.create({
+const stylesheet = createStyleSheet((theme) => ({
   container: {
     flex: 1,
     alignItems: "center",
+    backgroundColor: theme.colors.background,
   },
   content: {
     flex: 1,
@@ -92,11 +83,13 @@ const styles = StyleSheet.create({
   sidebar: {
     width: 280,
     borderRightWidth: 1,
+    backgroundColor: theme.colors.background,
+    borderRightColor: theme.colors.border,
     ...Platform.select({
       web: {
         position: "sticky" as any,
         top: 0,
-        height: "100vh",
+        height: "100vh" as any,
       },
     }),
   },
@@ -106,4 +99,4 @@ const styles = StyleSheet.create({
   mainContent: {
     flex: 1,
   },
-});
+}));

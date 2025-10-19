@@ -1,6 +1,5 @@
-import { StyleSheet, Text, type TextProps } from "react-native";
-
-import { useThemeColor } from "@/hooks/use-theme-color";
+import { Text, type TextProps, useColorScheme } from "react-native";
+import { createStyleSheet, useStyles } from "react-native-unistyles";
 
 export type ThemedTextProps = TextProps & {
   lightColor?: string;
@@ -15,55 +14,40 @@ export function ThemedText({
   type = "default",
   ...rest
 }: ThemedTextProps) {
-  // Use different color for link type
-  const linkColor = useThemeColor(
-    { light: lightColor, dark: darkColor },
-    "link",
-  );
-  const textColor = useThemeColor(
-    { light: lightColor, dark: darkColor },
-    "text",
-  );
-  const color = type === "link" ? linkColor : textColor;
+  const { theme } = useStyles(stylesheet);
+  const { styles } = useStyles(stylesheet);
+  const colorScheme = useColorScheme();
 
-  return (
-    <Text
-      style={[
-        { color },
-        type === "default" ? styles.default : undefined,
-        type === "title" ? styles.title : undefined,
-        type === "defaultSemiBold" ? styles.defaultSemiBold : undefined,
-        type === "subtitle" ? styles.subtitle : undefined,
-        type === "link" ? styles.link : undefined,
-        style,
-      ]}
-      {...rest}
-    />
-  );
+  const color =
+    colorScheme === "dark"
+      ? darkColor || (type === "link" ? theme.colors.primary : theme.colors.text)
+      : lightColor || (type === "link" ? theme.colors.primary : theme.colors.text);
+
+  return <Text style={[{ color }, styles[type], style]} {...rest} />;
 }
 
-const styles = StyleSheet.create({
+const stylesheet = createStyleSheet((theme) => ({
   default: {
-    fontSize: 16,
-    lineHeight: 24,
+    fontSize: theme.fontSize.base,
+    lineHeight: theme.fontSize["2xl"],
   },
   defaultSemiBold: {
-    fontSize: 16,
-    lineHeight: 24,
-    fontWeight: "600",
+    fontSize: theme.fontSize.base,
+    lineHeight: theme.fontSize["2xl"],
+    fontWeight: theme.fontWeight.semibold as any,
   },
   title: {
-    fontSize: 32,
-    fontWeight: "bold",
-    lineHeight: 32,
+    fontSize: theme.fontSize["3xl"],
+    fontWeight: theme.fontWeight.bold as any,
+    lineHeight: theme.fontSize["3xl"],
   },
   subtitle: {
-    fontSize: 20,
-    fontWeight: "bold",
+    fontSize: theme.fontSize.xl,
+    fontWeight: theme.fontWeight.semibold as any,
   },
   link: {
-    lineHeight: 30,
-    fontSize: 16,
-    // Color will be overridden by theme-aware color from useThemeColor
+    lineHeight: theme.fontSize["3xl"],
+    fontSize: theme.fontSize.base,
+    color: theme.colors.primary,
   },
-});
+}));

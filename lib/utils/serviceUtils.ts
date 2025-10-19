@@ -16,6 +16,7 @@ export const formatServiceItems = (description: string): string => {
         )
         .join("\n");
     }
+     
   } catch (error) {
     // If parsing fails, return the original description
   }
@@ -52,7 +53,7 @@ export const canUserAccessVehicle = async (
       return false; // No groups to check
     }
 
-    const groupIds = userGroups.map((g) => g.group_id);
+    const groupIds = (userGroups as { group_id: string }[]).map((g) => g.group_id);
 
     // Check if vehicle is shared with any of these groups
     const { data: sharedVehicles, error: shareError } = await supabase

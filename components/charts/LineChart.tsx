@@ -108,7 +108,7 @@ export function LineChart({
       strokeWidth: "2",
       stroke: chartColor,
     },
-    formatYLabel: formatY,
+    formatYLabel: (yLabel: string) => formatY(parseFloat(yLabel)),
   };
 
   return (

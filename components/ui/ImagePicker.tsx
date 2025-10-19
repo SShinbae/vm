@@ -166,7 +166,9 @@ export function ImagePicker({
   };
 
   // Crop modal handlers
-  const handleCropComplete = (croppedImageUri: string) => {
+  const handleCropComplete = (croppedFile: File) => {
+    // Convert File to blob URL for React Native Image component
+    const croppedImageUri = URL.createObjectURL(croppedFile);
     onImageSelected(croppedImageUri);
     setShowCropModal(false);
     setTempImageUri("");

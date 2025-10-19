@@ -1,5 +1,6 @@
 import { useDialog } from "@/lib/contexts/DialogContext";
 import { useFocusEffect } from "@react-navigation/native";
+import { Image } from "expo-image";
 import { router } from "expo-router";
 import React, { useCallback, useState } from "react";
 import {
@@ -12,7 +13,6 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { Image } from "expo-image";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { VehicleService } from "../../lib/services/vehicleService";
 
@@ -160,8 +160,8 @@ export default function VehiclesScreen() {
                 </View>
               )}
               {vehicle.is_own_vehicle &&
-                vehicle.shared_groups &&
-                vehicle.shared_groups.length > 0 && (
+                vehicle.sharing_info?.is_shared &&
+                vehicle.sharing_info.total_shares > 0 && (
                   <View style={styles.sharedBadge}>
                     <IconSymbol name="person.3.fill" size={12} color="white" />
                   </View>
@@ -175,11 +175,11 @@ export default function VehiclesScreen() {
               </Text>
             )}
             {vehicle.is_own_vehicle &&
-              vehicle.shared_groups &&
-              vehicle.shared_groups.length > 0 && (
+              vehicle.sharing_info?.is_shared &&
+              vehicle.sharing_info.total_shares > 0 && (
                 <Text style={styles.sharingStatus}>
-                  Shared with {vehicle.shared_groups.length} group
-                  {vehicle.shared_groups.length > 1 ? "s" : ""}
+                  Shared with {vehicle.sharing_info.total_shares} group
+                  {vehicle.sharing_info.total_shares > 1 ? "s" : ""}
                 </Text>
               )}
           </View>

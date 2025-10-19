@@ -13,10 +13,10 @@ interface NotificationItemProps {
 
 function NotificationItem({ notification, onPress }: NotificationItemProps) {
   const { markAsRead, clearNotification } = useNotifications();
-  const textColor = useThemeColor({}, "text");
-  const mutedTextColor = useThemeColor({}, "tabIconDefault");
-  const backgroundColor = useThemeColor({}, "background");
-  const cardBackground = useThemeColor({}, "card");
+  const textColor = String(useThemeColor({}, "text"));
+  const mutedTextColor = String(useThemeColor({}, "tabIconDefault"));
+  const backgroundColor = String(useThemeColor({}, "background"));
+  const cardBackground = String(useThemeColor({}, "card"));
 
   const handlePress = () => {
     if (!notification.read) {
@@ -144,9 +144,9 @@ export function NotificationList({
   const { notifications, isInitialized, markAllAsRead, clearAllNotifications } =
     useNotifications();
 
-  const textColor = useThemeColor({}, "text");
-  const mutedTextColor = useThemeColor({}, "tabIconDefault");
-  const backgroundColor = useThemeColor({}, "background");
+  const textColor = String(useThemeColor({}, "text"));
+  const mutedTextColor = String(useThemeColor({}, "tabIconDefault"));
+  const backgroundColor = String(useThemeColor({}, "background"));
 
   const hasUnreadNotifications = notifications.some((n) => !n.read);
 

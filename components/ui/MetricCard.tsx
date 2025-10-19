@@ -3,13 +3,14 @@ import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { Colors } from "@/constants/theme";
 import { IconSymbol } from "./icon-symbol";
+import type { SFSymbols6_0 } from "sf-symbols-typescript";
 
 interface MetricCardProps {
   title: string;
   value: string;
   trend?: number;
   subtitle?: string;
-  icon?: string;
+  icon?: SFSymbols6_0;
   color?: string;
   onPress?: () => void;
   size?: "small" | "medium" | "large";

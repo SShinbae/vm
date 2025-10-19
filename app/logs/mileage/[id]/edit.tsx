@@ -340,18 +340,19 @@ export default function EditMileageLogScreen() {
           <View style={styles.card}>
             <View style={styles.inputContainer}>
               <Text style={styles.label}>Vehicle</Text>
-              {mileageLog?.vehicles && (
+              {(mileageLog as any)?.vehicles && (
                 <View style={styles.vehicleInfo}>
                   <View style={styles.vehicleIcon}>
                     <IconSymbol name="car.fill" size={16} color="white" />
                   </View>
                   <View>
                     <Text style={styles.vehicleText}>
-                      {mileageLog.vehicles.year} {mileageLog.vehicles.make}{" "}
-                      {mileageLog.vehicles.model}
+                      {(mileageLog as any).vehicles.year}{" "}
+                      {(mileageLog as any).vehicles.make}{" "}
+                      {(mileageLog as any).vehicles.model}
                     </Text>
                     <Text style={styles.vehiclePlate}>
-                      {mileageLog.vehicles.license_plate}
+                      {(mileageLog as any).vehicles.license_plate}
                     </Text>
                   </View>
                 </View>

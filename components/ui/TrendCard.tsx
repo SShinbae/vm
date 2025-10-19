@@ -5,13 +5,15 @@ import { Colors } from "@/constants/theme";
 import { IconSymbol } from "./icon-symbol";
 import { LinearGradient } from "expo-linear-gradient";
 
+import type { SFSymbols6_0 } from "sf-symbols-typescript";
+
 interface TrendCardProps {
   title: string;
   value: string;
   trend: number;
   subtitle?: string;
-  icon?: string;
-  gradientColors?: [string, string];
+  icon?: SFSymbols6_0;
+  gradientColors?: readonly [string, string];
   onPress?: () => void;
 }
 
@@ -126,7 +128,7 @@ export function TrendCard({
           <View style={styles.titleContainer}>
             {icon && (
               <View style={styles.iconContainer}>
-                <IconSymbol name={icon} size={20} color="#FFFFFF" />
+                <IconSymbol name={icon as any} size={20} color="#FFFFFF" />
               </View>
             )}
             <Text style={styles.title}>{title}</Text>

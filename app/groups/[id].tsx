@@ -46,9 +46,7 @@ export default function GroupDetailScreen() {
   const [invitations, setInvitations] = useState<GroupInvitationWithDetails[]>(
     [],
   );
-  const [sharedVehicles, setSharedVehicles] = useState<VehicleWithGroupInfo[]>(
-    [],
-  );
+  const [sharedVehicles, setSharedVehicles] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const colorScheme = useColorScheme();

@@ -638,6 +638,7 @@ export default function AddFuelLogScreen() {
                   label="Liters Filled"
                   value={formData.liters_filled.toFixed(3)}
                   placeholder="Auto-calculated"
+                  onChangeText={() => {}}
                   editable={false}
                   helperText="Auto-calculated from cost and price"
                   leftIcon="drop"

@@ -1,17 +1,17 @@
 import { supabase } from "../../services/supabaseClient";
-import { canUserAccessVehicle } from "../utils/serviceUtils";
 import {
-  MileageLog,
-  FuelLog,
-  ServiceLog,
-  MileageLogInsert,
-  FuelLogInsert,
-  ServiceLogInsert,
-  MileageLogUpdate,
-  FuelLogUpdate,
-  ServiceLogUpdate,
   ApiResponse,
+  FuelLog,
+  FuelLogInsert,
+  FuelLogUpdate,
+  MileageLog,
+  MileageLogInsert,
+  MileageLogUpdate,
+  ServiceLog,
+  ServiceLogInsert,
+  ServiceLogUpdate,
 } from "../../types";
+import { canUserAccessVehicle } from "../utils/serviceUtils";
 
 export class MileageLogService {
   static async getMileageLogs(
@@ -53,7 +53,7 @@ export class MileageLogService {
           .eq("user_id", user.id);
 
         if (!groupError && userGroups && userGroups.length > 0) {
-          const groupIds = userGroups.map((g) => g.group_id);
+          const groupIds = userGroups.map((g: { group_id: string }) => g.group_id);
 
           // Get vehicles shared with these groups
           const { data: sharedVehicles, error: shareError } = await supabase
@@ -62,7 +62,7 @@ export class MileageLogService {
             .in("group_id", groupIds);
 
           if (!shareError && sharedVehicles) {
-            sharedVehicleIds = sharedVehicles.map((sv) => sv.vehicle_id);
+            sharedVehicleIds = sharedVehicles.map((sv: { vehicle_id: string }) => sv.vehicle_id);
           }
         }
       }
@@ -110,7 +110,7 @@ export class MileageLogService {
 
       // Combine and sort all logs
       const ownedLogs = ownedLogsResult.data || [];
-      const sharedLogs = (sharedLogsResult.data || []).map((log) => ({
+      const sharedLogs = (sharedLogsResult.data || []).map((log: any) => ({
         ...log,
         is_shared_vehicle: true, // Mark as shared for UI indicators
       }));
@@ -179,8 +179,13 @@ export class MileageLogService {
 
       const { data, error } = await supabase
         .from("mileage_logs")
+        // @ts-ignore - Supabase type inference issue with insert
         .insert({
-          ...log,
+          id: log.id,
+          vehicle_id: log.vehicle_id,
+          date: log.date,
+          odometer_reading: log.odometer_reading,
+          notes: log.notes,
           user_id: user.id,
         })
         .select()
@@ -224,7 +229,7 @@ export class MileageLogService {
         .from("mileage_logs")
         .select("vehicle_id, user_id")
         .eq("id", id)
-        .single();
+        .single<{ vehicle_id: string; user_id: string }>();
 
       if (fetchError) {
         console.error("Error fetching existing mileage log:", fetchError);
@@ -265,7 +270,12 @@ export class MileageLogService {
       // Perform the update and return the results
       const { data: updateResult, error: updateError } = await supabase
         .from("mileage_logs")
-        .update(updates)
+        // @ts-ignore - Supabase type inference issue with update
+        .update({
+          odometer_reading: updates.odometer_reading,
+          date: updates.date,
+          notes: updates.notes,
+        })
         .eq("id", id)
         .select();
 
@@ -330,7 +340,7 @@ export class MileageLogService {
         .from("mileage_logs")
         .select("vehicle_id")
         .eq("id", id)
-        .single();
+        .single<{ vehicle_id: string }>();
 
       if (fetchError) {
         console.error(
@@ -369,7 +379,7 @@ export class MileageLogService {
           .from("vehicles")
           .select("user_id, make, model, year")
           .eq("id", existingLog.vehicle_id)
-          .single();
+          .single<{ user_id: string; make: string; model: string; year: number }>();
 
         if (!vehicleError && vehicle && vehicle.user_id !== user.id) {
           return {
@@ -472,7 +482,7 @@ export class FuelLogService {
           .eq("user_id", user.id);
 
         if (!groupError && userGroups && userGroups.length > 0) {
-          const groupIds = userGroups.map((g) => g.group_id);
+          const groupIds = userGroups.map((g: { group_id: string }) => g.group_id);
 
           // Get vehicles shared with these groups
           const { data: sharedVehicles, error: shareError } = await supabase
@@ -481,7 +491,7 @@ export class FuelLogService {
             .in("group_id", groupIds);
 
           if (!shareError && sharedVehicles) {
-            sharedVehicleIds = sharedVehicles.map((sv) => sv.vehicle_id);
+            sharedVehicleIds = sharedVehicles.map((sv: { vehicle_id: string }) => sv.vehicle_id);
           }
         }
       }
@@ -526,7 +536,7 @@ export class FuelLogService {
 
       // Combine and sort all logs
       const ownedLogs = ownedLogsResult.data || [];
-      const sharedLogs = (sharedLogsResult.data || []).map((log) => ({
+      const sharedLogs = (sharedLogsResult.data || []).map((log: any) => ({
         ...log,
         is_shared_vehicle: true, // Mark as shared for UI indicators
       }));
@@ -547,6 +557,51 @@ export class FuelLogService {
     } catch (error) {
       console.error("Unexpected error fetching fuel logs:", error);
       return { data: null, error: "Failed to fetch fuel logs", loading: false };
+    }
+  }
+
+  static async getFuelLogById(id: string): Promise<ApiResponse<FuelLog>> {
+    try {
+      const {
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser();
+
+      if (userError || !user) {
+        return { data: null, error: "User not authenticated", loading: false };
+      }
+
+      const { data, error } = await supabase
+        .from("fuel_logs")
+        .select(
+          `
+          *,
+          vehicles!inner(make, model, year, license_plate, user_id, main_image_url)
+        `
+        )
+        .eq("id", id)
+        .single();
+
+      if (error) {
+        console.error("Error fetching fuel log:", error);
+        return { data: null, error: error.message, loading: false };
+      }
+
+      if (data) {
+        const hasAccess = await canUserAccessVehicle((data as any).vehicle_id, user.id);
+        if (!hasAccess) {
+          return {
+            data: null,
+            error: "Access denied - you do not have permission to view this fuel log",
+            loading: false,
+          };
+        }
+      }
+
+      return { data, error: null, loading: false };
+    } catch (error) {
+      console.error("Unexpected error fetching fuel log:", error);
+      return { data: null, error: "Failed to fetch fuel log", loading: false };
     }
   }
 
@@ -576,8 +631,15 @@ export class FuelLogService {
 
       const { data, error } = await supabase
         .from("fuel_logs")
+        // @ts-ignore - Supabase type inference issue with insert
         .insert({
-          ...log,
+          id: log.id,
+          vehicle_id: log.vehicle_id,
+          date: log.date,
+          odometer_reading: log.odometer_reading,
+          liters_filled: log.liters_filled,
+          cost: log.cost,
+          location: log.location,
           user_id: user.id,
         })
         .select()
@@ -617,7 +679,7 @@ export class FuelLogService {
         .from("fuel_logs")
         .select("vehicle_id, user_id")
         .eq("id", id)
-        .single();
+        .single<{ vehicle_id: string; user_id: string }>();
 
       if (fetchError) {
         console.error("Error fetching existing fuel log:", fetchError);
@@ -658,7 +720,14 @@ export class FuelLogService {
       // Perform the update and return the results
       const { data: updateResult, error: updateError } = await supabase
         .from("fuel_logs")
-        .update(updates)
+        // @ts-ignore - Supabase type inference issue with update
+        .update({
+          liters_filled: updates.liters_filled,
+          cost: updates.cost,
+          date: updates.date,
+          odometer_reading: updates.odometer_reading,
+          location: updates.location,
+        })
         .eq("id", id)
         .select();
 
@@ -723,7 +792,7 @@ export class FuelLogService {
         .from("fuel_logs")
         .select("vehicle_id")
         .eq("id", id)
-        .single();
+        .single<{ vehicle_id: string }>();
 
       if (fetchError) {
         console.error(
@@ -762,7 +831,7 @@ export class FuelLogService {
           .from("vehicles")
           .select("user_id, make, model, year")
           .eq("id", existingLog.vehicle_id)
-          .single();
+          .single<{ user_id: string; make: string; model: string; year: number }>();
 
         if (!vehicleError && vehicle && vehicle.user_id !== user.id) {
           return {
@@ -865,7 +934,7 @@ export class ServiceLogService {
           .eq("user_id", user.id);
 
         if (!groupError && userGroups && userGroups.length > 0) {
-          const groupIds = userGroups.map((g) => g.group_id);
+          const groupIds = userGroups.map((g: { group_id: string }) => g.group_id);
 
           // Get vehicles shared with these groups
           const { data: sharedVehicles, error: shareError } = await supabase
@@ -874,7 +943,7 @@ export class ServiceLogService {
             .in("group_id", groupIds);
 
           if (!shareError && sharedVehicles) {
-            sharedVehicleIds = sharedVehicles.map((sv) => sv.vehicle_id);
+            sharedVehicleIds = sharedVehicles.map((sv: { vehicle_id: string }) => sv.vehicle_id);
           }
         }
       }
@@ -922,7 +991,7 @@ export class ServiceLogService {
 
       // Combine and sort all logs
       const ownedLogs = ownedLogsResult.data || [];
-      const sharedLogs = (sharedLogsResult.data || []).map((log) => ({
+      const sharedLogs = (sharedLogsResult.data || []).map((log: any) => ({
         ...log,
         is_shared_vehicle: true, // Mark as shared for UI indicators
       }));
@@ -976,8 +1045,19 @@ export class ServiceLogService {
 
       const { data, error } = await supabase
         .from("service_logs")
+        // @ts-ignore - Supabase type inference issue with insert
         .insert({
-          ...log,
+          id: log.id,
+          vehicle_id: log.vehicle_id,
+          service_type: log.service_type,
+          date: log.date,
+          odometer_reading: log.odometer_reading,
+          cost: log.cost,
+          description: log.description,
+          next_service_due: log.next_service_due,
+          receipt_image_url: log.receipt_image_url,
+          ocr_extracted_data: log.ocr_extracted_data,
+          auto_filled: log.auto_filled,
           user_id: user.id,
         })
         .select()
@@ -1021,7 +1101,7 @@ export class ServiceLogService {
         .from("service_logs")
         .select("vehicle_id, user_id")
         .eq("id", id)
-        .single();
+        .single<{ vehicle_id: string; user_id: string }>();
 
       if (fetchError) {
         console.error("Error fetching existing service log:", fetchError);
@@ -1062,7 +1142,18 @@ export class ServiceLogService {
       // Perform the update and return the results
       const { data: updateResult, error: updateError } = await supabase
         .from("service_logs")
-        .update(updates)
+        // @ts-ignore - Supabase type inference issue with update
+        .update({
+          service_type: updates.service_type,
+          description: updates.description,
+          cost: updates.cost,
+          date: updates.date,
+          odometer_reading: updates.odometer_reading,
+          next_service_due: updates.next_service_due,
+          receipt_image_url: updates.receipt_image_url,
+          ocr_extracted_data: updates.ocr_extracted_data,
+          auto_filled: updates.auto_filled,
+        })
         .eq("id", id)
         .select();
 
@@ -1127,7 +1218,7 @@ export class ServiceLogService {
         .from("service_logs")
         .select("vehicle_id")
         .eq("id", id)
-        .single();
+        .single<{ vehicle_id: string }>();
 
       if (fetchError) {
         console.error(

@@ -19,7 +19,7 @@ interface CardProps {
 }
 
 interface TouchableCardProps
-  extends CardProps,
+  extends Omit<CardProps, "onPress">,
     Omit<TouchableOpacityProps, "style" | "children"> {}
 
 export function Card({
@@ -34,7 +34,7 @@ export function Card({
   const colors = Colors[colorScheme ?? "light"];
 
   const getCardStyle = (): ViewStyle[] => {
-    const baseStyle = [styles.card];
+    const baseStyle: ViewStyle[] = [styles.card];
 
     // Variant styles
     switch (variant) {
