@@ -45,11 +45,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   const fetchUserProfile = async (user: User): Promise<AuthUser | null> => {
     try {
-      const { data: profile, error }: { data: Profile | null; error: any } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("id", user.id)
-        .single();
+      const { data: profile, error }: { data: Profile | null; error: any } =
+        await supabase.from("profiles").select("*").eq("id", user.id).single();
 
       if (error && error.code !== "PGRST116") {
         console.error("Error fetching user profile:", error);
@@ -241,10 +238,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
     try {
       const updateData: any = {
         ...updates,
-        updated_at: new Date().toISOString()
+        updated_at: new Date().toISOString(),
       };
-      const { error } = await (supabase
-        .from("profiles") as any)
+      const { error } = await (supabase.from("profiles") as any)
         .update(updateData)
         .eq("id", state.user.id);
 

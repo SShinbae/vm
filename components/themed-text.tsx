@@ -20,8 +20,10 @@ export function ThemedText({
 
   const color =
     colorScheme === "dark"
-      ? darkColor || (type === "link" ? theme.colors.primary : theme.colors.text)
-      : lightColor || (type === "link" ? theme.colors.primary : theme.colors.text);
+      ? darkColor ||
+        (type === "link" ? theme.colors.primary : theme.colors.text)
+      : lightColor ||
+        (type === "link" ? theme.colors.primary : theme.colors.text);
 
   return <Text style={[{ color }, styles[type], style]} {...rest} />;
 }

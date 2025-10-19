@@ -498,10 +498,12 @@ export const VehicleDetail: React.FC<VehicleDetailProps> = ({
                   styles.detailItem,
                   hoveredItem === "mileage" && styles.detailItemHovered,
                 ]}
-                {...(isWeb ? {
-                  onMouseEnter: () => setHoveredItem("mileage"),
-                  onMouseLeave: () => setHoveredItem(null),
-                } as any : {})}
+                {...(isWeb
+                  ? ({
+                      onMouseEnter: () => setHoveredItem("mileage"),
+                      onMouseLeave: () => setHoveredItem(null),
+                    } as any)
+                  : {})}
                 activeOpacity={1}
               >
                 <View style={styles.detailIcon}>
@@ -532,10 +534,12 @@ export const VehicleDetail: React.FC<VehicleDetailProps> = ({
                   styles.detailItem,
                   hoveredItem === "fuel" && styles.detailItemHovered,
                 ]}
-                {...(isWeb ? {
-                  onMouseEnter: () => setHoveredItem("fuel"),
-                  onMouseLeave: () => setHoveredItem(null),
-                } as any : {})}
+                {...(isWeb
+                  ? ({
+                      onMouseEnter: () => setHoveredItem("fuel"),
+                      onMouseLeave: () => setHoveredItem(null),
+                    } as any)
+                  : {})}
                 activeOpacity={1}
               >
                 <View style={styles.detailIcon}>
@@ -578,10 +582,12 @@ export const VehicleDetail: React.FC<VehicleDetailProps> = ({
                   styles.detailItem,
                   hoveredItem === "service" && styles.detailItemHovered,
                 ]}
-                {...(isWeb ? {
-                  onMouseEnter: () => setHoveredItem("service"),
-                  onMouseLeave: () => setHoveredItem(null),
-                } as any : {})}
+                {...(isWeb
+                  ? ({
+                      onMouseEnter: () => setHoveredItem("service"),
+                      onMouseLeave: () => setHoveredItem(null),
+                    } as any)
+                  : {})}
                 activeOpacity={1}
               >
                 <View style={styles.detailIcon}>
@@ -622,13 +628,14 @@ export const VehicleDetail: React.FC<VehicleDetailProps> = ({
               <TouchableOpacity
                 style={[
                   styles.detailItem,
-                  hoveredItem === "mileage-records" &&
-                    styles.detailItemHovered,
+                  hoveredItem === "mileage-records" && styles.detailItemHovered,
                 ]}
-                {...(isWeb ? {
-                  onMouseEnter: () => setHoveredItem("mileage-records"),
-                  onMouseLeave: () => setHoveredItem(null),
-                } as any : {})}
+                {...(isWeb
+                  ? ({
+                      onMouseEnter: () => setHoveredItem("mileage-records"),
+                      onMouseLeave: () => setHoveredItem(null),
+                    } as any)
+                  : {})}
                 activeOpacity={1}
               >
                 <View style={styles.detailIcon}>
@@ -659,7 +666,7 @@ export const VehicleDetail: React.FC<VehicleDetailProps> = ({
                   <Text style={styles.detailValue}>
                     {vehicle.logs?.latest_mileage
                       ? `${vehicle.logs.latest_mileage.odometer_reading.toLocaleString()} km on ${formatDate(
-                          vehicle.logs.latest_mileage.date
+                          vehicle.logs.latest_mileage.date,
                         )}`
                       : "No records"}
                   </Text>

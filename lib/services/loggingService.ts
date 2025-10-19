@@ -53,7 +53,9 @@ export class MileageLogService {
           .eq("user_id", user.id);
 
         if (!groupError && userGroups && userGroups.length > 0) {
-          const groupIds = userGroups.map((g: { group_id: string }) => g.group_id);
+          const groupIds = userGroups.map(
+            (g: { group_id: string }) => g.group_id,
+          );
 
           // Get vehicles shared with these groups
           const { data: sharedVehicles, error: shareError } = await supabase
@@ -62,7 +64,9 @@ export class MileageLogService {
             .in("group_id", groupIds);
 
           if (!shareError && sharedVehicles) {
-            sharedVehicleIds = sharedVehicles.map((sv: { vehicle_id: string }) => sv.vehicle_id);
+            sharedVehicleIds = sharedVehicles.map(
+              (sv: { vehicle_id: string }) => sv.vehicle_id,
+            );
           }
         }
       }
@@ -379,7 +383,12 @@ export class MileageLogService {
           .from("vehicles")
           .select("user_id, make, model, year")
           .eq("id", existingLog.vehicle_id)
-          .single<{ user_id: string; make: string; model: string; year: number }>();
+          .single<{
+            user_id: string;
+            make: string;
+            model: string;
+            year: number;
+          }>();
 
         if (!vehicleError && vehicle && vehicle.user_id !== user.id) {
           return {
@@ -482,7 +491,9 @@ export class FuelLogService {
           .eq("user_id", user.id);
 
         if (!groupError && userGroups && userGroups.length > 0) {
-          const groupIds = userGroups.map((g: { group_id: string }) => g.group_id);
+          const groupIds = userGroups.map(
+            (g: { group_id: string }) => g.group_id,
+          );
 
           // Get vehicles shared with these groups
           const { data: sharedVehicles, error: shareError } = await supabase
@@ -491,7 +502,9 @@ export class FuelLogService {
             .in("group_id", groupIds);
 
           if (!shareError && sharedVehicles) {
-            sharedVehicleIds = sharedVehicles.map((sv: { vehicle_id: string }) => sv.vehicle_id);
+            sharedVehicleIds = sharedVehicles.map(
+              (sv: { vehicle_id: string }) => sv.vehicle_id,
+            );
           }
         }
       }
@@ -577,7 +590,7 @@ export class FuelLogService {
           `
           *,
           vehicles!inner(make, model, year, license_plate, user_id, main_image_url)
-        `
+        `,
         )
         .eq("id", id)
         .single();
@@ -588,11 +601,15 @@ export class FuelLogService {
       }
 
       if (data) {
-        const hasAccess = await canUserAccessVehicle((data as any).vehicle_id, user.id);
+        const hasAccess = await canUserAccessVehicle(
+          (data as any).vehicle_id,
+          user.id,
+        );
         if (!hasAccess) {
           return {
             data: null,
-            error: "Access denied - you do not have permission to view this fuel log",
+            error:
+              "Access denied - you do not have permission to view this fuel log",
             loading: false,
           };
         }
@@ -831,7 +848,12 @@ export class FuelLogService {
           .from("vehicles")
           .select("user_id, make, model, year")
           .eq("id", existingLog.vehicle_id)
-          .single<{ user_id: string; make: string; model: string; year: number }>();
+          .single<{
+            user_id: string;
+            make: string;
+            model: string;
+            year: number;
+          }>();
 
         if (!vehicleError && vehicle && vehicle.user_id !== user.id) {
           return {
@@ -934,7 +956,9 @@ export class ServiceLogService {
           .eq("user_id", user.id);
 
         if (!groupError && userGroups && userGroups.length > 0) {
-          const groupIds = userGroups.map((g: { group_id: string }) => g.group_id);
+          const groupIds = userGroups.map(
+            (g: { group_id: string }) => g.group_id,
+          );
 
           // Get vehicles shared with these groups
           const { data: sharedVehicles, error: shareError } = await supabase
@@ -943,7 +967,9 @@ export class ServiceLogService {
             .in("group_id", groupIds);
 
           if (!shareError && sharedVehicles) {
-            sharedVehicleIds = sharedVehicles.map((sv: { vehicle_id: string }) => sv.vehicle_id);
+            sharedVehicleIds = sharedVehicles.map(
+              (sv: { vehicle_id: string }) => sv.vehicle_id,
+            );
           }
         }
       }

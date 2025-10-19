@@ -180,7 +180,11 @@ export function Button({
     }
 
     const iconElement = icon ? (
-      <IconSymbol name={icon as any} size={getIconSize()} color={getIconColor()} />
+      <IconSymbol
+        name={icon as any}
+        size={getIconSize()}
+        color={getIconColor()}
+      />
     ) : null;
 
     const textElement = <Text style={getTextStyle()}>{title}</Text>;

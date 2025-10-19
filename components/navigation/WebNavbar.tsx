@@ -4,12 +4,7 @@ import { useResponsiveLayout } from "@/hooks/use-responsive-layout";
 import { useAuth } from "@/lib/contexts/AuthContext";
 import { router, usePathname } from "expo-router";
 import React, { useState } from "react";
-import {
-  Platform,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { Platform, Text, TouchableOpacity, View } from "react-native";
 import { createStyleSheet, useStyles } from "react-native-unistyles";
 import type { SFSymbols6_0 } from "sf-symbols-typescript";
 

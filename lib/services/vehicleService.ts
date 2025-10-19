@@ -10,7 +10,7 @@ import {
   VehicleInsert,
   VehicleSharingConfig,
   VehicleUpdate,
-  VehicleWithDetails
+  VehicleWithDetails,
 } from "../../types/database-v2";
 import { uploadImage } from "../utils/imageUpload";
 // Service templates now use Supabase database storage
@@ -61,8 +61,9 @@ export class VehicleService {
       };
 
       // Use the database function for optimized query
-      const { data: vehicleData, error: vehicleError } = await (supabase as any)
-        .rpc("get_user_vehicles_with_sharing", { user_uuid: user.id });
+      const { data: vehicleData, error: vehicleError } = await (
+        supabase as any
+      ).rpc("get_user_vehicles_with_sharing", { user_uuid: user.id });
 
       if (vehicleError) {
         console.error("❌ Error fetching vehicles:", vehicleError);
@@ -70,7 +71,10 @@ export class VehicleService {
       }
 
       const typedVehicleData = vehicleData as VehicleSharingInfo[] | null;
-      console.log("✅ Raw vehicle data received:", typedVehicleData?.length || 0);
+      console.log(
+        "✅ Raw vehicle data received:",
+        typedVehicleData?.length || 0,
+      );
 
       // Enhance the data with additional information
       const enhancedVehicles: VehicleWithDetails[] = await Promise.all(
@@ -93,11 +97,12 @@ export class VehicleService {
                 group_id,
                 shared_at,
                 groups!inner(id, name, description)
-              `
+              `,
               )
               .eq("vehicle_id", vehicle.vehicle_id);
 
-            sharedGroups = shares?.map((share: any) => share.groups).filter(Boolean) || [];
+            sharedGroups =
+              shares?.map((share: any) => share.groups).filter(Boolean) || [];
           }
 
           // Get latest logs for stats
@@ -243,10 +248,10 @@ export class VehicleService {
 
       console.log("🔄 Sharing vehicle with groups:", { vehicleId, groupIds });
 
-            // Use the database function for atomic operation
+      // Use the database function for atomic operation
       const { error } = await (supabase as any).rpc(
         "share_vehicle_with_groups",
-        { vehicle_uuid: vehicleId, group_uuids: groupIds }
+        { vehicle_uuid: vehicleId, group_uuids: groupIds },
       );
 
       if (error) {
@@ -288,7 +293,7 @@ export class VehicleService {
         .select("user_id")
         .eq("id", vehicleId)
         .single();
-        
+
       const { data: vehicle, error: vehicleError } = vehicleResult as any;
 
       if (vehicleError || !vehicle) {
@@ -311,7 +316,7 @@ export class VehicleService {
           group_id,
           shared_at,
           groups!inner(id, name, description)
-        `
+        `,
         )
         .eq("vehicle_id", vehicleId);
 
@@ -436,7 +441,7 @@ export class VehicleService {
         } as any)
         .select()
         .single();
-        
+
       const { data: vehicle, error: vehicleError } = vehicleResult as any;
 
       if (vehicleError || !vehicle) {
@@ -505,14 +510,14 @@ export class VehicleService {
         ...updates,
         updated_at: new Date().toISOString(),
       };
-      
+
       const vehicleUpdateResult = await (supabase as any)
         .from("vehicles")
         .update(updateData)
         .eq("id", id)
         .select()
         .single();
-        
+
       const { data: vehicle, error: vehicleError } = vehicleUpdateResult as any;
 
       if (vehicleError || !vehicle) {
@@ -560,7 +565,7 @@ export class VehicleService {
         .select("user_id")
         .eq("id", id)
         .single();
-        
+
       const { data: vehicle, error: vehicleError } = vehicleResult as any;
 
       if (vehicleError || !vehicle) {
@@ -619,11 +624,11 @@ export class VehicleService {
           mileage_logs(*, created_at),
           fuel_logs(*, created_at),
           service_logs(*, created_at)
-        `
+        `,
         )
         .eq("id", id)
         .single();
-        
+
       const { data: vehicle, error: vehicleError } = vehicleResult as any;
 
       if (vehicleError) {
@@ -697,11 +702,17 @@ export class VehicleService {
           : undefined,
         // Use detailed logs from separate queries, fall back to nested query logs
         mileage_logs:
-          detailedLogsResult.data?.mileage_logs || (vehicle as any).mileage_logs || [],
+          detailedLogsResult.data?.mileage_logs ||
+          (vehicle as any).mileage_logs ||
+          [],
         fuel_logs:
-          detailedLogsResult.data?.fuel_logs || (vehicle as any).fuel_logs || [],
+          detailedLogsResult.data?.fuel_logs ||
+          (vehicle as any).fuel_logs ||
+          [],
         service_logs:
-          detailedLogsResult.data?.service_logs || (vehicle as any).service_logs || [],
+          detailedLogsResult.data?.service_logs ||
+          (vehicle as any).service_logs ||
+          [],
         logs: {
           latest_mileage:
             detailedLogsResult.data?.mileage_logs?.[0] ||
@@ -743,7 +754,7 @@ export class VehicleService {
         .from("vehicle_group_shares")
         .select("group_id")
         .eq("vehicle_id", vehicleId);
-        
+
       const { data: shares, error } = sharesResult as any;
 
       if (error || !shares || shares.length === 0) {
@@ -758,8 +769,9 @@ export class VehicleService {
         .select("group_id")
         .eq("user_id", userId)
         .in("group_id", sharedGroupIds);
-        
-      const { data: memberships, error: membershipError } = membershipsResult as any;
+
+      const { data: memberships, error: membershipError } =
+        membershipsResult as any;
 
       return !membershipError && memberships && memberships.length > 0;
     } catch (error) {
@@ -782,7 +794,7 @@ export class VehicleService {
         .eq("vehicle_id", vehicleId)
         .order("date", { ascending: false })
         .limit(1);
-        
+
       const { data: latestMileage } = latestMileageResult as any;
 
       // Get fuel efficiency (last 5 fuel-ups)
@@ -792,7 +804,7 @@ export class VehicleService {
         .eq("vehicle_id", vehicleId)
         .order("date", { ascending: false })
         .limit(5);
-        
+
       const { data: fuelLogs } = fuelLogsResult as any;
 
       // Get next service due
@@ -803,7 +815,7 @@ export class VehicleService {
         .not("next_service_due", "is", null)
         .order("next_service_due", { ascending: true })
         .limit(1);
-        
+
       const { data: nextService } = nextServiceResult as any;
 
       return {
@@ -835,8 +847,9 @@ export class VehicleService {
         .eq("vehicle_id", vehicleId)
         .order("date", { ascending: false })
         .limit(1);
-        
-      const { data: latestMileage, error: mileageError } = latestMileageResult as any;
+
+      const { data: latestMileage, error: mileageError } =
+        latestMileageResult as any;
 
       if (mileageError) {
         console.error("Error fetching latest mileage:", mileageError);
@@ -851,7 +864,7 @@ export class VehicleService {
           .from("vehicles")
           .update({ current_mileage: newMileage })
           .eq("id", vehicleId);
-          
+
         const { error: updateError } = updateResult as any;
 
         if (updateError) {
@@ -914,11 +927,12 @@ export class VehicleService {
             created_at,
             updated_at
           )
-        `
+        `,
         )
         .eq("user_id", user.id);
-        
-      const { data: memberGroups, error: memberError } = memberGroupsResult as any;
+
+      const { data: memberGroups, error: memberError } =
+        memberGroupsResult as any;
 
       if (memberError) {
         console.error("Error fetching member groups:", memberError);
@@ -1193,11 +1207,11 @@ export class VehicleService {
           `
           *,
           service_template_items(*)
-        `
+        `,
         )
         .eq("user_id", user.id)
         .order("created_at", { ascending: false });
-        
+
       const { data: templates, error: templatesError } = templatesResult as any;
 
       if (templatesError) {
@@ -1266,12 +1280,12 @@ export class VehicleService {
           `
           *,
           service_template_items(*)
-        `
+        `,
         )
         .eq("id", id)
         .eq("user_id", user.id)
         .single();
-        
+
       const { data: template, error: templateError } = templateResult as any;
 
       if (templateError) {
@@ -1365,7 +1379,7 @@ export class VehicleService {
         })
         .select()
         .single();
-        
+
       const { data: template, error: templateError } = templateResult as any;
 
       if (templateError || !template) {
@@ -1385,7 +1399,7 @@ export class VehicleService {
         const itemsResult = (supabase as any)
           .from("service_template_items")
           .insert(templateItems);
-          
+
         const { error: itemsError } = itemsResult as any;
 
         if (itemsError) {
@@ -1472,7 +1486,7 @@ export class VehicleService {
           description: formData.description || "",
         })
         .eq("id", id);
-        
+
       const { error: updateError } = updateResult;
 
       if (updateError) {
@@ -1506,7 +1520,7 @@ export class VehicleService {
         const itemsResult = await (supabase as any)
           .from("service_template_items")
           .insert(templateItems);
-          
+
         const { error: itemsError } = itemsResult;
 
         if (itemsError) {
