@@ -42,7 +42,9 @@ export class VehicleServiceFallback {
 
       if (groupMemberships && groupMemberships.length > 0) {
         // Get all group IDs where user is a member
-        const groupIds = groupMemberships.map((gm: { group_id: string }) => gm.group_id);
+        const groupIds = groupMemberships.map(
+          (gm: { group_id: string }) => gm.group_id,
+        );
 
         // Get all other members of these groups
         const { data: allGroupMembers } = await supabase
@@ -53,7 +55,9 @@ export class VehicleServiceFallback {
 
         if (allGroupMembers && allGroupMembers.length > 0) {
           const memberUserIds = [
-            ...new Set(allGroupMembers.map((gm: { user_id: string }) => gm.user_id)),
+            ...new Set(
+              allGroupMembers.map((gm: { user_id: string }) => gm.user_id),
+            ),
           ];
 
           // Check if shared_with_groups column exists by trying to query it
@@ -92,7 +96,13 @@ export class VehicleServiceFallback {
             groupVehicles = memberVehicles.map((vehicle: Vehicle) => ({
               ...vehicle,
               owner_profile:
-                ownerProfiles?.find((p: { id: string; full_name: string | null; email: string }) => p.id === vehicle.user_id) || null,
+                ownerProfiles?.find(
+                  (p: {
+                    id: string;
+                    full_name: string | null;
+                    email: string;
+                  }) => p.id === vehicle.user_id,
+                ) || null,
               is_group_vehicle: true,
             }));
           }
@@ -269,8 +279,7 @@ export class VehicleServiceFallback {
         updated_at: new Date().toISOString(),
       };
 
-      const { data, error } = await (supabase
-        .from("vehicles") as any)
+      const { data, error } = await (supabase.from("vehicles") as any)
         .update(updateData)
         .eq("id", id)
         .select()
@@ -334,7 +343,8 @@ export class VehicleServiceFallback {
         .limit(1);
 
       return {
-        currentMileage: (latestMileage as MileageResult[] | null)?.[0]?.odometer_reading || 0,
+        currentMileage:
+          (latestMileage as MileageResult[] | null)?.[0]?.odometer_reading || 0,
         fuelLogs: fuelLogs || [],
         nextService: nextService?.[0] || null,
       };
@@ -396,8 +406,7 @@ export class VehicleServiceFallback {
           updated_at: new Date().toISOString(),
         };
 
-        const { data, error } = await (supabase
-          .from("vehicles") as any)
+        const { data, error } = await (supabase.from("vehicles") as any)
           .update(updateData)
           .eq("id", vehicleId)
           .select()

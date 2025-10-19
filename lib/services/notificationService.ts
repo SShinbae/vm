@@ -45,7 +45,9 @@ class NotificationService {
       .select("group_id")
       .eq("user_id", this.userId);
 
-    this.userGroupIds = (userGroups as { group_id: string }[] | null)?.map((g) => g.group_id) || [];
+    this.userGroupIds =
+      (userGroups as { group_id: string }[] | null)?.map((g) => g.group_id) ||
+      [];
 
     // Get user's vehicles (owned)
     const { data: vehicles } = await supabase
@@ -53,7 +55,8 @@ class NotificationService {
       .select("id")
       .eq("user_id", this.userId);
 
-    this.userVehicleIds = (vehicles as { id: string }[] | null)?.map((v) => v.id) || [];
+    this.userVehicleIds =
+      (vehicles as { id: string }[] | null)?.map((v) => v.id) || [];
 
     // Get shared vehicles through groups
     if (this.userGroupIds.length > 0) {
@@ -62,7 +65,10 @@ class NotificationService {
         .select("vehicle_id")
         .in("group_id", this.userGroupIds);
 
-      const sharedVehicleIds = (sharedVehicles as { vehicle_id: string }[] | null)?.map((sv) => sv.vehicle_id) || [];
+      const sharedVehicleIds =
+        (sharedVehicles as { vehicle_id: string }[] | null)?.map(
+          (sv) => sv.vehicle_id,
+        ) || [];
       this.userVehicleIds = [...this.userVehicleIds, ...sharedVehicleIds];
     }
   }
@@ -198,7 +204,11 @@ class NotificationService {
       .eq("id", newRecord?.user_id || oldRecord?.user_id)
       .single();
 
-    const vehicleData = vehicle as { make: string; model: string; year: number } | null;
+    const vehicleData = vehicle as {
+      make: string;
+      model: string;
+      year: number;
+    } | null;
     const userData = user as { full_name: string | null; email: string } | null;
 
     const vehicleName = vehicleData
@@ -319,7 +329,10 @@ class NotificationService {
 
     const userProfileData = userProfile as { email: string } | null;
 
-    if (!userProfileData || newRecord.email !== userProfileData.email.toLowerCase()) {
+    if (
+      !userProfileData ||
+      newRecord.email !== userProfileData.email.toLowerCase()
+    ) {
       return;
     }
 
@@ -337,10 +350,14 @@ class NotificationService {
       .single();
 
     const groupData = group as { name: string } | null;
-    const inviterData = inviter as { full_name: string | null; email: string } | null;
+    const inviterData = inviter as {
+      full_name: string | null;
+      email: string;
+    } | null;
 
     const groupName = groupData?.name || "Unknown Group";
-    const inviterName = inviterData?.full_name || inviterData?.email || "Someone";
+    const inviterName =
+      inviterData?.full_name || inviterData?.email || "Someone";
 
     const notification: NotificationData = {
       id: `invite-${newRecord.id}`,

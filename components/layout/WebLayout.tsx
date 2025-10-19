@@ -39,7 +39,12 @@ export function WebLayout({
   // Desktop/tablet layout with sidebar
   return (
     <View style={styles.container as ViewStyle}>
-      <View style={[styles.webLayout as ViewStyle, { maxWidth: layout.maxContentWidth }]}>
+      <View
+        style={[
+          styles.webLayout as ViewStyle,
+          { maxWidth: layout.maxContentWidth },
+        ]}
+      >
         {sidebarContent && (
           <View style={styles.sidebar as ViewStyle}>
             <ScrollView

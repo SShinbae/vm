@@ -172,8 +172,12 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
       } else {
         const imageUrl =
           type === "avatar"
-            ? (typeof result.data === 'string' ? result.data : result.data!.image_url)
-            : (typeof result.data === 'string' ? result.data : result.data!.image_url);
+            ? typeof result.data === "string"
+              ? result.data
+              : result.data!.image_url
+            : typeof result.data === "string"
+              ? result.data
+              : result.data!.image_url;
         onUploadComplete?.(imageUrl as string);
         Alert.alert("Success", "Image uploaded successfully!");
       }
@@ -268,8 +272,12 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
       } else {
         const imageUrl =
           type === "avatar"
-            ? (typeof result.data === 'string' ? result.data : result.data!.image_url)
-            : (typeof result.data === 'string' ? result.data : result.data!.image_url);
+            ? typeof result.data === "string"
+              ? result.data
+              : result.data!.image_url
+            : typeof result.data === "string"
+              ? result.data
+              : result.data!.image_url;
         console.log("✅ Upload successful! Image URL:", imageUrl);
         onUploadComplete?.(imageUrl as string);
         Alert.alert("Success", "Image uploaded successfully!");

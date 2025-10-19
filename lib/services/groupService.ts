@@ -23,7 +23,7 @@ export class GroupService {
       }
 
       // Get groups owned by user
-      const { data: ownedGroups, error: ownedError } = await supabase
+      const { data: ownedGroups, error: ownedError } = (await supabase
         .from("groups")
         .select(
           `
@@ -35,7 +35,10 @@ export class GroupService {
         `,
         )
         .eq("owner_id", user.id)
-        .order("created_at", { ascending: false }) as { data: any[] | null; error: any };
+        .order("created_at", { ascending: false })) as {
+        data: any[] | null;
+        error: any;
+      };
 
       if (ownedError) {
         console.error("Error fetching owned groups:", ownedError);
@@ -43,10 +46,13 @@ export class GroupService {
       }
 
       // Get groups where user is a member (simpler approach)
-      const { data: membershipData, error: memberError } = await supabase
+      const { data: membershipData, error: memberError } = (await supabase
         .from("group_members")
         .select("group_id")
-        .eq("user_id", user.id) as { data: { group_id: string }[] | null; error: any };
+        .eq("user_id", user.id)) as {
+        data: { group_id: string }[] | null;
+        error: any;
+      };
 
       if (memberError) {
         console.error("Error fetching member groups:", memberError);
@@ -140,7 +146,10 @@ export class GroupService {
         .from("groups")
         .select("*")
         .eq("id", id)
-        .single()) as { data: Database["public"]["Tables"]["groups"]["Row"] | null; error: any };
+        .single()) as {
+        data: Database["public"]["Tables"]["groups"]["Row"] | null;
+        error: any;
+      };
 
       if (groupError) {
         console.error("Error fetching group:", groupError);
@@ -228,14 +237,17 @@ export class GroupService {
         return { data: null, error: "User not authenticated", loading: false };
       }
 
-      const { data, error} = (await supabase
+      const { data, error } = (await supabase
         .from("groups")
         .insert({
           ...group,
           owner_id: user.id,
         } as any)
         .select()
-        .single()) as { data: Database["public"]["Tables"]["groups"]["Row"] | null; error: any };
+        .single()) as {
+        data: Database["public"]["Tables"]["groups"]["Row"] | null;
+        error: any;
+      };
 
       if (error) {
         console.error("Error creating group:", error);
@@ -243,12 +255,10 @@ export class GroupService {
       }
 
       // Automatically add the creator as a member
-      await supabase
-        .from("group_members")
-        .insert({
-          group_id: data!.id,
-          user_id: user.id,
-        } as any);
+      await supabase.from("group_members").insert({
+        group_id: data!.id,
+        user_id: user.id,
+      } as any);
 
       return { data, error: null, loading: false };
     } catch (error) {
@@ -271,7 +281,10 @@ export class GroupService {
         })
         .eq("id", id)
         .select()
-        .single()) as { data: Database["public"]["Tables"]["groups"]["Row"] | null; error: any };
+        .single()) as {
+        data: Database["public"]["Tables"]["groups"]["Row"] | null;
+        error: any;
+      };
 
       if (error) {
         console.error("Error updating group:", error);
@@ -884,7 +897,10 @@ export class GroupInvitationService {
         .from("groups")
         .select("owner_id, name")
         .eq("id", groupId)
-        .single()) as { data: { owner_id: string; name: string } | null; error: any };
+        .single()) as {
+        data: { owner_id: string; name: string } | null;
+        error: any;
+      };
 
       if (groupError) {
         console.error("Error fetching group:", groupError);
@@ -965,7 +981,10 @@ export class GroupInvitationService {
         .from("groups")
         .select("owner_id, name")
         .eq("id", groupId)
-        .single()) as { data: { owner_id: string; name: string } | null; error: any };
+        .single()) as {
+        data: { owner_id: string; name: string } | null;
+        error: any;
+      };
 
       if (groupError || !group) {
         console.error("Error fetching group:", groupError);
