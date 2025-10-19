@@ -1,6 +1,3 @@
-#!/usr/bin/env sh
-. "$(dirname -- "$0")/_/husky.sh"
-
 echo "🔨 Running build check before push..."
 # Temporarily skip build check due to module resolution issues in git hooks
 echo "⚠️  Build check temporarily disabled - please run 'npm build' manually before pushing"
