@@ -11,7 +11,7 @@ import { StatusBar } from "expo-status-bar";
 import { useCallback, useEffect } from "react";
 import { Platform, View } from "react-native";
 import "react-native-reanimated";
-import "../unistyles"; // Import Unistyles configuration
+import "../unistyles";
 
 import { AuthGuard } from "@/components/AuthGuard";
 import { useColorScheme } from "@/hooks/use-color-scheme";
