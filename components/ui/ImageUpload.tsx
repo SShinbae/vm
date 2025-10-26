@@ -1,19 +1,19 @@
-import React, { useState, useRef } from "react";
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-  Alert,
-  ActivityIndicator,
-  Platform,
-} from "react-native";
-import { Image } from "expo-image";
-import * as ImagePicker from "expo-image-picker";
-import { IconSymbol } from "./icon-symbol";
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { ImageUploadService } from "@/lib/services/imageUploadService";
+import { Image } from "expo-image";
+import * as ImagePicker from "expo-image-picker";
+import React, { useRef, useState } from "react";
+import {
+  ActivityIndicator,
+  Alert,
+  Platform,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { IconSymbol } from "./icon-symbol";
 import { ImageCropModal } from "./ImageCropModal";
 
 interface ImageUploadProps {
