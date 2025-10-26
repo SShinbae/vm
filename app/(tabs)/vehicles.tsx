@@ -600,18 +600,14 @@ export default function VehiclesScreen() {
 
             {/* Filter Chips */}
             <View style={styles.section}>
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.filterChipsContainer}
-              >
+              <View style={styles.filterChipsWrapper}>
                 <FilterChip filter="all" label="All Vehicles" />
                 <FilterChip filter="own" label="My Vehicles" />
                 <FilterChip filter="shared" label="Shared" />
                 <FilterChip filter="2020-2025" label="2020-2025" />
                 <FilterChip filter="2015-2019" label="2015-2019" />
                 <FilterChip filter="before-2015" label="Before 2015" />
-              </ScrollView>
+              </View>
             </View>
 
             {/* Vehicles Grid */}
@@ -952,8 +948,6 @@ const stylesheet = createStyleSheet((theme) => ({
     paddingHorizontal: theme.spacing.xl,
     paddingVertical: theme.spacing.lg,
     backgroundColor: theme.colors.background,
-    borderBottomWidth: 1,
-    borderBottomColor: theme.colors.border,
   },
   greeting: {
     fontSize: theme.fontSize["3xl"],
@@ -969,7 +963,7 @@ const stylesheet = createStyleSheet((theme) => ({
     flex: 1,
   },
   scrollContent: {
-    paddingBottom: 100, // Space for FAB
+    paddingBottom: theme.spacing.xxxl,
   },
   section: {
     paddingHorizontal: theme.spacing.xl,
@@ -985,6 +979,7 @@ const stylesheet = createStyleSheet((theme) => ({
     fontSize: theme.fontSize.xl,
     fontWeight: theme.fontWeight.semibold,
     color: theme.colors.text,
+    marginBottom: theme.spacing.lg,
   },
   countBadge: {
     backgroundColor: theme.colors.primary,
@@ -1000,25 +995,32 @@ const stylesheet = createStyleSheet((theme) => ({
     color: theme.colors.white,
   },
 
-  // Stats Grid
   statsGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
+    justifyContent: "space-between",
     gap: theme.spacing.md,
   },
   statCard: {
-    width: "47%",
+    width: "47%", // Approximate 50% minus gap
     backgroundColor: theme.colors.surface,
     borderRadius: theme.borderRadius.xl,
     padding: theme.spacing.lg,
     shadowColor: theme.colors.black,
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
     shadowOpacity: 0.1,
     shadowRadius: 8,
     elevation: 4,
   },
+
   statHeader: {
-    marginBottom: theme.spacing.md,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: theme.spacing.sm,
   },
   statIconContainer: {
     width: 48,
@@ -1055,11 +1057,13 @@ const stylesheet = createStyleSheet((theme) => ({
     color: theme.colors.text,
   },
 
-  // Filter Chips
-  filterChipsContainer: {
+  filterChipsWrapper: {
+    flexDirection: "row",
+    flexWrap: "wrap",
     gap: theme.spacing.sm,
     paddingVertical: theme.spacing.xs,
   },
+
   filterChip: {
     backgroundColor: theme.colors.surface,
     borderRadius: theme.borderRadius.full,
@@ -1067,7 +1071,11 @@ const stylesheet = createStyleSheet((theme) => ({
     paddingVertical: theme.spacing.sm,
     borderWidth: 1,
     borderColor: theme.colors.border,
+    minWidth: "30%", // Ensures 3 items per row on mobile
+    alignItems: "center",
+    justifyContent: "center",
   },
+
   filterChipActive: {
     backgroundColor: theme.colors.primary,
     borderColor: theme.colors.primary,

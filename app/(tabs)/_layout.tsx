@@ -2,7 +2,7 @@ import { Tabs } from "expo-router";
 import React from "react";
 import { Platform, StyleSheet, View } from "react-native";
 
-import { HapticTab } from "@/components/haptic-tab";
+import { ResponsiveTabBar } from "@/components/navigation/ResponsiveTabBar";
 import { WebSidebar } from "@/components/navigation/WebSidebar";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { Colors } from "@/constants/theme";
@@ -38,77 +38,24 @@ function TabLayoutContent() {
             !layout.isMobile && {
               marginLeft: isOpen ? 240 : 60,
             },
-          // Mobile web: add bottom padding for tab bar
-          Platform.OS === "web" &&
-            layout.isMobile && {
-              paddingBottom: 110, // Space for larger bottom tab bar on mobile web
-              backgroundColor: Colors[colorScheme ?? "light"].background,
-            },
         ]}
       >
         <Tabs
+          tabBar={(props) =>
+            showTabBar ? <ResponsiveTabBar {...props} /> : null
+          }
           screenOptions={{
             tabBarActiveTintColor: Colors[colorScheme ?? "light"].tint,
-            tabBarInactiveTintColor: Colors[colorScheme ?? "light"].icon,
             headerShown: false,
-            tabBarButton: HapticTab,
-            tabBarShowLabel: true, // Explicitly show labels
-            tabBarLabelStyle: {
-              fontSize: Platform.OS === "web" && layout.isMobile ? 13 : 11,
-              fontWeight: "600",
-              marginTop: Platform.OS === "web" && layout.isMobile ? 2 : -2,
-              marginBottom: Platform.OS === "web" && layout.isMobile ? 4 : 2,
-              textAlign: "center",
-            } as any, // Type assertion for web-specific properties
-            // Force labels to show on mobile web
-            tabBarHideOnKeyboard: false,
-            tabBarVisibilityAnimationConfig: {
-              show: { animation: "timing", config: { duration: 200 } },
-              hide: { animation: "timing", config: { duration: 200 } },
-            },
-            tabBarStyle: showTabBar
-              ? {
-                  backgroundColor: "transparent",
-                  borderTopColor: "transparent",
-                  borderTopWidth: 0,
-                  height: Platform.OS === "web" && layout.isMobile ? 90 : 70,
-                  paddingBottom:
-                    Platform.OS === "web" && layout.isMobile ? 20 : 12,
-                  paddingTop: 12,
-                  paddingHorizontal: Platform.OS === "web" ? 16 : 8,
-                  ...Platform.select({
-                    web: layout.isMobile
-                      ? {
-                          position: "fixed" as any,
-                          bottom: 0,
-                          left: 0,
-                          right: 0,
-                          zIndex: 1000,
-                          background:
-                            colorScheme === "dark"
-                              ? "rgba(24, 24, 27, 0.95)"
-                              : "rgba(255, 255, 255, 0.95)",
-                          backdropFilter: "blur(10px)",
-                          boxShadow: "0 -4px 20px rgba(0, 0, 0, 0.1)",
-                          borderRadius: "16px 16px 0 0",
-                        }
-                      : undefined,
-                  }),
-                }
-              : { display: "none" },
           }}
         >
           <Tabs.Screen
             name="index"
             options={{
-              title: "Dashboard",
-              tabBarLabel: "Dashboard",
-              tabBarIcon: ({ color }) => (
-                <IconSymbol
-                  size={Platform.OS === "web" && layout.isMobile ? 32 : 28}
-                  name="house.fill"
-                  color={color}
-                />
+              title: "Home",
+              tabBarLabel: "Home",
+              tabBarIcon: ({ color, size }) => (
+                <IconSymbol name="house.fill" size={size} color={color} />
               ),
             }}
           />
@@ -117,12 +64,8 @@ function TabLayoutContent() {
             options={{
               title: "Vehicles",
               tabBarLabel: "Vehicles",
-              tabBarIcon: ({ color }) => (
-                <IconSymbol
-                  size={Platform.OS === "web" && layout.isMobile ? 32 : 28}
-                  name="car.fill"
-                  color={color}
-                />
+              tabBarIcon: ({ color, size }) => (
+                <IconSymbol name="car.fill" size={size} color={color} />
               ),
             }}
           />
@@ -131,10 +74,10 @@ function TabLayoutContent() {
             options={{
               title: "Analytics",
               tabBarLabel: "Analytics",
-              tabBarIcon: ({ color }) => (
+              tabBarIcon: ({ color, size }) => (
                 <IconSymbol
-                  size={Platform.OS === "web" && layout.isMobile ? 32 : 28}
                   name="chart.line.uptrend.xyaxis"
+                  size={size}
                   color={color}
                 />
               ),
@@ -145,26 +88,8 @@ function TabLayoutContent() {
             options={{
               title: "Logs",
               tabBarLabel: "Logs",
-              tabBarIcon: ({ color }) => (
-                <IconSymbol
-                  size={Platform.OS === "web" && layout.isMobile ? 32 : 28}
-                  name="doc.text.fill"
-                  color={color}
-                />
-              ),
-            }}
-          />
-          <Tabs.Screen
-            name="groups"
-            options={{
-              title: "Groups",
-              tabBarLabel: "Groups",
-              tabBarIcon: ({ color }) => (
-                <IconSymbol
-                  size={Platform.OS === "web" && layout.isMobile ? 32 : 28}
-                  name="person.3.fill"
-                  color={color}
-                />
+              tabBarIcon: ({ color, size }) => (
+                <IconSymbol name="doc.text.fill" size={size} color={color} />
               ),
             }}
           />
@@ -173,13 +98,15 @@ function TabLayoutContent() {
             options={{
               title: "Profile",
               tabBarLabel: "Profile",
-              tabBarIcon: ({ color }) => (
-                <IconSymbol
-                  size={Platform.OS === "web" && layout.isMobile ? 32 : 28}
-                  name="person.fill"
-                  color={color}
-                />
+              tabBarIcon: ({ color, size }) => (
+                <IconSymbol name="person.fill" size={size} color={color} />
               ),
+            }}
+          />
+          <Tabs.Screen
+            name="groups"
+            options={{
+              href: null,
             }}
           />
         </Tabs>
