@@ -1,7 +1,7 @@
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { useAuth } from "@/lib/contexts/AuthContext";
-import { Database } from "@/types/database";
 import supabase from "@/services/supabaseClient";
+import { Database } from "@/types/database";
 import { Image } from "expo-image";
 import { router } from "expo-router";
 import React, { useCallback, useEffect, useState } from "react";
@@ -12,7 +12,6 @@ import {
   Text,
   TouchableOpacity,
   View,
-  FlatList,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { createStyleSheet, useStyles } from "react-native-unistyles";
@@ -731,10 +730,11 @@ const stylesheet = createStyleSheet((theme) => ({
   statsGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
+    justifyContent: "space-between",
     gap: theme.spacing.md,
   },
   statCard: {
-    width: "47%",
+    width: "47%", // Approximate 50% minus gap
     backgroundColor: theme.colors.surface,
     borderRadius: theme.borderRadius.xl,
     padding: theme.spacing.lg,

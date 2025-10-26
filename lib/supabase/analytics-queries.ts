@@ -1,0 +1,309 @@
+import { supabase } from "../../services/supabaseClient";
+import { FuelLog, ServiceLog, MileageLog, Vehicle } from "../../types";
+import {
+  AnalyticsFilters,
+  AnalyticsData,
+  VehicleWithLogs,
+} from "../../types/analytics";
+
+/**
+ * Fetch all analytics data based on filters
+ */
+export async function fetchAnalyticsData(
+  userId: string,
+  filters: AnalyticsFilters,
+): Promise<AnalyticsData> {
+  try {
+    const { startDate, endDate } = filters.period;
+    const { vehicleIds, groupId } = filters;
+
+    // Determine which vehicles to query
+    let targetVehicleIds: string[] = [];
+
+    if (groupId) {
+      // Fetch vehicles shared with the group
+      const { data: groupVehicles, error: groupError } = await supabase
+        .from("vehicle_group_shares")
+        .select("vehicle_id")
+        .eq("group_id", groupId);
+
+      if (groupError) throw groupError;
+      targetVehicleIds = groupVehicles?.map((v: any) => v.vehicle_id) || [];
+    } else if (vehicleIds.length > 0) {
+      // Use specified vehicle IDs
+      targetVehicleIds = vehicleIds;
+    } else {
+      // Fetch all user's vehicles
+      const { data: userVehicles, error: vehicleError } = await supabase
+        .from("vehicles")
+        .select("id")
+        .eq("user_id", userId);
+
+      if (vehicleError) throw vehicleError;
+      targetVehicleIds = userVehicles?.map((v: any) => v.id) || [];
+    }
+
+    if (targetVehicleIds.length === 0) {
+      return {
+        fuelLogs: [],
+        serviceLogs: [],
+        mileageLogs: [],
+        vehicles: [],
+      };
+    }
+
+    // Fetch all data in parallel
+    const [
+      fuelLogsResult,
+      serviceLogsResult,
+      mileageLogsResult,
+      vehiclesResult,
+    ] = await Promise.all([
+      supabase
+        .from("fuel_logs")
+        .select("*")
+        .in("vehicle_id", targetVehicleIds)
+        .gte("date", startDate.toISOString())
+        .lte("date", endDate.toISOString())
+        .order("date", { ascending: true }),
+
+      supabase
+        .from("service_logs")
+        .select("*")
+        .in("vehicle_id", targetVehicleIds)
+        .gte("date", startDate.toISOString())
+        .lte("date", endDate.toISOString())
+        .order("date", { ascending: true }),
+
+      supabase
+        .from("mileage_logs")
+        .select("*")
+        .in("vehicle_id", targetVehicleIds)
+        .gte("date", startDate.toISOString())
+        .lte("date", endDate.toISOString())
+        .order("date", { ascending: true }),
+
+      supabase.from("vehicles").select("*").in("id", targetVehicleIds),
+    ]);
+
+    // Check for errors
+    if (fuelLogsResult.error) throw fuelLogsResult.error;
+    if (serviceLogsResult.error) throw serviceLogsResult.error;
+    if (mileageLogsResult.error) throw mileageLogsResult.error;
+    if (vehiclesResult.error) throw vehiclesResult.error;
+
+    return {
+      fuelLogs: (fuelLogsResult.data as FuelLog[]) || [],
+      serviceLogs: (serviceLogsResult.data as ServiceLog[]) || [],
+      mileageLogs: (mileageLogsResult.data as MileageLog[]) || [],
+      vehicles: (vehiclesResult.data as Vehicle[]) || [],
+    };
+  } catch (error) {
+    console.error("Error fetching analytics data:", error);
+    throw error;
+  }
+}
+
+/**
+ * Fetch a single vehicle with all its logs
+ */
+export async function fetchVehicleWithLogs(
+  vehicleId: string,
+  startDate: Date,
+  endDate: Date,
+): Promise<VehicleWithLogs | null> {
+  try {
+    const [
+      vehicleResult,
+      fuelLogsResult,
+      serviceLogsResult,
+      mileageLogsResult,
+    ] = (await Promise.all([
+      supabase.from("vehicles").select("*").eq("id", vehicleId).single(),
+
+      supabase
+        .from("fuel_logs")
+        .select("*")
+        .eq("vehicle_id", vehicleId)
+        .gte("date", startDate.toISOString())
+        .lte("date", endDate.toISOString())
+        .order("date", { ascending: true }),
+
+      supabase
+        .from("service_logs")
+        .select("*")
+        .eq("vehicle_id", vehicleId)
+        .gte("date", startDate.toISOString())
+        .lte("date", endDate.toISOString())
+        .order("date", { ascending: true }),
+
+      supabase
+        .from("mileage_logs")
+        .select("*")
+        .eq("vehicle_id", vehicleId)
+        .gte("date", startDate.toISOString())
+        .lte("date", endDate.toISOString())
+        .order("date", { ascending: true }),
+    ])) as any;
+
+    if (vehicleResult.error) throw vehicleResult.error;
+    if (!vehicleResult.data) return null;
+
+    if (fuelLogsResult.error) throw fuelLogsResult.error;
+    if (serviceLogsResult.error) throw serviceLogsResult.error;
+    if (mileageLogsResult.error) throw mileageLogsResult.error;
+
+    return {
+      ...(vehicleResult.data as Vehicle),
+      fuel_logs: (fuelLogsResult.data as FuelLog[]) || [],
+      service_logs: (serviceLogsResult.data as ServiceLog[]) || [],
+      mileage_logs: (mileageLogsResult.data as MileageLog[]) || [],
+    };
+  } catch (error) {
+    console.error("Error fetching vehicle with logs:", error);
+    throw error;
+  }
+}
+
+/**
+ * Fetch upcoming services (services with next_service_due populated)
+ */
+export async function fetchUpcomingServices(
+  userId: string,
+): Promise<ServiceLog[]> {
+  try {
+    // First get user's vehicle IDs
+    const { data: vehicles, error: vehicleError } = await supabase
+      .from("vehicles")
+      .select("id")
+      .eq("user_id", userId);
+
+    if (vehicleError) throw vehicleError;
+    if (!vehicles || vehicles.length === 0) return [];
+
+    const vehicleIds = vehicles.map((v: any) => v.id);
+
+    // Fetch services with next_service_due
+    const { data, error } = await supabase
+      .from("service_logs")
+      .select("*")
+      .in("vehicle_id", vehicleIds)
+      .not("next_service_due", "is", null)
+      .order("date", { ascending: false });
+
+    if (error) throw error;
+
+    return (data as ServiceLog[]) || [];
+  } catch (error) {
+    console.error("Error fetching upcoming services:", error);
+    throw error;
+  }
+}
+
+/**
+ * Fetch multiple vehicles with their logs
+ */
+export async function fetchVehiclesWithLogs(
+  vehicleIds: string[],
+  startDate: Date,
+  endDate: Date,
+): Promise<VehicleWithLogs[]> {
+  try {
+    if (vehicleIds.length === 0) return [];
+
+    const results = await Promise.all(
+      vehicleIds.map((id) => fetchVehicleWithLogs(id, startDate, endDate)),
+    );
+
+    return results.filter((v): v is VehicleWithLogs => v !== null);
+  } catch (error) {
+    console.error("Error fetching vehicles with logs:", error);
+    throw error;
+  }
+}
+
+/**
+ * Fetch all accessible vehicles for a user (owned + group-shared)
+ */
+export async function fetchAccessibleVehicles(
+  userId: string,
+): Promise<Vehicle[]> {
+  try {
+    // Fetch user's own vehicles
+    const { data: ownVehicles, error: ownError } = await supabase
+      .from("vehicles")
+      .select("*")
+      .eq("user_id", userId);
+
+    if (ownError) throw ownError;
+
+    // TODO: Add group-shared vehicles when RPC function is created
+    // For now, just return owned vehicles
+    return (ownVehicles as Vehicle[]) || [];
+  } catch (error) {
+    console.error("Error fetching accessible vehicles:", error);
+    throw error;
+  }
+}
+
+/**
+ * Fetch logs for a specific date range (useful for export)
+ */
+export async function fetchLogsByDateRange(
+  userId: string,
+  vehicleId: string | null,
+  startDate: Date,
+  endDate: Date,
+): Promise<{
+  fuelLogs: FuelLog[];
+  serviceLogs: ServiceLog[];
+  mileageLogs: MileageLog[];
+}> {
+  try {
+    let fuelQuery = supabase
+      .from("fuel_logs")
+      .select("*")
+      .eq("user_id", userId)
+      .gte("date", startDate.toISOString())
+      .lte("date", endDate.toISOString());
+
+    let serviceQuery = supabase
+      .from("service_logs")
+      .select("*")
+      .eq("user_id", userId)
+      .gte("date", startDate.toISOString())
+      .lte("date", endDate.toISOString());
+
+    let mileageQuery = supabase
+      .from("mileage_logs")
+      .select("*")
+      .eq("user_id", userId)
+      .gte("date", startDate.toISOString())
+      .lte("date", endDate.toISOString());
+
+    if (vehicleId) {
+      fuelQuery = fuelQuery.eq("vehicle_id", vehicleId);
+      serviceQuery = serviceQuery.eq("vehicle_id", vehicleId);
+      mileageQuery = mileageQuery.eq("vehicle_id", vehicleId);
+    }
+
+    const [fuelResult, serviceResult, mileageResult] = await Promise.all([
+      fuelQuery.order("date", { ascending: true }),
+      serviceQuery.order("date", { ascending: true }),
+      mileageQuery.order("date", { ascending: true }),
+    ]);
+
+    if (fuelResult.error) throw fuelResult.error;
+    if (serviceResult.error) throw serviceResult.error;
+    if (mileageResult.error) throw mileageResult.error;
+
+    return {
+      fuelLogs: (fuelResult.data as FuelLog[]) || [],
+      serviceLogs: (serviceResult.data as ServiceLog[]) || [],
+      mileageLogs: (mileageResult.data as MileageLog[]) || [],
+    };
+  } catch (error) {
+    console.error("Error fetching logs by date range:", error);
+    throw error;
+  }
+}
