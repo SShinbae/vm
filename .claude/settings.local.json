@@ -26,7 +26,14 @@
       "Bash(git stash:*)",
       "Bash(git add:*)",
       "Bash(git commit:*)",
-      "Bash(ls:*)"
+      "Bash(ls:*)",
+      "Bash(head -20 \"c:/Users/wanah/React Native/vehicles-management/app/(tabs)/analytics/index.tsx\")",
+      "Bash(for file in index.tsx fuel.tsx service.tsx performance.tsx)",
+      "Bash(do sed -i '/^  header:/,/^  },$/d; /^  headerTitle:/,/^  },$/d; /^  headerSubtitle:/,/^  },$/d' \"$file\")",
+      "Bash(done)",
+      "Bash(do sed -i 's/\\$\\${\\([^}]*\\)}/RM${\\1}/g' \"$file\")",
+      "Bash(taskkill /PID 16348 /F)",
+      "Bash(taskkill //PID 16348 //F)"
     ],
     "deny": [],
     "ask": []

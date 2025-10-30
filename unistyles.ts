@@ -28,6 +28,16 @@ export const lightTheme = {
       800: "#1F2937",
       900: "#111827",
     },
+    analytics: {
+      fuel: "#4CAF50",
+      service: "#2196F3",
+      cost: "#FF9800",
+      warning: "#FF5722",
+      success: "#8BC34A",
+      neutral: "#9E9E9E",
+      purple: "#9C27B0",
+      teal: "#009688",
+    },
   },
   spacing: {
     xs: 4,
@@ -91,6 +101,16 @@ export const darkTheme = {
       700: "#F3F4F6",
       800: "#F9FAFB",
       900: "#FFFFFF",
+    },
+    analytics: {
+      fuel: "#66BB6A",
+      service: "#42A5F5",
+      cost: "#FFA726",
+      warning: "#FF7043",
+      success: "#9CCC65",
+      neutral: "#BDBDBD",
+      purple: "#AB47BC",
+      teal: "#26A69A",
     },
   },
   spacing: {
