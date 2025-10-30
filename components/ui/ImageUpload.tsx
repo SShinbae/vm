@@ -1,19 +1,19 @@
-import React, { useState, useRef } from "react";
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-  Alert,
-  ActivityIndicator,
-  Platform,
-} from "react-native";
-import { Image } from "expo-image";
-import * as ImagePicker from "expo-image-picker";
-import { IconSymbol } from "./icon-symbol";
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { ImageUploadService } from "@/lib/services/imageUploadService";
+import { Image } from "expo-image";
+import * as ImagePicker from "expo-image-picker";
+import React, { useRef, useState } from "react";
+import {
+  ActivityIndicator,
+  Alert,
+  Platform,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { IconSymbol } from "./icon-symbol";
 import { ImageCropModal } from "./ImageCropModal";
 
 interface ImageUploadProps {
@@ -136,11 +136,24 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
       setUploading(true);
       setLocalImageUri(uri);
 
-      // Convert URI to File for upload service
-      const response = await fetch(uri);
-      const blob = await response.blob();
-      const fileName = `image_${Date.now()}.jpg`;
-      const file = new File([blob], fileName, { type: "image/jpeg" });
+      let file: File;
+
+      if (Platform.OS === "web") {
+        // Web: Convert URI to File for upload service
+        const response = await fetch(uri);
+        const blob = await response.blob();
+        const fileName = `image_${Date.now()}.jpg`;
+        file = new File([blob], fileName, { type: "image/jpeg" });
+      } else {
+        // Mobile: Create File from ArrayBuffer
+        const response = await fetch(uri);
+        const arrayBuffer = await response.arrayBuffer();
+        const fileName = `image_${Date.now()}.jpg`;
+
+        // Create a proper File object for mobile using ArrayBuffer
+        const uint8Array = new Uint8Array(arrayBuffer);
+        file = new File([uint8Array], fileName, { type: "image/jpeg" });
+      }
 
       // Validate file
       const validation = ImageUploadService.validateImageFile(file);
@@ -190,6 +203,20 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
     }
   };
 
+  const validateImageSize = (width: number, height: number): boolean => {
+    const maxDimension = 4096; // Typical max for mobile devices
+
+    if (width > maxDimension || height > maxDimension) {
+      Alert.alert(
+        "Image Too Large",
+        `Please select a smaller image (max ${maxDimension}px)`,
+      );
+      return false;
+    }
+
+    return true;
+  };
+
   const handleCropComplete = (croppedFile: File) => {
     console.log("🎯 Crop complete, received file:", croppedFile);
     console.log("   File details:", {
@@ -220,8 +247,14 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
       URL.revokeObjectURL(selectedImageUri);
       setSelectedImageUri(null);
     }
+    console.error("❌ Crop error:", error);
     onUploadError?.(error);
-    Alert.alert("Crop Error", error);
+
+    // Provide user-friendly error message
+    Alert.alert(
+      "Crop Error",
+      error || "Failed to crop image. Please try again.",
+    );
   };
 
   const processImageFile = async (file: File) => {

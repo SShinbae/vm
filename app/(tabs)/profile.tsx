@@ -1,13 +1,10 @@
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { ImageUpload } from "@/components/ui/ImageUpload";
 import { Modal } from "@/components/ui/Modal";
-import { NotificationBell } from "@/components/ui/NotificationBell";
-import { Colors } from "@/constants/theme";
-import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useResponsiveLayout } from "@/hooks/use-responsive-layout";
 import { useAuth } from "@/lib/contexts/AuthContext";
-import { useTheme } from "@/lib/contexts/ThemeContext";
 import { useDialog } from "@/lib/contexts/DialogContext";
+import { useTheme } from "@/lib/contexts/ThemeContext";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router } from "expo-router";
 import React, { useEffect, useState } from "react";
@@ -16,7 +13,6 @@ import {
   Alert,
   Platform,
   ScrollView,
-  StyleSheet,
   Switch,
   Text,
   TextInput,
@@ -24,19 +20,27 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { supabase } from "../../services/supabaseClient";
+import { createStyleSheet, useStyles } from "react-native-unistyles";
+
+// Type for tab names
+type TabName = "Profile" | "Settings" | "Notifications";
 
 export default function ProfileScreen() {
   const { user, updateProfile, signOut } = useAuth();
   const { themeMode, setThemeMode } = useTheme();
   const { showConfirm, hideConfirm } = useDialog();
+  const { styles, theme } = useStyles(stylesheet);
+  const { isMobile } = useResponsiveLayout();
+
   const [fullName, setFullName] = useState(user?.profile?.full_name || "");
   const [username, setUsername] = useState(user?.profile?.username || "");
   const [avatarUrl, setAvatarUrl] = useState(user?.profile?.avatar_url || null);
   const [loading, setLoading] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
-  const { isMobile } = useResponsiveLayout();
+
+  // Tab state
+  const [activeTab, setActiveTab] = useState<TabName>("Profile");
 
   // Notification preferences
   const [notificationPrefs, setNotificationPrefs] = useState({
@@ -46,8 +50,7 @@ export default function ProfileScreen() {
     inAppToasts: true,
     pushNotifications: true,
   });
-  const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? "light"];
+
   const isWeb = Platform.OS === "web";
 
   // Update avatar state when user profile changes
@@ -123,12 +126,8 @@ export default function ProfileScreen() {
 
   const handleAvatarUpload = (imageUrl: string) => {
     console.log("🖼️ handleAvatarUpload called with URL:", imageUrl);
-    // Avatar is automatically saved to the database by ImageUpload component
-    // Update local state immediately for instant preview
     setAvatarUrl(imageUrl);
 
-    // Trigger AuthContext to refresh user profile from database in the background
-    // This ensures the user context has the latest avatar_url
     console.log("🔄 Updating profile in AuthContext (background)...");
     updateProfile({
       full_name: user?.profile?.full_name || "",
@@ -183,382 +182,73 @@ export default function ProfileScreen() {
     );
   };
 
-  const styles = StyleSheet.create({
-    container: {
-      flex: 1,
-      backgroundColor: colors.background,
-    },
-    card: {
-      backgroundColor: colors.surface || colors.background,
-      margin: 16,
-      borderRadius: 16,
-      shadowColor: colorScheme === "dark" ? "#ffffff" : "#000000",
-      shadowOffset: {
-        width: 0,
-        height: 2,
-      },
-      shadowOpacity: colorScheme === "dark" ? 0.05 : 0.1,
-      shadowRadius: 8,
-      elevation: 4,
-      overflow: "hidden",
-    },
-    headerBackground: {
-      height: 120,
-      backgroundColor: colors.tint,
-      position: "relative",
-      overflow: "hidden",
-    },
-    circlePattern: {
-      position: "absolute",
-      width: "100%",
-      height: "100%",
-    },
-    logoutButton: {
-      position: "absolute",
-      top: 16,
-      right: 16,
-      width: 36,
-      height: 36,
-      borderRadius: 18,
-      backgroundColor: "rgba(255, 255, 255, 0.95)",
-      alignItems: "center",
-      justifyContent: "center",
-      shadowColor: "#000000",
-      shadowOffset: {
-        width: 0,
-        height: 2,
-      },
-      shadowOpacity: 0.2,
-      shadowRadius: 4,
-      elevation: 10,
-      zIndex: 1000,
-      borderWidth: 1,
-      borderColor: "rgba(255, 68, 68, 0.3)",
-    },
-    notificationButton: {
-      position: "absolute",
-      top: 16,
-      right: 60,
-      width: 36,
-      height: 36,
-      borderRadius: 18,
-      backgroundColor: "rgba(255, 255, 255, 0.95)",
-      alignItems: "center",
-      justifyContent: "center",
-      shadowColor: "#000000",
-      shadowOffset: {
-        width: 0,
-        height: 2,
-      },
-      shadowOpacity: 0.2,
-      shadowRadius: 4,
-      elevation: 10,
-      zIndex: 1000,
-    },
-    circle: {
-      position: "absolute",
-      borderRadius: 100,
-      backgroundColor: "rgba(255, 255, 255, 0.1)",
-    },
-    circle1: {
-      width: 80,
-      height: 80,
-      top: -20,
-      left: 50,
-    },
-    circle2: {
-      width: 120,
-      height: 120,
-      top: -30,
-      right: -20,
-    },
-    circle3: {
-      width: 60,
-      height: 60,
-      bottom: -10,
-      left: 30,
-    },
-    avatarContainer: {
-      alignItems: "center",
-      marginTop: -40,
-      marginBottom: 32,
-    },
-    profileAvatarUpload: {
-      width: 80,
-      height: 80,
-      borderRadius: 40,
-    },
-    avatar: {
-      width: 80,
-      height: 80,
-      borderRadius: 40,
-      borderWidth: 4,
-      borderColor: "white",
-      backgroundColor: colors.tint,
-      alignItems: "center",
-      justifyContent: "center",
-    },
-    avatarText: {
-      fontSize: 32,
-      fontWeight: "bold",
-      color: "white",
-    },
-    profileInfo: {
-      alignItems: "center",
-      paddingHorizontal: 20,
-      marginBottom: 20,
-    },
-    username: {
-      fontSize: 14,
-      color: colors.icon,
-      marginBottom: 2,
-    },
-    name: {
-      fontSize: 24,
-      fontWeight: "bold",
-      color: colors.text,
-      marginBottom: 4,
-    },
-    locationRow: {
-      flexDirection: "row",
-      alignItems: "center",
-    },
-    joinDate: {
-      fontSize: 14,
-      color: colors.icon,
-    },
-    actionButtons: {
-      flexDirection: "row",
-      paddingHorizontal: 20,
-      marginBottom: 20,
-      justifyContent: "space-between",
-    },
-    editButton: {
-      backgroundColor: colors.tint,
-      paddingHorizontal: 24,
-      paddingVertical: 10,
-      borderRadius: 20,
-      flex: 1,
-      marginRight: 8,
-      alignItems: "center",
-      flexDirection: "row",
-      justifyContent: "center",
-      gap: 8,
-    },
-    editButtonText: {
-      color: "white",
-      fontWeight: "600",
-      fontSize: 14,
-    },
-    cancelButton: {
-      backgroundColor: "transparent",
-      borderWidth: 1,
-      borderColor: colors.border,
-      paddingHorizontal: 24,
-      paddingVertical: 10,
-      borderRadius: 20,
-      flex: 1,
-      marginHorizontal: 4,
-      alignItems: "center",
-      flexDirection: "row",
-      justifyContent: "center",
-      gap: 8,
-    },
-    cancelButtonText: {
-      color: colors.text,
-      fontWeight: "600",
-      fontSize: 14,
-    },
-    saveButton: {
-      backgroundColor: colors.tint,
-      paddingHorizontal: 24,
-      paddingVertical: 10,
-      borderRadius: 20,
-      marginLeft: 8,
-      alignItems: "center",
-      flexDirection: "row",
-      justifyContent: "center",
-      gap: 8,
-    },
-    saveButtonText: {
-      color: "white",
-      fontWeight: "600",
-      fontSize: 14,
-    },
-    informationSection: {
-      paddingHorizontal: 20,
-      marginBottom: 30,
-    },
-    sectionTitle: {
-      fontSize: 18,
-      fontWeight: "bold",
-      color: colors.text,
-      marginBottom: 20,
-    },
-    infoRow: {
-      flexDirection: "row",
-      justifyContent: "space-between",
-      alignItems: "center",
-      paddingVertical: 12,
-      borderBottomWidth: 1,
-      borderBottomColor: colors.border,
-    },
-    infoLabel: {
-      fontSize: 14,
-      color: colors.icon,
-      flex: 1,
-    },
-    infoValue: {
-      fontSize: 14,
-      color: colors.text,
-      fontWeight: "500",
-      flex: 2,
-      textAlign: "right",
-    },
-    input: {
-      fontSize: 14,
-      color: colors.text,
-      fontWeight: "500",
-      flex: 2,
-      textAlign: "right",
-      paddingVertical: 4,
-      paddingHorizontal: 8,
-      backgroundColor: colors.background,
-      borderRadius: 6,
-      borderWidth: 1,
-      borderColor: colors.tint,
-    },
-    themeOptions: {
-      flex: 2,
-      flexDirection: "row",
-      justifyContent: "flex-end",
-      gap: 8,
-    },
-    themeOption: {
-      paddingHorizontal: 12,
-      paddingVertical: 6,
-      borderRadius: 16,
-      borderWidth: 1,
-      borderColor: colors.border,
-      backgroundColor: colors.background,
-    },
-    themeOptionActive: {
-      backgroundColor: colors.tint,
-      borderColor: colors.tint,
-    },
-    themeOptionText: {
-      fontSize: 12,
-      color: colors.text,
-      fontWeight: "500",
-    },
-    themeOptionTextActive: {
-      color: "white",
-    },
-    avatarUpload: {
-      marginTop: -40,
-      marginBottom: 16,
-    },
-    avatarOverlay: {
-      position: "absolute",
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      backgroundColor: "rgba(0,0,0,0.3)",
-      borderRadius: 40,
-      justifyContent: "center",
-      alignItems: "center",
-    },
-    // Modal styles
-    modalContent: {
-      // No additional styling needed as Modal component handles the container
-    },
-    modalAvatarContainer: {
-      alignItems: "center",
-      marginBottom: 24,
-    },
-    modalAvatarUpload: {
-      width: 80,
-      height: 80,
-      borderRadius: 40,
-    },
-    modalAvatarText: {
-      fontSize: 14,
-      color: colors.icon || colors.text,
-      marginTop: 8,
-      textAlign: "center",
-    },
-    modalForm: {
-      marginBottom: 24,
-    },
-    modalField: {
-      marginBottom: 20,
-    },
-    modalLabel: {
-      fontSize: 16,
-      fontWeight: "600",
-      color: colors.text,
-      marginBottom: 8,
-    },
-    modalInput: {
-      borderWidth: 1,
-      borderColor: colors.border,
-      borderRadius: 8,
-      paddingHorizontal: 12,
-      paddingVertical: 12,
-      fontSize: 16,
-      color: colors.text,
-      backgroundColor: colors.background,
-    },
-    modalEmailText: {
-      fontSize: 16,
-      color: colors.text,
-      paddingVertical: 12,
-    },
-    modalEmailSubtext: {
-      fontSize: 12,
-      color: colors.icon || colors.text,
-      marginTop: 4,
-    },
-    modalButtons: {
-      flexDirection: "row",
-      gap: 12,
-    },
-    modalCancelButton: {
-      flex: 1,
-      backgroundColor: "transparent",
-      borderWidth: 1,
-      borderColor: colors.border,
-      paddingVertical: 12,
-      paddingHorizontal: 16,
-      borderRadius: 8,
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "center",
-      gap: 8,
-    },
-    modalCancelButtonText: {
-      color: colors.text,
-      fontWeight: "600",
-      fontSize: 16,
-    },
-    modalSaveButton: {
-      flex: 1,
-      backgroundColor: colors.tint,
-      paddingVertical: 12,
-      paddingHorizontal: 16,
-      borderRadius: 8,
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "center",
-      gap: 8,
-    },
-    modalSaveButtonText: {
-      color: "white",
-      fontWeight: "600",
-      fontSize: 16,
-    },
-  });
+  /**
+   * TabBar Component - Renders horizontal tabs for navigation
+   * On web/desktop: Segmented control style
+   * On mobile: Top tabs with underline indicator
+   */
+  const TabBar = ({
+    activeTab,
+    onTabChange,
+  }: {
+    activeTab: TabName;
+    onTabChange: (tab: TabName) => void;
+  }) => {
+    const tabs: TabName[] = ["Profile", "Settings", "Notifications"];
+
+    return (
+      <View style={styles.tabBar}>
+        {tabs.map((tab) => (
+          <TouchableOpacity
+            key={tab}
+            style={[
+              styles.tab,
+              activeTab === tab && styles.activeTab,
+              isWeb && !isMobile && styles.tabWeb,
+            ]}
+            onPress={() => onTabChange(tab)}
+            accessibilityRole="tab"
+            accessibilityLabel={`${tab} tab`}
+            accessibilityState={{ selected: activeTab === tab }}
+          >
+            <Text
+              style={[
+                styles.tabText,
+                activeTab === tab && styles.activeTabText,
+              ]}
+            >
+              {tab}
+            </Text>
+            {/* Underline indicator for mobile */}
+            {!isWeb && activeTab === tab && (
+              <View style={styles.tabIndicator} />
+            )}
+          </TouchableOpacity>
+        ))}
+      </View>
+    );
+  };
+
+  /**
+   * StatItem Component - Displays a single statistic
+   * Shows numeric value and label in a vertical layout
+   */
+  const StatItem = ({
+    value,
+    label,
+  }: {
+    value: number | string;
+    label: string;
+  }) => (
+    <TouchableOpacity
+      style={styles.statItem}
+      activeOpacity={0.7}
+      accessibilityRole="button"
+    >
+      <Text style={styles.statValue}>{value}</Text>
+      <Text style={styles.statLabel}>{label}</Text>
+    </TouchableOpacity>
+  );
 
   if (!user) return null;
 
@@ -570,287 +260,417 @@ export default function ProfileScreen() {
     });
   };
 
+  // Render Settings Tab Content
+  const renderSettingsTab = () => (
+    <>
+      {/* Action Buttons */}
+      <View style={styles.actionButtons}>
+        {isWeb && isEditing ? (
+          <>
+            <TouchableOpacity
+              style={styles.cancelButton}
+              onPress={handleCancelEdit}
+              disabled={loading}
+            >
+              <IconSymbol name="xmark" size={16} color={theme.colors.text} />
+              <Text style={styles.cancelButtonText}>Cancel</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.saveButton}
+              onPress={handleUpdateProfile}
+              disabled={loading}
+            >
+              {loading ? (
+                <ActivityIndicator color="white" size="small" />
+              ) : (
+                <>
+                  <IconSymbol name="checkmark" size={16} color="white" />
+                  <Text style={styles.saveButtonText}>Save Changes</Text>
+                </>
+              )}
+            </TouchableOpacity>
+          </>
+        ) : (
+          <TouchableOpacity style={styles.editButton} onPress={handleEditPress}>
+            <IconSymbol name="pencil" size={16} color="white" />
+            <Text style={styles.editButtonText}>Edit Profile</Text>
+          </TouchableOpacity>
+        )}
+      </View>
+
+      {/* Theme Selection */}
+      <View style={styles.informationSection}>
+        <Text style={styles.sectionTitle}>Appearance</Text>
+
+        <View style={styles.infoRow}>
+          <Text style={styles.infoLabel}>Theme</Text>
+          <View style={styles.themeOptions}>
+            <TouchableOpacity
+              style={[
+                styles.themeOption,
+                themeMode === "system" && styles.themeOptionActive,
+              ]}
+              onPress={() => setThemeMode("system")}
+            >
+              <Text
+                style={[
+                  styles.themeOptionText,
+                  themeMode === "system" && styles.themeOptionTextActive,
+                ]}
+              >
+                System
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[
+                styles.themeOption,
+                themeMode === "light" && styles.themeOptionActive,
+              ]}
+              onPress={() => setThemeMode("light")}
+            >
+              <Text
+                style={[
+                  styles.themeOptionText,
+                  themeMode === "light" && styles.themeOptionTextActive,
+                ]}
+              >
+                Light
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[
+                styles.themeOption,
+                themeMode === "dark" && styles.themeOptionActive,
+              ]}
+              onPress={() => setThemeMode("dark")}
+            >
+              <Text
+                style={[
+                  styles.themeOptionText,
+                  themeMode === "dark" && styles.themeOptionTextActive,
+                ]}
+              >
+                Dark
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+
+      {/* Account Information Section */}
+      <View style={styles.informationSection}>
+        <Text style={styles.sectionTitle}>Account Information</Text>
+
+        <View style={styles.infoRow}>
+          <Text style={styles.infoLabel}>Email</Text>
+          <Text style={styles.infoValue}>{user.email}</Text>
+        </View>
+
+        <View style={styles.infoRow}>
+          <Text style={styles.infoLabel}>Username</Text>
+          {isWeb && isEditing ? (
+            <TextInput
+              style={styles.input}
+              value={username}
+              onChangeText={setUsername}
+              placeholder="Enter username"
+              autoCapitalize="none"
+              autoCorrect={false}
+              placeholderTextColor={theme.colors.textSecondary}
+            />
+          ) : (
+            <Text style={styles.infoValue}>
+              @{user.profile?.username || "Not set"}
+            </Text>
+          )}
+        </View>
+
+        <View style={styles.infoRow}>
+          <Text style={styles.infoLabel}>Full Name</Text>
+          {isWeb && isEditing ? (
+            <TextInput
+              style={styles.input}
+              value={fullName}
+              onChangeText={setFullName}
+              placeholder="Enter your full name"
+              autoCapitalize="words"
+              autoCorrect={false}
+              placeholderTextColor={theme.colors.textSecondary}
+            />
+          ) : (
+            <Text style={styles.infoValue}>
+              {user.profile?.full_name || "Not provided"}
+            </Text>
+          )}
+        </View>
+
+        <View style={styles.infoRow}>
+          <Text style={styles.infoLabel}>Joined</Text>
+          <Text style={styles.infoValue}>
+            {formatJoinDate(user.profile?.created_at || "")}
+          </Text>
+        </View>
+      </View>
+
+      {/* Sign Out Button */}
+      {isWeb && !isMobile && (
+        <View style={[styles.informationSection, { paddingTop: 0 }]}>
+          <TouchableOpacity
+            style={[styles.editButton, { backgroundColor: "#ff4444" }]}
+            onPress={handleSignOut}
+          >
+            <IconSymbol
+              name="arrow.right.square.fill"
+              size={16}
+              color="white"
+            />
+            <Text style={styles.editButtonText}>Sign Out</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+    </>
+  );
+
+  // Render Notifications Tab Content
+  const renderNotificationsTab = () => (
+    <>
+      {/* Activity Notifications Section */}
+      <View style={styles.informationSection}>
+        <Text style={styles.sectionTitle}>Activity Notifications</Text>
+
+        <View style={styles.infoRow}>
+          <Text style={styles.infoLabel}>Log Updates</Text>
+          <Switch
+            value={notificationPrefs.logUpdates}
+            onValueChange={(value) =>
+              updateNotificationPref("logUpdates", value)
+            }
+            trackColor={{
+              false: theme.colors.border,
+              true: theme.colors.primary,
+            }}
+            thumbColor={
+              notificationPrefs.logUpdates
+                ? "white"
+                : theme.colors.textSecondary
+            }
+          />
+        </View>
+
+        <View style={[styles.infoRow, { borderBottomWidth: 0 }]}>
+          <Text style={styles.infoLabel}>Group Members</Text>
+          <Switch
+            value={notificationPrefs.groupMembers}
+            onValueChange={(value) =>
+              updateNotificationPref("groupMembers", value)
+            }
+            trackColor={{
+              false: theme.colors.border,
+              true: theme.colors.primary,
+            }}
+            thumbColor={
+              notificationPrefs.groupMembers
+                ? "white"
+                : theme.colors.textSecondary
+            }
+          />
+        </View>
+      </View>
+
+      {/* System Notifications Section */}
+      <View style={styles.informationSection}>
+        <Text style={styles.sectionTitle}>System Notifications</Text>
+
+        <View style={styles.infoRow}>
+          <Text style={styles.infoLabel}>Invitations</Text>
+          <Switch
+            value={notificationPrefs.invitations}
+            onValueChange={(value) =>
+              updateNotificationPref("invitations", value)
+            }
+            trackColor={{
+              false: theme.colors.border,
+              true: theme.colors.primary,
+            }}
+            thumbColor={
+              notificationPrefs.invitations
+                ? "white"
+                : theme.colors.textSecondary
+            }
+          />
+        </View>
+
+        <View style={styles.infoRow}>
+          <Text style={styles.infoLabel}>In-App Toasts</Text>
+          <Switch
+            value={notificationPrefs.inAppToasts}
+            onValueChange={(value) =>
+              updateNotificationPref("inAppToasts", value)
+            }
+            trackColor={{
+              false: theme.colors.border,
+              true: theme.colors.primary,
+            }}
+            thumbColor={
+              notificationPrefs.inAppToasts
+                ? "white"
+                : theme.colors.textSecondary
+            }
+          />
+        </View>
+
+        <View style={[styles.infoRow, { borderBottomWidth: 0 }]}>
+          <Text style={styles.infoLabel}>Push Notifications</Text>
+          <Switch
+            value={notificationPrefs.pushNotifications}
+            onValueChange={(value) =>
+              updateNotificationPref("pushNotifications", value)
+            }
+            trackColor={{
+              false: theme.colors.border,
+              true: theme.colors.primary,
+            }}
+            thumbColor={
+              notificationPrefs.pushNotifications
+                ? "white"
+                : theme.colors.textSecondary
+            }
+          />
+        </View>
+      </View>
+    </>
+  );
+
+  // Render Profile Tab Content
+  const renderProfileTab = () => (
+    <>
+      {/* Avatar */}
+      <View style={styles.avatarContainer}>
+        <ImageUpload
+          type="avatar"
+          currentImageUrl={avatarUrl}
+          onUploadComplete={handleAvatarUpload}
+          onUploadError={handleAvatarError}
+          style={styles.profileAvatarUpload}
+        />
+      </View>
+
+      {/* Profile Info */}
+      <View style={styles.profileInfo}>
+        <Text style={styles.name}>
+          {user.profile?.full_name || "Name not provided"}
+        </Text>
+        <Text style={styles.username}>
+          @{user.profile?.username || "username"}
+        </Text>
+        <View style={styles.locationRow}>
+          <Text style={styles.joinDate}>
+            Joined {formatJoinDate(user.profile?.created_at || "")}
+          </Text>
+        </View>
+      </View>
+
+      {/* Stats Row */}
+      <View style={styles.statsContainer}>
+        <StatItem value={0} label="Total Logs" />
+        <View style={styles.statDivider} />
+        <StatItem value={0} label="Active Groups" />
+        <View style={styles.statDivider} />
+        <StatItem value={0} label="Days Active" />
+      </View>
+
+      {/* Quick Actions Section */}
+      <View style={styles.informationSection}>
+        <Text style={styles.sectionTitle}>Quick Actions</Text>
+
+        <TouchableOpacity
+          style={[styles.quickActionRow, { marginBottom: 12 }]}
+          onPress={handleEditPress}
+        >
+          <View style={styles.quickActionIcon}>
+            <IconSymbol name="pencil" size={20} color={theme.colors.primary} />
+          </View>
+          <View style={styles.quickActionContent}>
+            <Text style={styles.quickActionLabel}>Edit Profile</Text>
+            <Text style={styles.quickActionSubtitle}>
+              Update your personal information
+            </Text>
+          </View>
+          <IconSymbol
+            name="chevron.right"
+            size={16}
+            color={theme.colors.textSecondary}
+          />
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.quickActionRow, { marginBottom: 12 }]}
+          onPress={() => router.push("/groups" as any)}
+        >
+          <View style={styles.quickActionIcon}>
+            <IconSymbol
+              name="person.3.fill"
+              size={20}
+              color={theme.colors.primary}
+            />
+          </View>
+          <View style={styles.quickActionContent}>
+            <Text style={styles.quickActionLabel}>Groups</Text>
+            <Text style={styles.quickActionSubtitle}>
+              Manage your vehicle groups
+            </Text>
+          </View>
+          <IconSymbol
+            name="chevron.right"
+            size={16}
+            color={theme.colors.textSecondary}
+          />
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.quickActionRow} activeOpacity={0.5}>
+          <View style={styles.quickActionIcon}>
+            <IconSymbol
+              name="lock.fill"
+              size={20}
+              color={theme.colors.primary}
+            />
+          </View>
+          <View style={styles.quickActionContent}>
+            <Text style={styles.quickActionLabel}>Privacy Settings</Text>
+            <Text style={styles.quickActionSubtitle}>Coming soon</Text>
+          </View>
+          <IconSymbol
+            name="chevron.right"
+            size={16}
+            color={theme.colors.textSecondary}
+          />
+          <TouchableOpacity
+            style={styles.logoutButton}
+            onPress={handleSignOut}
+            activeOpacity={0.7}
+          >
+            <IconSymbol
+              name="arrow.right.square.fill"
+              size={18}
+              color="#ff4444"
+            />
+          </TouchableOpacity>
+        </TouchableOpacity>
+      </View>
+    </>
+  );
+
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView showsVerticalScrollIndicator={false}>
         <View style={styles.card}>
-          {/* Header Background */}
-          <View style={styles.headerBackground}>
-            <View style={styles.circlePattern}>
-              <View style={[styles.circle, styles.circle1]} />
-              <View style={[styles.circle, styles.circle2]} />
-              <View style={[styles.circle, styles.circle3]} />
-            </View>
-            {(Platform.OS !== "web" || (isWeb && isMobile)) && (
-              <>
-                <View style={styles.notificationButton}>
-                  <NotificationBell
-                    onPress={() => router.push("/notifications")}
-                    size={20}
-                  />
-                </View>
-                <TouchableOpacity
-                  style={styles.logoutButton}
-                  onPress={handleSignOut}
-                  activeOpacity={0.7}
-                >
-                  <IconSymbol
-                    name="arrow.right.square.fill"
-                    size={18}
-                    color="#ff4444"
-                  />
-                </TouchableOpacity>
-              </>
-            )}
-          </View>
+          {/* Tab Bar - Sticky below header */}
+          <TabBar activeTab={activeTab} onTabChange={setActiveTab} />
 
-          {/* Avatar */}
-          <View style={styles.avatarContainer}>
-            <ImageUpload
-              type="avatar"
-              currentImageUrl={avatarUrl}
-              onUploadComplete={handleAvatarUpload}
-              onUploadError={handleAvatarError}
-              style={styles.profileAvatarUpload}
-            />
-          </View>
-
-          {/* Profile Info */}
-          <View style={styles.profileInfo}>
-            <Text style={styles.name}>
-              {user.profile?.full_name || "Name not provided"}
-            </Text>
-            <Text style={styles.username}>
-              @{user.profile?.username || "username"}
-            </Text>
-            <View style={styles.locationRow}>
-              <Text style={styles.joinDate}>
-                Joined {formatJoinDate(user.profile?.created_at || "")}
-              </Text>
-            </View>
-          </View>
-
-          {/* Action Buttons */}
-          <View style={styles.actionButtons}>
-            {isWeb && isEditing ? (
-              <>
-                <TouchableOpacity
-                  style={styles.cancelButton}
-                  onPress={handleCancelEdit}
-                  disabled={loading}
-                >
-                  <IconSymbol name="xmark" size={16} color={colors.text} />
-                  <Text style={styles.cancelButtonText}>Cancel</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.saveButton}
-                  onPress={handleUpdateProfile}
-                  disabled={loading}
-                >
-                  {loading ? (
-                    <ActivityIndicator color="white" size="small" />
-                  ) : (
-                    <>
-                      <IconSymbol name="checkmark" size={16} color="white" />
-                      <Text style={styles.saveButtonText}>Save Changes</Text>
-                    </>
-                  )}
-                </TouchableOpacity>
-              </>
-            ) : (
-              <TouchableOpacity
-                style={styles.editButton}
-                onPress={handleEditPress}
-              >
-                <IconSymbol name="pencil" size={16} color="white" />
-                <Text style={styles.editButtonText}>Edit Profile</Text>
-              </TouchableOpacity>
-            )}
-          </View>
-
-          {/* Information Section */}
-          <View style={styles.informationSection}>
-            <Text style={styles.sectionTitle}>Information</Text>
-
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Username</Text>
-              {isWeb && isEditing ? (
-                <TextInput
-                  style={styles.input}
-                  value={username}
-                  onChangeText={setUsername}
-                  placeholder="Enter username"
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                  placeholderTextColor={colors.icon}
-                />
-              ) : (
-                <Text style={styles.infoValue}>
-                  @{user.profile?.username || "Not set"}
-                </Text>
-              )}
-            </View>
-
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Full Name</Text>
-              {isWeb && isEditing ? (
-                <TextInput
-                  style={styles.input}
-                  value={fullName}
-                  onChangeText={setFullName}
-                  placeholder="Enter your full name"
-                  autoCapitalize="words"
-                  autoCorrect={false}
-                  placeholderTextColor={colors.icon}
-                />
-              ) : (
-                <Text style={styles.infoValue}>
-                  {user.profile?.full_name || "Not provided"}
-                </Text>
-              )}
-            </View>
-
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Email</Text>
-              <Text style={styles.infoValue}>{user.email}</Text>
-            </View>
-
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Joined</Text>
-              <Text style={styles.infoValue}>
-                {formatJoinDate(user.profile?.created_at || "")}
-              </Text>
-            </View>
-
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Theme</Text>
-              <View style={styles.themeOptions}>
-                <TouchableOpacity
-                  style={[
-                    styles.themeOption,
-                    themeMode === "system" && styles.themeOptionActive,
-                  ]}
-                  onPress={() => setThemeMode("system")}
-                >
-                  <Text
-                    style={[
-                      styles.themeOptionText,
-                      themeMode === "system" && styles.themeOptionTextActive,
-                    ]}
-                  >
-                    System
-                  </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[
-                    styles.themeOption,
-                    themeMode === "light" && styles.themeOptionActive,
-                  ]}
-                  onPress={() => setThemeMode("light")}
-                >
-                  <Text
-                    style={[
-                      styles.themeOptionText,
-                      themeMode === "light" && styles.themeOptionTextActive,
-                    ]}
-                  >
-                    Light
-                  </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[
-                    styles.themeOption,
-                    themeMode === "dark" && styles.themeOptionActive,
-                  ]}
-                  onPress={() => setThemeMode("dark")}
-                >
-                  <Text
-                    style={[
-                      styles.themeOptionText,
-                      themeMode === "dark" && styles.themeOptionTextActive,
-                    ]}
-                  >
-                    Dark
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          </View>
-
-          {/* Notification Preferences Section */}
-          <View style={styles.informationSection}>
-            <Text style={styles.sectionTitle}>Notification Preferences</Text>
-
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Log Updates</Text>
-              <Switch
-                value={notificationPrefs.logUpdates}
-                onValueChange={(value) =>
-                  updateNotificationPref("logUpdates", value)
-                }
-                trackColor={{ false: colors.border, true: colors.tint }}
-                thumbColor={
-                  notificationPrefs.logUpdates ? "white" : colors.icon
-                }
-              />
-            </View>
-
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Group Members</Text>
-              <Switch
-                value={notificationPrefs.groupMembers}
-                onValueChange={(value) =>
-                  updateNotificationPref("groupMembers", value)
-                }
-                trackColor={{ false: colors.border, true: colors.tint }}
-                thumbColor={
-                  notificationPrefs.groupMembers ? "white" : colors.icon
-                }
-              />
-            </View>
-
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Invitations</Text>
-              <Switch
-                value={notificationPrefs.invitations}
-                onValueChange={(value) =>
-                  updateNotificationPref("invitations", value)
-                }
-                trackColor={{ false: colors.border, true: colors.tint }}
-                thumbColor={
-                  notificationPrefs.invitations ? "white" : colors.icon
-                }
-              />
-            </View>
-
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>In-App Toasts</Text>
-              <Switch
-                value={notificationPrefs.inAppToasts}
-                onValueChange={(value) =>
-                  updateNotificationPref("inAppToasts", value)
-                }
-                trackColor={{ false: colors.border, true: colors.tint }}
-                thumbColor={
-                  notificationPrefs.inAppToasts ? "white" : colors.icon
-                }
-              />
-            </View>
-
-            <View style={[styles.infoRow, { borderBottomWidth: 0 }]}>
-              <Text style={styles.infoLabel}>Push Notifications</Text>
-              <Switch
-                value={notificationPrefs.pushNotifications}
-                onValueChange={(value) =>
-                  updateNotificationPref("pushNotifications", value)
-                }
-                trackColor={{ false: colors.border, true: colors.tint }}
-                thumbColor={
-                  notificationPrefs.pushNotifications ? "white" : colors.icon
-                }
-              />
-            </View>
-          </View>
+          {/* Render active tab content */}
+          {activeTab === "Profile" && renderProfileTab()}
+          {activeTab === "Settings" && renderSettingsTab()}
+          {activeTab === "Notifications" && renderNotificationsTab()}
         </View>
       </ScrollView>
 
@@ -894,7 +714,7 @@ export default function ProfileScreen() {
                   placeholder="Enter your full name"
                   autoCapitalize="words"
                   autoCorrect={false}
-                  placeholderTextColor={colors.icon}
+                  placeholderTextColor={theme.colors.textSecondary}
                 />
               </View>
 
@@ -907,7 +727,7 @@ export default function ProfileScreen() {
                   placeholder="Enter username"
                   autoCapitalize="none"
                   autoCorrect={false}
-                  placeholderTextColor={colors.icon}
+                  placeholderTextColor={theme.colors.textSecondary}
                 />
               </View>
 
@@ -932,7 +752,7 @@ export default function ProfileScreen() {
                 }}
                 disabled={loading}
               >
-                <IconSymbol name="xmark" size={16} color={colors.text} />
+                <IconSymbol name="xmark" size={16} color={theme.colors.text} />
                 <Text style={styles.modalCancelButtonText}>Cancel</Text>
               </TouchableOpacity>
               <TouchableOpacity
@@ -956,3 +776,454 @@ export default function ProfileScreen() {
     </SafeAreaView>
   );
 }
+
+// Stylesheet using Unistyles
+const stylesheet = createStyleSheet((theme) => ({
+  container: {
+    flex: 1,
+    backgroundColor: theme.colors.background,
+  },
+  card: {
+    backgroundColor: theme.colors.surface,
+    margin: theme.spacing.lg,
+    borderRadius: theme.borderRadius.xl,
+    shadowColor: theme.colors.black,
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
+    overflow: "hidden",
+  },
+  headerBackground: {
+    height: 120,
+    backgroundColor: theme.colors.primary,
+    position: "relative",
+    overflow: "hidden",
+  },
+  circlePattern: {
+    position: "absolute",
+    width: "100%",
+    height: "100%",
+  },
+  logoutButton: {
+    position: "absolute",
+    top: theme.spacing.lg,
+    right: theme.spacing.lg,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: "rgba(255, 255, 255, 0.95)",
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: theme.colors.black,
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 10,
+    zIndex: 1000,
+    borderWidth: 1,
+    borderColor: "rgba(255, 68, 68, 0.3)",
+  },
+  notificationButton: {
+    position: "absolute",
+    top: theme.spacing.lg,
+    right: 60,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: "rgba(255, 255, 255, 0.95)",
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: theme.colors.black,
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 10,
+    zIndex: 1000,
+  },
+  circle: {
+    position: "absolute",
+    borderRadius: 100,
+    backgroundColor: "rgba(255, 255, 255, 0.1)",
+  },
+  circle1: {
+    width: 80,
+    height: 80,
+    top: -20,
+    left: 50,
+  },
+  circle2: {
+    width: 120,
+    height: 120,
+    top: -30,
+    right: -20,
+  },
+  circle3: {
+    width: 60,
+    height: 60,
+    bottom: -10,
+    left: 30,
+  },
+  avatarContainer: {
+    alignItems: "center",
+    marginTop: 0,
+    marginBottom: theme.spacing.xxl,
+  },
+  profileAvatarUpload: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+  },
+  profileInfo: {
+    alignItems: "center",
+    paddingHorizontal: theme.spacing.xl,
+    marginBottom: theme.spacing.xl,
+  },
+  username: {
+    fontSize: theme.fontSize.sm,
+    color: theme.colors.textSecondary,
+    marginBottom: 2,
+  },
+  name: {
+    fontSize: theme.fontSize["2xl"],
+    fontWeight: theme.fontWeight.bold,
+    color: theme.colors.text,
+    marginBottom: theme.spacing.xs,
+  },
+  locationRow: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  joinDate: {
+    fontSize: theme.fontSize.sm,
+    color: theme.colors.textSecondary,
+  },
+  actionButtons: {
+    flexDirection: "row",
+    paddingHorizontal: theme.spacing.xl,
+    marginBottom: theme.spacing.xl,
+    justifyContent: "space-between",
+  },
+  editButton: {
+    backgroundColor: theme.colors.primary,
+    paddingHorizontal: theme.spacing.xl,
+    paddingVertical: theme.spacing.md,
+    borderRadius: theme.borderRadius.full,
+    flex: 1,
+    marginRight: theme.spacing.sm,
+    alignItems: "center",
+    flexDirection: "row",
+    justifyContent: "center",
+    gap: theme.spacing.sm,
+  },
+  editButtonText: {
+    color: theme.colors.white,
+    fontWeight: theme.fontWeight.semibold,
+    fontSize: theme.fontSize.sm,
+  },
+  cancelButton: {
+    backgroundColor: "transparent",
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    paddingHorizontal: theme.spacing.xl,
+    paddingVertical: theme.spacing.md,
+    borderRadius: theme.borderRadius.full,
+    flex: 1,
+    marginHorizontal: theme.spacing.xs,
+    alignItems: "center",
+    flexDirection: "row",
+    justifyContent: "center",
+    gap: theme.spacing.sm,
+  },
+  cancelButtonText: {
+    color: theme.colors.text,
+    fontWeight: theme.fontWeight.semibold,
+    fontSize: theme.fontSize.sm,
+  },
+  saveButton: {
+    backgroundColor: theme.colors.primary,
+    paddingHorizontal: theme.spacing.xl,
+    paddingVertical: theme.spacing.md,
+    borderRadius: theme.borderRadius.full,
+    marginLeft: theme.spacing.sm,
+    alignItems: "center",
+    flexDirection: "row",
+    justifyContent: "center",
+    gap: theme.spacing.sm,
+  },
+  saveButtonText: {
+    color: theme.colors.white,
+    fontWeight: theme.fontWeight.semibold,
+    fontSize: theme.fontSize.sm,
+  },
+  informationSection: {
+    paddingHorizontal: theme.spacing.xl,
+    marginBottom: theme.spacing.xxl,
+  },
+  sectionTitle: {
+    fontSize: theme.fontSize.lg,
+    fontWeight: theme.fontWeight.bold,
+    color: theme.colors.text,
+    marginBottom: theme.spacing.xl,
+  },
+  quickActionRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: theme.spacing.lg,
+    paddingHorizontal: theme.spacing.lg,
+    backgroundColor: theme.colors.surface,
+    borderRadius: theme.borderRadius.lg,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    gap: theme.spacing.md,
+  },
+  quickActionIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: theme.borderRadius.full,
+    backgroundColor: theme.colors.primary + "15",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  quickActionContent: {
+    flex: 1,
+  },
+  quickActionLabel: {
+    fontSize: theme.fontSize.base,
+    fontWeight: theme.fontWeight.semibold,
+    color: theme.colors.text,
+    marginBottom: 2,
+  },
+  quickActionSubtitle: {
+    fontSize: theme.fontSize.xs,
+    color: theme.colors.textSecondary,
+  },
+  infoRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingVertical: theme.spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.border,
+  },
+  infoLabel: {
+    fontSize: theme.fontSize.sm,
+    color: theme.colors.textSecondary,
+    flex: 1,
+  },
+  infoValue: {
+    fontSize: theme.fontSize.sm,
+    color: theme.colors.text,
+    fontWeight: theme.fontWeight.medium,
+    flex: 2,
+    textAlign: "right",
+  },
+  input: {
+    fontSize: theme.fontSize.sm,
+    color: theme.colors.text,
+    fontWeight: theme.fontWeight.medium,
+    flex: 2,
+    textAlign: "right",
+    paddingVertical: theme.spacing.xs,
+    paddingHorizontal: theme.spacing.sm,
+    backgroundColor: theme.colors.background,
+    borderRadius: theme.borderRadius.sm,
+    borderWidth: 1,
+    borderColor: theme.colors.primary,
+  },
+  themeOptions: {
+    flex: 2,
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    gap: theme.spacing.sm,
+  },
+  themeOption: {
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.xs,
+    borderRadius: theme.borderRadius.lg,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    backgroundColor: theme.colors.background,
+  },
+  themeOptionActive: {
+    backgroundColor: theme.colors.primary,
+    borderColor: theme.colors.primary,
+  },
+  themeOptionText: {
+    fontSize: theme.fontSize.xs,
+    color: theme.colors.text,
+    fontWeight: theme.fontWeight.medium,
+  },
+  themeOptionTextActive: {
+    color: theme.colors.white,
+  },
+  // Tab Bar Styles
+  tabBar: {
+    flexDirection: "row",
+    backgroundColor: theme.colors.surface,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.border,
+    paddingHorizontal: theme.spacing.lg,
+    marginBottom: theme.spacing.sm,
+  },
+  tab: {
+    flex: 1,
+    paddingVertical: theme.spacing.lg,
+    alignItems: "center",
+    justifyContent: "center",
+    minHeight: 44,
+    position: "relative",
+  },
+  tabWeb: {
+    flex: 0,
+    paddingHorizontal: theme.spacing.xl,
+    marginHorizontal: theme.spacing.xs,
+    borderRadius: theme.borderRadius.md,
+    backgroundColor: theme.colors.background,
+  },
+  activeTab: {},
+  tabText: {
+    fontSize: theme.fontSize.base,
+    fontWeight: theme.fontWeight.normal,
+    color: theme.colors.textSecondary,
+  },
+  activeTabText: {
+    fontWeight: theme.fontWeight.semibold,
+    color: theme.colors.primary,
+  },
+  tabIndicator: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 3,
+    backgroundColor: theme.colors.primary,
+    borderRadius: 1.5,
+  },
+  // Stats Section Styles
+  statsContainer: {
+    flexDirection: "row",
+    paddingHorizontal: theme.spacing.xl,
+    paddingVertical: theme.spacing.lg,
+    marginBottom: theme.spacing.lg,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.border,
+  },
+  statItem: {
+    flex: 1,
+    alignItems: "center",
+    paddingVertical: theme.spacing.sm,
+  },
+  statValue: {
+    fontSize: theme.fontSize["2xl"],
+    fontWeight: theme.fontWeight.bold,
+    color: theme.colors.text,
+    marginBottom: theme.spacing.xs,
+  },
+  statLabel: {
+    fontSize: theme.fontSize.xs,
+    color: theme.colors.textSecondary,
+    textAlign: "center",
+  },
+  statDivider: {
+    width: 1,
+    backgroundColor: theme.colors.border,
+    marginHorizontal: theme.spacing.sm,
+  },
+  // Modal styles
+  modalContent: {},
+  modalAvatarContainer: {
+    alignItems: "center",
+    marginBottom: theme.spacing.xl,
+  },
+  modalAvatarUpload: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+  },
+  modalAvatarText: {
+    fontSize: theme.fontSize.sm,
+    color: theme.colors.textSecondary,
+    marginTop: theme.spacing.sm,
+    textAlign: "center",
+  },
+  modalForm: {
+    marginBottom: theme.spacing.xl,
+  },
+  modalField: {
+    marginBottom: theme.spacing.xl,
+  },
+  modalLabel: {
+    fontSize: theme.fontSize.base,
+    fontWeight: theme.fontWeight.semibold,
+    color: theme.colors.text,
+    marginBottom: theme.spacing.sm,
+  },
+  modalInput: {
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    borderRadius: theme.borderRadius.md,
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.md,
+    fontSize: theme.fontSize.base,
+    color: theme.colors.text,
+    backgroundColor: theme.colors.background,
+  },
+  modalEmailText: {
+    fontSize: theme.fontSize.base,
+    color: theme.colors.text,
+    paddingVertical: theme.spacing.md,
+  },
+  modalEmailSubtext: {
+    fontSize: theme.fontSize.xs,
+    color: theme.colors.textSecondary,
+    marginTop: theme.spacing.xs,
+  },
+  modalButtons: {
+    flexDirection: "row",
+    gap: theme.spacing.md,
+  },
+  modalCancelButton: {
+    flex: 1,
+    backgroundColor: "transparent",
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    paddingVertical: theme.spacing.md,
+    paddingHorizontal: theme.spacing.lg,
+    borderRadius: theme.borderRadius.md,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: theme.spacing.sm,
+  },
+  modalCancelButtonText: {
+    color: theme.colors.text,
+    fontWeight: theme.fontWeight.semibold,
+    fontSize: theme.fontSize.base,
+  },
+  modalSaveButton: {
+    flex: 1,
+    backgroundColor: theme.colors.primary,
+    paddingVertical: theme.spacing.md,
+    paddingHorizontal: theme.spacing.lg,
+    borderRadius: theme.borderRadius.md,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: theme.spacing.sm,
+  },
+  modalSaveButtonText: {
+    color: theme.colors.white,
+    fontWeight: theme.fontWeight.semibold,
+    fontSize: theme.fontSize.base,
+  },
+}));

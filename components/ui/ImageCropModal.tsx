@@ -92,27 +92,38 @@ export const ImageCropModal: React.FC<ImageCropModalProps> = ({
       >
         <ImageEditor
           imageUri={imageUri}
-          fixedAspectRatio={aspectRatio}
+          fixedAspectRatio={aspectRatio} // CRITICAL FIX: Use fixedAspectRatio prop
           minimumCropDimensions={{
-            width: 50,
-            height: 50,
+            width: 100,
+            height: 100,
           }}
-          onEditingCancel={onClose}
           onEditingComplete={async (result: { uri: string }) => {
             try {
-              // Convert URI to File object for consistency
+              console.log("📱 Mobile crop result:", result);
+
+              // Convert URI to File object
               const response = await fetch(result.uri);
               const blob = await response.blob();
-              const fileName = `cropped_image_${Date.now()}.jpg`;
+              const fileName = `cropped_avatar_${Date.now()}.jpg`;
               const file = new File([blob], fileName, { type: "image/jpeg" });
-              console.log("Mobile crop - Created File object:", file);
+
+              console.log("✅ Mobile crop - Created File object:", {
+                name: file.name,
+                size: file.size,
+                type: file.type,
+              });
+
               onCropComplete(file);
               onClose();
             } catch (error: any) {
-              console.error("Error completing crop:", error);
+              console.error("❌ Error completing mobile crop:", error);
               onError(error.message || "Failed to crop image");
             }
           }}
+          onCloseEditor={onClose}
+          mode="crop-only"
+          throttleBlur={false}
+          allowedTransformOperations={["crop"]}
         />
       </Modal>
     );
@@ -176,93 +187,32 @@ const WebCropModal: React.FC<{
   const pan = React.useRef(new Animated.ValueXY()).current;
   const imageRef = React.useRef<any>(null);
 
-  // Initialize crop area when image loads
-  const onImageLoad = useCallback(
-    (event: any) => {
-      let naturalWidth, naturalHeight;
-
-      // Handle different event formats for web vs mobile
-      if (Platform.OS === "web") {
-        // On web, try multiple methods to get dimensions
-        console.log("Web onLoad event:", event);
-        console.log("Image ref:", imageRef.current);
-
-        // Method 1: Use the ref (most reliable on web)
-        if (
-          imageRef.current &&
-          typeof imageRef.current.naturalWidth !== "undefined"
-        ) {
-          naturalWidth = imageRef.current.naturalWidth;
-          naturalHeight = imageRef.current.naturalHeight;
-          console.log("Got dimensions from ref.naturalWidth/Height");
-        }
-        // Method 2: Try event.target
-        else if (event.target) {
-          naturalWidth = event.target.naturalWidth || event.target.width;
-          naturalHeight = event.target.naturalHeight || event.target.height;
-          console.log("Got dimensions from event.target");
-        }
-        // Method 3: Try nativeEvent (might work in some cases)
-        else if (event.nativeEvent?.target) {
-          naturalWidth =
-            event.nativeEvent.target.naturalWidth ||
-            event.nativeEvent.target.width;
-          naturalHeight =
-            event.nativeEvent.target.naturalHeight ||
-            event.nativeEvent.target.height;
-          console.log("Got dimensions from event.nativeEvent.target");
-        }
-      } else {
-        // On mobile, use event.nativeEvent
-        if (event.nativeEvent) {
-          const source = event.nativeEvent.source;
-          naturalWidth = source?.width;
-          naturalHeight = source?.height;
-        }
-      }
-
-      console.log("Image loaded, natural dimensions:", {
-        naturalWidth,
-        naturalHeight,
-        platform: Platform.OS,
-      });
-
-      if (
-        !naturalWidth ||
-        !naturalHeight ||
-        naturalWidth === 0 ||
-        naturalHeight === 0
-      ) {
-        console.error("Invalid image dimensions:", {
-          naturalWidth,
-          naturalHeight,
-        });
-        return;
-      }
-
+  // NEW HELPER FUNCTION: Extract crop area initialization
+  const initializeCropArea = useCallback(
+    (naturalWidth: number, naturalHeight: number) => {
       // Calculate displayed image dimensions considering resizeMode="contain"
-      const containerWidth = 300; // From styles.imageContainer height
+      const containerWidth = 300;
       const containerHeight = 300;
-
       const imageAspectRatio = naturalWidth / naturalHeight;
       const containerAspectRatio = containerWidth / containerHeight;
 
-      let displayWidth, displayHeight;
+      let displayWidth, displayHeight, offsetX, offsetY;
+
       if (imageAspectRatio > containerAspectRatio) {
         // Image is wider - fit by width
         displayWidth = containerWidth;
         displayHeight = containerWidth / imageAspectRatio;
+        offsetX = 0;
+        offsetY = (containerHeight - displayHeight) / 2;
       } else {
         // Image is taller - fit by height
         displayHeight = containerHeight;
         displayWidth = containerHeight * imageAspectRatio;
+        offsetX = (containerWidth - displayWidth) / 2;
+        offsetY = 0;
       }
 
-      // Calculate offset to center the image in the container
-      const offsetX = (containerWidth - displayWidth) / 2;
-      const offsetY = (containerHeight - displayHeight) / 2;
-
-      console.log("Display dimensions:", {
+      console.log("✅ Display dimensions calculated:", {
         displayWidth,
         displayHeight,
         offsetX,
@@ -271,8 +221,8 @@ const WebCropModal: React.FC<{
 
       setImageSize({ width: displayWidth, height: displayHeight });
 
-      // Calculate initial crop area (80% of displayed image, centered, maintaining aspect ratio)
-      const cropSize = Math.min(displayWidth, displayHeight) * 0.6;
+      // Calculate initial crop area (70% of displayed image, centered)
+      const cropSize = Math.min(displayWidth, displayHeight) * 0.7;
       const cropWidth = aspectRatio >= 1 ? cropSize : cropSize * aspectRatio;
       const cropHeight = aspectRatio >= 1 ? cropSize / aspectRatio : cropSize;
 
@@ -283,10 +233,104 @@ const WebCropModal: React.FC<{
         height: cropHeight,
       };
 
-      console.log("Initial crop area calculated:", initialCropArea);
+      console.log("✅ Initial crop area set:", initialCropArea);
       setCropArea(initialCropArea);
     },
     [aspectRatio],
+  );
+
+  // In ImageCropModal.tsx - Replace the onImageLoad function
+
+  const onImageLoad = useCallback(
+    (event: any) => {
+      if (Platform.OS === "web") {
+        // CRITICAL FIX: For web, access the underlying DOM element differently
+        // React Native Image on web wraps an HTML img element
+        let imgElement: HTMLImageElement | null = null;
+
+        // Try to get the image element from the event first
+        if (event?.target?.naturalWidth) {
+          imgElement = event.target;
+        } else if (event?.nativeEvent?.target?.naturalWidth) {
+          imgElement = event.nativeEvent.target;
+        } else if (imageRef.current) {
+          // Fallback: Try to access through ref
+          // On web, React Native Image renders to an img tag
+          if ((imageRef.current as any).naturalWidth) {
+            imgElement = imageRef.current as any;
+          } else {
+            // Last resort: query the DOM element directly
+            const imgNode =
+              (imageRef.current as any)._nativeTag || (imageRef.current as any);
+            if (imgNode && imgNode.querySelector) {
+              imgElement = imgNode.querySelector("img");
+            } else if (imgNode && imgNode.tagName === "IMG") {
+              imgElement = imgNode;
+            }
+          }
+        }
+
+        if (imgElement && imgElement.naturalWidth && imgElement.naturalHeight) {
+          const naturalWidth = imgElement.naturalWidth;
+          const naturalHeight = imgElement.naturalHeight;
+
+          console.log("✅ Web image loaded:", {
+            naturalWidth,
+            naturalHeight,
+          });
+
+          if (naturalWidth > 0 && naturalHeight > 0) {
+            initializeCropArea(naturalWidth, naturalHeight);
+          } else {
+            console.error("❌ Invalid image dimensions:", {
+              naturalWidth,
+              naturalHeight,
+            });
+          }
+        } else {
+          // If still can't get dimensions, create a new Image object
+          console.warn("⚠️ Falling back to Image object method");
+          const img = new window.Image();
+          img.onload = () => {
+            const naturalWidth = img.naturalWidth;
+            const naturalHeight = img.naturalHeight;
+
+            console.log("✅ Web image loaded (via Image object):", {
+              naturalWidth,
+              naturalHeight,
+            });
+
+            if (naturalWidth > 0 && naturalHeight > 0) {
+              initializeCropArea(naturalWidth, naturalHeight);
+            }
+          };
+          img.onerror = () => {
+            console.error("❌ Failed to load image");
+            onError("Failed to load image");
+          };
+          img.src = imageUri;
+        }
+      } else {
+        // For mobile - unchanged
+        if (event.nativeEvent?.source) {
+          const source = event.nativeEvent.source;
+          const naturalWidth = source.width;
+          const naturalHeight = source.height;
+
+          console.log("✅ Mobile image loaded:", {
+            naturalWidth,
+            naturalHeight,
+          });
+
+          if (naturalWidth && naturalHeight) {
+            initializeCropArea(naturalWidth, naturalHeight);
+          } else {
+            console.error("❌ Invalid mobile image dimensions");
+          }
+        }
+      }
+    },
+    [initializeCropArea, imageUri, onError],
   );
 
   // Web-specific mouse/touch handlers for dragging and resizing
@@ -644,132 +688,141 @@ const WebCropModal: React.FC<{
     try {
       console.log("Cropping image with displayed area:", cropArea);
 
-      // Convert displayed crop area to original image coordinates
+      // CRITICAL FIX: Get the actual natural image dimensions
+      let originalWidth: number;
+      let originalHeight: number;
+
+      if (Platform.OS === "web") {
+        // For web, we need to create a new Image object to get natural dimensions
+        const img = new window.Image();
+        await new Promise((resolve, reject) => {
+          img.onload = resolve;
+          img.onerror = reject;
+          img.src = imageUri;
+        });
+        originalWidth = img.naturalWidth;
+        originalHeight = img.naturalHeight;
+      } else {
+        // For mobile, use Image.getSize
+        const dimensions = await new Promise<{ width: number; height: number }>(
+          (resolve, reject) => {
+            Image.getSize(
+              imageUri,
+              (width, height) => {
+                resolve({ width, height });
+              },
+              reject,
+            );
+          },
+        );
+        originalWidth = dimensions.width;
+        originalHeight = dimensions.height;
+      }
+
+      console.log("✅ Original image dimensions:", {
+        originalWidth,
+        originalHeight,
+      });
+
       // Get container bounds (300x300 from styles)
       const containerWidth = 300;
       const containerHeight = 300;
 
-      // Get original image dimensions from the image element
-      let originalWidth, originalHeight;
-      if (Platform.OS === "web" && imageRef.current) {
-        originalWidth = imageRef.current.naturalWidth;
-        originalHeight = imageRef.current.naturalHeight;
-      } else {
-        // Fallback - we need the original dimensions
-        originalWidth = imageSize.width;
-        originalHeight = imageSize.height;
-      }
-
-      // Calculate displayed image bounds considering resizeMode="contain"
+      // Calculate how the image is actually displayed (considering contain mode)
       const imageAspectRatio = originalWidth / originalHeight;
       const containerAspectRatio = containerWidth / containerHeight;
 
       let displayWidth, displayHeight, offsetX, offsetY;
+
       if (imageAspectRatio > containerAspectRatio) {
+        // Image is wider - fits by width
         displayWidth = containerWidth;
         displayHeight = containerWidth / imageAspectRatio;
         offsetX = 0;
         offsetY = (containerHeight - displayHeight) / 2;
       } else {
+        // Image is taller - fits by height
         displayHeight = containerHeight;
         displayWidth = containerHeight * imageAspectRatio;
         offsetX = (containerWidth - displayWidth) / 2;
         offsetY = 0;
       }
 
-      // Calculate scale factor from displayed to original
-      const scaleX = originalWidth / displayWidth;
-      const scaleY = originalHeight / displayHeight;
-
-      // Convert crop area to original image coordinates
-      const originalCropArea = {
-        originX: Math.max(0, Math.round((cropArea.x - offsetX) * scaleX)),
-        originY: Math.max(0, Math.round((cropArea.y - offsetY) * scaleY)),
-        width: Math.round(cropArea.width * scaleX),
-        height: Math.round(cropArea.height * scaleY),
-      };
-
-      console.log("Original image dimensions:", {
-        originalWidth,
-        originalHeight,
-      });
       console.log("Display dimensions:", {
         displayWidth,
         displayHeight,
         offsetX,
         offsetY,
       });
-      console.log("Scale factors:", { scaleX, scaleY });
-      console.log("Original crop area:", originalCropArea);
 
-      // Use Expo ImageManipulator to crop the image
+      // CRITICAL FIX: Calculate scale from DISPLAY to ORIGINAL
+      const scaleX = originalWidth / displayWidth;
+      const scaleY = originalHeight / displayHeight;
+
+      console.log("Scale factors:", { scaleX, scaleY });
+
+      // Convert crop area from display coordinates to original image coordinates
+      const originalCropArea = {
+        originX: Math.max(0, Math.round((cropArea.x - offsetX) * scaleX)),
+        originY: Math.max(0, Math.round((cropArea.y - offsetY) * scaleY)),
+        width: Math.min(Math.round(cropArea.width * scaleX), originalWidth),
+        height: Math.min(Math.round(cropArea.height * scaleY), originalHeight),
+      };
+
+      // CRITICAL FIX: Ensure crop area is within bounds
+      if (originalCropArea.originX + originalCropArea.width > originalWidth) {
+        originalCropArea.width = originalWidth - originalCropArea.originX;
+      }
+      if (originalCropArea.originY + originalCropArea.height > originalHeight) {
+        originalCropArea.height = originalHeight - originalCropArea.originY;
+      }
+
+      console.log(
+        "✅ Final crop area (original coordinates):",
+        originalCropArea,
+      );
+
+      // Validate crop area
+      if (
+        originalCropArea.width <= 0 ||
+        originalCropArea.height <= 0 ||
+        originalCropArea.originX < 0 ||
+        originalCropArea.originY < 0
+      ) {
+        throw new Error("Invalid crop coordinates calculated");
+      }
+
+      // Use Expo ImageManipulator to crop
       const result = await ImageManipulator.manipulateAsync(
         imageUri,
-        [
-          {
-            crop: originalCropArea,
-          },
-        ],
+        [{ crop: originalCropArea }],
         {
           compress: 0.9,
           format: ImageManipulator.SaveFormat.JPEG,
         },
       );
 
-      console.log("Image cropped successfully:", result.uri);
+      console.log("✅ Image cropped successfully:", result.uri);
 
-      // On web, ImageManipulator returns a file:// URI that browsers can't access
-      // We need to get the image data and create a proper blob URL
+      // Convert to File object for upload
       if (Platform.OS === "web") {
-        try {
-          // On web, get the base64 data by reading the result with base64 format
-          const base64Result = await ImageManipulator.manipulateAsync(
-            result.uri,
-            [],
-            {
-              compress: 0.9,
-              format: ImageManipulator.SaveFormat.JPEG,
-              base64: true,
-            },
-          );
+        // For web, fetch the result and create a proper File
+        const response = await fetch(result.uri);
+        const blob = await response.blob();
+        const fileName = `cropped_avatar_${Date.now()}.jpg`;
+        const file = new File([blob], fileName, { type: "image/jpeg" });
 
-          if (base64Result.base64) {
-            // Convert base64 to blob
-            const byteCharacters = atob(base64Result.base64);
-            const byteNumbers = new Array(byteCharacters.length);
-            for (let i = 0; i < byteCharacters.length; i++) {
-              byteNumbers[i] = byteCharacters.charCodeAt(i);
-            }
-            const byteArray = new Uint8Array(byteNumbers);
-            const blob = new Blob([byteArray], { type: "image/jpeg" });
-
-            // Create a File object from the blob
-            const fileName = `cropped_image_${Date.now()}.jpg`;
-            const file = new File([blob], fileName, { type: "image/jpeg" });
-            console.log("Created File object:", file);
-            onCropComplete(file);
-          } else {
-            throw new Error("Failed to get base64 data from ImageManipulator");
-          }
-        } catch (blobError: any) {
-          console.error("Error converting to blob:", blobError);
-          onError("Failed to process cropped image. Please try again.");
-          return;
-        }
+        console.log("✅ Created File object for web:", file);
+        onCropComplete(file);
       } else {
-        // On native, convert URI to File object
-        try {
-          const response = await fetch(result.uri);
-          const blob = await response.blob();
-          const fileName = `cropped_image_${Date.now()}.jpg`;
-          const file = new File([blob], fileName, { type: "image/jpeg" });
-          console.log("Created File object from native URI:", file);
-          onCropComplete(file);
-        } catch (nativeError: any) {
-          console.error("Error converting native URI to File:", nativeError);
-          onError("Failed to process cropped image. Please try again.");
-          return;
-        }
+        // For mobile, convert URI to File
+        const response = await fetch(result.uri);
+        const blob = await response.blob();
+        const fileName = `cropped_avatar_${Date.now()}.jpg`;
+        const file = new File([blob], fileName, { type: "image/jpeg" });
+
+        console.log("✅ Created File object for mobile:", file);
+        onCropComplete(file);
       }
 
       onClose();
