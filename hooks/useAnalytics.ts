@@ -1,31 +1,31 @@
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+    calculateCostMetrics,
+    calculateFuelEfficiency,
+    calculateServiceMetrics,
+    calculateTotalDistance,
+    calculateVehicleComparison,
+    generateTrendData,
+    getPeriodOptions,
+} from "../lib/analytics/calculations";
 import { useAuth } from "../lib/contexts/AuthContext";
 import {
-  AnalyticsFilters,
-  AnalyticsPeriod,
-  CostMetrics,
-  FuelEfficiencyMetrics,
-  ServiceMetrics,
-  VehiclePerformance,
-  TrendDataPoint,
-  AnalyticsResponse,
-  TrendAnalysis,
-} from "../types/analytics";
-import {
-  fetchAnalyticsData,
-  fetchVehiclesWithLogs,
-  fetchAccessibleVehicles,
+    fetchAccessibleVehicles,
+    fetchAnalyticsData,
+    fetchVehiclesWithLogs,
 } from "../lib/supabase/analytics-queries";
-import {
-  calculateFuelEfficiency,
-  calculateCostMetrics,
-  calculateServiceMetrics,
-  calculateVehicleComparison,
-  generateTrendData,
-  getPeriodOptions,
-  calculateTotalDistance,
-} from "../lib/analytics/calculations";
 import { Vehicle } from "../types";
+import {
+    AnalyticsFilters,
+    AnalyticsPeriod,
+    AnalyticsResponse,
+    CostMetrics,
+    FuelEfficiencyMetrics,
+    ServiceMetrics,
+    TrendAnalysis,
+    TrendDataPoint,
+    VehiclePerformance,
+} from "../types/analytics";
 
 /**
  * Main hook for analytics data

@@ -1,21 +1,21 @@
-import React, { useMemo } from "react";
-import { View, Text, ScrollView, RefreshControl } from "react-native";
-import { createStyleSheet, useStyles } from "react-native-unistyles";
-import { SafeAreaView } from "react-native-safe-area-context";
+import React, { useMemo } from 'react';
+import { View, Text, ScrollView, RefreshControl } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { useStyles } from 'react-native-unistyles';
 import {
   PeriodSelector,
   VehicleFilter,
   EmptyAnalytics,
   AnalyticsHeader,
-} from "../../../components/analytics";
+} from '@/components/analytics';
 import {
   useAnalyticsData,
   usePeriodSelector,
   useVehicleFilter,
-} from "../../../hooks/useAnalytics";
+} from '@/hooks/useAnalytics';
 
 export default function PerformanceTab() {
-  const { styles, theme } = useStyles(stylesheet);
+  const { theme } = useStyles();
   const { period, setPeriod, periods } = usePeriodSelector();
   const {
     vehicles,
@@ -31,28 +31,31 @@ export default function PerformanceTab() {
       period,
       vehicleIds: selectedVehicleIds,
     }),
-    [period, selectedVehicleIds],
+    [period, selectedVehicleIds]
   );
 
-  const { loading, error, vehicleComparison, refetch } =
-    useAnalyticsData(filters);
+  const { loading, error, vehicleComparison, refetch } = useAnalyticsData(filters);
 
   const hasData = vehicleComparison && vehicleComparison.length > 0;
 
+  // Loading state
   if (loading || vehiclesLoading) {
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.background }}>
         <AnalyticsHeader />
-        <View style={styles.loadingContainer}>
-          <Text style={styles.loadingText}>Loading vehicle performance...</Text>
+        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+          <Text style={{ fontSize: theme.fontSize.base, color: theme.colors.textSecondary }}>
+            Loading vehicle performance...
+          </Text>
         </View>
       </SafeAreaView>
     );
   }
 
+  // Error state
   if (error) {
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.background }}>
         <EmptyAnalytics
           icon="alert-circle-outline"
           title="Error Loading Data"
@@ -62,22 +65,25 @@ export default function PerformanceTab() {
     );
   }
 
+  // Empty state
   if (!hasData) {
     return (
-      <SafeAreaView style={styles.container}>
-        <View style={styles.filtersContainer}>
-          <PeriodSelector
-            selectedPeriod={period}
-            onPeriodChange={setPeriod}
-            periods={periods}
-          />
-          <VehicleFilter
-            vehicles={vehicles}
-            selectedVehicleIds={selectedVehicleIds}
-            onToggleVehicle={toggleVehicle}
-            onSelectAll={selectAll}
-            onClearAll={clearAll}
-          />
+      <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.background }}>
+        <View style={{ padding: theme.spacing.lg }}>
+          <View style={{ marginBottom: theme.spacing.lg }}>
+            <PeriodSelector
+              selectedPeriod={period}
+              onPeriodChange={setPeriod}
+              periods={periods}
+            />
+            <VehicleFilter
+              vehicles={vehicles}
+              selectedVehicleIds={selectedVehicleIds}
+              onToggleVehicle={toggleVehicle}
+              onSelectAll={selectAll}
+              onClearAll={clearAll}
+            />
+          </View>
         </View>
         <EmptyAnalytics
           icon="car-outline"
@@ -89,30 +95,26 @@ export default function PerformanceTab() {
   }
 
   // Sort vehicles by total cost (descending)
-  const sortedVehicles = [...vehicleComparison].sort(
-    (a, b) => b.totalCost - a.totalCost,
-  );
+  const sortedVehicles = [...vehicleComparison].sort((a, b) => b.totalCost - a.totalCost);
 
   // Find best and worst performers
   const mostEfficient = [...vehicleComparison].sort(
-    (a, b) => a.fuelEfficiency - b.fuelEfficiency,
+    (a, b) => a.fuelEfficiency - b.fuelEfficiency
   )[0];
   const leastEfficient = [...vehicleComparison].sort(
-    (a, b) => b.fuelEfficiency - a.fuelEfficiency,
+    (a, b) => b.fuelEfficiency - a.fuelEfficiency
   )[0];
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.background }}>
       <ScrollView
-        style={styles.scrollView}
-        refreshControl={
-          <RefreshControl refreshing={loading} onRefresh={refetch} />
-        }
+        style={{ flex: 1 }}
+        refreshControl={<RefreshControl refreshing={loading} onRefresh={refetch} />}
         showsVerticalScrollIndicator={false}
       >
-        <View style={styles.content}>
+        <View style={{ padding: theme.spacing.lg }}>
           {/* Filters */}
-          <View style={styles.filtersContainer}>
+          <View style={{ marginBottom: theme.spacing.lg }}>
             <PeriodSelector
               selectedPeriod={period}
               onPeriodChange={setPeriod}
@@ -130,23 +132,106 @@ export default function PerformanceTab() {
           {/* Highlights */}
           {vehicleComparison.length > 1 && (
             <>
-              <Text style={styles.sectionTitle}>Highlights</Text>
-              <View style={styles.highlightsRow}>
-                <View style={styles.highlightCard}>
-                  <Text style={styles.highlightLabel}>Most Efficient</Text>
-                  <Text style={styles.highlightVehicle} numberOfLines={1}>
+              <Text
+                style={{
+                  fontSize: theme.fontSize.xl,
+                  fontWeight: theme.fontWeight.bold,
+                  color: theme.colors.text,
+                  marginBottom: theme.spacing.md,
+                  marginTop: theme.spacing.lg,
+                }}
+              >
+                Highlights
+              </Text>
+              <View
+                style={{
+                  flexDirection: 'row',
+                  gap: theme.spacing.md,
+                  marginBottom: theme.spacing.md,
+                }}
+              >
+                {/* Most Efficient */}
+                <View
+                  style={{
+                    flex: 1,
+                    backgroundColor: theme.colors.surface,
+                    borderRadius: theme.borderRadius.lg,
+                    padding: theme.spacing.lg,
+                    alignItems: 'center',
+                  }}
+                >
+                  <Text
+                    style={{
+                      fontSize: theme.fontSize.xs,
+                      color: theme.colors.textSecondary,
+                      fontWeight: theme.fontWeight.medium,
+                      marginBottom: theme.spacing.xs,
+                    }}
+                  >
+                    Most Efficient
+                  </Text>
+                  <Text
+                    style={{
+                      fontSize: theme.fontSize.sm,
+                      color: theme.colors.text,
+                      fontWeight: theme.fontWeight.bold,
+                      marginBottom: theme.spacing.xs,
+                      textAlign: 'center',
+                    }}
+                    numberOfLines={1}
+                  >
                     {mostEfficient.vehicleName}
                   </Text>
-                  <Text style={styles.highlightValue}>
+                  <Text
+                    style={{
+                      fontSize: theme.fontSize.xl,
+                      color: theme.colors.primary,
+                      fontWeight: theme.fontWeight.bold,
+                    }}
+                  >
                     {mostEfficient.fuelEfficiency.toFixed(1)} L/100km
                   </Text>
                 </View>
-                <View style={styles.highlightCard}>
-                  <Text style={styles.highlightLabel}>Least Efficient</Text>
-                  <Text style={styles.highlightVehicle} numberOfLines={1}>
+
+                {/* Least Efficient */}
+                <View
+                  style={{
+                    flex: 1,
+                    backgroundColor: theme.colors.surface,
+                    borderRadius: theme.borderRadius.lg,
+                    padding: theme.spacing.lg,
+                    alignItems: 'center',
+                  }}
+                >
+                  <Text
+                    style={{
+                      fontSize: theme.fontSize.xs,
+                      color: theme.colors.textSecondary,
+                      fontWeight: theme.fontWeight.medium,
+                      marginBottom: theme.spacing.xs,
+                    }}
+                  >
+                    Least Efficient
+                  </Text>
+                  <Text
+                    style={{
+                      fontSize: theme.fontSize.sm,
+                      color: theme.colors.text,
+                      fontWeight: theme.fontWeight.bold,
+                      marginBottom: theme.spacing.xs,
+                      textAlign: 'center',
+                    }}
+                    numberOfLines={1}
+                  >
                     {leastEfficient.vehicleName}
                   </Text>
-                  <Text style={styles.highlightValue}>
+                  <Text
+                    style={{
+                      fontSize: theme.fontSize.xl,
+                      color: theme.colors.primary,
+                      fontWeight: theme.fontWeight.bold,
+                    }}
+                  >
                     {leastEfficient.fuelEfficiency.toFixed(1)} L/100km
                   </Text>
                 </View>
@@ -155,206 +240,234 @@ export default function PerformanceTab() {
           )}
 
           {/* Vehicle Comparison Table */}
-          <Text style={styles.sectionTitle}>Vehicle Comparison</Text>
+          <Text
+            style={{
+              fontSize: theme.fontSize.xl,
+              fontWeight: theme.fontWeight.bold,
+              color: theme.colors.text,
+              marginBottom: theme.spacing.md,
+              marginTop: theme.spacing.lg,
+            }}
+          >
+            Vehicle Comparison
+          </Text>
+
           {sortedVehicles.map((vehicle, index) => (
-            <View key={vehicle.vehicleId} style={styles.vehicleCard}>
-              <View style={styles.vehicleHeader}>
-                <View style={styles.vehicleRank}>
-                  <Text style={styles.rankNumber}>#{index + 1}</Text>
+            <View
+              key={vehicle.vehicleId}
+              style={{
+                backgroundColor: theme.colors.surface,
+                borderRadius: theme.borderRadius.lg,
+                padding: theme.spacing.lg,
+                marginBottom: theme.spacing.md,
+                borderLeftWidth: 4,
+                borderLeftColor: theme.colors.primary,
+              }}
+            >
+              {/* Vehicle Header */}
+              <View
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  marginBottom: theme.spacing.md,
+                  gap: theme.spacing.md,
+                }}
+              >
+                {/* Rank Badge */}
+                <View
+                  style={{
+                    width: 40,
+                    height: 40,
+                    borderRadius: 20,
+                    backgroundColor: theme.colors.primary,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <Text
+                    style={{
+                      fontSize: theme.fontSize.base,
+                      fontWeight: theme.fontWeight.bold,
+                      color: theme.colors.white,
+                    }}
+                  >
+                    #{index + 1}
+                  </Text>
                 </View>
-                <Text style={styles.vehicleName} numberOfLines={1}>
+
+                {/* Vehicle Name */}
+                <Text
+                  style={{
+                    flex: 1,
+                    fontSize: theme.fontSize.lg,
+                    fontWeight: theme.fontWeight.bold,
+                    color: theme.colors.text,
+                  }}
+                  numberOfLines={1}
+                >
                   {vehicle.vehicleName}
                 </Text>
               </View>
 
-              <View style={styles.vehicleMetrics}>
-                <View style={styles.metricRow}>
-                  <Text style={styles.metricLabel}>Total Cost</Text>
-                  <Text style={styles.metricValue}>
+              {/* Vehicle Metrics */}
+              <View style={{ gap: theme.spacing.sm, marginBottom: theme.spacing.md }}>
+                {/* Total Cost */}
+                <View
+                  style={{
+                    flexDirection: 'row',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                  }}
+                >
+                  <Text
+                    style={{ fontSize: theme.fontSize.sm, color: theme.colors.textSecondary }}
+                  >
+                    Total Cost
+                  </Text>
+                  <Text
+                    style={{
+                      fontSize: theme.fontSize.sm,
+                      color: theme.colors.text,
+                      fontWeight: theme.fontWeight.medium,
+                    }}
+                  >
                     RM{vehicle.totalCost.toFixed(2)}
                   </Text>
                 </View>
-                <View style={styles.metricRow}>
-                  <Text style={styles.metricLabel}>Cost per km</Text>
-                  <Text style={styles.metricValue}>
+
+                {/* Cost per km */}
+                <View
+                  style={{
+                    flexDirection: 'row',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                  }}
+                >
+                  <Text
+                    style={{ fontSize: theme.fontSize.sm, color: theme.colors.textSecondary }}
+                  >
+                    Cost per km
+                  </Text>
+                  <Text
+                    style={{
+                      fontSize: theme.fontSize.sm,
+                      color: theme.colors.text,
+                      fontWeight: theme.fontWeight.medium,
+                    }}
+                  >
                     RM{vehicle.costPerKm.toFixed(2)}
                   </Text>
                 </View>
-                <View style={styles.metricRow}>
-                  <Text style={styles.metricLabel}>Fuel Efficiency</Text>
-                  <Text style={styles.metricValue}>
+
+                {/* Fuel Efficiency */}
+                <View
+                  style={{
+                    flexDirection: 'row',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                  }}
+                >
+                  <Text
+                    style={{ fontSize: theme.fontSize.sm, color: theme.colors.textSecondary }}
+                  >
+                    Fuel Efficiency
+                  </Text>
+                  <Text
+                    style={{
+                      fontSize: theme.fontSize.sm,
+                      color: theme.colors.text,
+                      fontWeight: theme.fontWeight.medium,
+                    }}
+                  >
                     {vehicle.fuelEfficiency.toFixed(1)} L/100km
                   </Text>
                 </View>
-                <View style={styles.metricRow}>
-                  <Text style={styles.metricLabel}>Distance Traveled</Text>
-                  <Text style={styles.metricValue}>
+
+                {/* Distance Traveled */}
+                <View
+                  style={{
+                    flexDirection: 'row',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                  }}
+                >
+                  <Text
+                    style={{ fontSize: theme.fontSize.sm, color: theme.colors.textSecondary }}
+                  >
+                    Distance Traveled
+                  </Text>
+                  <Text
+                    style={{
+                      fontSize: theme.fontSize.sm,
+                      color: theme.colors.text,
+                      fontWeight: theme.fontWeight.medium,
+                    }}
+                  >
                     {vehicle.totalDistance.toFixed(0)} km
                   </Text>
                 </View>
-                <View style={styles.metricRow}>
-                  <Text style={styles.metricLabel}>Services</Text>
-                  <Text style={styles.metricValue}>
+
+                {/* Services */}
+                <View
+                  style={{
+                    flexDirection: 'row',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                  }}
+                >
+                  <Text
+                    style={{ fontSize: theme.fontSize.sm, color: theme.colors.textSecondary }}
+                  >
+                    Services
+                  </Text>
+                  <Text
+                    style={{
+                      fontSize: theme.fontSize.sm,
+                      color: theme.colors.text,
+                      fontWeight: theme.fontWeight.medium,
+                    }}
+                  >
                     {vehicle.serviceCount} completed
                   </Text>
                 </View>
               </View>
 
-              {/* Cost breakdown bar */}
-              <View style={styles.costBreakdown}>
-                <Text style={styles.costBreakdownLabel}>Cost Breakdown</Text>
-                <View style={styles.progressBar}>
+              {/* Cost Breakdown Progress Bar */}
+              <View style={{ marginTop: theme.spacing.sm }}>
+                <Text
+                  style={{
+                    fontSize: theme.fontSize.xs,
+                    color: theme.colors.textSecondary,
+                    marginBottom: theme.spacing.xs,
+                  }}
+                >
+                  Cost Breakdown
+                </Text>
+                <View
+                  style={{
+                    height: 8,
+                    backgroundColor: theme.colors.border,
+                    borderRadius: theme.borderRadius.sm,
+                    overflow: 'hidden',
+                  }}
+                >
                   <View
-                    style={[
-                      styles.progressFill,
-                      {
-                        width: `${(vehicle.totalCost / sortedVehicles[0].totalCost) * 100}%`,
-                        backgroundColor: theme.colors.analytics.cost,
-                      },
-                    ]}
+                    style={{
+                      height: '100%',
+                      width: `${(vehicle.totalCost / sortedVehicles[0].totalCost) * 100}%`,
+                      backgroundColor: theme.colors.analytics.cost,
+                      borderRadius: theme.borderRadius.sm,
+                    }}
                   />
                 </View>
               </View>
             </View>
           ))}
 
-          <View style={styles.spacing} />
+          {/* Bottom spacing */}
+          <View style={{ height: theme.spacing.xl }} />
         </View>
       </ScrollView>
     </SafeAreaView>
   );
 }
-
-const stylesheet = createStyleSheet((theme) => ({
-  container: {
-    flex: 1,
-    backgroundColor: theme.colors.background,
-  },
-  loadingContainer: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  loadingText: {
-    fontSize: theme.fontSize.base,
-    color: theme.colors.textSecondary,
-  },
-  scrollView: {
-    flex: 1,
-  },
-  content: {
-    padding: theme.spacing.lg,
-  },
-  filtersContainer: {
-    marginBottom: theme.spacing.lg,
-  },
-  sectionTitle: {
-    fontSize: theme.fontSize.xl,
-    fontWeight: theme.fontWeight.bold,
-    color: theme.colors.text,
-    marginBottom: theme.spacing.md,
-    marginTop: theme.spacing.lg,
-  },
-  highlightsRow: {
-    flexDirection: "row",
-    gap: theme.spacing.md,
-    marginBottom: theme.spacing.md,
-  },
-  highlightCard: {
-    flex: 1,
-    backgroundColor: theme.colors.surface,
-    borderRadius: theme.borderRadius.lg,
-    padding: theme.spacing.lg,
-    alignItems: "center",
-  },
-  highlightLabel: {
-    fontSize: theme.fontSize.xs,
-    color: theme.colors.textSecondary,
-    fontWeight: theme.fontWeight.medium,
-    marginBottom: theme.spacing.xs,
-  },
-  highlightVehicle: {
-    fontSize: theme.fontSize.sm,
-    color: theme.colors.text,
-    fontWeight: theme.fontWeight.bold,
-    marginBottom: theme.spacing.xs,
-    textAlign: "center",
-  },
-  highlightValue: {
-    fontSize: theme.fontSize.xl,
-    color: theme.colors.primary,
-    fontWeight: theme.fontWeight.bold,
-  },
-  vehicleCard: {
-    backgroundColor: theme.colors.surface,
-    borderRadius: theme.borderRadius.lg,
-    padding: theme.spacing.lg,
-    marginBottom: theme.spacing.md,
-    borderLeftWidth: 4,
-    borderLeftColor: theme.colors.primary,
-  },
-  vehicleHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: theme.spacing.md,
-    gap: theme.spacing.md,
-  },
-  vehicleRank: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: theme.colors.primary,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  rankNumber: {
-    fontSize: theme.fontSize.base,
-    fontWeight: theme.fontWeight.bold,
-    color: theme.colors.white,
-  },
-  vehicleName: {
-    flex: 1,
-    fontSize: theme.fontSize.lg,
-    fontWeight: theme.fontWeight.bold,
-    color: theme.colors.text,
-  },
-  vehicleMetrics: {
-    gap: theme.spacing.sm,
-    marginBottom: theme.spacing.md,
-  },
-  metricRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  metricLabel: {
-    fontSize: theme.fontSize.sm,
-    color: theme.colors.textSecondary,
-  },
-  metricValue: {
-    fontSize: theme.fontSize.sm,
-    color: theme.colors.text,
-    fontWeight: theme.fontWeight.medium,
-  },
-  costBreakdown: {
-    marginTop: theme.spacing.sm,
-  },
-  costBreakdownLabel: {
-    fontSize: theme.fontSize.xs,
-    color: theme.colors.textSecondary,
-    marginBottom: theme.spacing.xs,
-  },
-  progressBar: {
-    height: 8,
-    backgroundColor: theme.colors.border,
-    borderRadius: theme.borderRadius.sm,
-    overflow: "hidden",
-  },
-  progressFill: {
-    height: "100%",
-    borderRadius: theme.borderRadius.sm,
-  },
-  spacing: {
-    height: theme.spacing.xl,
-  },
-}));
