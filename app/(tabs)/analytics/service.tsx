@@ -1,7 +1,7 @@
-import React, { useMemo } from "react";
-import { View, Text, ScrollView, RefreshControl } from "react-native";
-import { createStyleSheet, useStyles } from "react-native-unistyles";
-import { SafeAreaView } from "react-native-safe-area-context";
+import React, { useMemo } from 'react';
+import { View, Text, ScrollView, RefreshControl } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { useStyles } from 'react-native-unistyles';
 import {
   MetricCard,
   PeriodSelector,
@@ -10,16 +10,16 @@ import {
   AnalyticsHeader,
   TrendLineChart,
   UpcomingServiceCard,
-} from "../../../components/analytics";
+} from '@/components/analytics';
 import {
   useAnalyticsData,
   usePeriodSelector,
   useVehicleFilter,
   useAnalyticsTrends,
-} from "../../../hooks/useAnalytics";
+} from '@/hooks/useAnalytics';
 
 export default function ServiceTab() {
-  const { styles, theme } = useStyles(stylesheet);
+  const { theme } = useStyles();
   const { period, setPeriod, periods } = usePeriodSelector();
   const {
     vehicles,
@@ -35,29 +35,32 @@ export default function ServiceTab() {
       period,
       vehicleIds: selectedVehicleIds,
     }),
-    [period, selectedVehicleIds],
+    [period, selectedVehicleIds]
   );
 
-  const { loading, error, serviceMetrics, costMetrics, refetch } =
-    useAnalyticsData(filters);
-  const { trendData } = useAnalyticsTrends(filters, "service");
+  const { loading, error, serviceMetrics, costMetrics, refetch } = useAnalyticsData(filters);
+  const { trendData } = useAnalyticsTrends(filters, 'service');
 
   const hasData = serviceMetrics && serviceMetrics.totalServices > 0;
 
+  // Loading state
   if (loading || vehiclesLoading) {
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.background }}>
         <AnalyticsHeader />
-        <View style={styles.loadingContainer}>
-          <Text style={styles.loadingText}>Loading service analytics...</Text>
+        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+          <Text style={{ fontSize: theme.fontSize.base, color: theme.colors.textSecondary }}>
+            Loading service analytics...
+          </Text>
         </View>
       </SafeAreaView>
     );
   }
 
+  // Error state
   if (error) {
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.background }}>
         <EmptyAnalytics
           icon="alert-circle-outline"
           title="Error Loading Data"
@@ -67,22 +70,25 @@ export default function ServiceTab() {
     );
   }
 
+  // Empty state
   if (!hasData) {
     return (
-      <SafeAreaView style={styles.container}>
-        <View style={styles.filtersContainer}>
-          <PeriodSelector
-            selectedPeriod={period}
-            onPeriodChange={setPeriod}
-            periods={periods}
-          />
-          <VehicleFilter
-            vehicles={vehicles}
-            selectedVehicleIds={selectedVehicleIds}
-            onToggleVehicle={toggleVehicle}
-            onSelectAll={selectAll}
-            onClearAll={clearAll}
-          />
+      <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.background }}>
+        <View style={{ padding: theme.spacing.lg }}>
+          <View style={{ marginBottom: theme.spacing.lg }}>
+            <PeriodSelector
+              selectedPeriod={period}
+              onPeriodChange={setPeriod}
+              periods={periods}
+            />
+            <VehicleFilter
+              vehicles={vehicles}
+              selectedVehicleIds={selectedVehicleIds}
+              onToggleVehicle={toggleVehicle}
+              onSelectAll={selectAll}
+              onClearAll={clearAll}
+            />
+          </View>
         </View>
         <EmptyAnalytics
           icon="build-outline"
@@ -95,9 +101,9 @@ export default function ServiceTab() {
 
   const formatServiceType = (type: string) => {
     return type
-      .split("_")
+      .split('_')
       .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(" ");
+      .join(' ');
   };
 
   // Get top 3 service types by count
@@ -107,17 +113,15 @@ export default function ServiceTab() {
     .slice(0, 3);
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.background }}>
       <ScrollView
-        style={styles.scrollView}
-        refreshControl={
-          <RefreshControl refreshing={loading} onRefresh={refetch} />
-        }
+        style={{ flex: 1 }}
+        refreshControl={<RefreshControl refreshing={loading} onRefresh={refetch} />}
         showsVerticalScrollIndicator={false}
       >
-        <View style={styles.content}>
+        <View style={{ padding: theme.spacing.lg }}>
           {/* Filters */}
-          <View style={styles.filtersContainer}>
+          <View style={{ marginBottom: theme.spacing.lg }}>
             <PeriodSelector
               selectedPeriod={period}
               onPeriodChange={setPeriod}
@@ -133,9 +137,27 @@ export default function ServiceTab() {
           </View>
 
           {/* Service Overview */}
-          <Text style={styles.sectionTitle}>Service Overview</Text>
-          <View style={styles.metricsGrid}>
-            <View style={styles.metricCardWrapper}>
+          <Text
+            style={{
+              fontSize: theme.fontSize.xl,
+              fontWeight: theme.fontWeight.bold,
+              color: theme.colors.text,
+              marginBottom: theme.spacing.md,
+              marginTop: theme.spacing.lg,
+            }}
+          >
+            Service Overview
+          </Text>
+
+          {/* First Row: Total Services & Total Cost */}
+          <View
+            style={{
+              flexDirection: 'row',
+              gap: theme.spacing.md,
+              marginBottom: theme.spacing.md,
+            }}
+          >
+            <View style={{ flex: 1 }}>
               <MetricCard
                 title="Total Services"
                 value={serviceMetrics.totalServices}
@@ -144,7 +166,7 @@ export default function ServiceTab() {
                 color={theme.colors.analytics.service}
               />
             </View>
-            <View style={styles.metricCardWrapper}>
+            <View style={{ flex: 1 }}>
               <MetricCard
                 title="Total Cost"
                 value={`RM${costMetrics?.totalServiceCost.toFixed(2) || 0}`}
@@ -155,8 +177,15 @@ export default function ServiceTab() {
             </View>
           </View>
 
-          <View style={styles.metricsGrid}>
-            <View style={styles.metricCardWrapper}>
+          {/* Second Row: Average Cost & Service Interval */}
+          <View
+            style={{
+              flexDirection: 'row',
+              gap: theme.spacing.md,
+              marginBottom: theme.spacing.md,
+            }}
+          >
+            <View style={{ flex: 1 }}>
               <MetricCard
                 title="Average Cost"
                 value={`RM${costMetrics?.averageServiceCost.toFixed(2) || 0}`}
@@ -165,7 +194,7 @@ export default function ServiceTab() {
                 color={theme.colors.analytics.purple}
               />
             </View>
-            <View style={styles.metricCardWrapper}>
+            <View style={{ flex: 1 }}>
               <MetricCard
                 title="Service Interval"
                 value={`${serviceMetrics.averageServiceInterval.toFixed(0)}`}
@@ -176,23 +205,69 @@ export default function ServiceTab() {
             </View>
           </View>
 
-          {/* Top Service Types */}
-          <Text style={styles.sectionTitle}>Most Frequent Services</Text>
-          <View style={styles.serviceTypesList}>
+          {/* Most Frequent Services */}
+          <Text
+            style={{
+              fontSize: theme.fontSize.xl,
+              fontWeight: theme.fontWeight.bold,
+              color: theme.colors.text,
+              marginBottom: theme.spacing.md,
+              marginTop: theme.spacing.lg,
+            }}
+          >
+            Most Frequent Services
+          </Text>
+
+          <View style={{ gap: theme.spacing.md, marginBottom: theme.spacing.md }}>
             {topServiceTypes.map(([type, count]) => {
               const cost =
                 serviceMetrics.costByServiceType[
                   type as keyof typeof serviceMetrics.costByServiceType
                 ];
               return (
-                <View key={type} style={styles.serviceTypeCard}>
-                  <View style={styles.serviceTypeHeader}>
-                    <Text style={styles.serviceTypeName}>
+                <View
+                  key={type}
+                  style={{
+                    backgroundColor: theme.colors.surface,
+                    borderRadius: theme.borderRadius.lg,
+                    padding: theme.spacing.lg,
+                    borderLeftWidth: 4,
+                    borderLeftColor: theme.colors.analytics.service,
+                  }}
+                >
+                  <View
+                    style={{
+                      flexDirection: 'row',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      marginBottom: theme.spacing.xs,
+                    }}
+                  >
+                    <Text
+                      style={{
+                        fontSize: theme.fontSize.base,
+                        fontWeight: theme.fontWeight.bold,
+                        color: theme.colors.text,
+                      }}
+                    >
                       {formatServiceType(type)}
                     </Text>
-                    <Text style={styles.serviceTypeCount}>{count}x</Text>
+                    <Text
+                      style={{
+                        fontSize: theme.fontSize.lg,
+                        fontWeight: theme.fontWeight.bold,
+                        color: theme.colors.analytics.service,
+                      }}
+                    >
+                      {count}x
+                    </Text>
                   </View>
-                  <Text style={styles.serviceTypeCost}>
+                  <Text
+                    style={{
+                      fontSize: theme.fontSize.sm,
+                      color: theme.colors.textSecondary,
+                    }}
+                  >
                     RM{cost.toFixed(2)} total
                   </Text>
                 </View>
@@ -200,10 +275,20 @@ export default function ServiceTab() {
             })}
           </View>
 
-          {/* Upcoming Services */}
+          {/* Upcoming Maintenance */}
           {serviceMetrics.upcomingServices.length > 0 && (
             <>
-              <Text style={styles.sectionTitle}>Upcoming Maintenance</Text>
+              <Text
+                style={{
+                  fontSize: theme.fontSize.xl,
+                  fontWeight: theme.fontWeight.bold,
+                  color: theme.colors.text,
+                  marginBottom: theme.spacing.md,
+                  marginTop: theme.spacing.lg,
+                }}
+              >
+                Upcoming Maintenance
+              </Text>
               {serviceMetrics.upcomingServices.map((service, index) => (
                 <UpcomingServiceCard key={index} service={service} />
               ))}
@@ -213,7 +298,17 @@ export default function ServiceTab() {
           {/* Trend Chart */}
           {trendData.length > 0 && (
             <>
-              <Text style={styles.sectionTitle}>Service Frequency</Text>
+              <Text
+                style={{
+                  fontSize: theme.fontSize.xl,
+                  fontWeight: theme.fontWeight.bold,
+                  color: theme.colors.text,
+                  marginBottom: theme.spacing.md,
+                  marginTop: theme.spacing.lg,
+                }}
+              >
+                Service Frequency
+              </Text>
               <TrendLineChart
                 data={trendData}
                 title="Services Per Month"
@@ -222,83 +317,10 @@ export default function ServiceTab() {
             </>
           )}
 
-          <View style={styles.spacing} />
+          {/* Bottom spacing */}
+          <View style={{ height: theme.spacing.xl }} />
         </View>
       </ScrollView>
     </SafeAreaView>
   );
 }
-
-const stylesheet = createStyleSheet((theme) => ({
-  container: {
-    flex: 1,
-    backgroundColor: theme.colors.background,
-  },
-  loadingContainer: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  loadingText: {
-    fontSize: theme.fontSize.base,
-    color: theme.colors.textSecondary,
-  },
-  scrollView: {
-    flex: 1,
-  },
-  content: {
-    padding: theme.spacing.lg,
-  },
-  filtersContainer: {
-    marginBottom: theme.spacing.lg,
-  },
-  sectionTitle: {
-    fontSize: theme.fontSize.xl,
-    fontWeight: theme.fontWeight.bold,
-    color: theme.colors.text,
-    marginBottom: theme.spacing.md,
-    marginTop: theme.spacing.lg,
-  },
-  metricsGrid: {
-    flexDirection: "row",
-    gap: theme.spacing.md,
-    marginBottom: theme.spacing.md,
-  },
-  metricCardWrapper: {
-    flex: 1,
-  },
-  serviceTypesList: {
-    gap: theme.spacing.md,
-    marginBottom: theme.spacing.md,
-  },
-  serviceTypeCard: {
-    backgroundColor: theme.colors.surface,
-    borderRadius: theme.borderRadius.lg,
-    padding: theme.spacing.lg,
-    borderLeftWidth: 4,
-    borderLeftColor: theme.colors.analytics.service,
-  },
-  serviceTypeHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: theme.spacing.xs,
-  },
-  serviceTypeName: {
-    fontSize: theme.fontSize.base,
-    fontWeight: theme.fontWeight.bold,
-    color: theme.colors.text,
-  },
-  serviceTypeCount: {
-    fontSize: theme.fontSize.lg,
-    fontWeight: theme.fontWeight.bold,
-    color: theme.colors.analytics.service,
-  },
-  serviceTypeCost: {
-    fontSize: theme.fontSize.sm,
-    color: theme.colors.textSecondary,
-  },
-  spacing: {
-    height: theme.spacing.xl,
-  },
-}));
