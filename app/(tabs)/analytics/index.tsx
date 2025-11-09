@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { View, Text, ScrollView, RefreshControl } from 'react-native';
+import { View, Text, ScrollView, RefreshControl, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useStyles } from 'react-native-unistyles';
 import {
@@ -9,6 +9,8 @@ import {
   EmptyAnalytics,
   AnalyticsHeader,
   UpcomingServiceCard,
+  CostBreakdownCard,
+  StatCard,
 } from '@/components/analytics';
 import {
   useAnalyticsData,
@@ -46,17 +48,26 @@ export default function OverviewTab() {
   // Loading state
   if (loading || vehiclesLoading) {
     return (
-      <SafeAreaView
-        style={{
-          flex: 1,
-          backgroundColor: theme.colors.background,
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
-      >
-        <Text style={{ fontSize: theme.fontSize.base, color: theme.colors.textSecondary }}>
-          Loading analytics...
-        </Text>
+      <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.background }}>
+        <AnalyticsHeader />
+        <View
+          style={{
+            flex: 1,
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <ActivityIndicator size="large" color={theme.colors.primary} />
+          <Text
+            style={{
+              fontSize: theme.fontSize.base,
+              color: theme.colors.textSecondary,
+              marginTop: theme.spacing.md,
+            }}
+          >
+            Loading analytics...
+          </Text>
+        </View>
       </SafeAreaView>
     );
   }
@@ -65,11 +76,14 @@ export default function OverviewTab() {
   if (error) {
     return (
       <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.background }}>
-        <EmptyAnalytics
-          icon="alert-circle-outline"
-          title="Error Loading Data"
-          message="Failed to load analytics data. Please try again."
-        />
+        <AnalyticsHeader />
+        <View style={{ padding: theme.spacing.lg }}>
+          <EmptyAnalytics
+            icon="alert-circle-outline"
+            title="Error Loading Data"
+            message="Failed to load analytics data. Please try again."
+          />
+        </View>
       </SafeAreaView>
     );
   }
@@ -78,21 +92,20 @@ export default function OverviewTab() {
   if (!hasData) {
     return (
       <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.background }}>
+        <AnalyticsHeader />
         <View style={{ padding: theme.spacing.lg }}>
-          <View style={{ marginBottom: theme.spacing.lg }}>
-            <PeriodSelector
-              selectedPeriod={period}
-              onPeriodChange={setPeriod}
-              periods={periods}
-            />
-            <VehicleFilter
-              vehicles={vehicles}
-              selectedVehicleIds={selectedVehicleIds}
-              onToggleVehicle={toggleVehicle}
-              onSelectAll={selectAll}
-              onClearAll={clearAll}
-            />
-          </View>
+          <PeriodSelector
+            selectedPeriod={period}
+            onPeriodChange={setPeriod}
+            periods={periods}
+          />
+          <VehicleFilter
+            vehicles={vehicles}
+            selectedVehicleIds={selectedVehicleIds}
+            onToggleVehicle={toggleVehicle}
+            onSelectAll={selectAll}
+            onClearAll={clearAll}
+          />
         </View>
         <EmptyAnalytics />
       </SafeAreaView>
@@ -100,6 +113,10 @@ export default function OverviewTab() {
   }
 
   const upcomingServices = serviceMetrics?.upcomingServices.slice(0, 3) || [];
+
+  // Calculate selected vehicle count
+  const isAllSelected = selectedVehicleIds.length === 0;
+  const selectedVehicleCount = isAllSelected ? vehicles.length : selectedVehicleIds.length;
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.background }}>
@@ -111,25 +128,23 @@ export default function OverviewTab() {
       >
         <View style={{ padding: theme.spacing.lg }}>
           {/* Filters */}
-          <View style={{ marginBottom: theme.spacing.lg }}>
-            <PeriodSelector
-              selectedPeriod={period}
-              onPeriodChange={setPeriod}
-              periods={periods}
-            />
-            <VehicleFilter
-              vehicles={vehicles}
-              selectedVehicleIds={selectedVehicleIds}
-              onToggleVehicle={toggleVehicle}
-              onSelectAll={selectAll}
-              onClearAll={clearAll}
-            />
-          </View>
+          <PeriodSelector
+            selectedPeriod={period}
+            onPeriodChange={setPeriod}
+            periods={periods}
+          />
+          <VehicleFilter
+            vehicles={vehicles}
+            selectedVehicleIds={selectedVehicleIds}
+            onToggleVehicle={toggleVehicle}
+            onSelectAll={selectAll}
+            onClearAll={clearAll}
+          />
 
-          {/* Summary Cards */}
+          {/* Summary Section */}
           <Text
             style={{
-              fontSize: theme.fontSize.xl,
+              fontSize: theme.fontSize['2xl'],
               fontWeight: theme.fontWeight.bold,
               color: theme.colors.text,
               marginBottom: theme.spacing.md,
@@ -139,66 +154,69 @@ export default function OverviewTab() {
             Summary
           </Text>
 
-          {/* First Row: Total Cost & Cost Per Km */}
-          <View
-            style={{
-              flexDirection: 'row',
-              gap: theme.spacing.md,
-              marginBottom: theme.spacing.md,
-            }}
-          >
-            <View style={{ flex: 1 }}>
-              <MetricCard
-                title="Total Cost"
-                value={`RM${costMetrics?.totalCost.toFixed(2) || 0}`}
-                subtitle={period.label}
-                icon="cash-outline"
-                color={theme.colors.analytics.cost}
-              />
+          {/* Metric Cards Grid */}
+          <View style={{ gap: theme.spacing.md, marginBottom: theme.spacing.md }}>
+            <View style={{ flexDirection: 'row', gap: theme.spacing.md }}>
+              <View style={{ flex: 1 }}>
+                <MetricCard
+                  title="Total Cost"
+                  value={`RM${costMetrics?.totalCost.toFixed(2) || 0}`}
+                  subtitle={period.label}
+                  icon="cash-outline"
+                />
+              </View>
+              <View style={{ flex: 1 }}>
+                <MetricCard
+                  title="Cost Per Km"
+                  value={`RM${costMetrics?.costPerKm.toFixed(2) || 0}`}
+                  subtitle="Average"
+                  icon="speedometer-outline"
+                />
+              </View>
             </View>
-            <View style={{ flex: 1 }}>
-              <MetricCard
-                title="Cost Per Km"
-                value={`RM${costMetrics?.costPerKm.toFixed(2) || 0}`}
-                subtitle="Average"
-                icon="speedometer-outline"
-                color={theme.colors.primary}
-              />
+
+            <View style={{ flexDirection: 'row', gap: theme.spacing.md }}>
+              <View style={{ flex: 1 }}>
+                <MetricCard
+                  title="Fuel Cost"
+                  value={`RM${costMetrics?.totalFuelCost.toFixed(2) || 0}`}
+                  subtitle={`${fuelMetrics?.fuelUps || 0} fill-ups`}
+                  icon="water-outline"
+                />
+              </View>
+              <View style={{ flex: 1 }}>
+                <MetricCard
+                  title="Service Cost"
+                  value={`RM${costMetrics?.totalServiceCost.toFixed(2) || 0}`}
+                  subtitle={`${serviceMetrics?.totalServices || 0} services`}
+                  icon="build-outline"
+                />
+              </View>
             </View>
           </View>
 
-          {/* Second Row: Fuel & Service Cost */}
-          <View
-            style={{
-              flexDirection: 'row',
-              gap: theme.spacing.md,
-              marginBottom: theme.spacing.md,
-            }}
-          >
-            <View style={{ flex: 1 }}>
-              <MetricCard
-                title="Fuel Cost"
-                value={`RM${costMetrics?.totalFuelCost.toFixed(2) || 0}`}
-                subtitle={`${fuelMetrics?.fuelUps || 0} fill-ups`}
-                icon="water-outline"
-                color={theme.colors.analytics.fuel}
-              />
-            </View>
-            <View style={{ flex: 1 }}>
-              <MetricCard
-                title="Service Cost"
-                value={`RM${costMetrics?.totalServiceCost.toFixed(2) || 0}`}
-                subtitle={`${serviceMetrics?.totalServices || 0} services`}
-                icon="build-outline"
-                color={theme.colors.analytics.service}
-              />
-            </View>
-          </View>
-
-          {/* Quick Stats */}
+          {/* Cost Breakdown Section */}
           <Text
             style={{
-              fontSize: theme.fontSize.xl,
+              fontSize: theme.fontSize['2xl'],
+              fontWeight: theme.fontWeight.bold,
+              color: theme.colors.text,
+              marginBottom: theme.spacing.md,
+              marginTop: theme.spacing.lg,
+            }}
+          >
+            Cost Breakdown
+          </Text>
+          <CostBreakdownCard
+            totalCost={costMetrics?.totalCost || 0}
+            fuelCost={costMetrics?.totalFuelCost || 0}
+            serviceCost={costMetrics?.totalServiceCost || 0}
+          />
+
+          {/* Quick Stats Section */}
+          <Text
+            style={{
+              fontSize: theme.fontSize['2xl'],
               fontWeight: theme.fontWeight.bold,
               color: theme.colors.text,
               marginBottom: theme.spacing.md,
@@ -207,113 +225,27 @@ export default function OverviewTab() {
           >
             Quick Stats
           </Text>
-          <View
-            style={{
-              flexDirection: 'row',
-              gap: theme.spacing.md,
-              marginBottom: theme.spacing.md,
-            }}
-          >
-            {/* Avg Consumption */}
-            <View
-              style={{
-                flex: 1,
-                backgroundColor: theme.colors.surface,
-                borderRadius: theme.borderRadius.lg,
-                padding: theme.spacing.lg,
-                alignItems: 'center',
-              }}
-            >
-              <Text
-                style={{
-                  fontSize: theme.fontSize['2xl'],
-                  fontWeight: theme.fontWeight.bold,
-                  color: theme.colors.text,
-                  marginBottom: theme.spacing.xs,
-                }}
-              >
-                {fuelMetrics?.averageConsumption.toFixed(1) || 0}
-              </Text>
-              <Text
-                style={{
-                  fontSize: theme.fontSize.xs,
-                  color: theme.colors.textSecondary,
-                  textAlign: 'center',
-                }}
-              >
-                L/100km
-              </Text>
-            </View>
-
-            {/* Total Distance */}
-            <View
-              style={{
-                flex: 1,
-                backgroundColor: theme.colors.surface,
-                borderRadius: theme.borderRadius.lg,
-                padding: theme.spacing.lg,
-                alignItems: 'center',
-              }}
-            >
-              <Text
-                style={{
-                  fontSize: theme.fontSize['2xl'],
-                  fontWeight: theme.fontWeight.bold,
-                  color: theme.colors.text,
-                  marginBottom: theme.spacing.xs,
-                }}
-              >
-                {fuelMetrics?.totalDistance.toFixed(0) || 0}
-              </Text>
-              <Text
-                style={{
-                  fontSize: theme.fontSize.xs,
-                  color: theme.colors.textSecondary,
-                  textAlign: 'center',
-                }}
-              >
-                km traveled
-              </Text>
-            </View>
-
-            {/* Vehicle Count */}
-            <View
-              style={{
-                flex: 1,
-                backgroundColor: theme.colors.surface,
-                borderRadius: theme.borderRadius.lg,
-                padding: theme.spacing.lg,
-                alignItems: 'center',
-              }}
-            >
-              <Text
-                style={{
-                  fontSize: theme.fontSize['2xl'],
-                  fontWeight: theme.fontWeight.bold,
-                  color: theme.colors.text,
-                  marginBottom: theme.spacing.xs,
-                }}
-              >
-                {vehicles.length > 0 ? vehicles.length : 0}
-              </Text>
-              <Text
-                style={{
-                  fontSize: theme.fontSize.xs,
-                  color: theme.colors.textSecondary,
-                  textAlign: 'center',
-                }}
-              >
-                vehicles
-              </Text>
-            </View>
+          <View style={{ flexDirection: 'row', gap: theme.spacing.md, marginBottom: theme.spacing.md }}>
+            <StatCard
+              value={fuelMetrics?.averageConsumption.toFixed(1) || 0}
+              label="L/100km"
+            />
+            <StatCard
+              value={fuelMetrics?.totalDistance.toFixed(0) || 0}
+              label="km traveled"
+            />
+            <StatCard
+              value={selectedVehicleCount}
+              label="vehicles selected"
+            />
           </View>
 
-          {/* Upcoming Maintenance */}
+          {/* Upcoming Maintenance Section */}
           {upcomingServices.length > 0 && (
             <>
               <Text
                 style={{
-                  fontSize: theme.fontSize.xl,
+                  fontSize: theme.fontSize['2xl'],
                   fontWeight: theme.fontWeight.bold,
                   color: theme.colors.text,
                   marginBottom: theme.spacing.md,
@@ -322,9 +254,11 @@ export default function OverviewTab() {
               >
                 Upcoming Maintenance
               </Text>
-              {upcomingServices.map((service, index) => (
-                <UpcomingServiceCard key={index} service={service} />
-              ))}
+              <View style={{ gap: theme.spacing.md }}>
+                {upcomingServices.map((service, index) => (
+                  <UpcomingServiceCard key={index} service={service} />
+                ))}
+              </View>
             </>
           )}
 

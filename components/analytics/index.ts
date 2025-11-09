@@ -6,3 +6,5 @@ export { TrendLineChart } from "./TrendLineChart";
 export { UpcomingServiceCard } from "./UpcomingServiceCard";
 export { AnalyticsTabBar } from "./AnalyticsTabBar";
 export { AnalyticsHeader } from "./AnalyticsHeader";
+export { CostBreakdownCard } from "./CostBreakdownCard";
+export { StatCard } from "./StatCard";
