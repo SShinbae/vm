@@ -130,7 +130,7 @@ export default function ProfileScreen() {
         if (router.canGoBack()) {
           router.back();
         } else {
-          router.replace("/auth/login");
+          router.replace("/login");
         }
       }
     );

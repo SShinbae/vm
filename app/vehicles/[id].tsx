@@ -143,6 +143,7 @@ export default function VehicleDetailScreen() {
                   await VehicleService.getUserGroups();
 
                 if (groupsError || !groups || groups.length === 0) {
+                  setSharingLoading(false);
                   showAlert(
                     "Error",
                     "No groups found. You need to be a member of at least one group to share vehicles.",
@@ -160,6 +161,7 @@ export default function VehicleDetailScreen() {
                   );
 
                 if (shareError) {
+                  setSharingLoading(false);
                   showAlert(
                     "Error",
                     "Failed to share vehicle: " + shareError,
@@ -179,6 +181,7 @@ export default function VehicleDetailScreen() {
                         }
                       : null,
                   );
+                  setSharingLoading(false);
                   showAlert(
                     "Success",
                     `Vehicle shared with ${groups.length} group(s)`,
@@ -187,9 +190,8 @@ export default function VehicleDetailScreen() {
                 }
               } catch (error) {
                 console.error("Error sharing vehicle:", error);
-                showAlert("Error", "Failed to share vehicle", "error");
-              } finally {
                 setSharingLoading(false);
+                showAlert("Error", "Failed to share vehicle", "error");
               }
             },
           },
@@ -1362,7 +1364,7 @@ export default function VehicleDetailScreen() {
 
                 {sharingExpanded &&
                   vehicle.sharing_info?.shared_with_groups &&
-                  vehicle.sharing_info.shared_with_groups.length > 0 && (
+                  vehicle.sharing_info.shared_with_groups.length > 0 ? (
                     <View style={styles.sharingGroupsList}>
                       {vehicle.sharing_info.shared_with_groups.map(
                         (groupName, index) => (
@@ -1381,7 +1383,7 @@ export default function VehicleDetailScreen() {
                         ),
                       )}
                     </View>
-                  )}
+                  ) : null}
               </View>
             )}
 

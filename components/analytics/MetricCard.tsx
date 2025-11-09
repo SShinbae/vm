@@ -56,7 +56,7 @@ export function MetricCard({
         )}
         <View style={styles.textContainer}>
           <Text style={styles.title}>{title}</Text>
-          <Text style={[styles.value, color && { color }]}>{value}</Text>
+          <Text style={[styles.value, color && { color }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>{value}</Text>
           {subtitle && <Text style={styles.subtitle}>{subtitle}</Text>}
         </View>
       </View>
@@ -101,6 +101,8 @@ const stylesheet = createStyleSheet((theme) => ({
     color: theme.colors.text,
     fontWeight: theme.fontWeight.bold,
     marginBottom: 2,
+    flexWrap: "nowrap",
+    flexShrink: 1,
   },
   subtitle: {
     fontSize: theme.fontSize.xs,
