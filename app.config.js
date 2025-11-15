@@ -2,11 +2,11 @@ import "dotenv/config";
 
 export default {
   expo: {
-    name: "vehicles-management",
+    name: "Vehicles Management",
     slug: "vehicles-management",
     version: "1.0.0",
     orientation: "portrait",
-    icon: "./assets/images/icon.png",
+    icon: "./assets/images/vm_logo.png",
     scheme: "vehiclesmanagement",
     userInterfaceStyle: "automatic",
     newArchEnabled: true,
@@ -26,7 +26,7 @@ export default {
     },
     web: {
       output: "static",
-      favicon: "./assets/images/favicon.png",
+      favicon: "./assets/images/vm_logo.png",
       bundler: "metro",
       name: "Vehicle Management System",
       shortName: "Vehicle Manager",
@@ -42,12 +42,12 @@ export default {
       [
         "expo-splash-screen",
         {
-          image: "./assets/images/splash-icon.png",
+          image: "./assets/images/vm_logo.png",
           imageWidth: 200,
           resizeMode: "contain",
           backgroundColor: "#E6F4FE",
           dark: {
-            image: "./assets/images/splash-icon.png",
+            image: "./assets/images/vm_logo.png",
             backgroundColor: "#1a1a1a",
           },
         },
