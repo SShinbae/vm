@@ -1,8 +1,8 @@
-import type { ReactNode } from 'react';
-import type { ListRenderItem, ViewProps } from 'react-native';
-import type { PageHeaderProps } from '../../organisms/PageHeader/PageHeader.types';
+import type { ReactNode } from "react";
+import type { ListRenderItem, ViewProps } from "react-native";
+import type { PageHeaderProps } from "../../organisms/PageHeader/PageHeader.types";
 
-export interface ListLayoutProps<T> extends Omit<ViewProps, 'style'> {
+export interface ListLayoutProps<T> extends Omit<ViewProps, "style"> {
   /**
    * Page header configuration
    */

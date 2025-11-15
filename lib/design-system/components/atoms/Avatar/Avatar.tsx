@@ -1,25 +1,31 @@
-import { useColorScheme } from '@/hooks/use-color-scheme';
-import React from 'react';
-import { Image, ImageSourcePropType, StyleSheet, View, ViewProps } from 'react-native';
-import { theme } from '../../../theme';
-import { tokens } from '../../../tokens';
-import { Badge } from '../Badge';
-import { Text } from '../Text';
+import { useColorScheme } from "@/hooks/use-color-scheme";
+import React from "react";
+import {
+  Image,
+  ImageSourcePropType,
+  StyleSheet,
+  View,
+  ViewProps,
+} from "react-native";
+import { theme } from "../../../theme";
+import { tokens } from "../../../tokens";
+import { Badge } from "../Badge";
+import { Text } from "../Text";
 
-export interface AvatarProps extends Omit<ViewProps, 'style'> {
-  size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl' | 'xxl';
+export interface AvatarProps extends Omit<ViewProps, "style"> {
+  size?: "xs" | "sm" | "md" | "lg" | "xl" | "xxl";
   source?: ImageSourcePropType;
   name?: string;
   alt?: string;
-  status?: 'online' | 'offline' | 'busy' | 'away';
+  status?: "online" | "offline" | "busy" | "away";
   showStatus?: boolean;
   backgroundColor?: string;
   textColor?: string;
-  style?: ViewProps['style'];
+  style?: ViewProps["style"];
 }
 
 export const Avatar: React.FC<AvatarProps> = ({
-  size = 'md',
+  size = "md",
   source,
   name,
   alt,
@@ -60,8 +66,8 @@ export const Avatar: React.FC<AvatarProps> = ({
 
   // Get initials from name
   const getInitials = (name?: string): string => {
-    if (!name) return '?';
-    const parts = name.trim().split(' ');
+    if (!name) return "?";
+    const parts = name.trim().split(" ");
     if (parts.length >= 2) {
       return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
     }
@@ -72,7 +78,7 @@ export const Avatar: React.FC<AvatarProps> = ({
 
   // Background color for fallback
   const bgColor = backgroundColor || colors.tint;
-  const txtColor = textColor || '#FFFFFF';
+  const txtColor = textColor || "#FFFFFF";
 
   const statusSize = avatarSize * 0.25;
   const statusPosition = avatarSize * 0.75;
@@ -88,7 +94,7 @@ export const Avatar: React.FC<AvatarProps> = ({
         style,
       ]}
       accessibilityRole="image"
-      accessibilityLabel={alt || name || 'Avatar'}
+      accessibilityLabel={alt || name || "Avatar"}
       {...props}
     >
       {source ? (
@@ -145,7 +151,15 @@ export const Avatar: React.FC<AvatarProps> = ({
           ]}
         >
           <Badge
-            variant={status === 'online' ? 'success' : status === 'busy' ? 'error' : status === 'away' ? 'warning' : 'default'}
+            variant={
+              status === "online"
+                ? "success"
+                : status === "busy"
+                  ? "error"
+                  : status === "away"
+                    ? "warning"
+                    : "default"
+            }
             type="dot"
             size="sm"
             style={{
@@ -161,20 +175,20 @@ export const Avatar: React.FC<AvatarProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    position: 'relative',
-    alignSelf: 'flex-start',
+    position: "relative",
+    alignSelf: "flex-start",
   },
   image: {
-    resizeMode: 'cover',
+    resizeMode: "cover",
   },
   fallback: {
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   statusContainer: {
-    position: 'absolute',
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'transparent',
+    position: "absolute",
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "transparent",
   },
 });

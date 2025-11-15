@@ -61,7 +61,9 @@ export function VehicleFilter({
               style={[styles.chip, isSelected && styles.chipSelected]}
               onPress={() => onToggleVehicle(vehicle.id)}
             >
-              <Text style={[styles.chipText, isSelected && styles.chipTextSelected]}>
+              <Text
+                style={[styles.chipText, isSelected && styles.chipTextSelected]}
+              >
                 {vehicle.year} {vehicle.make} {vehicle.model}
               </Text>
             </TouchableOpacity>

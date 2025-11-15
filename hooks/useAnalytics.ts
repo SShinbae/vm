@@ -1,30 +1,30 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-    calculateCostMetrics,
-    calculateFuelEfficiency,
-    calculateServiceMetrics,
-    calculateTotalDistance,
-    calculateVehicleComparison,
-    generateTrendData,
-    getPeriodOptions,
+  calculateCostMetrics,
+  calculateFuelEfficiency,
+  calculateServiceMetrics,
+  calculateTotalDistance,
+  calculateVehicleComparison,
+  generateTrendData,
+  getPeriodOptions,
 } from "../lib/analytics/calculations";
 import { useAuth } from "../lib/contexts/AuthContext";
 import {
-    fetchAccessibleVehicles,
-    fetchAnalyticsData,
-    fetchVehiclesWithLogs,
+  fetchAccessibleVehicles,
+  fetchAnalyticsData,
+  fetchVehiclesWithLogs,
 } from "../lib/supabase/analytics-queries";
 import { Vehicle } from "../types";
 import {
-    AnalyticsFilters,
-    AnalyticsPeriod,
-    AnalyticsResponse,
-    CostMetrics,
-    FuelEfficiencyMetrics,
-    ServiceMetrics,
-    TrendAnalysis,
-    TrendDataPoint,
-    VehiclePerformance,
+  AnalyticsFilters,
+  AnalyticsPeriod,
+  AnalyticsResponse,
+  CostMetrics,
+  FuelEfficiencyMetrics,
+  ServiceMetrics,
+  TrendAnalysis,
+  TrendDataPoint,
+  VehiclePerformance,
 } from "../types/analytics";
 
 /**

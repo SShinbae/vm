@@ -1,7 +1,5 @@
-
-
 ```
-I need to refactor my React Native ProfileScreen component to implement a modern 
+I need to refactor my React Native ProfileScreen component to implement a modern
 tabbed interface that improves organization and user experience.
 
 CURRENT SITUATION:
@@ -24,7 +22,7 @@ REQUIREMENTS:
    - Keep existing header with gradient background and decorative circles
    - Avatar upload with ImageUpload component (keep current functionality)
    - Display: full name, username, join date
-   - Add stats row showing: "Total Logs", "Active Groups", "Days Active" 
+   - Add stats row showing: "Total Logs", "Active Groups", "Days Active"
      (use placeholder values like 0 for now)
    - Quick Actions section with cards for:
      * Edit Profile (opens edit mode/modal)
@@ -120,24 +118,22 @@ const TabBar = ({ activeTab, onTabChange }) => (
 key={tab}
 style={[styles.tab, activeTab === tab \&\& styles.activeTab]}
 onPress={() => onTabChange(tab)}
->
-<Text style={[styles.tabText, activeTab === tab \&\& styles.activeTabText]}>
-{tab}
-</Text>
-</TouchableOpacity>
-))}
-</View>
-);
+
+> <Text style={[styles.tabText, activeTab === tab \&\& styles.activeTabText]}>
+> {tab}
+> </Text>
+> </TouchableOpacity>
+> ))}
+> </View>
+> );
 
 ```
 
-Please generate the complete refactored code with clear organization, proper TypeScript 
+Please generate the complete refactored code with clear organization, proper TypeScript
 types, and all functionality preserved from the original implementation.
 ```
 
-
-***
-
+---
 
 [^1]: https://help.openai.com/en/articles/6654000-best-practices-for-prompt-engineering-with-the-openai-api
 
@@ -170,4 +166,3 @@ types, and all functionality preserved from the original implementation.
 [^15]: https://www.youtube.com/watch?v=M-uUFLU9IFU
 
 [^16]: https://www.reddit.com/r/PromptEngineering/comments/1kz5gem/share_your_prompt_to_generate_ui_designs/
-

@@ -1,20 +1,20 @@
-import { useColorScheme } from '@/hooks/use-color-scheme';
-import { Badge } from '@/lib/design-system/components/atoms/Badge';
-import { Icon } from '@/lib/design-system/components/atoms/Icon';
-import { Text } from '@/lib/design-system/components/atoms/Text';
-import { theme } from '@/lib/design-system/theme';
-import { tokens } from '@/lib/design-system/tokens';
-import React from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
-import { NavigationBarProps } from './NavigationBar.types';
+import { useColorScheme } from "@/hooks/use-color-scheme";
+import { Badge } from "@/lib/design-system/components/atoms/Badge";
+import { Icon } from "@/lib/design-system/components/atoms/Icon";
+import { Text } from "@/lib/design-system/components/atoms/Text";
+import { theme } from "@/lib/design-system/theme";
+import { tokens } from "@/lib/design-system/tokens";
+import React from "react";
+import { Pressable, StyleSheet, View } from "react-native";
+import { NavigationBarProps } from "./NavigationBar.types";
 
 export const NavigationBar: React.FC<NavigationBarProps> = ({
   tabs,
   activeTab,
   onTabChange,
   showLabels = true,
-  variant = 'default',
-  position = 'bottom',
+  variant = "default",
+  position = "bottom",
 }) => {
   const colorScheme = useColorScheme();
   const colors = theme.getThemeColors(colorScheme);
@@ -23,9 +23,12 @@ export const NavigationBar: React.FC<NavigationBarProps> = ({
     <View
       style={[
         styles.container,
-        variant === 'filled' && { backgroundColor: colors.card },
-        variant === 'default' && { backgroundColor: colors.background, borderTopColor: colors.border },
-        position === 'top' && styles.topPosition,
+        variant === "filled" && { backgroundColor: colors.card },
+        variant === "default" && {
+          backgroundColor: colors.background,
+          borderTopColor: colors.border,
+        },
+        position === "top" && styles.topPosition,
       ]}
     >
       {tabs.map((tab) => {
@@ -38,7 +41,8 @@ export const NavigationBar: React.FC<NavigationBarProps> = ({
             onPress={() => !isDisabled && onTabChange(tab.id)}
             style={[
               styles.tab,
-              isActive && variant === 'filled' && { backgroundColor: colors.tint + '20' },
+              isActive &&
+                variant === "filled" && { backgroundColor: colors.tint + "20" },
             ]}
             disabled={isDisabled}
             accessibilityRole="tab"
@@ -52,7 +56,13 @@ export const NavigationBar: React.FC<NavigationBarProps> = ({
                     <Icon
                       name={tab.icon}
                       size="md"
-                      color={isActive ? 'primary' : isDisabled ? 'tertiary' : 'secondary'}
+                      color={
+                        isActive
+                          ? "primary"
+                          : isDisabled
+                            ? "tertiary"
+                            : "secondary"
+                      }
                     />
                     {tab.badge !== undefined && tab.badge > 0 && (
                       <View style={styles.badgeContainer}>
@@ -67,8 +77,10 @@ export const NavigationBar: React.FC<NavigationBarProps> = ({
                 <Text
                   variant="body"
                   size="xs"
-                  weight={isActive ? 'semibold' : 'regular'}
-                  color={isActive ? 'primary' : isDisabled ? 'tertiary' : 'secondary'}
+                  weight={isActive ? "semibold" : "regular"}
+                  color={
+                    isActive ? "primary" : isDisabled ? "tertiary" : "secondary"
+                  }
                   numberOfLines={1}
                 >
                   {tab.label}
@@ -84,7 +96,7 @@ export const NavigationBar: React.FC<NavigationBarProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    flexDirection: 'row',
+    flexDirection: "row",
     borderTopWidth: 1,
     paddingBottom: 8,
     paddingTop: 8,
@@ -95,21 +107,21 @@ const styles = StyleSheet.create({
   },
   tab: {
     flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     paddingVertical: tokens.spacing.xs,
     paddingHorizontal: tokens.spacing.xxs,
     borderRadius: tokens.radius.md,
   },
   tabContent: {
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   iconContainer: {
-    position: 'relative',
+    position: "relative",
   },
   badgeContainer: {
-    position: 'absolute',
+    position: "absolute",
     top: -8,
     right: -12,
   },

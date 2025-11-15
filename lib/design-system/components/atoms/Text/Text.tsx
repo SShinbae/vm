@@ -1,26 +1,37 @@
-import { useColorScheme } from '@/hooks/use-color-scheme';
-import React from 'react';
-import { Text as RNText, TextProps as RNTextProps, StyleSheet } from 'react-native';
-import { theme } from '../../../theme';
-import { tokens } from '../../../tokens';
+import { useColorScheme } from "@/hooks/use-color-scheme";
+import React from "react";
+import {
+  Text as RNText,
+  TextProps as RNTextProps,
+  StyleSheet,
+} from "react-native";
+import { theme } from "../../../theme";
+import { tokens } from "../../../tokens";
 
-export interface TextComponentProps extends Omit<RNTextProps, 'style'> {
-  variant?: 'display' | 'heading' | 'title' | 'body' | 'caption' | 'label';
-  size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl';
-  weight?: 'light' | 'regular' | 'medium' | 'semibold' | 'bold';
-  color?: 'primary' | 'secondary' | 'tertiary' | 'success' | 'error' | 'warning' | 'info';
-  align?: 'left' | 'center' | 'right' | 'justify';
+export interface TextComponentProps extends Omit<RNTextProps, "style"> {
+  variant?: "display" | "heading" | "title" | "body" | "caption" | "label";
+  size?: "xs" | "sm" | "md" | "lg" | "xl";
+  weight?: "light" | "regular" | "medium" | "semibold" | "bold";
+  color?:
+    | "primary"
+    | "secondary"
+    | "tertiary"
+    | "success"
+    | "error"
+    | "warning"
+    | "info";
+  align?: "left" | "center" | "right" | "justify";
   numberOfLines?: number;
   children: React.ReactNode;
-  style?: RNTextProps['style'];
+  style?: RNTextProps["style"];
 }
 
 export const Text: React.FC<TextComponentProps> = ({
-  variant = 'body',
-  size = 'md',
-  weight = 'regular',
-  color = 'primary',
-  align = 'left',
+  variant = "body",
+  size = "md",
+  weight = "regular",
+  color = "primary",
+  align = "left",
   numberOfLines,
   children,
   style,
@@ -31,25 +42,28 @@ export const Text: React.FC<TextComponentProps> = ({
 
   // Variant-based font sizes
   const variantSizes: Record<typeof variant, keyof typeof tokens.fontSize> = {
-    display: 'xxxxl',
-    heading: 'xxxl',
-    title: 'xxl',
-    body: 'base',
-    caption: 'sm',
-    label: 'xs',
+    display: "xxxxl",
+    heading: "xxxl",
+    title: "xxl",
+    body: "base",
+    caption: "sm",
+    label: "xs",
   };
 
   // Size overrides
   const sizeMap: Record<typeof size, keyof typeof tokens.fontSize> = {
-    xs: 'xs',
-    sm: 'sm',
-    md: 'base',
-    lg: 'lg',
-    xl: 'xl',
+    xs: "xs",
+    sm: "sm",
+    md: "base",
+    lg: "lg",
+    xl: "xl",
   };
 
   // Final font size (size prop overrides variant default)
-  const fontSize = size !== 'md' ? tokens.fontSize[sizeMap[size]] : tokens.fontSize[variantSizes[variant]];
+  const fontSize =
+    size !== "md"
+      ? tokens.fontSize[sizeMap[size]]
+      : tokens.fontSize[variantSizes[variant]];
 
   // Font weight mapping
   const fontWeight = tokens.fontWeight[weight];
@@ -68,14 +82,15 @@ export const Text: React.FC<TextComponentProps> = ({
   const textColor = colorMap[color];
 
   // Line height based on variant
-  const lineHeightMap: Record<typeof variant, keyof typeof tokens.lineHeight> = {
-    display: 'tight',
-    heading: 'tight',
-    title: 'snug',
-    body: 'normal',
-    caption: 'normal',
-    label: 'normal',
-  };
+  const lineHeightMap: Record<typeof variant, keyof typeof tokens.lineHeight> =
+    {
+      display: "tight",
+      heading: "tight",
+      title: "snug",
+      body: "normal",
+      caption: "normal",
+      label: "normal",
+    };
 
   const lineHeight = tokens.lineHeight[lineHeightMap[variant]];
 

@@ -41,19 +41,28 @@ export function VehicleSelector({
               />
             ) : (
               <View style={[styles.vehicleIcon, styles.vehicleIconPlaceholder]}>
-                <IconSymbol name="car.fill" size={16} color={theme.colors.warning} />
+                <IconSymbol
+                  name="car.fill"
+                  size={16}
+                  color={theme.colors.warning}
+                />
               </View>
             )}
             <View style={styles.lockedVehicleInfo}>
               <Text style={styles.lockedVehicleText} numberOfLines={1}>
-                {selectedVehicle.year} {selectedVehicle.make} {selectedVehicle.model}
+                {selectedVehicle.year} {selectedVehicle.make}{" "}
+                {selectedVehicle.model}
               </Text>
               <Text style={styles.lockedVehiclePlate}>
                 {selectedVehicle.license_plate}
               </Text>
             </View>
             <View style={styles.lockIcon}>
-              <IconSymbol name="lock.fill" size={14} color={theme.colors.textSecondary} />
+              <IconSymbol
+                name="lock.fill"
+                size={14}
+                color={theme.colors.textSecondary}
+              />
             </View>
           </View>
           <Text style={styles.lockedHelpText}>

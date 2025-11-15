@@ -1,7 +1,7 @@
-import React, { useMemo } from 'react';
-import { View, Text, ScrollView, RefreshControl } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { useStyles } from 'react-native-unistyles';
+import React, { useMemo } from "react";
+import { View, Text, ScrollView, RefreshControl } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { useStyles } from "react-native-unistyles";
 import {
   MetricCard,
   PeriodSelector,
@@ -9,13 +9,13 @@ import {
   EmptyAnalytics,
   AnalyticsHeader,
   TrendLineChart,
-} from '@/components/analytics';
+} from "@/components/analytics";
 import {
   useAnalyticsData,
   usePeriodSelector,
   useVehicleFilter,
   useAnalyticsTrends,
-} from '@/hooks/useAnalytics';
+} from "@/hooks/useAnalytics";
 
 export default function FuelTab() {
   const { theme } = useStyles();
@@ -34,11 +34,12 @@ export default function FuelTab() {
       period,
       vehicleIds: selectedVehicleIds,
     }),
-    [period, selectedVehicleIds]
+    [period, selectedVehicleIds],
   );
 
-  const { loading, error, fuelMetrics, costMetrics, refetch } = useAnalyticsData(filters);
-  const { trendData, trendAnalysis } = useAnalyticsTrends(filters, 'fuel');
+  const { loading, error, fuelMetrics, costMetrics, refetch } =
+    useAnalyticsData(filters);
+  const { trendData, trendAnalysis } = useAnalyticsTrends(filters, "fuel");
 
   const hasData = fuelMetrics && fuelMetrics.fuelUps > 0;
 
@@ -55,11 +56,16 @@ export default function FuelTab() {
         <View
           style={{
             flex: 1,
-            alignItems: 'center',
-            justifyContent: 'center',
+            alignItems: "center",
+            justifyContent: "center",
           }}
         >
-          <Text style={{ fontSize: theme.fontSize.base, color: theme.colors.textSecondary }}>
+          <Text
+            style={{
+              fontSize: theme.fontSize.base,
+              color: theme.colors.textSecondary,
+            }}
+          >
             Loading fuel analytics...
           </Text>
         </View>
@@ -70,7 +76,9 @@ export default function FuelTab() {
   // Error state
   if (error) {
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.background }}>
+      <SafeAreaView
+        style={{ flex: 1, backgroundColor: theme.colors.background }}
+      >
         <EmptyAnalytics
           icon="alert-circle-outline"
           title="Error Loading Data"
@@ -83,7 +91,9 @@ export default function FuelTab() {
   // Empty state
   if (!hasData) {
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.background }}>
+      <SafeAreaView
+        style={{ flex: 1, backgroundColor: theme.colors.background }}
+      >
         <View style={{ padding: theme.spacing.lg }}>
           <View style={{ marginBottom: theme.spacing.lg }}>
             <PeriodSelector
@@ -113,7 +123,9 @@ export default function FuelTab() {
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.background }}>
       <ScrollView
         style={{ flex: 1 }}
-        refreshControl={<RefreshControl refreshing={loading} onRefresh={refetch} />}
+        refreshControl={
+          <RefreshControl refreshing={loading} onRefresh={refetch} />
+        }
         showsVerticalScrollIndicator={false}
       >
         <View style={{ padding: theme.spacing.lg }}>
@@ -149,7 +161,7 @@ export default function FuelTab() {
           {/* First Row: Avg Consumption & Total Distance */}
           <View
             style={{
-              flexDirection: 'row',
+              flexDirection: "row",
               gap: theme.spacing.md,
               marginBottom: theme.spacing.md,
             }}
@@ -178,7 +190,7 @@ export default function FuelTab() {
           {/* Second Row: Best & Worst Efficiency */}
           <View
             style={{
-              flexDirection: 'row',
+              flexDirection: "row",
               gap: theme.spacing.md,
               marginBottom: theme.spacing.md,
             }}
@@ -219,7 +231,7 @@ export default function FuelTab() {
           {/* Third Row: Total Cost & Avg Price */}
           <View
             style={{
-              flexDirection: 'row',
+              flexDirection: "row",
               gap: theme.spacing.md,
               marginBottom: theme.spacing.md,
             }}
@@ -227,7 +239,7 @@ export default function FuelTab() {
             <View style={{ flex: 1 }}>
               <MetricCard
                 title="Total Fuel Cost"
-                value={`RM${costMetrics?.totalFuelCost.toFixed(2) || '0.00'}`}
+                value={`RM${costMetrics?.totalFuelCost.toFixed(2) || "0.00"}`}
                 subtitle={period.label}
                 icon="cash-outline"
                 color={theme.colors.analytics.cost}
@@ -258,7 +270,7 @@ export default function FuelTab() {
           </Text>
           <View
             style={{
-              flexDirection: 'row',
+              flexDirection: "row",
               gap: theme.spacing.md,
               marginBottom: theme.spacing.md,
             }}
@@ -270,12 +282,12 @@ export default function FuelTab() {
                 backgroundColor: theme.colors.surface,
                 borderRadius: theme.borderRadius.lg,
                 padding: theme.spacing.lg,
-                alignItems: 'center',
+                alignItems: "center",
               }}
             >
               <Text
                 style={{
-                  fontSize: theme.fontSize['2xl'],
+                  fontSize: theme.fontSize["2xl"],
                   fontWeight: theme.fontWeight.bold,
                   color: theme.colors.text,
                   marginBottom: theme.spacing.xs,
@@ -287,7 +299,7 @@ export default function FuelTab() {
                 style={{
                   fontSize: theme.fontSize.xs,
                   color: theme.colors.textSecondary,
-                  textAlign: 'center',
+                  textAlign: "center",
                 }}
               >
                 Total Fill-ups
@@ -301,12 +313,12 @@ export default function FuelTab() {
                 backgroundColor: theme.colors.surface,
                 borderRadius: theme.borderRadius.lg,
                 padding: theme.spacing.lg,
-                alignItems: 'center',
+                alignItems: "center",
               }}
             >
               <Text
                 style={{
-                  fontSize: theme.fontSize['2xl'],
+                  fontSize: theme.fontSize["2xl"],
                   fontWeight: theme.fontWeight.bold,
                   color: theme.colors.text,
                   marginBottom: theme.spacing.xs,
@@ -318,7 +330,7 @@ export default function FuelTab() {
                 style={{
                   fontSize: theme.fontSize.xs,
                   color: theme.colors.textSecondary,
-                  textAlign: 'center',
+                  textAlign: "center",
                 }}
               >
                 Liters Filled
@@ -332,12 +344,12 @@ export default function FuelTab() {
                 backgroundColor: theme.colors.surface,
                 borderRadius: theme.borderRadius.lg,
                 padding: theme.spacing.lg,
-                alignItems: 'center',
+                alignItems: "center",
               }}
             >
               <Text
                 style={{
-                  fontSize: theme.fontSize['2xl'],
+                  fontSize: theme.fontSize["2xl"],
                   fontWeight: theme.fontWeight.bold,
                   color: theme.colors.text,
                   marginBottom: theme.spacing.xs,
@@ -351,7 +363,7 @@ export default function FuelTab() {
                 style={{
                   fontSize: theme.fontSize.xs,
                   color: theme.colors.textSecondary,
-                  textAlign: 'center',
+                  textAlign: "center",
                 }}
               >
                 km/fill-up

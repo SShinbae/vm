@@ -1,19 +1,19 @@
-import { useColorScheme } from '@/hooks/use-color-scheme';
-import React, { useState } from 'react';
+import { useColorScheme } from "@/hooks/use-color-scheme";
+import React, { useState } from "react";
 import {
-    RefreshControl,
-    ScrollView,
-    StyleSheet,
-    TouchableOpacity,
-    View,
-} from 'react-native';
-import { theme } from '../../../theme';
-import { tokens } from '../../../tokens';
-import { Badge } from '../../atoms/Badge';
-import { Spacer } from '../../atoms/Spacer';
-import { Text } from '../../atoms/Text';
-import { PageHeader } from '../../organisms/PageHeader';
-import type { DetailLayoutProps } from './DetailLayout.types';
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { theme } from "../../../theme";
+import { tokens } from "../../../tokens";
+import { Badge } from "../../atoms/Badge";
+import { Spacer } from "../../atoms/Spacer";
+import { Text } from "../../atoms/Text";
+import { PageHeader } from "../../organisms/PageHeader";
+import type { DetailLayoutProps } from "./DetailLayout.types";
 
 export const DetailLayout: React.FC<DetailLayoutProps> = ({
   header,
@@ -46,9 +46,12 @@ export const DetailLayout: React.FC<DetailLayoutProps> = ({
   const activeTabContent = tabs.find((tab) => tab.id === activeTab)?.content;
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]} {...props}>
+    <View
+      style={[styles.container, { backgroundColor: colors.background }]}
+      {...props}
+    >
       <PageHeader {...header} />
-      
+
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.contentContainer}
@@ -89,7 +92,9 @@ export const DetailLayout: React.FC<DetailLayoutProps> = ({
                       style={[
                         styles.tab,
                         {
-                          borderBottomColor: isActive ? colors.tint : 'transparent',
+                          borderBottomColor: isActive
+                            ? colors.tint
+                            : "transparent",
                         },
                       ]}
                       onPress={() => handleTabPress(tab.id)}
@@ -98,8 +103,8 @@ export const DetailLayout: React.FC<DetailLayoutProps> = ({
                       accessibilityState={{ selected: isActive }}
                     >
                       <Text
-                        weight={isActive ? 'semibold' : 'regular'}
-                        color={isActive ? 'primary' : 'secondary'}
+                        weight={isActive ? "semibold" : "regular"}
+                        color={isActive ? "primary" : "secondary"}
                       >
                         {tab.label}
                       </Text>
@@ -110,7 +115,9 @@ export const DetailLayout: React.FC<DetailLayoutProps> = ({
                         </>
                       )}
                     </TouchableOpacity>
-                    {index < tabs.length - 1 && <View style={styles.tabSpacer} />}
+                    {index < tabs.length - 1 && (
+                      <View style={styles.tabSpacer} />
+                    )}
                   </React.Fragment>
                 );
               })}
@@ -162,7 +169,7 @@ const styles = StyleSheet.create({
     padding: tokens.spacing.md,
   },
   section: {
-    width: '100%',
+    width: "100%",
   },
   tabsContainer: {
     flexGrow: 0,
@@ -176,8 +183,8 @@ const styles = StyleSheet.create({
     paddingVertical: tokens.spacing.sm,
     paddingHorizontal: tokens.spacing.xs,
     borderBottomWidth: 2,
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
   },
   tabSpacer: {
     width: tokens.spacing.lg,

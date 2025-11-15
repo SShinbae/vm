@@ -1,4 +1,4 @@
-import { allIcons } from '@/lib/design-system/icons';
+import { allIcons } from "@/lib/design-system/icons";
 
 export interface NavigationTab {
   id: string;
@@ -34,11 +34,11 @@ export interface NavigationBarProps {
    * Variant
    * @default "default"
    */
-  variant?: 'default' | 'filled';
+  variant?: "default" | "filled";
 
   /**
    * Position
    * @default "bottom"
    */
-  position?: 'top' | 'bottom';
+  position?: "top" | "bottom";
 }

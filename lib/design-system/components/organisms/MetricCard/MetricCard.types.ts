@@ -1,6 +1,6 @@
-import { allIcons } from '@/lib/design-system/icons';
+import { allIcons } from "@/lib/design-system/icons";
 
-export type TrendDirection = 'up' | 'down' | 'neutral';
+export type TrendDirection = "up" | "down" | "neutral";
 
 export interface MetricCardProps {
   /**
@@ -36,7 +36,7 @@ export interface MetricCardProps {
   /**
    * Card variant
    */
-  variant?: 'default' | 'success' | 'warning' | 'error' | 'info';
+  variant?: "default" | "success" | "warning" | "error" | "info";
 
   /**
    * Show loading skeleton

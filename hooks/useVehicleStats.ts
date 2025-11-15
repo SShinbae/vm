@@ -27,52 +27,57 @@ export function useVehicleStats(vehicles: VehicleWithDetails[]) {
    * Fetch monthly fuel cost and upcoming services from Supabase
    * Now calculates based on ALL vehicles (owned + shared)
    */
-  const fetchAdditionalStats = useCallback(async (vehicleIds: string[]) => {
-    if (!user || vehicleIds.length === 0) {
-      return { monthlyFuelCost: 0, upcomingServices: 0 };
-    }
+  const fetchAdditionalStats = useCallback(
+    async (vehicleIds: string[]) => {
+      if (!user || vehicleIds.length === 0) {
+        return { monthlyFuelCost: 0, upcomingServices: 0 };
+      }
 
-    try {
-      // Get monthly fuel cost for ALL vehicles (owned and shared)
-      const startOfMonth = new Date();
-      startOfMonth.setDate(1);
-      startOfMonth.setHours(0, 0, 0, 0);
+      try {
+        // Get monthly fuel cost for ALL vehicles (owned and shared)
+        const startOfMonth = new Date();
+        startOfMonth.setDate(1);
+        startOfMonth.setHours(0, 0, 0, 0);
 
-      const { data: fuelData } = await supabase
-        .from("fuel_logs")
-        .select("cost")
-        .in("vehicle_id", vehicleIds)
-        .gte("date", startOfMonth.toISOString());
+        const { data: fuelData } = await supabase
+          .from("fuel_logs")
+          .select("cost")
+          .in("vehicle_id", vehicleIds)
+          .gte("date", startOfMonth.toISOString());
 
-      const monthlyFuelCost =
-        (fuelData as { cost: number | null }[] | null)?.reduce(
-          (sum, f) => sum + (f.cost || 0),
-          0,
-        ) || 0;
+        const monthlyFuelCost =
+          (fuelData as { cost: number | null }[] | null)?.reduce(
+            (sum, f) => sum + (f.cost || 0),
+            0,
+          ) || 0;
 
-      console.log(`💰 Monthly fuel cost for ${vehicleIds.length} vehicles: RM${monthlyFuelCost.toFixed(2)}`);
+        console.log(
+          `💰 Monthly fuel cost for ${vehicleIds.length} vehicles: RM${monthlyFuelCost.toFixed(2)}`,
+        );
 
-      // Get upcoming services (next 30 days) for ALL vehicles
-      const now = new Date();
-      const thirtyDaysLater = new Date(
-        now.getTime() + 30 * 24 * 60 * 60 * 1000,
-      );
+        // Get upcoming services (next 30 days) for ALL vehicles
+        const now = new Date();
+        const thirtyDaysLater = new Date(
+          now.getTime() + 30 * 24 * 60 * 60 * 1000,
+        );
 
-      const { data: servicesData } = await supabase
-        .from("service_logs")
-        .select("next_service_due")
-        .in("vehicle_id", vehicleIds)
-        .gte("next_service_due", now.toISOString())
-        .lte("next_service_due", thirtyDaysLater.toISOString());
+        const { data: servicesData } = await supabase
+          .from("service_logs")
+          .select("next_service_due")
+          .in("vehicle_id", vehicleIds)
+          .gte("next_service_due", now.toISOString())
+          .lte("next_service_due", thirtyDaysLater.toISOString());
 
-      const upcomingServices = servicesData?.length || 0;
+        const upcomingServices = servicesData?.length || 0;
 
-      return { monthlyFuelCost, upcomingServices };
-    } catch (err) {
-      console.error("Error fetching stats:", err);
-      return { monthlyFuelCost: 0, upcomingServices: 0 };
-    }
-  }, [user]);
+        return { monthlyFuelCost, upcomingServices };
+      } catch (err) {
+        console.error("Error fetching stats:", err);
+        return { monthlyFuelCost: 0, upcomingServices: 0 };
+      }
+    },
+    [user],
+  );
 
   /**
    * Calculate stats whenever vehicles change

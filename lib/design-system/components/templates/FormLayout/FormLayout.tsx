@@ -1,19 +1,19 @@
-import { useColorScheme } from '@/hooks/use-color-scheme';
-import React, { useState } from 'react';
+import { useColorScheme } from "@/hooks/use-color-scheme";
+import React, { useState } from "react";
 import {
-    KeyboardAvoidingView,
-    Platform,
-    ScrollView,
-    StyleSheet,
-    View,
-} from 'react-native';
-import { theme } from '../../../theme';
-import { tokens } from '../../../tokens';
-import { Spacer } from '../../atoms/Spacer';
-import { Text } from '../../atoms/Text';
-import { Button } from '../../molecules/Button';
-import { PageHeader } from '../../organisms/PageHeader';
-import type { FormLayoutProps } from './FormLayout.types';
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  View,
+} from "react-native";
+import { theme } from "../../../theme";
+import { tokens } from "../../../tokens";
+import { Spacer } from "../../atoms/Spacer";
+import { Text } from "../../atoms/Text";
+import { Button } from "../../molecules/Button";
+import { PageHeader } from "../../organisms/PageHeader";
+import type { FormLayoutProps } from "./FormLayout.types";
 
 export const FormLayout: React.FC<FormLayoutProps> = ({
   header,
@@ -23,10 +23,10 @@ export const FormLayout: React.FC<FormLayoutProps> = ({
   currentStep: controlledStep,
   onStepChange,
   children,
-  submitLabel = 'Submit',
-  cancelLabel = 'Cancel',
-  previousLabel = 'Previous',
-  nextLabel = 'Next',
+  submitLabel = "Submit",
+  cancelLabel = "Cancel",
+  previousLabel = "Previous",
+  nextLabel = "Next",
   onSubmit,
   onCancel,
   loading = false,
@@ -39,9 +39,11 @@ export const FormLayout: React.FC<FormLayoutProps> = ({
 
   const isMultiStep = steps.length > 0;
   const [internalStep, setInternalStep] = useState(0);
-  const currentStepIndex = controlledStep !== undefined ? controlledStep : internalStep;
+  const currentStepIndex =
+    controlledStep !== undefined ? controlledStep : internalStep;
 
-  const showProgressIndicator = showProgress !== undefined ? showProgress : isMultiStep;
+  const showProgressIndicator =
+    showProgress !== undefined ? showProgress : isMultiStep;
 
   const handleStepChange = (newStep: number) => {
     if (onStepChange) {
@@ -71,7 +73,7 @@ export const FormLayout: React.FC<FormLayoutProps> = ({
   return (
     <KeyboardAvoidingView
       style={[styles.container, { backgroundColor: colors.background }]}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
       {...props}
     >
       {header && <PageHeader {...header} />}
@@ -97,7 +99,9 @@ export const FormLayout: React.FC<FormLayoutProps> = ({
                       styles.progressLine,
                       {
                         backgroundColor:
-                          index < currentStepIndex ? colors.tint : colors.border,
+                          index < currentStepIndex
+                            ? colors.tint
+                            : colors.border,
                       },
                     ]}
                   />
@@ -108,7 +112,7 @@ export const FormLayout: React.FC<FormLayoutProps> = ({
           <Spacer size="sm" />
           <Text size="sm" color="secondary" align="center">
             Step {currentStepIndex + 1} of {steps.length}
-            {currentStepData?.optional && ' (Optional)'}
+            {currentStepData?.optional && " (Optional)"}
           </Text>
         </View>
       )}
@@ -132,7 +136,9 @@ export const FormLayout: React.FC<FormLayoutProps> = ({
         {/* Form Description */}
         {(description || currentStepData?.description) && (
           <>
-            <Text color="secondary">{currentStepData?.description || description}</Text>
+            <Text color="secondary">
+              {currentStepData?.description || description}
+            </Text>
             <Spacer size="lg" />
           </>
         )}
@@ -140,7 +146,12 @@ export const FormLayout: React.FC<FormLayoutProps> = ({
         {/* Error Summary */}
         {Object.keys(errors).length > 0 && (
           <>
-            <View style={[styles.errorContainer, { backgroundColor: colors.card, borderColor: colors.error }]}>
+            <View
+              style={[
+                styles.errorContainer,
+                { backgroundColor: colors.card, borderColor: colors.error },
+              ]}
+            >
               <Text color="error" weight="semibold">
                 Please fix the following errors:
               </Text>
@@ -232,13 +243,13 @@ const styles = StyleSheet.create({
     paddingBottom: 0,
   },
   progressSteps: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
   },
   progressStep: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
   },
   progressDot: {
     width: 12,
@@ -259,9 +270,9 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
   },
   actionButtons: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: tokens.spacing.sm,
-    justifyContent: 'flex-end',
+    justifyContent: "flex-end",
   },
   button: {
     minWidth: 100,

@@ -1,1 +1,1 @@
-export type AlertSeverity = 'success' | 'warning' | 'error' | 'info';
+export type AlertSeverity = "success" | "warning" | "error" | "info";

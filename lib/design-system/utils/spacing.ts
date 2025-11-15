@@ -1,12 +1,12 @@
 /**
  * Spacing Utilities
- * 
+ *
  * Helper functions for applying consistent spacing throughout the app.
- * 
+ *
  * Usage:
  * ```typescript
  * import { getSpacing, spacing } from '@/lib/design-system/utils/spacing';
- * 
+ *
  * const styles = {
  *   padding: getSpacing('md'),
  *   margin: spacing('lg', 'xl'),
@@ -14,7 +14,7 @@
  * ```
  */
 
-import { tokens, type Spacing } from '../tokens';
+import { tokens, type Spacing } from "../tokens";
 
 /**
  * Get spacing value by token name
@@ -68,7 +68,7 @@ export function spacing(...sizes: Spacing[]): number | object {
 export function padding(
   all?: Spacing,
   vertical?: Spacing,
-  horizontal?: Spacing
+  horizontal?: Spacing,
 ): object {
   if (all) {
     return { padding: getSpacing(all) };
@@ -86,7 +86,7 @@ export function padding(
 export function margin(
   all?: Spacing,
   vertical?: Spacing,
-  horizontal?: Spacing
+  horizontal?: Spacing,
 ): object {
   if (all) {
     return { margin: getSpacing(all) };
@@ -126,7 +126,7 @@ export const spacingHelpers = {
   paddingRight: (size: Spacing) => ({ paddingRight: getSpacing(size) }),
   paddingBottom: (size: Spacing) => ({ paddingBottom: getSpacing(size) }),
   paddingLeft: (size: Spacing) => ({ paddingLeft: getSpacing(size) }),
-  
+
   marginTop: (size: Spacing) => ({ marginTop: getSpacing(size) }),
   marginRight: (size: Spacing) => ({ marginRight: getSpacing(size) }),
   marginBottom: (size: Spacing) => ({ marginBottom: getSpacing(size) }),

@@ -30,23 +30,23 @@ A reusable page header component for navigation and page-level actions.
 
 ### Props
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `title` | `string` | **Required** | Page title |
-| `subtitle` | `string` | `undefined` | Optional subtitle text |
-| `showBack` | `boolean` | `false` | Whether to show back button |
-| `onBack` | `() => void` | `router.back` | Custom back navigation handler |
-| `actions` | `PageHeaderAction[]` | `[]` | Array of action buttons |
-| `bottom` | `ReactNode` | `undefined` | Content to render below header |
+| Prop       | Type                 | Default       | Description                    |
+| ---------- | -------------------- | ------------- | ------------------------------ |
+| `title`    | `string`             | **Required**  | Page title                     |
+| `subtitle` | `string`             | `undefined`   | Optional subtitle text         |
+| `showBack` | `boolean`            | `false`       | Whether to show back button    |
+| `onBack`   | `() => void`         | `router.back` | Custom back navigation handler |
+| `actions`  | `PageHeaderAction[]` | `[]`          | Array of action buttons        |
+| `bottom`   | `ReactNode`          | `undefined`   | Content to render below header |
 
 ### PageHeaderAction
 
-| Prop | Type | Description |
-|------|------|-------------|
-| `icon` | `keyof typeof allIcons` | Icon name |
-| `onPress` | `() => void` | Press handler |
-| `label` | `string` | Accessibility label |
-| `disabled` | `boolean` | Whether button is disabled |
+| Prop       | Type                    | Description                |
+| ---------- | ----------------------- | -------------------------- |
+| `icon`     | `keyof typeof allIcons` | Icon name                  |
+| `onPress`  | `() => void`            | Press handler              |
+| `label`    | `string`                | Accessibility label        |
+| `disabled` | `boolean`               | Whether button is disabled |
 
 ### Usage Example
 
@@ -57,14 +57,14 @@ import { PageHeader } from '@/lib/design-system/components/organisms';
 <PageHeader title="Vehicles" />
 
 // With back navigation and subtitle
-<PageHeader 
+<PageHeader
   title="Vehicle Details"
   subtitle="Toyota Camry 2020"
   showBack
 />
 
 // With actions
-<PageHeader 
+<PageHeader
   title="Vehicles"
   actions={[
     {
@@ -81,7 +81,7 @@ import { PageHeader } from '@/lib/design-system/components/organisms';
 />
 
 // With bottom tabs
-<PageHeader 
+<PageHeader
   title="Dashboard"
   bottom={
     <ScrollView horizontal>
@@ -109,33 +109,33 @@ A search input component with filter and sort capabilities.
 
 ### Props
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `value` | `string` | **Required** | Current search value |
-| `onChangeText` | `(text: string) => void` | **Required** | Text change handler |
-| `placeholder` | `string` | `'Search...'` | Input placeholder |
-| `onFilterPress` | `() => void` | `undefined` | Filter button handler |
-| `onSortPress` | `() => void` | `undefined` | Sort button handler |
-| `activeFilters` | `number` | `0` | Number of active filters (for badge) |
-| `disabled` | `boolean` | `false` | Whether input is disabled |
+| Prop            | Type                     | Default       | Description                          |
+| --------------- | ------------------------ | ------------- | ------------------------------------ |
+| `value`         | `string`                 | **Required**  | Current search value                 |
+| `onChangeText`  | `(text: string) => void` | **Required**  | Text change handler                  |
+| `placeholder`   | `string`                 | `'Search...'` | Input placeholder                    |
+| `onFilterPress` | `() => void`             | `undefined`   | Filter button handler                |
+| `onSortPress`   | `() => void`             | `undefined`   | Sort button handler                  |
+| `activeFilters` | `number`                 | `0`           | Number of active filters (for badge) |
+| `disabled`      | `boolean`                | `false`       | Whether input is disabled            |
 
 ### Usage Example
 
 ```tsx
-import { SearchBar } from '@/lib/design-system/components/organisms';
+import { SearchBar } from "@/lib/design-system/components/organisms";
 
-const [searchQuery, setSearchQuery] = useState('');
+const [searchQuery, setSearchQuery] = useState("");
 const [showFilters, setShowFilters] = useState(false);
 const [activeFilters, setActiveFilters] = useState(0);
 
-<SearchBar 
+<SearchBar
   value={searchQuery}
   onChangeText={setSearchQuery}
   placeholder="Search vehicles..."
   onFilterPress={() => setShowFilters(true)}
   onSortPress={() => setShowSort(true)}
   activeFilters={activeFilters}
-/>
+/>;
 ```
 
 ---
@@ -155,55 +155,63 @@ A domain-specific card for displaying vehicle information.
 
 ### Props
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `name` | `string` | **Required** | Vehicle name |
-| `subtitle` | `string` | **Required** | Vehicle subtitle (make/model/year) |
-| `imageUri` | `string` | `undefined` | Vehicle image URL |
-| `status` | `string` | `undefined` | Status text |
-| `statusVariant` | `ChipVariant` | `'default'` | Status chip variant |
-| `metrics` | `VehicleMetric[]` | `[]` | Array of metrics to display |
-| `actions` | `VehicleAction[]` | `[]` | Array of action buttons |
-| `onPress` | `() => void` | `undefined` | Card press handler |
-| `loading` | `boolean` | `false` | Loading state |
+| Prop            | Type              | Default      | Description                        |
+| --------------- | ----------------- | ------------ | ---------------------------------- |
+| `name`          | `string`          | **Required** | Vehicle name                       |
+| `subtitle`      | `string`          | **Required** | Vehicle subtitle (make/model/year) |
+| `imageUri`      | `string`          | `undefined`  | Vehicle image URL                  |
+| `status`        | `string`          | `undefined`  | Status text                        |
+| `statusVariant` | `ChipVariant`     | `'default'`  | Status chip variant                |
+| `metrics`       | `VehicleMetric[]` | `[]`         | Array of metrics to display        |
+| `actions`       | `VehicleAction[]` | `[]`         | Array of action buttons            |
+| `onPress`       | `() => void`      | `undefined`  | Card press handler                 |
+| `loading`       | `boolean`         | `false`      | Loading state                      |
 
 ### VehicleMetric
 
-| Prop | Type | Description |
-|------|------|-------------|
-| `label` | `string` | Metric label |
-| `value` | `string \| number` | Metric value |
-| `icon` | `keyof typeof allIcons` | Metric icon |
+| Prop    | Type                    | Description  |
+| ------- | ----------------------- | ------------ |
+| `label` | `string`                | Metric label |
+| `value` | `string \| number`      | Metric value |
+| `icon`  | `keyof typeof allIcons` | Metric icon  |
 
 ### VehicleAction
 
-| Prop | Type | Description |
-|------|------|-------------|
-| `icon` | `keyof typeof allIcons` | Action icon |
-| `label` | `string` | Accessibility label |
-| `onPress` | `() => void` | Action handler |
+| Prop      | Type                    | Description         |
+| --------- | ----------------------- | ------------------- |
+| `icon`    | `keyof typeof allIcons` | Action icon         |
+| `label`   | `string`                | Accessibility label |
+| `onPress` | `() => void`            | Action handler      |
 
 ### Usage Example
 
 ```tsx
-import { VehicleCard } from '@/lib/design-system/components/organisms';
+import { VehicleCard } from "@/lib/design-system/components/organisms";
 
-<VehicleCard 
+<VehicleCard
   name="Family Car"
   subtitle="2020 Toyota Camry"
   imageUri="https://example.com/camry.jpg"
   status="Active"
   statusVariant="success"
   metrics={[
-    { label: 'Mileage', value: '50,000 km', icon: 'speedometer' },
-    { label: 'Last Service', value: '2 months ago', icon: 'calendar' }
+    { label: "Mileage", value: "50,000 km", icon: "speedometer" },
+    { label: "Last Service", value: "2 months ago", icon: "calendar" },
   ]}
   actions={[
-    { icon: 'log', label: 'View logs', onPress: () => router.push(`/logs/${id}`) },
-    { icon: 'settings', label: 'Edit', onPress: () => router.push(`/vehicles/${id}/edit`) }
+    {
+      icon: "log",
+      label: "View logs",
+      onPress: () => router.push(`/logs/${id}`),
+    },
+    {
+      icon: "settings",
+      label: "Edit",
+      onPress: () => router.push(`/vehicles/${id}/edit`),
+    },
   ]}
   onPress={() => router.push(`/vehicles/${id}`)}
-/>
+/>;
 ```
 
 ---
@@ -223,25 +231,25 @@ A dashboard metric display component with trend indicators.
 
 ### Props
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `label` | `string` | **Required** | Metric label |
-| `value` | `string \| number` | **Required** | Metric value |
-| `icon` | `keyof typeof allIcons` | `undefined` | Metric icon |
-| `variant` | `'success' \| 'warning' \| 'error' \| 'info' \| 'default'` | `'default'` | Visual variant |
-| `trendDirection` | `'up' \| 'down' \| 'neutral'` | `undefined` | Trend direction |
-| `trendValue` | `string` | `undefined` | Trend value (e.g., "12%") |
-| `comparisonText` | `string` | `undefined` | Comparison text (e.g., "vs last month") |
-| `loading` | `boolean` | `false` | Loading state |
-| `disabled` | `boolean` | `false` | Disabled state |
+| Prop             | Type                                                       | Default      | Description                             |
+| ---------------- | ---------------------------------------------------------- | ------------ | --------------------------------------- |
+| `label`          | `string`                                                   | **Required** | Metric label                            |
+| `value`          | `string \| number`                                         | **Required** | Metric value                            |
+| `icon`           | `keyof typeof allIcons`                                    | `undefined`  | Metric icon                             |
+| `variant`        | `'success' \| 'warning' \| 'error' \| 'info' \| 'default'` | `'default'`  | Visual variant                          |
+| `trendDirection` | `'up' \| 'down' \| 'neutral'`                              | `undefined`  | Trend direction                         |
+| `trendValue`     | `string`                                                   | `undefined`  | Trend value (e.g., "12%")               |
+| `comparisonText` | `string`                                                   | `undefined`  | Comparison text (e.g., "vs last month") |
+| `loading`        | `boolean`                                                  | `false`      | Loading state                           |
+| `disabled`       | `boolean`                                                  | `false`      | Disabled state                          |
 
 ### Usage Example
 
 ```tsx
-import { MetricCard } from '@/lib/design-system/components/organisms';
+import { MetricCard } from "@/lib/design-system/components/organisms";
 
-<View style={{ flexDirection: 'row', gap: 16 }}>
-  <MetricCard 
+<View style={{ flexDirection: "row", gap: 16 }}>
+  <MetricCard
     label="Total Vehicles"
     value="24"
     icon="car"
@@ -250,8 +258,8 @@ import { MetricCard } from '@/lib/design-system/components/organisms';
     trendValue="12%"
     comparisonText="vs last month"
   />
-  
-  <MetricCard 
+
+  <MetricCard
     label="Maintenance Due"
     value="3"
     icon="warning"
@@ -260,8 +268,8 @@ import { MetricCard } from '@/lib/design-system/components/organisms';
     trendValue="2"
     comparisonText="from last week"
   />
-  
-  <MetricCard 
+
+  <MetricCard
     label="Total Costs"
     value="$12,450"
     icon="document"
@@ -269,7 +277,7 @@ import { MetricCard } from '@/lib/design-system/components/organisms';
     trendDirection="up"
     trendValue="$450"
   />
-</View>
+</View>;
 ```
 
 ---
@@ -289,85 +297,85 @@ A dynamic form builder component with validation.
 
 ### Props
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `fields` | `FormField[]` | **Required** | Array of field configurations |
-| `onSubmit` | `(values: Record<string, any>) => void` | **Required** | Submit handler |
-| `onCancel` | `() => void` | `undefined` | Cancel handler |
-| `initialValues` | `Record<string, any>` | `{}` | Initial form values |
-| `submitLabel` | `string` | `'Submit'` | Submit button label |
-| `loading` | `boolean` | `false` | Loading state |
-| `disabled` | `boolean` | `false` | Disabled state |
+| Prop            | Type                                    | Default      | Description                   |
+| --------------- | --------------------------------------- | ------------ | ----------------------------- |
+| `fields`        | `FormField[]`                           | **Required** | Array of field configurations |
+| `onSubmit`      | `(values: Record<string, any>) => void` | **Required** | Submit handler                |
+| `onCancel`      | `() => void`                            | `undefined`  | Cancel handler                |
+| `initialValues` | `Record<string, any>`                   | `{}`         | Initial form values           |
+| `submitLabel`   | `string`                                | `'Submit'`   | Submit button label           |
+| `loading`       | `boolean`                               | `false`      | Loading state                 |
+| `disabled`      | `boolean`                               | `false`      | Disabled state                |
 
 ### FormField
 
-| Prop | Type | Description |
-|------|------|-------------|
-| `name` | `string` | Field name (key in values object) |
-| `label` | `string` | Field label |
-| `type` | `'text' \| 'email' \| 'password' \| 'number' \| 'textarea'` | Input type |
-| `placeholder` | `string` | Input placeholder |
-| `required` | `boolean` | Whether field is required |
-| `validation` | `FieldValidation` | Validation rules |
+| Prop          | Type                                                        | Description                       |
+| ------------- | ----------------------------------------------------------- | --------------------------------- |
+| `name`        | `string`                                                    | Field name (key in values object) |
+| `label`       | `string`                                                    | Field label                       |
+| `type`        | `'text' \| 'email' \| 'password' \| 'number' \| 'textarea'` | Input type                        |
+| `placeholder` | `string`                                                    | Input placeholder                 |
+| `required`    | `boolean`                                                   | Whether field is required         |
+| `validation`  | `FieldValidation`                                           | Validation rules                  |
 
 ### FieldValidation
 
-| Prop | Type | Description |
-|------|------|-------------|
-| `min` | `number` | Minimum length |
-| `max` | `number` | Maximum length |
-| `pattern` | `RegExp` | Pattern to match |
+| Prop      | Type     | Description          |
+| --------- | -------- | -------------------- |
+| `min`     | `number` | Minimum length       |
+| `max`     | `number` | Maximum length       |
+| `pattern` | `RegExp` | Pattern to match     |
 | `message` | `string` | Custom error message |
 
 ### Usage Example
 
 ```tsx
-import { Form } from '@/lib/design-system/components/organisms';
+import { Form } from "@/lib/design-system/components/organisms";
 
 const vehicleFormFields: FormField[] = [
   {
-    name: 'name',
-    label: 'Vehicle Name',
-    type: 'text',
+    name: "name",
+    label: "Vehicle Name",
+    type: "text",
     required: true,
-    validation: { min: 2, max: 50, message: 'Name must be 2-50 characters' }
+    validation: { min: 2, max: 50, message: "Name must be 2-50 characters" },
   },
   {
-    name: 'make',
-    label: 'Make',
-    type: 'text',
-    required: true
-  },
-  {
-    name: 'model',
-    label: 'Model',
-    type: 'text',
-    required: true
-  },
-  {
-    name: 'year',
-    label: 'Year',
-    type: 'number',
+    name: "make",
+    label: "Make",
+    type: "text",
     required: true,
-    validation: { 
-      pattern: /^\d{4}$/, 
-      message: 'Year must be 4 digits'
-    }
   },
   {
-    name: 'notes',
-    label: 'Notes',
-    type: 'textarea',
-    placeholder: 'Additional notes...'
-  }
+    name: "model",
+    label: "Model",
+    type: "text",
+    required: true,
+  },
+  {
+    name: "year",
+    label: "Year",
+    type: "number",
+    required: true,
+    validation: {
+      pattern: /^\d{4}$/,
+      message: "Year must be 4 digits",
+    },
+  },
+  {
+    name: "notes",
+    label: "Notes",
+    type: "textarea",
+    placeholder: "Additional notes...",
+  },
 ];
 
-<Form 
+<Form
   fields={vehicleFormFields}
-  onSubmit={(values) => console.log('Form submitted:', values)}
+  onSubmit={(values) => console.log("Form submitted:", values)}
   onCancel={() => router.back()}
   submitLabel="Save Vehicle"
-/>
+/>;
 ```
 
 ---
@@ -388,64 +396,62 @@ A generic data table component with custom rendering.
 
 ### Props
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `columns` | `DataTableColumn<T>[]` | **Required** | Column configurations |
-| `data` | `T[]` | **Required** | Array of data items |
-| `onRowPress` | `(item: T, index: number) => void` | `undefined` | Row press handler |
-| `emptyMessage` | `string` | `'No data available'` | Empty state message |
-| `loading` | `boolean` | `false` | Loading state |
-| `striped` | `boolean` | `false` | Alternating row colors |
-| `keyExtractor` | `(item: T) => string` | `undefined` | Custom key extraction |
+| Prop           | Type                               | Default               | Description            |
+| -------------- | ---------------------------------- | --------------------- | ---------------------- |
+| `columns`      | `DataTableColumn<T>[]`             | **Required**          | Column configurations  |
+| `data`         | `T[]`                              | **Required**          | Array of data items    |
+| `onRowPress`   | `(item: T, index: number) => void` | `undefined`           | Row press handler      |
+| `emptyMessage` | `string`                           | `'No data available'` | Empty state message    |
+| `loading`      | `boolean`                          | `false`               | Loading state          |
+| `striped`      | `boolean`                          | `false`               | Alternating row colors |
+| `keyExtractor` | `(item: T) => string`              | `undefined`           | Custom key extraction  |
 
 ### DataTableColumn
 
-| Prop | Type | Description |
-|------|------|-------------|
-| `key` | `keyof T \| string` | Data key or custom key |
-| `title` | `string` | Column header title |
-| `width` | `DimensionValue` | Column width |
+| Prop     | Type                                                | Description            |
+| -------- | --------------------------------------------------- | ---------------------- |
+| `key`    | `keyof T \| string`                                 | Data key or custom key |
+| `title`  | `string`                                            | Column header title    |
+| `width`  | `DimensionValue`                                    | Column width           |
 | `render` | `(value: any, item: T, index: number) => ReactNode` | Custom render function |
 
 ### Usage Example
 
 ```tsx
-import { DataTable } from '@/lib/design-system/components/organisms';
+import { DataTable } from "@/lib/design-system/components/organisms";
 
 interface Vehicle {
   id: string;
   name: string;
-  status: 'active' | 'inactive';
+  status: "active" | "inactive";
   mileage: number;
 }
 
 const columns: DataTableColumn<Vehicle>[] = [
-  { key: 'name', title: 'Name', width: 200 },
-  { 
-    key: 'status', 
-    title: 'Status', 
+  { key: "name", title: "Name", width: 200 },
+  {
+    key: "status",
+    title: "Status",
     width: 120,
     render: (value) => (
-      <Chip variant={value === 'active' ? 'success' : 'default'}>
-        {value}
-      </Chip>
-    )
+      <Chip variant={value === "active" ? "success" : "default"}>{value}</Chip>
+    ),
   },
-  { 
-    key: 'mileage', 
-    title: 'Mileage', 
+  {
+    key: "mileage",
+    title: "Mileage",
     width: 150,
-    render: (value) => `${value.toLocaleString()} km`
-  }
+    render: (value) => `${value.toLocaleString()} km`,
+  },
 ];
 
-<DataTable 
+<DataTable
   columns={columns}
   data={vehicles}
   onRowPress={(vehicle) => router.push(`/vehicles/${vehicle.id}`)}
   striped
   loading={isLoading}
-/>
+/>;
 ```
 
 ---
@@ -466,24 +472,24 @@ A bottom or top navigation bar with tabs.
 
 ### Props
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `tabs` | `NavigationTab[]` | **Required** | Array of tabs |
-| `activeTab` | `string` | **Required** | Active tab ID |
-| `onTabChange` | `(tabId: string) => void` | **Required** | Tab change handler |
-| `variant` | `'default' \| 'filled'` | `'default'` | Visual variant |
-| `position` | `'top' \| 'bottom'` | `'bottom'` | Navigation position |
-| `showLabels` | `boolean` | `true` | Whether to show tab labels |
+| Prop          | Type                      | Default      | Description                |
+| ------------- | ------------------------- | ------------ | -------------------------- |
+| `tabs`        | `NavigationTab[]`         | **Required** | Array of tabs              |
+| `activeTab`   | `string`                  | **Required** | Active tab ID              |
+| `onTabChange` | `(tabId: string) => void` | **Required** | Tab change handler         |
+| `variant`     | `'default' \| 'filled'`   | `'default'`  | Visual variant             |
+| `position`    | `'top' \| 'bottom'`       | `'bottom'`   | Navigation position        |
+| `showLabels`  | `boolean`                 | `true`       | Whether to show tab labels |
 
 ### NavigationTab
 
-| Prop | Type | Description |
-|------|------|-------------|
-| `id` | `string` | Unique tab identifier |
-| `label` | `string` | Tab label |
-| `icon` | `keyof typeof allIcons` | Tab icon |
-| `badge` | `number` | Badge count |
-| `disabled` | `boolean` | Whether tab is disabled |
+| Prop       | Type                    | Description             |
+| ---------- | ----------------------- | ----------------------- |
+| `id`       | `string`                | Unique tab identifier   |
+| `label`    | `string`                | Tab label               |
+| `icon`     | `keyof typeof allIcons` | Tab icon                |
+| `badge`    | `number`                | Badge count             |
+| `disabled` | `boolean`               | Whether tab is disabled |
 
 ### Usage Example
 
@@ -492,7 +498,7 @@ import { NavigationBar } from '@/lib/design-system/components/organisms';
 
 const [activeTab, setActiveTab] = useState('home');
 
-<NavigationBar 
+<NavigationBar
   tabs={[
     { id: 'home', label: 'Home', icon: 'home' },
     { id: 'vehicles', label: 'Vehicles', icon: 'car' },
@@ -504,7 +510,7 @@ const [activeTab, setActiveTab] = useState('home');
 />
 
 // Filled variant at top (icon-only)
-<NavigationBar 
+<NavigationBar
   tabs={tabs}
   activeTab={activeTab}
   onTabChange={setActiveTab}
@@ -569,7 +575,7 @@ const MemoizedDataTable = React.memo(DataTable);
   data={vehicles}
   columns={columns}
   keyExtractor={(item) => item.id}
-/>
+/>;
 ```
 
 ---
@@ -579,6 +585,7 @@ const MemoizedDataTable = React.memo(DataTable);
 ### Keyboard Navigation
 
 All interactive organism components support keyboard navigation:
+
 - **PageHeader**: Back button and actions are focusable
 - **SearchBar**: Input is focusable, Esc clears input
 - **Form**: Tab navigation through fields
@@ -589,7 +596,7 @@ All interactive organism components support keyboard navigation:
 
 ```tsx
 // PageHeader announces title and actions
-<PageHeader title="Settings" /> 
+<PageHeader title="Settings" />
 // Announces: "Settings page"
 
 // MetricCard announces value and trend
@@ -615,7 +622,7 @@ All interactive organism components support keyboard navigation:
 <Form fields={fields} onSubmit={handleSubmit} autoFocus />
 
 // Announce dynamic updates
-<MetricCard 
+<MetricCard
   label="Messages"
   value={messageCount}
   aria-live="polite" // Announces count changes
@@ -625,6 +632,7 @@ All interactive organism components support keyboard navigation:
 ### Color Contrast
 
 All organisms maintain **WCAG AA** contrast ratios:
+
 - Text on backgrounds: ≥ 4.5:1
 - Interactive elements: ≥ 3:1
 - Focus indicators: ≥ 3:1
@@ -632,6 +640,7 @@ All organisms maintain **WCAG AA** contrast ratios:
 ### Touch Targets
 
 All interactive elements meet **minimum 44x44pt** touch target size:
+
 - PageHeader actions: 44x44pt
 - SearchBar buttons: 44x44pt
 - VehicleCard actions: 44x44pt
@@ -644,6 +653,7 @@ All interactive elements meet **minimum 44x44pt** touch target size:
 ## Testing
 
 See `__tests__` directory for comprehensive test coverage including:
+
 - Rendering tests
 - Interaction tests
 - Accessibility tests

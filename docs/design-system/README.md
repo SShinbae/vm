@@ -30,7 +30,7 @@ import { useColorScheme } from '@/hooks/use-color-scheme';
 export function MyComponent() {
   const colorScheme = useColorScheme();
   const colors = theme.getThemeColors(colorScheme);
-  
+
   return (
     <View style={{
       padding: getSpacing('md'),
@@ -52,27 +52,32 @@ export function MyComponent() {
 Our design system is built on these core principles:
 
 ### 1. **Consistency**
+
 - Use design tokens for all spacing, typography, and colors
 - Follow established patterns across the app
 - Maintain visual hierarchy
 
 ### 2. **Scalability**
+
 - Components are composable and reusable
 - Token-based system allows for easy updates
 - Mobile-first responsive design
 
 ### 3. **Accessibility**
+
 - WCAG 2.1 Level AA compliance
 - Minimum touch target size of 44x44
 - Proper color contrast ratios
 - Screen reader support
 
 ### 4. **Performance**
+
 - Optimized component rendering
 - Lazy loading where appropriate
 - Minimal re-renders
 
 ### 5. **Type Safety**
+
 - Full TypeScript support
 - Type-safe props and themes
 - Autocomplete for all tokens
@@ -84,57 +89,57 @@ Our design system is built on these core principles:
 ### Spacing Tokens
 
 ```typescript
-import { tokens } from '@/lib/design-system';
+import { tokens } from "@/lib/design-system";
 
-tokens.spacing.xxxs  // 2
-tokens.spacing.xxs   // 4
-tokens.spacing.xs    // 8
-tokens.spacing.sm    // 12
-tokens.spacing.md    // 16 (base)
-tokens.spacing.lg    // 20
-tokens.spacing.xl    // 24
-tokens.spacing.xxl   // 32
-tokens.spacing.xxxl  // 40
+tokens.spacing.xxxs; // 2
+tokens.spacing.xxs; // 4
+tokens.spacing.xs; // 8
+tokens.spacing.sm; // 12
+tokens.spacing.md; // 16 (base)
+tokens.spacing.lg; // 20
+tokens.spacing.xl; // 24
+tokens.spacing.xxl; // 32
+tokens.spacing.xxxl; // 40
 ```
 
 ### Typography Presets
 
 ```typescript
-import { getTypography } from '@/lib/design-system';
+import { getTypography } from "@/lib/design-system";
 
-getTypography('display')   // Largest
-getTypography('h1')
-getTypography('h2')
-getTypography('h3')
-getTypography('body')
-getTypography('caption')   // Smallest
+getTypography("display"); // Largest
+getTypography("h1");
+getTypography("h2");
+getTypography("h3");
+getTypography("body");
+getTypography("caption"); // Smallest
 ```
 
 ### Colors
 
 ```typescript
-import { theme } from '@/lib/design-system';
-import { useColorScheme } from '@/hooks/use-color-scheme';
+import { theme } from "@/lib/design-system";
+import { useColorScheme } from "@/hooks/use-color-scheme";
 
 const colorScheme = useColorScheme();
 const colors = theme.getThemeColors(colorScheme);
 
-colors.text            // Primary text color
-colors.textSecondary   // Secondary text color
-colors.background      // Background color
-colors.card            // Card background
-colors.tint            // Brand color
-colors.success         // Success state
-colors.error           // Error state
+colors.text; // Primary text color
+colors.textSecondary; // Secondary text color
+colors.background; // Background color
+colors.card; // Card background
+colors.tint; // Brand color
+colors.success; // Success state
+colors.error; // Error state
 ```
 
 ### Shadows
 
 ```typescript
-import { tokens } from '@/lib/design-system';
+import { tokens } from "@/lib/design-system";
 
 const cardStyle = {
-  ...tokens.shadows.md,  // Medium shadow
+  ...tokens.shadows.md, // Medium shadow
 };
 ```
 
@@ -152,7 +157,7 @@ import { useColorScheme } from '@/hooks/use-color-scheme';
 export function SimpleCard() {
   const colorScheme = useColorScheme();
   const colors = theme.getThemeColors(colorScheme);
-  
+
   return (
     <View style={{
       padding: getSpacing('lg'),
@@ -211,13 +216,13 @@ import { iconMap, iconSizes } from '@/lib/design-system';
 export function IconExample() {
   return (
     <>
-      <IconSymbol 
-        name={iconMap.navigation.home} 
-        size={iconSizes.md} 
+      <IconSymbol
+        name={iconMap.navigation.home}
+        size={iconSizes.md}
       />
-      <IconSymbol 
-        name={iconMap.actions.add} 
-        size={iconSizes.lg} 
+      <IconSymbol
+        name={iconMap.actions.add}
+        size={iconSizes.lg}
       />
     </>
   );
@@ -242,26 +247,26 @@ const colors = theme.getThemeColors(colorScheme);
 backgroundColor: colors.card;
 
 // ✅ Use typography presets
-const textStyle = getTypography('h2');
+const textStyle = getTypography("h2");
 
 // ✅ Use spacing helpers
-padding: getSpacing('md');
+padding: getSpacing("md");
 ```
 
 ### ❌ Don'ts
 
 ```typescript
 // ❌ Don't use magic numbers
-padding: 16;  // Use tokens.spacing.md instead
+padding: 16; // Use tokens.spacing.md instead
 
 // ❌ Don't hardcode colors
-backgroundColor: '#FFFFFF';  // Use colors.card instead
+backgroundColor: "#FFFFFF"; // Use colors.card instead
 
 // ❌ Don't hardcode font sizes
-fontSize: 24;  // Use tokens.fontSize.xxl instead
+fontSize: 24; // Use tokens.fontSize.xxl instead
 
 // ❌ Don't create inconsistent spacing
-marginTop: 13;  // Use design tokens only
+marginTop: 13; // Use design tokens only
 ```
 
 ---

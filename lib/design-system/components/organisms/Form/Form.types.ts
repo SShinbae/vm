@@ -1,6 +1,13 @@
-import { allIcons } from '@/lib/design-system/icons';
+import { allIcons } from "@/lib/design-system/icons";
 
-export type FormFieldType = 'text' | 'email' | 'password' | 'number' | 'select' | 'date' | 'textarea';
+export type FormFieldType =
+  | "text"
+  | "email"
+  | "password"
+  | "number"
+  | "select"
+  | "date"
+  | "textarea";
 
 export interface FormField {
   name: string;

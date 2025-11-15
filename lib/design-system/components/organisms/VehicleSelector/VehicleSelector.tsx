@@ -142,7 +142,11 @@ export const VehicleSelector: React.FC<VehicleSelectorProps> = ({
                 {selectedVehicle.license_plate}
               </Text>
             </View>
-            <IconSymbol name="lock.fill" size={16} color={theme.colors.textSecondary} />
+            <IconSymbol
+              name="lock.fill"
+              size={16}
+              color={theme.colors.textSecondary}
+            />
           </View>
           <Spacer size="xs" />
           <Text size="sm" color="secondary">

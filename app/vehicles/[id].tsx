@@ -1363,27 +1363,27 @@ export default function VehicleDetailScreen() {
                 </TouchableOpacity>
 
                 {sharingExpanded &&
-                  vehicle.sharing_info?.shared_with_groups &&
-                  vehicle.sharing_info.shared_with_groups.length > 0 ? (
-                    <View style={styles.sharingGroupsList}>
-                      {vehicle.sharing_info.shared_with_groups.map(
-                        (groupName, index) => (
-                          <View key={index} style={styles.sharingGroupItem}>
-                            <View style={styles.sharingGroupAvatar}>
-                              <IconSymbol
-                                name="person.3.fill"
-                                size={16}
-                                color={colors.tint}
-                              />
-                            </View>
-                            <Text style={styles.sharingGroupName}>
-                              {groupName}
-                            </Text>
+                vehicle.sharing_info?.shared_with_groups &&
+                vehicle.sharing_info.shared_with_groups.length > 0 ? (
+                  <View style={styles.sharingGroupsList}>
+                    {vehicle.sharing_info.shared_with_groups.map(
+                      (groupName, index) => (
+                        <View key={index} style={styles.sharingGroupItem}>
+                          <View style={styles.sharingGroupAvatar}>
+                            <IconSymbol
+                              name="person.3.fill"
+                              size={16}
+                              color={colors.tint}
+                            />
                           </View>
-                        ),
-                      )}
-                    </View>
-                  ) : null}
+                          <Text style={styles.sharingGroupName}>
+                            {groupName}
+                          </Text>
+                        </View>
+                      ),
+                    )}
+                  </View>
+                ) : null}
               </View>
             )}
 

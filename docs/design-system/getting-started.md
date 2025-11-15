@@ -12,25 +12,25 @@ The design system is already included in your project at `lib/design-system`. No
 
 ```typescript
 // Import the main exports
-import { tokens, theme, getSpacing, getTypography } from '@/lib/design-system';
+import { tokens, theme, getSpacing, getTypography } from "@/lib/design-system";
 
 // Import specific utilities
-import { responsive, platform } from '@/lib/design-system';
+import { responsive, platform } from "@/lib/design-system";
 
 // Import icons
-import { iconMap, iconSizes } from '@/lib/design-system';
+import { iconMap, iconSizes } from "@/lib/design-system";
 ```
 
 ### 2. Get Theme Colors
 
 ```typescript
-import { useColorScheme } from '@/hooks/use-color-scheme';
-import { theme } from '@/lib/design-system';
+import { useColorScheme } from "@/hooks/use-color-scheme";
+import { theme } from "@/lib/design-system";
 
 export function MyComponent() {
   const colorScheme = useColorScheme(); // 'light' or 'dark'
   const colors = theme.getThemeColors(colorScheme);
-  
+
   // Now use colors.text, colors.background, etc.
 }
 ```
@@ -77,7 +77,7 @@ interface CardProps {
 export function Card({ title, children }: CardProps) {
   const colorScheme = useColorScheme();
   const colors = theme.getThemeColors(colorScheme);
-  
+
   return (
     <View style={[
       styles.card,
@@ -115,14 +115,14 @@ const styles = StyleSheet.create({
 ### Pattern 2: Responsive Spacing
 
 ```typescript
-import { responsive, getSpacing } from '@/lib/design-system';
+import { responsive, getSpacing } from "@/lib/design-system";
 
 const containerStyle = {
   padding: responsive({
-    mobile: getSpacing('sm'),   // 12px on mobile
-    tablet: getSpacing('md'),   // 16px on tablet
-    desktop: getSpacing('lg'),  // 20px on desktop
-    default: getSpacing('md'),
+    mobile: getSpacing("sm"), // 12px on mobile
+    tablet: getSpacing("md"), // 16px on tablet
+    desktop: getSpacing("lg"), // 20px on desktop
+    default: getSpacing("md"),
   }),
 };
 ```
@@ -130,15 +130,15 @@ const containerStyle = {
 ### Pattern 3: Platform-Specific Styles
 
 ```typescript
-import { platform, tokens } from '@/lib/design-system';
+import { platform, tokens } from "@/lib/design-system";
 
 const styles = StyleSheet.create({
   header: {
     paddingTop: tokens.spacing.lg,
     ...platform({
-      ios: { paddingTop: 44 },      // iOS safe area
-      android: { paddingTop: 0 },   // Android no safe area
-      web: { paddingTop: 20 },      // Web custom
+      ios: { paddingTop: 44 }, // iOS safe area
+      android: { paddingTop: 0 }, // Android no safe area
+      web: { paddingTop: 20 }, // Web custom
     }),
   },
 });
@@ -164,7 +164,7 @@ export function MyComponent({ title }: MyComponentProps) {
   // 3a. Hooks
   const colorScheme = useColorScheme();
   const colors = theme.getThemeColors(colorScheme);
-  
+
   // 3b. Render
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -193,25 +193,27 @@ const styles = StyleSheet.create({
 ### Migrating Existing Components
 
 **Before:**
+
 ```typescript
 const styles = StyleSheet.create({
   container: {
-    padding: 16,              // ❌ Magic number
-    backgroundColor: '#FFF',  // ❌ Hardcoded color
-    fontSize: 18,             // ❌ Magic number
+    padding: 16, // ❌ Magic number
+    backgroundColor: "#FFF", // ❌ Hardcoded color
+    fontSize: 18, // ❌ Magic number
   },
 });
 ```
 
 **After:**
+
 ```typescript
-import { tokens } from '@/lib/design-system';
+import { tokens } from "@/lib/design-system";
 
 const styles = StyleSheet.create({
   container: {
-    padding: tokens.spacing.md,        // ✅ Token
-    backgroundColor: colors.card,      // ✅ Theme color
-    fontSize: tokens.fontSize.lg,      // ✅ Token
+    padding: tokens.spacing.md, // ✅ Token
+    backgroundColor: colors.card, // ✅ Theme color
+    fontSize: tokens.fontSize.lg, // ✅ Token
   },
 });
 ```
@@ -239,8 +241,8 @@ tokens.fontSize.  // Autocomplete shows all font sizes
 
 ```typescript
 const styles = {
-  ...getTypography('body'),
-  ...textShadow({ color: 'rgba(0,0,0,0.1)' }),
+  ...getTypography("body"),
+  ...textShadow({ color: "rgba(0,0,0,0.1)" }),
   color: colors.text,
 };
 ```
@@ -249,8 +251,8 @@ const styles = {
 
 ```typescript
 // hooks/useThemedStyles.ts
-import { useColorScheme } from '@/hooks/use-color-scheme';
-import { theme } from '@/lib/design-system';
+import { useColorScheme } from "@/hooks/use-color-scheme";
+import { theme } from "@/lib/design-system";
 
 export function useThemedStyles() {
   const colorScheme = useColorScheme();
@@ -267,10 +269,10 @@ const colors = useThemedStyles();
 
 ```typescript
 // ✅ Correct
-import { tokens } from '@/lib/design-system';
+import { tokens } from "@/lib/design-system";
 
 // ❌ Wrong
-import { tokens } from 'lib/design-system';
+import { tokens } from "lib/design-system";
 ```
 
 ### Color Not Updating
@@ -292,10 +294,10 @@ Ensure your token keys are correct:
 
 ```typescript
 // ✅ Correct
-tokens.spacing.md
+tokens.spacing.md;
 
 // ❌ Wrong - typo
-tokens.spacing.medium  // TypeScript error
+tokens.spacing.medium; // TypeScript error
 ```
 
 ---

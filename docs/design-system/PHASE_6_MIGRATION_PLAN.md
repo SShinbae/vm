@@ -11,6 +11,7 @@
 ### Current Screen Count: 15+ screens
 
 #### **High Priority (Week 1)**
+
 1. **Dashboard/Home** - `app/(tabs)/index.tsx` (945 lines)
    - Template: `DashboardLayout`
    - Components: Metrics, charts, recent activity, quick actions
@@ -36,6 +37,7 @@
    - Estimated reduction: 70%
 
 #### **Medium Priority (Week 2)**
+
 5. **Logs List** - `app/(tabs)/logs.tsx` (1,178 lines)
    - Template: `ListLayout` with tabs
    - Components: Tab bar, log cards, swipe actions
@@ -67,6 +69,7 @@
    - Estimated reduction: 60%
 
 #### **Low Priority (Week 3)**
+
 10. **Profile/Settings** - `app/(tabs)/profile.tsx`
     - Template: `PageLayout`
     - Components: Settings sections, theme toggle
@@ -92,42 +95,52 @@
 ### Phase-by-Phase Approach
 
 #### **Week 1: High Priority Screens**
+
 **Days 1-2**: Dashboard Migration
+
 - Extract stats calculation logic to hooks
 - Create metric card components using design system
 - Implement DashboardLayout with sections
 - Test all data fetching and display
 
 **Days 3-4**: Vehicles List Migration
+
 - Implement ListLayout with search and filters
 - Create VehicleCard using design system components
 - Migrate bottom sheet to design system Modal
 - Test search, filter, and navigation
 
 **Days 5-7**: Vehicle Detail & Add/Edit
+
 - Implement DetailLayout with hero and tabs
 - Create form using FormLayout template
 - Migrate image upload component
 - Test CRUD operations
 
 #### **Week 2: Medium Priority Screens**
+
 **Days 1-3**: Logs Screens Migration
+
 - Implement ListLayout with custom tabs
 - Create log card components
 - Migrate swipe actions
 - Test all log types and permissions
 
 **Days 4-5**: Log Forms Migration
+
 - Implement FormLayout for each log type
 - Create reusable form field components
 - Test form validation and submission
 
 #### **Week 3: Low Priority & Polish**
+
 **Days 1-2**: Remaining Screens
+
 - Migrate profile, notifications, auth screens
 - Test all navigation flows
 
 **Days 3-5**: Testing & Documentation
+
 - Visual regression testing
 - Performance testing
 - Accessibility testing
@@ -138,6 +151,7 @@
 ## 🔄 Migration Process (Per Screen)
 
 ### 1. **Pre-Migration Checklist**
+
 - [ ] Read entire screen file
 - [ ] Document current features and functionality
 - [ ] Identify all components used
@@ -148,16 +162,18 @@
 ### 2. **Migration Steps**
 
 #### Step 1: Create New File Structure
+
 ```typescript
 // Before: Inline styles, mixed components
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet } from "react-native";
 
 // After: Design system imports
-import { DashboardLayout, Card, Text, Spacer } from '@/lib/design-system';
-import { PageHeader } from '@/lib/design-system/components/organisms';
+import { DashboardLayout, Card, Text, Spacer } from "@/lib/design-system";
+import { PageHeader } from "@/lib/design-system/components/organisms";
 ```
 
 #### Step 2: Replace Layout Wrapper
+
 ```typescript
 // Before: Manual SafeAreaView + ScrollView
 <SafeAreaView>
@@ -181,6 +197,7 @@ import { PageHeader } from '@/lib/design-system/components/organisms';
 ```
 
 #### Step 3: Replace Components
+
 ```typescript
 // Before: Custom card with styles
 <View style={styles.card}>
@@ -201,23 +218,27 @@ import { PageHeader } from '@/lib/design-system/components/organisms';
 ```
 
 #### Step 4: Remove Old Styles
+
 ```typescript
 // Before: Large StyleSheet
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 16 },
-  header: { flexDirection: 'row', justifyContent: 'space-between' },
-  card: { backgroundColor: '#fff', borderRadius: 8, padding: 16 },
+  header: { flexDirection: "row", justifyContent: "space-between" },
+  card: { backgroundColor: "#fff", borderRadius: 8, padding: 16 },
   // ... 50+ more styles
 });
 
 // After: Minimal or no custom styles (tokens handle everything)
 // Only custom styles for truly unique layouts
 const styles = StyleSheet.create({
-  customGrid: { /* only if needed */ }
+  customGrid: {
+    /* only if needed */
+  },
 });
 ```
 
 #### Step 5: Test Functionality
+
 - [ ] Visual appearance matches original
 - [ ] All interactions work (taps, swipes, navigation)
 - [ ] Data fetching works correctly
@@ -227,6 +248,7 @@ const styles = StyleSheet.create({
 - [ ] Navigation flows work
 
 ### 3. **Post-Migration Checklist**
+
 - [ ] All features working
 - [ ] No TypeScript errors
 - [ ] No console warnings
@@ -242,6 +264,7 @@ const styles = StyleSheet.create({
 ### When to Use Each Template
 
 #### **DashboardLayout** - Use for:
+
 - Home/overview screens
 - Screens with multiple metric sections
 - Screens with charts and stats
@@ -250,6 +273,7 @@ const styles = StyleSheet.create({
 **Examples**: Dashboard, Analytics, Reports Overview
 
 #### **ListLayout** - Use for:
+
 - Index/list screens
 - Searchable content
 - Filterable content
@@ -258,6 +282,7 @@ const styles = StyleSheet.create({
 **Examples**: Vehicles List, Logs List, Groups List, Notifications
 
 #### **DetailLayout** - Use for:
+
 - Detail/show pages
 - Profile pages
 - Screens with tabbed content
@@ -266,6 +291,7 @@ const styles = StyleSheet.create({
 **Examples**: Vehicle Detail, User Profile, Group Detail
 
 #### **FormLayout** - Use for:
+
 - Create/edit forms
 - Single or multi-step forms
 - Settings screens with inputs
@@ -274,6 +300,7 @@ const styles = StyleSheet.create({
 **Examples**: Add Vehicle, Edit Vehicle, Add Log, Settings
 
 #### **PageLayout** - Use for:
+
 - Simple content pages
 - Settings pages without complex forms
 - Static content
@@ -286,6 +313,7 @@ const styles = StyleSheet.create({
 ## 🔧 Common Migration Patterns
 
 ### Pattern 1: Stats/Metrics Cards
+
 ```typescript
 // Before: Custom metric display
 <View style={styles.statsGrid}>
@@ -315,6 +343,7 @@ const styles = StyleSheet.create({
 ```
 
 ### Pattern 2: Search & Filter
+
 ```typescript
 // Before: Custom search input and filter buttons
 <View style={styles.searchContainer}>
@@ -341,6 +370,7 @@ const styles = StyleSheet.create({
 ```
 
 ### Pattern 3: Tab Navigation
+
 ```typescript
 // Before: Custom tab bar
 <View style={styles.tabBar}>
@@ -371,6 +401,7 @@ const styles = StyleSheet.create({
 ```
 
 ### Pattern 4: Form Fields
+
 ```typescript
 // Before: Manual form layout
 <View style={styles.form}>
@@ -406,6 +437,7 @@ const styles = StyleSheet.create({
 ```
 
 ### Pattern 5: Empty States
+
 ```typescript
 // Before: Conditional render
 {data.length === 0 ? (
@@ -445,33 +477,37 @@ const styles = StyleSheet.create({
 
 ### Code Reduction Targets
 
-| Screen | Before (LOC) | After (LOC) | Reduction |
-|--------|--------------|-------------|-----------|
-| Dashboard | 945 | ~280 | 70% |
-| Vehicles List | 1,487 | ~520 | 65% |
-| Logs List | 1,178 | ~410 | 65% |
-| Vehicle Detail | ~600 | ~240 | 60% |
-| Add Vehicle | ~500 | ~150 | 70% |
-| **Total** | **~4,710** | **~1,600** | **~66%** |
+| Screen         | Before (LOC) | After (LOC) | Reduction |
+| -------------- | ------------ | ----------- | --------- |
+| Dashboard      | 945          | ~280        | 70%       |
+| Vehicles List  | 1,487        | ~520        | 65%       |
+| Logs List      | 1,178        | ~410        | 65%       |
+| Vehicle Detail | ~600         | ~240        | 60%       |
+| Add Vehicle    | ~500         | ~150        | 70%       |
+| **Total**      | **~4,710**   | **~1,600**  | **~66%**  |
 
 ### Quality Improvements
 
 **Consistency**:
+
 - ✅ All screens use same layout patterns
 - ✅ Consistent spacing, colors, typography
 - ✅ Unified component behavior
 
 **Maintainability**:
+
 - ✅ Centralized component logic
 - ✅ Easier to update/fix bugs
 - ✅ Less duplication
 
 **Accessibility**:
+
 - ✅ Built-in screen reader support
 - ✅ Proper touch targets
 - ✅ Keyboard navigation (web)
 
 **Performance**:
+
 - ✅ Optimized component rendering
 - ✅ Smaller bundle size
 - ✅ Faster initial render
@@ -481,36 +517,44 @@ const styles = StyleSheet.create({
 ## 🚨 Common Challenges & Solutions
 
 ### Challenge 1: Complex Custom Components
+
 **Problem**: Screen has highly custom UI that doesn't fit templates
 
-**Solution**: 
+**Solution**:
+
 1. Use `PageLayout` as base (most flexible)
 2. Create custom organism if reusable
 3. Use `children` prop for one-off layouts
 4. Compose multiple templates if needed
 
 ### Challenge 2: State Management
+
 **Problem**: Template doesn't handle specific state logic
 
 **Solution**:
+
 1. Templates are presentational - keep state in screen
 2. Pass state and handlers as props
 3. Extract complex logic to custom hooks
 4. Use controlled components pattern
 
 ### Challenge 3: Breaking Changes
+
 **Problem**: Migration breaks existing functionality
 
 **Solution**:
+
 1. Migrate incrementally (one screen at a time)
 2. Test thoroughly after each migration
 3. Keep feature flags for rollback
 4. Document any behavior changes
 
 ### Challenge 4: Performance Regression
+
 **Problem**: New components slower than old ones
 
 **Solution**:
+
 1. Use React.memo for expensive components
 2. Optimize list rendering (FlatList optimizations)
 3. Lazy load heavy components
@@ -526,13 +570,15 @@ Use this for each screen migration:
 ## Screen: [Screen Name]
 
 ### Pre-Migration
-- [ ] Current LOC count: ___
+
+- [ ] Current LOC count: \_\_\_
 - [ ] Features documented
 - [ ] Components identified
-- [ ] Template selected: ___
-- [ ] Custom components needed: ___
+- [ ] Template selected: \_\_\_
+- [ ] Custom components needed: \_\_\_
 
 ### Migration
+
 - [ ] Template layout implemented
 - [ ] Header/navigation migrated
 - [ ] Content sections migrated
@@ -542,6 +588,7 @@ Use this for each screen migration:
 - [ ] Pull-to-refresh works
 
 ### Testing
+
 - [ ] Visual appearance correct
 - [ ] All interactions work
 - [ ] Data fetching works
@@ -552,8 +599,9 @@ Use this for each screen migration:
 - [ ] Accessibility tested
 
 ### Post-Migration
-- [ ] New LOC count: ___
-- [ ] Code reduction: ____%
+
+- [ ] New LOC count: \_\_\_
+- [ ] Code reduction: \_\_\_\_%
 - [ ] Documentation updated
 - [ ] Team reviewed
 - [ ] Merged to main
@@ -564,6 +612,7 @@ Use this for each screen migration:
 ## 📅 Weekly Goals
 
 ### Week 1
+
 - [ ] Dashboard screen migrated (Day 1-2)
 - [ ] Vehicles list screen migrated (Day 3-4)
 - [ ] Vehicle detail screen migrated (Day 5-6)
@@ -571,12 +620,14 @@ Use this for each screen migration:
 - **Target**: 4 screens, ~66% code reduction
 
 ### Week 2
+
 - [ ] Logs list screen migrated (Day 1-2)
 - [ ] All log forms migrated (Day 3-4)
 - [ ] Groups screen migrated (Day 5)
 - **Target**: 5 screens, ~65% code reduction
 
 ### Week 3
+
 - [ ] Profile/Settings migrated (Day 1)
 - [ ] Notifications migrated (Day 2)
 - [ ] Auth screens migrated (Day 3)

@@ -1,8 +1,17 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { View, TouchableOpacity, RefreshControl, ScrollView, ActivityIndicator } from "react-native";
+import {
+  View,
+  TouchableOpacity,
+  RefreshControl,
+  ScrollView,
+  ActivityIndicator,
+} from "react-native";
 import { Image } from "expo-image";
 import { router, useLocalSearchParams } from "expo-router";
-import { GroupService, GroupInvitationService } from "@/lib/services/groupService";
+import {
+  GroupService,
+  GroupInvitationService,
+} from "@/lib/services/groupService";
 import { VehicleService } from "@/lib/services/vehicleService";
 import { GroupWithMembers, GroupInvitationWithDetails } from "@/types";
 import { IconSymbol } from "@/components/ui/icon-symbol";
@@ -23,7 +32,9 @@ export default function GroupDetailScreen() {
   const dialog = useDialog();
   const [activeTab, setActiveTab] = useState<TabType>("members");
   const [group, setGroup] = useState<GroupWithMembers | null>(null);
-  const [invitations, setInvitations] = useState<GroupInvitationWithDetails[]>([]);
+  const [invitations, setInvitations] = useState<GroupInvitationWithDetails[]>(
+    [],
+  );
   const [sharedVehicles, setSharedVehicles] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -73,7 +84,10 @@ export default function GroupDetailScreen() {
           text: "Remove",
           style: "destructive",
           onPress: async () => {
-            const { error } = await GroupService.removeMember(group.id, memberId);
+            const { error } = await GroupService.removeMember(
+              group.id,
+              memberId,
+            );
             if (error) {
               dialog.showError("Error", error);
             } else {
@@ -87,7 +101,10 @@ export default function GroupDetailScreen() {
     );
   };
 
-  const handleCancelInvitation = async (invitationId: string, email: string) => {
+  const handleCancelInvitation = async (
+    invitationId: string,
+    email: string,
+  ) => {
     dialog.alert(
       "Cancel Invitation",
       `Are you sure you want to cancel the invitation to ${email}?`,
@@ -97,7 +114,8 @@ export default function GroupDetailScreen() {
           text: "Cancel Invitation",
           style: "destructive",
           onPress: async () => {
-            const { error } = await GroupInvitationService.cancelInvitation(invitationId);
+            const { error } =
+              await GroupInvitationService.cancelInvitation(invitationId);
             if (error) {
               dialog.showError("Error", error);
             } else {
@@ -127,7 +145,9 @@ export default function GroupDetailScreen() {
             if (error) {
               dialog.showError("Error", error);
             } else {
-              dialog.showSuccess("Success", "You have left the group", () => router.back());
+              dialog.showSuccess("Success", "You have left the group", () =>
+                router.back(),
+              );
             }
             dialog.hideConfirm();
           },
@@ -142,9 +162,13 @@ export default function GroupDetailScreen() {
 
   if (loading) {
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.background }}>
+      <SafeAreaView
+        style={{ flex: 1, backgroundColor: theme.colors.background }}
+      >
         <PageHeader title="Loading..." showBack />
-        <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
+        <View
+          style={{ flex: 1, alignItems: "center", justifyContent: "center" }}
+        >
           <ActivityIndicator size="large" color={theme.colors.primary} />
         </View>
       </SafeAreaView>
@@ -153,9 +177,18 @@ export default function GroupDetailScreen() {
 
   if (!group) {
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.background }}>
+      <SafeAreaView
+        style={{ flex: 1, backgroundColor: theme.colors.background }}
+      >
         <PageHeader title="Group Not Found" showBack />
-        <View style={{ flex: 1, alignItems: "center", justifyContent: "center", padding: theme.spacing.lg }}>
+        <View
+          style={{
+            flex: 1,
+            alignItems: "center",
+            justifyContent: "center",
+            padding: theme.spacing.lg,
+          }}
+        >
           <Text>This group does not exist or you don&apos;t have access.</Text>
         </View>
       </SafeAreaView>
@@ -203,11 +236,22 @@ export default function GroupDetailScreen() {
                 marginRight: theme.spacing.sm,
               }}
             >
-              <IconSymbol name="person.fill" size={20} color={theme.colors.primary} />
+              <IconSymbol
+                name="person.fill"
+                size={20}
+                color={theme.colors.primary}
+              />
             </View>
           )}
           <View style={{ flex: 1 }}>
-            <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 4, gap: 8 }}>
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                marginBottom: 4,
+                gap: 8,
+              }}
+            >
               <Text weight="semibold">
                 {member.profiles?.full_name || member.profiles?.email}
                 {isCurrentUser && " (You)"}
@@ -252,7 +296,11 @@ export default function GroupDetailScreen() {
     );
   };
 
-  const InvitationCard = ({ invitation }: { invitation: GroupInvitationWithDetails }) => (
+  const InvitationCard = ({
+    invitation,
+  }: {
+    invitation: GroupInvitationWithDetails;
+  }) => (
     <View
       style={{
         backgroundColor: theme.colors.surface,
@@ -275,12 +323,18 @@ export default function GroupDetailScreen() {
             marginRight: theme.spacing.sm,
           }}
         >
-          <IconSymbol name="envelope.fill" size={18} color={theme.colors.primary} />
+          <IconSymbol
+            name="envelope.fill"
+            size={18}
+            color={theme.colors.primary}
+          />
         </View>
         <View style={{ flex: 1 }}>
           <Text weight="semibold">{invitation.email}</Text>
           <Text size="sm" color="secondary">
-            Status: {invitation.status.charAt(0).toUpperCase() + invitation.status.slice(1)}
+            Status:{" "}
+            {invitation.status.charAt(0).toUpperCase() +
+              invitation.status.slice(1)}
           </Text>
           <Text size="xs" color="secondary">
             {formatDateWithPrefix(invitation.created_at, "Sent")}
@@ -289,7 +343,9 @@ export default function GroupDetailScreen() {
         {isOwner && (
           <TouchableOpacity
             style={{ padding: 8 }}
-            onPress={() => handleCancelInvitation(invitation.id, invitation.email)}
+            onPress={() =>
+              handleCancelInvitation(invitation.id, invitation.email)
+            }
           >
             <IconSymbol name="xmark" size={16} color={theme.colors.error} />
           </TouchableOpacity>
@@ -334,7 +390,11 @@ export default function GroupDetailScreen() {
               marginRight: theme.spacing.sm,
             }}
           >
-            <IconSymbol name="car.fill" size={24} color={theme.colors.primary} />
+            <IconSymbol
+              name="car.fill"
+              size={24}
+              color={theme.colors.primary}
+            />
           </View>
         )}
         <View style={{ flex: 1 }}>
@@ -346,11 +406,16 @@ export default function GroupDetailScreen() {
           </Text>
           {vehicle.owner_profile && (
             <Text size="xs" color="secondary">
-              Shared by {vehicle.owner_profile.full_name || vehicle.owner_profile.email}
+              Shared by{" "}
+              {vehicle.owner_profile.full_name || vehicle.owner_profile.email}
             </Text>
           )}
         </View>
-        <IconSymbol name="chevron.right" size={16} color={theme.colors.textSecondary} />
+        <IconSymbol
+          name="chevron.right"
+          size={16}
+          color={theme.colors.textSecondary}
+        />
       </View>
     </TouchableOpacity>
   );
@@ -361,7 +426,9 @@ export default function GroupDetailScreen() {
         <ScrollView
           style={{ flex: 1 }}
           contentContainerStyle={{ padding: theme.spacing.md }}
-          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          }
           showsVerticalScrollIndicator={false}
         >
           {group.group_members?.map((member) => (
@@ -374,7 +441,14 @@ export default function GroupDetailScreen() {
     if (activeTab === "vehicles") {
       if (sharedVehicles.length === 0) {
         return (
-          <View style={{ flex: 1, alignItems: "center", justifyContent: "center", padding: theme.spacing.xl }}>
+          <View
+            style={{
+              flex: 1,
+              alignItems: "center",
+              justifyContent: "center",
+              padding: theme.spacing.xl,
+            }}
+          >
             <View
               style={{
                 width: 60,
@@ -386,13 +460,22 @@ export default function GroupDetailScreen() {
                 marginBottom: theme.spacing.md,
               }}
             >
-              <IconSymbol name="car" size={24} color={theme.colors.textSecondary} />
+              <IconSymbol
+                name="car"
+                size={24}
+                color={theme.colors.textSecondary}
+              />
             </View>
             <Text weight="semibold" style={{ marginBottom: theme.spacing.xs }}>
               No shared vehicles
             </Text>
-            <Text size="sm" color="secondary" style={{ textAlign: "center", maxWidth: 300 }}>
-              Group members can share their vehicles here. Enable sharing in your vehicle settings.
+            <Text
+              size="sm"
+              color="secondary"
+              style={{ textAlign: "center", maxWidth: 300 }}
+            >
+              Group members can share their vehicles here. Enable sharing in
+              your vehicle settings.
             </Text>
           </View>
         );
@@ -402,7 +485,9 @@ export default function GroupDetailScreen() {
         <ScrollView
           style={{ flex: 1 }}
           contentContainerStyle={{ padding: theme.spacing.md }}
-          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          }
           showsVerticalScrollIndicator={false}
         >
           {sharedVehicles.map((vehicle) => (
@@ -415,7 +500,14 @@ export default function GroupDetailScreen() {
     // Invitations tab
     if (invitations.length === 0) {
       return (
-        <View style={{ flex: 1, alignItems: "center", justifyContent: "center", padding: theme.spacing.xl }}>
+        <View
+          style={{
+            flex: 1,
+            alignItems: "center",
+            justifyContent: "center",
+            padding: theme.spacing.xl,
+          }}
+        >
           <View
             style={{
               width: 60,
@@ -427,7 +519,11 @@ export default function GroupDetailScreen() {
               marginBottom: theme.spacing.md,
             }}
           >
-            <IconSymbol name="envelope" size={24} color={theme.colors.textSecondary} />
+            <IconSymbol
+              name="envelope"
+              size={24}
+              color={theme.colors.textSecondary}
+            />
           </View>
           <Text weight="semibold" style={{ marginBottom: theme.spacing.xs }}>
             No invitations
@@ -443,7 +539,9 @@ export default function GroupDetailScreen() {
       <ScrollView
         style={{ flex: 1 }}
         contentContainerStyle={{ padding: theme.spacing.md }}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
         showsVerticalScrollIndicator={false}
       >
         {invitations.map((invitation) => (
@@ -464,7 +562,8 @@ export default function GroupDetailScreen() {
                 {
                   icon: "add",
                   label: "Invite",
-                  onPress: () => router.push(`/groups/${group.id}/invite` as any),
+                  onPress: () =>
+                    router.push(`/groups/${group.id}/invite` as any),
                 },
               ]
             : undefined
@@ -473,7 +572,12 @@ export default function GroupDetailScreen() {
 
       {/* Group Info Section */}
       {group.description && (
-        <View style={{ padding: theme.spacing.md, backgroundColor: theme.colors.surface }}>
+        <View
+          style={{
+            padding: theme.spacing.md,
+            backgroundColor: theme.colors.surface,
+          }}
+        >
           <Text color="secondary" style={{ marginBottom: theme.spacing.sm }}>
             {group.description}
           </Text>
@@ -522,7 +626,8 @@ export default function GroupDetailScreen() {
             paddingVertical: theme.spacing.sm,
             paddingHorizontal: theme.spacing.md,
             borderRadius: theme.spacing.sm,
-            backgroundColor: activeTab === "members" ? theme.colors.primary : "transparent",
+            backgroundColor:
+              activeTab === "members" ? theme.colors.primary : "transparent",
             alignItems: "center",
           }}
           onPress={() => setActiveTab("members")}
@@ -530,7 +635,9 @@ export default function GroupDetailScreen() {
           <Text
             weight="semibold"
             size="sm"
-            style={{ color: activeTab === "members" ? "white" : theme.colors.text }}
+            style={{
+              color: activeTab === "members" ? "white" : theme.colors.text,
+            }}
           >
             Members ({group.member_count})
           </Text>
@@ -542,7 +649,8 @@ export default function GroupDetailScreen() {
             paddingVertical: theme.spacing.sm,
             paddingHorizontal: theme.spacing.md,
             borderRadius: theme.spacing.sm,
-            backgroundColor: activeTab === "vehicles" ? theme.colors.primary : "transparent",
+            backgroundColor:
+              activeTab === "vehicles" ? theme.colors.primary : "transparent",
             alignItems: "center",
           }}
           onPress={() => setActiveTab("vehicles")}
@@ -550,7 +658,9 @@ export default function GroupDetailScreen() {
           <Text
             weight="semibold"
             size="sm"
-            style={{ color: activeTab === "vehicles" ? "white" : theme.colors.text }}
+            style={{
+              color: activeTab === "vehicles" ? "white" : theme.colors.text,
+            }}
           >
             Vehicles ({sharedVehicles.length})
           </Text>
@@ -563,7 +673,10 @@ export default function GroupDetailScreen() {
               paddingVertical: theme.spacing.sm,
               paddingHorizontal: theme.spacing.md,
               borderRadius: theme.spacing.sm,
-              backgroundColor: activeTab === "invitations" ? theme.colors.primary : "transparent",
+              backgroundColor:
+                activeTab === "invitations"
+                  ? theme.colors.primary
+                  : "transparent",
               alignItems: "center",
             }}
             onPress={() => setActiveTab("invitations")}
@@ -571,7 +684,10 @@ export default function GroupDetailScreen() {
             <Text
               weight="semibold"
               size="sm"
-              style={{ color: activeTab === "invitations" ? "white" : theme.colors.text }}
+              style={{
+                color:
+                  activeTab === "invitations" ? "white" : theme.colors.text,
+              }}
             >
               Invitations ({invitations.length})
             </Text>

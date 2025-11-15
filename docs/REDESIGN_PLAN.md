@@ -24,7 +24,9 @@
 ## 🎯 Executive Summary
 
 ### Vision
+
 Create a **centralized design system** that enables:
+
 - ✅ Component reusability across all screens
 - ✅ Consistent UI/UX throughout the app
 - ✅ Scalable architecture for future features
@@ -33,6 +35,7 @@ Create a **centralized design system** that enables:
 - ✅ Faster feature development
 
 ### Key Principles
+
 1. **Atomic Design** - Build from atoms → molecules → organisms → templates → pages
 2. **Composition over Configuration** - Flexible, composable components
 3. **Single Source of Truth** - Centralized theme, tokens, and utilities
@@ -44,6 +47,7 @@ Create a **centralized design system** that enables:
 ## 🔍 Current State Analysis
 
 ### Existing Structure
+
 ```
 ✅ Good:
 - Basic UI components exist (Button, Card, Input, etc.)
@@ -62,7 +66,9 @@ Create a **centralized design system** that enables:
 ```
 
 ### Component Inventory
+
 **Current UI Components** (28 components):
+
 - Core: Button, Card, Input, Modal, DatePicker
 - Display: MetricCard, TrendCard, Skeleton, LoadingSpinner
 - Media: ImagePicker, ImageUpload, ReceiptCapture
@@ -111,11 +117,11 @@ export const tokens = {
   },
 
   fontWeight: {
-    light: '300',
-    regular: '400',
-    medium: '500',
-    semibold: '600',
-    bold: '700',
+    light: "300",
+    regular: "400",
+    medium: "500",
+    semibold: "600",
+    bold: "700",
   },
 
   // Border Radius
@@ -170,25 +176,25 @@ Extend the existing theme with semantic tokens:
 export const semanticTokens = {
   // Surface Hierarchy
   surface: {
-    base: 'background',
-    raised: 'card',
-    overlay: 'modal',
+    base: "background",
+    raised: "card",
+    overlay: "modal",
   },
 
   // Interactive States
   interactive: {
-    default: 'buttonPrimary',
-    hover: 'tint',
-    active: 'tint',
-    disabled: 'textTertiary',
+    default: "buttonPrimary",
+    hover: "tint",
+    active: "tint",
+    disabled: "textTertiary",
   },
 
   // Feedback States
   feedback: {
-    success: 'success',
-    warning: 'warning',
-    error: 'error',
-    info: 'info',
+    success: "success",
+    warning: "warning",
+    error: "error",
+    info: "info",
   },
 };
 ```
@@ -210,17 +216,17 @@ export const iconSizes = {
 
 export const iconMap = {
   // Navigation
-  back: 'chevron.left',
-  forward: 'chevron.right',
-  close: 'xmark',
-  menu: 'line.horizontal.3',
-  
+  back: "chevron.left",
+  forward: "chevron.right",
+  close: "xmark",
+  menu: "line.horizontal.3",
+
   // Actions
-  add: 'plus',
-  edit: 'pencil',
-  delete: 'trash',
-  save: 'checkmark',
-  
+  add: "plus",
+  edit: "pencil",
+  delete: "trash",
+  save: "checkmark",
+
   // ... (centralized icon mapping)
 } as const;
 ```
@@ -275,21 +281,23 @@ lib/design-system/
 #### 1. **Atoms** - Building Blocks
 
 ##### Text Component
+
 ```typescript
 // lib/design-system/components/atoms/Text/Text.tsx
 
 interface TextProps {
-  variant?: 'display' | 'heading' | 'title' | 'body' | 'caption' | 'label';
-  size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl';
-  weight?: 'light' | 'regular' | 'medium' | 'semibold' | 'bold';
-  color?: 'primary' | 'secondary' | 'tertiary' | 'error' | 'success';
-  align?: 'left' | 'center' | 'right';
+  variant?: "display" | "heading" | "title" | "body" | "caption" | "label";
+  size?: "xs" | "sm" | "md" | "lg" | "xl";
+  weight?: "light" | "regular" | "medium" | "semibold" | "bold";
+  color?: "primary" | "secondary" | "tertiary" | "error" | "success";
+  align?: "left" | "center" | "right";
   numberOfLines?: number;
   children: React.ReactNode;
 }
 ```
 
 ##### Icon Component
+
 ```typescript
 // lib/design-system/components/atoms/Icon/Icon.tsx
 
@@ -297,11 +305,12 @@ interface IconProps {
   name: keyof typeof iconMap;
   size?: keyof typeof iconSizes | number;
   color?: string;
-  variant?: 'outlined' | 'filled' | 'rounded';
+  variant?: "outlined" | "filled" | "rounded";
 }
 ```
 
 ##### Spacer Component
+
 ```typescript
 // lib/design-system/components/atoms/Spacer/Spacer.tsx
 
@@ -314,12 +323,13 @@ interface SpacerProps {
 #### 2. **Molecules** - Component Combinations
 
 ##### Enhanced Button
+
 ```typescript
 // lib/design-system/components/molecules/Button/Button.tsx
 
 interface ButtonProps {
-  variant?: 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger';
-  size?: 'sm' | 'md' | 'lg';
+  variant?: "primary" | "secondary" | "outline" | "ghost" | "danger";
+  size?: "sm" | "md" | "lg";
   fullWidth?: boolean;
   leftIcon?: keyof typeof iconMap;
   rightIcon?: keyof typeof iconMap;
@@ -331,11 +341,12 @@ interface ButtonProps {
 ```
 
 ##### Enhanced Card
+
 ```typescript
 // lib/design-system/components/molecules/Card/Card.tsx
 
 interface CardProps {
-  variant?: 'default' | 'elevated' | 'outlined' | 'filled';
+  variant?: "default" | "elevated" | "outlined" | "filled";
   padding?: keyof typeof tokens.spacing;
   onPress?: () => void;
   header?: React.ReactNode;
@@ -345,6 +356,7 @@ interface CardProps {
 ```
 
 ##### ListItem Component
+
 ```typescript
 // lib/design-system/components/molecules/ListItem/ListItem.tsx
 
@@ -362,6 +374,7 @@ interface ListItemProps {
 #### 3. **Organisms** - Complex Components
 
 ##### PageHeader
+
 ```typescript
 // lib/design-system/components/organisms/Header/PageHeader.tsx
 
@@ -380,6 +393,7 @@ interface PageHeaderProps {
 ```
 
 ##### DataTable
+
 ```typescript
 // lib/design-system/components/organisms/DataTable/DataTable.tsx
 
@@ -398,6 +412,7 @@ interface DataTableProps<T> {
 ```
 
 ##### Form Component
+
 ```typescript
 // lib/design-system/components/organisms/Form/Form.tsx
 
@@ -415,6 +430,7 @@ interface FormProps {
 #### 4. **Templates** - Layouts
 
 ##### PageLayout
+
 ```typescript
 // lib/design-system/components/templates/PageLayout/PageLayout.tsx
 
@@ -429,6 +445,7 @@ interface PageLayoutProps {
 ```
 
 ##### DashboardLayout
+
 ```typescript
 // lib/design-system/components/templates/DashboardLayout/DashboardLayout.tsx
 
@@ -450,7 +467,9 @@ interface DashboardLayoutProps {
 **Goal**: Establish design system infrastructure
 
 #### Tasks:
+
 1. **Create Design System Structure**
+
    ```
    lib/design-system/
    ├── tokens.ts
@@ -473,15 +492,20 @@ interface DashboardLayoutProps {
    - [ ] Animation durations
 
 3. **Create Utility Functions**
+
    ```typescript
    // lib/design-system/utils/spacing.ts
-   export const getSpacing = (size: keyof typeof tokens.spacing) => tokens.spacing[size];
-   
+   export const getSpacing = (size: keyof typeof tokens.spacing) =>
+     tokens.spacing[size];
+
    // lib/design-system/utils/responsive.ts
    export const responsive = {
-     sm: (value: any) => Platform.OS === 'web' ? { '@media (max-width: 640px)': value } : value,
-     md: (value: any) => Platform.OS === 'web' ? { '@media (max-width: 768px)': value } : value,
-     lg: (value: any) => Platform.OS === 'web' ? { '@media (max-width: 1024px)': value } : value,
+     sm: (value: any) =>
+       Platform.OS === "web" ? { "@media (max-width: 640px)": value } : value,
+     md: (value: any) =>
+       Platform.OS === "web" ? { "@media (max-width: 768px)": value } : value,
+     lg: (value: any) =>
+       Platform.OS === "web" ? { "@media (max-width: 1024px)": value } : value,
    };
    ```
 
@@ -491,6 +515,7 @@ interface DashboardLayoutProps {
    - [ ] Token reference guide
 
 **Deliverables**:
+
 - ✅ Complete token system
 - ✅ Enhanced theme configuration
 - ✅ Utility functions library
@@ -541,6 +566,7 @@ interface DashboardLayoutProps {
    - Token-based sizing
 
 **Quality Checklist**:
+
 - [ ] TypeScript types exported
 - [ ] Props documented
 - [ ] Accessibility implemented
@@ -549,6 +575,7 @@ interface DashboardLayoutProps {
 - [ ] Unit tests written
 
 **Deliverables**:
+
 - ✅ 6 atomic components
 - ✅ Component documentation
 - ✅ Storybook examples (optional)
@@ -605,6 +632,7 @@ interface DashboardLayoutProps {
    - Icon support
 
 **Deliverables**:
+
 - ✅ 7+ molecule components
 - ✅ Refactored existing components
 - ✅ Comprehensive props API
@@ -660,6 +688,7 @@ interface DashboardLayoutProps {
    - Active states
 
 **Deliverables**:
+
 - ✅ 7+ organism components
 - ✅ Domain logic integration
 - ✅ Complex state management
@@ -703,6 +732,7 @@ interface DashboardLayoutProps {
    - Pull-to-refresh
 
 **Deliverables**:
+
 - ✅ 5 layout templates
 - ✅ Composition examples
 - ✅ Layout documentation
@@ -716,22 +746,15 @@ interface DashboardLayoutProps {
 #### Migration Priority:
 
 **High Priority** (Week 8-9):
+
 1. Dashboard/Home screen
 2. Vehicle list screen
 3. Vehicle detail screen
 4. Add/Edit vehicle forms
 
-**Medium Priority** (Week 9-10):
-5. Logs list screen
-6. Add/Edit log forms
-7. Analytics/Reports screen
-8. Profile/Settings screen
+**Medium Priority** (Week 9-10): 5. Logs list screen 6. Add/Edit log forms 7. Analytics/Reports screen 8. Profile/Settings screen
 
-**Low Priority** (Week 10-12):
-9. Groups management
-10. Notifications
-11. Authentication screens
-12. Onboarding screens
+**Low Priority** (Week 10-12): 9. Groups management 10. Notifications 11. Authentication screens 12. Onboarding screens
 
 #### Migration Process (per screen):
 
@@ -762,6 +785,7 @@ interface DashboardLayoutProps {
    - Document design decisions
 
 **Deliverables**:
+
 - ✅ All screens migrated
 - ✅ Consistent UI/UX
 - ✅ Reduced code by 60%+
@@ -786,36 +810,43 @@ Week 13-14: QA & Documentation
 ### Weekly Breakdown
 
 #### Week 1: Design System Foundation
+
 - Day 1-2: Create folder structure, setup tokens
 - Day 3-4: Implement theme enhancements
 - Day 5-7: Utility functions and documentation
 
 #### Week 2-3: Atomic Components
+
 - Days 1-3: Text, Icon, Badge components
 - Days 4-6: Avatar, Divider, Spacer components
 - Day 7: Testing and documentation
 
 #### Week 3-5: Molecule Components
+
 - Week 3: Button, Input, Card refactor
 - Week 4: ListItem, Chip, Alert, TabBar
 - Week 5: Testing, documentation, refinement
 
 #### Week 5-7: Organism Components
+
 - Week 5: PageHeader, VehicleCard, MetricCard
 - Week 6: DataTable, Form components
 - Week 7: BottomSheet, NavigationBar, testing
 
 #### Week 7-8: Layout Templates
+
 - Week 7 Days 1-4: PageLayout, DashboardLayout
 - Week 7 Days 5-7: DetailLayout, FormLayout
 - Week 8: ListLayout, testing, documentation
 
 #### Week 8-12: Screen Migration
+
 - Week 8-9: High priority screens (Dashboard, Vehicles)
 - Week 9-10: Medium priority screens (Logs, Analytics)
 - Week 10-12: Low priority screens (Groups, Settings, Auth)
 
 #### Week 12-14: Final Polish
+
 - Week 12-13: Bug fixes, performance optimization
 - Week 13-14: Final QA, documentation updates
 
@@ -826,6 +857,7 @@ Week 13-14: QA & Documentation
 ### Step-by-Step Migration Guide
 
 #### 1. **Pre-Migration**
+
 ```typescript
 // Before: Old component usage
 <View style={styles.card}>
@@ -835,6 +867,7 @@ Week 13-14: QA & Documentation
 ```
 
 #### 2. **Post-Migration**
+
 ```typescript
 // After: Design system components
 import { Card, Text, Spacer } from '@/lib/design-system';
@@ -849,16 +882,18 @@ import { Card, Text, Spacer } from '@/lib/design-system';
 ### Coexistence Strategy
 
 **Phase 1-7**: Old and new components coexist
+
 ```typescript
 // Import from both
-import { Button as OldButton } from '@/components/ui/Button';
-import { Button as NewButton } from '@/lib/design-system';
+import { Button as OldButton } from "@/components/ui/Button";
+import { Button as NewButton } from "@/lib/design-system";
 
 // Gradually replace
 // <OldButton /> → <NewButton />
 ```
 
 **Phase 8+**: Start deprecating old components
+
 ```typescript
 // Mark old components as deprecated
 /** @deprecated Use Button from @/lib/design-system instead */
@@ -883,6 +918,7 @@ export const Button = OldButton;
 ### Testing Strategy
 
 #### 1. **Component Testing**
+
 ```typescript
 // Example: Button component test
 import { render, fireEvent } from '@testing-library/react-native';
@@ -909,17 +945,20 @@ describe('Button', () => {
 ```
 
 #### 2. **Visual Regression Testing**
+
 - Screenshot comparison for each component
 - Test all variants and states
 - Cross-platform testing (iOS, Android, Web)
 
 #### 3. **Accessibility Testing**
+
 - Screen reader compatibility
 - Keyboard navigation
 - Touch target sizes (minimum 44x44)
 - Color contrast ratios (WCAG AA)
 
 #### 4. **Performance Testing**
+
 - Component render time < 16ms
 - Memory usage monitoring
 - Bundle size impact
@@ -944,14 +983,14 @@ describe('Button', () => {
 
 ### Quantitative Goals
 
-| Metric | Current | Target | Improvement |
-|--------|---------|--------|-------------|
-| Code Duplication | ~40% | <15% | 62% reduction |
-| Component Reuse | Low | High | 80%+ reuse |
-| Development Time | Baseline | -40% | Faster features |
-| Bundle Size | Baseline | -20% | Smaller app |
-| Test Coverage | ~30% | >80% | Better quality |
-| Accessibility Score | 60% | 95%+ | WCAG AA |
+| Metric              | Current  | Target | Improvement     |
+| ------------------- | -------- | ------ | --------------- |
+| Code Duplication    | ~40%     | <15%   | 62% reduction   |
+| Component Reuse     | Low      | High   | 80%+ reuse      |
+| Development Time    | Baseline | -40%   | Faster features |
+| Bundle Size         | Baseline | -20%   | Smaller app     |
+| Test Coverage       | ~30%     | >80%   | Better quality  |
+| Accessibility Score | 60%      | 95%+   | WCAG AA         |
 
 ### Qualitative Goals
 
@@ -969,6 +1008,7 @@ describe('Button', () => {
 ### Documentation to Create
 
 1. **Design System Guide**
+
    ```
    docs/design-system/
    ├── README.md                 # Overview
@@ -984,31 +1024,42 @@ describe('Button', () => {
    ```
 
 2. **Component Documentation Template**
-   ```markdown
+
+   ````markdown
    # Component Name
 
    ## Description
+
    Brief description of the component
 
    ## Usage
-   ```tsx
-   import { Component } from '@/lib/design-system';
 
-   <Component prop1="value" />
+   ```tsx
+   import { Component } from "@/lib/design-system";
+
+   <Component prop1="value" />;
    ```
+   ````
 
    ## Props
+
    | Prop | Type | Default | Description |
-   |------|------|---------|-------------|
+   | ---- | ---- | ------- | ----------- |
 
    ## Variants
+
    Screenshots and code for each variant
 
    ## Accessibility
+
    Accessibility features and requirements
 
    ## Examples
+
    Common usage examples
+
+   ```
+
    ```
 
 ---
@@ -1016,6 +1067,7 @@ describe('Button', () => {
 ## 🎨 Design System Benefits
 
 ### For Developers
+
 - ✅ Faster development with ready-made components
 - ✅ Consistent code patterns
 - ✅ Less decision fatigue
@@ -1023,12 +1075,14 @@ describe('Button', () => {
 - ✅ Easier code reviews
 
 ### For Designers
+
 - ✅ Consistent design language
 - ✅ Faster prototyping
 - ✅ Design-to-code alignment
 - ✅ Easier design iterations
 
 ### For Users
+
 - ✅ Consistent experience
 - ✅ Better accessibility
 - ✅ Improved performance
@@ -1036,6 +1090,7 @@ describe('Button', () => {
 - ✅ Smoother interactions
 
 ### For Business
+
 - ✅ Faster time to market
 - ✅ Reduced development costs
 - ✅ Easier scaling
@@ -1057,16 +1112,19 @@ describe('Button', () => {
 ### First Week Action Items
 
 **Day 1-2: Setup**
+
 - [ ] Create `lib/design-system/` folder structure
 - [ ] Set up tokens.ts with spacing, typography, colors
 - [ ] Create base theme.ts enhancements
 
 **Day 3-4: Utilities**
+
 - [ ] Create spacing utilities
 - [ ] Create responsive utilities
 - [ ] Create typography utilities
 
 **Day 5-7: Documentation**
+
 - [ ] Write design system README
 - [ ] Document design principles
 - [ ] Create token reference guide
@@ -1089,12 +1147,12 @@ describe('Button', () => {
 
 ```typescript
 // Component files: PascalCase
-Button.tsx
-PageHeader.tsx
+Button.tsx;
+PageHeader.tsx;
 
 // Utility files: camelCase
-spacing.ts
-responsive.ts
+spacing.ts;
+responsive.ts;
 
 // Constants: UPPER_SNAKE_CASE
 const MAX_WIDTH = 1200;
@@ -1139,6 +1197,7 @@ docs(design-system): add component usage guide
 This redesign plan transforms your Vehicle Management app into a **scalable, maintainable, and consistent** application with a professional design system at its core.
 
 ### Key Takeaways:
+
 1. **Centralized design system** with atomic design methodology
 2. **Reusable components** that work across all screens
 3. **Scalable architecture** for future growth
@@ -1146,6 +1205,7 @@ This redesign plan transforms your Vehicle Management app into a **scalable, mai
 5. **Professional UI/UX** with accessibility built-in
 
 ### Success Factors:
+
 - ✅ Follow the phased approach (don't skip ahead)
 - ✅ Maintain high code quality standards
 - ✅ Document as you build
@@ -1156,4 +1216,4 @@ This redesign plan transforms your Vehicle Management app into a **scalable, mai
 
 ---
 
-*For questions or clarifications, refer to the design system documentation or create a GitHub issue with the `design-system` label.*
+_For questions or clarifications, refer to the design system documentation or create a GitHub issue with the `design-system` label._

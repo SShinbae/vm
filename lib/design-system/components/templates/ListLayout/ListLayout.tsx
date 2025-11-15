@@ -1,23 +1,23 @@
-import { useColorScheme } from '@/hooks/use-color-scheme';
-import React from 'react';
+import { useColorScheme } from "@/hooks/use-color-scheme";
+import React from "react";
 import {
-    ActivityIndicator,
-    FlatList,
-    RefreshControl,
-    StyleSheet,
-    View,
-} from 'react-native';
-import { theme } from '../../../theme';
-import { tokens } from '../../../tokens';
-import { Spacer } from '../../atoms/Spacer';
-import { Text } from '../../atoms/Text';
-import { PageHeader } from '../../organisms/PageHeader';
-import { SearchBar } from '../../organisms/SearchBar';
-import type { ListLayoutProps } from './ListLayout.types';
+  ActivityIndicator,
+  FlatList,
+  RefreshControl,
+  StyleSheet,
+  View,
+} from "react-native";
+import { theme } from "../../../theme";
+import { tokens } from "../../../tokens";
+import { Spacer } from "../../atoms/Spacer";
+import { Text } from "../../atoms/Text";
+import { PageHeader } from "../../organisms/PageHeader";
+import { SearchBar } from "../../organisms/SearchBar";
+import type { ListLayoutProps } from "./ListLayout.types";
 
 export const ListLayout = <T,>({
   header,
-  searchQuery = '',
+  searchQuery = "",
   onSearchChange,
   onFilterPress,
   onSortPress,
@@ -26,7 +26,7 @@ export const ListLayout = <T,>({
   renderItem,
   keyExtractor,
   emptyComponent,
-  emptyMessage = 'No items found',
+  emptyMessage = "No items found",
   loading = false,
   refreshable = true,
   onRefresh,
@@ -124,9 +124,12 @@ export const ListLayout = <T,>({
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]} {...props}>
+    <View
+      style={[styles.container, { backgroundColor: colors.background }]}
+      {...props}
+    >
       {header && <PageHeader {...header} />}
-      
+
       <FlatList
         data={data}
         renderItem={renderItem}
@@ -173,21 +176,21 @@ const styles = StyleSheet.create({
   },
   centerContent: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     padding: tokens.spacing.xl,
   },
   emptyContainer: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   loadingMore: {
     padding: tokens.spacing.lg,
-    alignItems: 'center',
+    alignItems: "center",
   },
   endOfList: {
     padding: tokens.spacing.lg,
-    alignItems: 'center',
+    alignItems: "center",
   },
 });

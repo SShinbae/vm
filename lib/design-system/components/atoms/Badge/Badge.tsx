@@ -1,24 +1,24 @@
-import { useColorScheme } from '@/hooks/use-color-scheme';
-import React from 'react';
-import { StyleSheet, View, ViewProps } from 'react-native';
-import { theme } from '../../../theme';
-import { tokens } from '../../../tokens';
-import { Text } from '../Text';
+import { useColorScheme } from "@/hooks/use-color-scheme";
+import React from "react";
+import { StyleSheet, View, ViewProps } from "react-native";
+import { theme } from "../../../theme";
+import { tokens } from "../../../tokens";
+import { Text } from "../Text";
 
-export interface BadgeProps extends Omit<ViewProps, 'style'> {
-  variant?: 'success' | 'warning' | 'error' | 'info' | 'default';
-  size?: 'sm' | 'md' | 'lg';
-  type?: 'filled' | 'outlined' | 'dot';
+export interface BadgeProps extends Omit<ViewProps, "style"> {
+  variant?: "success" | "warning" | "error" | "info" | "default";
+  size?: "sm" | "md" | "lg";
+  type?: "filled" | "outlined" | "dot";
   count?: number;
   maxCount?: number;
   children?: React.ReactNode;
-  style?: ViewProps['style'];
+  style?: ViewProps["style"];
 }
 
 export const Badge: React.FC<BadgeProps> = ({
-  variant = 'default',
-  size = 'md',
-  type = 'filled',
+  variant = "default",
+  size = "md",
+  type = "filled",
   count,
   maxCount = 99,
   children,
@@ -56,22 +56,22 @@ export const Badge: React.FC<BadgeProps> = ({
   const variantColors = {
     success: {
       bg: colors.success,
-      text: '#FFFFFF',
+      text: "#FFFFFF",
       border: colors.success,
     },
     warning: {
       bg: colors.warning,
-      text: '#000000',
+      text: "#000000",
       border: colors.warning,
     },
     error: {
       bg: colors.error,
-      text: '#FFFFFF',
+      text: "#FFFFFF",
       border: colors.error,
     },
     info: {
       bg: colors.info,
-      text: '#FFFFFF',
+      text: "#FFFFFF",
       border: colors.info,
     },
     default: {
@@ -84,7 +84,7 @@ export const Badge: React.FC<BadgeProps> = ({
   const colorStyle = variantColors[variant];
 
   // Dot badge
-  if (type === 'dot') {
+  if (type === "dot") {
     return (
       <View
         style={[
@@ -105,12 +105,15 @@ export const Badge: React.FC<BadgeProps> = ({
   }
 
   // Display count or children
-  const displayContent = count !== undefined 
-    ? count > maxCount ? `${maxCount}+` : count.toString()
-    : children;
+  const displayContent =
+    count !== undefined
+      ? count > maxCount
+        ? `${maxCount}+`
+        : count.toString()
+      : children;
 
   // Outlined variant
-  const isOutlined = type === 'outlined';
+  const isOutlined = type === "outlined";
 
   return (
     <View
@@ -119,7 +122,7 @@ export const Badge: React.FC<BadgeProps> = ({
         {
           height: sizeStyle.height,
           paddingHorizontal: sizeStyle.paddingHorizontal,
-          backgroundColor: isOutlined ? 'transparent' : colorStyle.bg,
+          backgroundColor: isOutlined ? "transparent" : colorStyle.bg,
           borderWidth: isOutlined ? 1 : 0,
           borderColor: colorStyle.border,
           borderRadius: sizeStyle.height / 2,
@@ -127,7 +130,9 @@ export const Badge: React.FC<BadgeProps> = ({
         style,
       ]}
       accessibilityRole="image"
-      accessibilityLabel={count !== undefined ? `${count} notifications` : undefined}
+      accessibilityLabel={
+        count !== undefined ? `${count} notifications` : undefined
+      }
       {...props}
     >
       <Text
@@ -147,11 +152,11 @@ export const Badge: React.FC<BadgeProps> = ({
 
 const styles = StyleSheet.create({
   badge: {
-    justifyContent: 'center',
-    alignItems: 'center',
-    alignSelf: 'flex-start',
+    justifyContent: "center",
+    alignItems: "center",
+    alignSelf: "flex-start",
   },
   dot: {
-    alignSelf: 'flex-start',
+    alignSelf: "flex-start",
   },
 });

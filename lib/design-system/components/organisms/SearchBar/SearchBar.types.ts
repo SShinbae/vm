@@ -1,4 +1,4 @@
-import { allIcons } from '@/lib/design-system/icons';
+import { allIcons } from "@/lib/design-system/icons";
 
 export interface SearchBarProps {
   /**

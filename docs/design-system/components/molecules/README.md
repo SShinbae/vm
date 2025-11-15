@@ -31,9 +31,9 @@ import { Button } from '@/lib/design-system';
 </Button>
 
 // Primary button with icon
-<Button 
-  variant="primary" 
-  size="lg" 
+<Button
+  variant="primary"
+  size="lg"
   leftIcon="add"
   onPress={handlePress}
 >
@@ -46,8 +46,8 @@ import { Button } from '@/lib/design-system';
 </Button>
 
 // Danger button with full width
-<Button 
-  variant="danger" 
+<Button
+  variant="danger"
   fullWidth
   rightIcon="delete"
   onPress={handleDelete}
@@ -58,17 +58,17 @@ import { Button } from '@/lib/design-system';
 
 ### Props
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `variant` | `'primary' \| 'secondary' \| 'outline' \| 'ghost' \| 'danger'` | `'primary'` | Visual style variant |
-| `size` | `'sm' \| 'md' \| 'lg'` | `'md'` | Button size |
-| `fullWidth` | `boolean` | `false` | Whether button takes full width |
-| `leftIcon` | `IconName` | - | Icon to display on the left |
-| `rightIcon` | `IconName` | - | Icon to display on the right |
-| `loading` | `boolean` | `false` | Shows loading indicator |
-| `disabled` | `boolean` | `false` | Disables button interaction |
-| `onPress` | `() => void` | - | Press handler (required) |
-| `style` | `ViewStyle` | - | Custom style override |
+| Prop        | Type                                                           | Default     | Description                     |
+| ----------- | -------------------------------------------------------------- | ----------- | ------------------------------- |
+| `variant`   | `'primary' \| 'secondary' \| 'outline' \| 'ghost' \| 'danger'` | `'primary'` | Visual style variant            |
+| `size`      | `'sm' \| 'md' \| 'lg'`                                         | `'md'`      | Button size                     |
+| `fullWidth` | `boolean`                                                      | `false`     | Whether button takes full width |
+| `leftIcon`  | `IconName`                                                     | -           | Icon to display on the left     |
+| `rightIcon` | `IconName`                                                     | -           | Icon to display on the right    |
+| `loading`   | `boolean`                                                      | `false`     | Shows loading indicator         |
+| `disabled`  | `boolean`                                                      | `false`     | Disables button interaction     |
+| `onPress`   | `() => void`                                                   | -           | Press handler (required)        |
+| `style`     | `ViewStyle`                                                    | -           | Custom style override           |
 
 ### Variants
 
@@ -96,13 +96,13 @@ Form input component with validation states and helper text.
 import { Input } from '@/lib/design-system';
 
 // Basic input
-<Input 
+<Input
   placeholder="Enter your name"
   onChangeText={setName}
 />
 
 // Input with label and helper text
-<Input 
+<Input
   label="Email Address"
   placeholder="you@example.com"
   helperText="We'll never share your email"
@@ -111,7 +111,7 @@ import { Input } from '@/lib/design-system';
 />
 
 // Input with validation
-<Input 
+<Input
   label="Password"
   placeholder="Enter password"
   secureTextEntry
@@ -120,7 +120,7 @@ import { Input } from '@/lib/design-system';
 />
 
 // Input with icons
-<Input 
+<Input
   placeholder="Search..."
   leftIcon="search"
   rightIcon="close"
@@ -131,17 +131,17 @@ import { Input } from '@/lib/design-system';
 
 ### Props
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `label` | `string` | - | Label text above input |
-| `helperText` | `string` | - | Helper text below input |
-| `errorText` | `string` | - | Error message (shows error state) |
-| `successText` | `string` | - | Success message (shows success state) |
-| `leftIcon` | `IconName` | - | Icon on the left side |
-| `rightIcon` | `IconName` | - | Icon on the right side |
-| `onRightIconPress` | `() => void` | - | Handler for right icon press |
-| `disabled` | `boolean` | `false` | Disables input |
-| `fullWidth` | `boolean` | `false` | Takes full width |
+| Prop               | Type         | Default | Description                           |
+| ------------------ | ------------ | ------- | ------------------------------------- |
+| `label`            | `string`     | -       | Label text above input                |
+| `helperText`       | `string`     | -       | Helper text below input               |
+| `errorText`        | `string`     | -       | Error message (shows error state)     |
+| `successText`      | `string`     | -       | Success message (shows success state) |
+| `leftIcon`         | `IconName`   | -       | Icon on the left side                 |
+| `rightIcon`        | `IconName`   | -       | Icon on the right side                |
+| `onRightIconPress` | `() => void` | -       | Handler for right icon press          |
+| `disabled`         | `boolean`    | `false` | Disables input                        |
+| `fullWidth`        | `boolean`    | `false` | Takes full width                      |
 
 Plus all standard `TextInput` props (placeholder, secureTextEntry, keyboardType, etc.)
 
@@ -181,11 +181,11 @@ import { Card, CardHeader, CardContent, CardFooter, Button } from '@/lib/design-
     <Text variant="heading" size="lg">Title</Text>
     <Text variant="body" color="secondary">Subtitle</Text>
   </CardHeader>
-  
+
   <CardContent>
     <Text>Main content goes here with proper spacing.</Text>
   </CardContent>
-  
+
   <CardFooter>
     <Button variant="outline" size="sm">Cancel</Button>
     <Button size="sm">Confirm</Button>
@@ -204,17 +204,17 @@ import { Card, CardHeader, CardContent, CardFooter, Button } from '@/lib/design-
 
 **Card Props:**
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `variant` | `'default' \| 'elevated' \| 'outlined' \| 'filled'` | `'default'` | Visual style |
-| `padding` | `SpacingKey` | `'md'` | Internal padding |
-| `onPress` | `() => void` | - | Makes card pressable |
-| `children` | `ReactNode` | - | Card content (required) |
+| Prop       | Type                                                | Default     | Description             |
+| ---------- | --------------------------------------------------- | ----------- | ----------------------- |
+| `variant`  | `'default' \| 'elevated' \| 'outlined' \| 'filled'` | `'default'` | Visual style            |
+| `padding`  | `SpacingKey`                                        | `'md'`      | Internal padding        |
+| `onPress`  | `() => void`                                        | -           | Makes card pressable    |
+| `children` | `ReactNode`                                         | -           | Card content (required) |
 
 **CardHeader/CardContent/CardFooter Props:**
 
-| Prop | Type | Description |
-|------|------|-------------|
+| Prop       | Type        | Description                |
+| ---------- | ----------- | -------------------------- |
 | `children` | `ReactNode` | Section content (required) |
 
 ### Variants
@@ -244,20 +244,20 @@ Flexible list row component with multi-line support.
 import { ListItem, Avatar, Icon } from '@/lib/design-system';
 
 // Simple list item
-<ListItem 
+<ListItem
   title="Item Title"
   onPress={handlePress}
 />
 
 // List item with subtitle
-<ListItem 
+<ListItem
   title="John Doe"
   subtitle="Software Engineer"
   onPress={handlePress}
 />
 
 // Rich list item with avatar
-<ListItem 
+<ListItem
   title="Jane Smith"
   subtitle="Product Manager"
   description="Available for meetings today"
@@ -268,7 +268,7 @@ import { ListItem, Avatar, Icon } from '@/lib/design-system';
 />
 
 // Non-interactive list item
-<ListItem 
+<ListItem
   title="Settings"
   subtitle="Manage your preferences"
   leftElement={<Icon name="settings" />}
@@ -277,16 +277,16 @@ import { ListItem, Avatar, Icon } from '@/lib/design-system';
 
 ### Props
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `title` | `string` | - | Primary text (required) |
-| `subtitle` | `string` | - | Secondary text |
-| `description` | `string` | - | Tertiary text (smaller) |
-| `leftElement` | `ReactNode` | - | Element on the left (avatar, icon) |
-| `rightElement` | `ReactNode` | - | Element on the right (icon, badge) |
-| `showDivider` | `boolean` | `false` | Show bottom divider |
-| `onPress` | `() => void` | - | Makes item pressable |
-| `disabled` | `boolean` | `false` | Disables interaction |
+| Prop           | Type         | Default | Description                        |
+| -------------- | ------------ | ------- | ---------------------------------- |
+| `title`        | `string`     | -       | Primary text (required)            |
+| `subtitle`     | `string`     | -       | Secondary text                     |
+| `description`  | `string`     | -       | Tertiary text (smaller)            |
+| `leftElement`  | `ReactNode`  | -       | Element on the left (avatar, icon) |
+| `rightElement` | `ReactNode`  | -       | Element on the right (icon, badge) |
+| `showDivider`  | `boolean`    | `false` | Show bottom divider                |
+| `onPress`      | `() => void` | -       | Makes item pressable               |
+| `disabled`     | `boolean`    | `false` | Disables interaction               |
 
 ### Layout
 
@@ -320,34 +320,34 @@ import { Chip } from '@/lib/design-system';
 <Chip label="Tag" />
 
 // Selectable chip
-<Chip 
+<Chip
   label="Filter"
   selected={isSelected}
   onPress={() => setIsSelected(!isSelected)}
 />
 
 // Dismissible chip
-<Chip 
+<Chip
   label="Applied Filter"
   onDismiss={() => removeFilter('category')}
 />
 
 // Chip with icon
-<Chip 
+<Chip
   label="Priority"
   leftIcon="star"
   variant="filled"
 />
 
 // Chip with avatar
-<Chip 
+<Chip
   label="John Doe"
   avatar={avatarSource}
   onPress={handlePress}
 />
 
 // Small chip
-<Chip 
+<Chip
   label="New"
   size="sm"
   variant="outlined"
@@ -356,17 +356,17 @@ import { Chip } from '@/lib/design-system';
 
 ### Props
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `label` | `string` | - | Chip text (required) |
-| `variant` | `'default' \| 'outlined' \| 'filled'` | `'default'` | Visual style |
-| `size` | `'sm' \| 'md'` | `'md'` | Chip size |
-| `selected` | `boolean` | `false` | Selected state |
-| `disabled` | `boolean` | `false` | Disabled state |
-| `leftIcon` | `IconName` | - | Icon on the left |
-| `avatar` | `string \| ImageSource` | - | Avatar image |
-| `onPress` | `() => void` | - | Press handler |
-| `onDismiss` | `() => void` | - | Dismiss handler (shows X button) |
+| Prop        | Type                                  | Default     | Description                      |
+| ----------- | ------------------------------------- | ----------- | -------------------------------- |
+| `label`     | `string`                              | -           | Chip text (required)             |
+| `variant`   | `'default' \| 'outlined' \| 'filled'` | `'default'` | Visual style                     |
+| `size`      | `'sm' \| 'md'`                        | `'md'`      | Chip size                        |
+| `selected`  | `boolean`                             | `false`     | Selected state                   |
+| `disabled`  | `boolean`                             | `false`     | Disabled state                   |
+| `leftIcon`  | `IconName`                            | -           | Icon on the left                 |
+| `avatar`    | `string \| ImageSource`               | -           | Avatar image                     |
+| `onPress`   | `() => void`                          | -           | Press handler                    |
+| `onDismiss` | `() => void`                          | -           | Dismiss handler (shows X button) |
 
 ### Use Cases
 
@@ -394,20 +394,20 @@ Feedback component for important messages with severity levels.
 import { Alert } from '@/lib/design-system';
 
 // Basic alert
-<Alert 
+<Alert
   severity="info"
   message="Your changes have been saved."
 />
 
 // Alert with title
-<Alert 
+<Alert
   severity="success"
   title="Success!"
   message="Your profile has been updated successfully."
 />
 
 // Alert with action
-<Alert 
+<Alert
   severity="warning"
   title="Low Storage"
   message="You're running out of storage space."
@@ -418,7 +418,7 @@ import { Alert } from '@/lib/design-system';
 />
 
 // Dismissible alert
-<Alert 
+<Alert
   severity="error"
   title="Error"
   message="Failed to load data. Please try again."
@@ -427,7 +427,7 @@ import { Alert } from '@/lib/design-system';
 />
 
 // Complete alert
-<Alert 
+<Alert
   severity="warning"
   title="Action Required"
   message="Please verify your email address to continue."
@@ -442,14 +442,14 @@ import { Alert } from '@/lib/design-system';
 
 ### Props
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `severity` | `'success' \| 'warning' \| 'error' \| 'info'` | `'info'` | Alert severity level |
-| `title` | `string` | - | Alert title (optional) |
-| `message` | `string` | - | Alert message (required) |
-| `dismissible` | `boolean` | `false` | Show dismiss button |
-| `onDismiss` | `() => void` | - | Dismiss handler |
-| `action` | `{ label: string, onPress: () => void }` | - | Action button config |
+| Prop          | Type                                          | Default  | Description              |
+| ------------- | --------------------------------------------- | -------- | ------------------------ |
+| `severity`    | `'success' \| 'warning' \| 'error' \| 'info'` | `'info'` | Alert severity level     |
+| `title`       | `string`                                      | -        | Alert title (optional)   |
+| `message`     | `string`                                      | -        | Alert message (required) |
+| `dismissible` | `boolean`                                     | `false`  | Show dismiss button      |
+| `onDismiss`   | `() => void`                                  | -        | Dismiss handler          |
+| `action`      | `{ label: string, onPress: () => void }`      | -        | Action button config     |
 
 ### Severity Levels
 
@@ -486,7 +486,7 @@ const tabs = [
   { key: 'profile', label: 'Profile' },
 ];
 
-<TabBar 
+<TabBar
   tabs={tabs}
   activeTab={activeTab}
   onTabChange={setActiveTab}
@@ -499,7 +499,7 @@ const tabsWithIcons = [
   { key: 'notifications', label: 'Alerts', icon: 'notification', badge: 5 },
 ];
 
-<TabBar 
+<TabBar
   tabs={tabsWithIcons}
   activeTab={activeTab}
   onTabChange={setActiveTab}
@@ -507,7 +507,7 @@ const tabsWithIcons = [
 />
 
 // Pills variant
-<TabBar 
+<TabBar
   tabs={tabs}
   activeTab={activeTab}
   onTabChange={setActiveTab}
@@ -520,7 +520,7 @@ const manyTabs = Array.from({ length: 10 }, (_, i) => ({
   label: `Tab ${i + 1}`,
 }));
 
-<TabBar 
+<TabBar
   tabs={manyTabs}
   activeTab={activeTab}
   onTabChange={setActiveTab}
@@ -539,23 +539,23 @@ const tabsWithDisabled = [
 
 **TabBar Props:**
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `tabs` | `Tab[]` | - | Array of tab objects (required) |
-| `activeTab` | `string` | - | Key of active tab (required) |
-| `onTabChange` | `(key: string) => void` | - | Tab change handler (required) |
-| `variant` | `'default' \| 'underline' \| 'pills'` | `'default'` | Visual style |
-| `scrollable` | `boolean` | `false` | Enable horizontal scrolling |
+| Prop          | Type                                  | Default     | Description                     |
+| ------------- | ------------------------------------- | ----------- | ------------------------------- |
+| `tabs`        | `Tab[]`                               | -           | Array of tab objects (required) |
+| `activeTab`   | `string`                              | -           | Key of active tab (required)    |
+| `onTabChange` | `(key: string) => void`               | -           | Tab change handler (required)   |
+| `variant`     | `'default' \| 'underline' \| 'pills'` | `'default'` | Visual style                    |
+| `scrollable`  | `boolean`                             | `false`     | Enable horizontal scrolling     |
 
 **Tab Object:**
 
-| Prop | Type | Description |
-|------|------|-------------|
-| `key` | `string` | Unique tab identifier (required) |
-| `label` | `string` | Tab label text (required) |
-| `icon` | `IconName` | Optional icon |
-| `badge` | `number` | Optional badge count |
-| `disabled` | `boolean` | Disable tab interaction |
+| Prop       | Type       | Description                      |
+| ---------- | ---------- | -------------------------------- |
+| `key`      | `string`   | Unique tab identifier (required) |
+| `label`    | `string`   | Tab label text (required)        |
+| `icon`     | `IconName` | Optional icon                    |
+| `badge`    | `number`   | Optional badge count             |
+| `disabled` | `boolean`  | Disable tab interaction          |
 
 ### Variants
 
@@ -578,20 +578,24 @@ const tabsWithDisabled = [
 All molecule components follow WCAG 2.1 Level AA guidelines:
 
 ### Touch Targets
+
 - Minimum 44x44pt touch targets for interactive elements
 - Adequate spacing between tappable areas
 
 ### Screen Readers
+
 - Semantic HTML/accessibility roles
 - Descriptive labels for all interactive elements
 - State changes announced properly
 
 ### Keyboard Navigation
+
 - All interactive elements keyboard accessible
 - Logical tab order maintained
 - Focus indicators visible
 
 ### Color Contrast
+
 - Text contrast ratio ≥ 4.5:1 for normal text
 - ≥ 3:1 for large text and UI components
 - Not relying on color alone for information
@@ -599,35 +603,42 @@ All molecule components follow WCAG 2.1 Level AA guidelines:
 ### Component-Specific
 
 **Button:**
+
 - `accessibilityRole="button"`
 - Disabled state in `accessibilityState`
 - Loading state announced
 
 **Input:**
+
 - Label as `accessibilityLabel`
 - Error states announced
 - Helper text as `accessibilityHint`
 
 **Card:**
+
 - `accessibilityRole="button"` when pressable
 - Proper content hierarchy
 
 **ListItem:**
+
 - `accessibilityRole="button"` when pressable
 - Combined title/subtitle as label
 - Disabled state communicated
 
 **Chip:**
+
 - `accessibilityRole="button"` when interactive
 - Selection state in `accessibilityState`
 - Dismiss button labeled
 
 **Alert:**
+
 - `accessibilityRole="alert"`
 - Severity communicated
 - Action buttons accessible
 
 **TabBar:**
+
 - Tab selection state
 - Disabled tabs communicated
 - Badge counts announced
@@ -660,39 +671,46 @@ All molecule components follow WCAG 2.1 Level AA guidelines:
 ### Component-Specific Tips
 
 **Button:**
+
 - Use `primary` for main actions
 - Use `danger` for destructive actions
 - Provide loading states for async operations
 - Don't nest buttons
 
 **Input:**
+
 - Always provide labels for accessibility
 - Show error states immediately after validation
 - Use appropriate keyboard types
 - Clear helper text from errors
 
 **Card:**
+
 - Use elevation sparingly
 - Maintain consistent padding
 - Don't nest pressable cards
 
 **ListItem:**
+
 - Keep titles concise
 - Use dividers between semantically different items
 - Provide visual feedback on press
 
 **Chip:**
+
 - Use for filtering and categorization
 - Don't use too many in one view
 - Make dismissal obvious when available
 
 **Alert:**
+
 - Place near affected content
 - Auto-dismiss non-critical alerts
 - Provide clear actions
 - Stack multiple alerts vertically
 
 **TabBar:**
+
 - Keep to 3-5 tabs
 - Use icons for recognition
 - Provide visual active state
@@ -703,7 +721,7 @@ All molecule components follow WCAG 2.1 Level AA guidelines:
 **Form with Validation:**
 
 ```tsx
-<Input 
+<Input
   label="Email"
   value={email}
   onChangeText={setEmail}
@@ -712,7 +730,7 @@ All molecule components follow WCAG 2.1 Level AA guidelines:
   autoCapitalize="none"
 />
 
-<Input 
+<Input
   label="Password"
   value={password}
   onChangeText={setPassword}
@@ -722,7 +740,7 @@ All molecule components follow WCAG 2.1 Level AA guidelines:
   onRightIconPress={() => setShowPassword(!showPassword)}
 />
 
-<Button 
+<Button
   variant="primary"
   fullWidth
   loading={isSubmitting}
@@ -736,7 +754,7 @@ All molecule components follow WCAG 2.1 Level AA guidelines:
 **Filterable List:**
 
 ```tsx
-<Input 
+<Input
   placeholder="Search items..."
   leftIcon="search"
   rightIcon={query ? 'close' : undefined}
@@ -747,7 +765,7 @@ All molecule components follow WCAG 2.1 Level AA guidelines:
 
 <View style={styles.filters}>
   {filters.map(filter => (
-    <Chip 
+    <Chip
       key={filter.id}
       label={filter.label}
       selected={selectedFilters.includes(filter.id)}
@@ -757,7 +775,7 @@ All molecule components follow WCAG 2.1 Level AA guidelines:
 </View>
 
 {items.map(item => (
-  <ListItem 
+  <ListItem
     key={item.id}
     title={item.title}
     subtitle={item.subtitle}
@@ -774,43 +792,41 @@ All molecule components follow WCAG 2.1 Level AA guidelines:
 ```tsx
 <Card variant="elevated">
   <CardHeader>
-    <Text variant="heading" size="lg">Account Settings</Text>
+    <Text variant="heading" size="lg">
+      Account Settings
+    </Text>
   </CardHeader>
-  
+
   <CardContent>
-    <ListItem 
+    <ListItem
       title="Profile"
       subtitle="Update your personal information"
       leftElement={<Icon name="user" />}
       rightElement={<Icon name="forward" />}
-      onPress={() => navigate('Profile')}
+      onPress={() => navigate("Profile")}
       showDivider
     />
-    
-    <ListItem 
+
+    <ListItem
       title="Notifications"
       subtitle="Manage notification preferences"
       leftElement={<Icon name="notification" />}
       rightElement={<Icon name="forward" />}
-      onPress={() => navigate('Notifications')}
+      onPress={() => navigate("Notifications")}
       showDivider
     />
-    
-    <ListItem 
+
+    <ListItem
       title="Privacy"
       subtitle="Control your privacy settings"
       leftElement={<Icon name="settings" />}
       rightElement={<Icon name="forward" />}
-      onPress={() => navigate('Privacy')}
+      onPress={() => navigate("Privacy")}
     />
   </CardContent>
-  
+
   <CardFooter>
-    <Button 
-      variant="danger"
-      fullWidth
-      onPress={handleSignOut}
-    >
+    <Button variant="danger" fullWidth onPress={handleSignOut}>
       Sign Out
     </Button>
   </CardFooter>
@@ -843,7 +859,7 @@ Migrating from old components to molecule components:
 // Old
 <View>
   <Text>Email</Text>
-  <TextInput 
+  <TextInput
     placeholder="Enter email"
     value={email}
     onChangeText={setEmail}
@@ -852,7 +868,7 @@ Migrating from old components to molecule components:
 </View>
 
 // New
-<Input 
+<Input
   label="Email"
   placeholder="Enter email"
   value={email}
@@ -882,12 +898,14 @@ Migrating from old components to molecule components:
 ## Support
 
 For questions or issues:
+
 - Review examples in this documentation
 - Check atomic components documentation
 - Refer to design tokens documentation
 - Review accessibility guidelines
 
 **Next Steps:**
+
 - Explore [Organism Components](../organisms/README.md) (Phase 4)
 - Review [Design Tokens](../../tokens/README.md)
 - Check [Theme System](../../theme/README.md)

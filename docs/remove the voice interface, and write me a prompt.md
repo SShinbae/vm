@@ -4,7 +4,7 @@
 
 Based on the design trends and your project structure, here's a comprehensive prompt for modernizing your vehicles tab/page:
 
-***
+---
 
 ## **Design Implementation Prompt: Modern Vehicles Tab Redesign**
 
@@ -27,7 +27,6 @@ Create a modern, intuitive vehicles tab/page for a React Native vehicle manageme
 - Current mileage with visual progress indicator
 - Color accent badge matching the vehicle's `color` field
 - Sharing status icon if `isownvehicle` is false or `sharedgroups` exist[^11]
-
 
 ### **Interactive Features**
 
@@ -55,7 +54,6 @@ Create a modern, intuitive vehicles tab/page for a React Native vehicle manageme
 - Swipe left: Delete with confirmation
 - Color-coded backgrounds (edit: blue, delete: red) using theme colors
 
-
 ### **Data Visualization Widgets**
 
 **Mileage Status Indicator**:[^13][^2]
@@ -78,7 +76,6 @@ Create a modern, intuitive vehicles tab/page for a React Native vehicle manageme
 - ✅ IMPLEMENTED: Display "Due Soon", "Up to Date", or "Overdue"
 - ✅ IMPLEMENTED: Use theme colors: `success`, `warning`, `error`
 - ✅ IMPLEMENTED: Positioned at top-left of hero image
-
 
 ### **Search and Filter System**
 
@@ -104,7 +101,6 @@ Create a modern, intuitive vehicles tab/page for a React Native vehicle manageme
 - Options: "Newest First", "Oldest First", "Highest Mileage", "Last Updated"
 - Implements `PaginationParams` sorting
 
-
 ### **Enhanced Information Display**
 
 **Sharing Indicators**:[^14][^11]
@@ -121,7 +117,6 @@ Create a modern, intuitive vehicles tab/page for a React Native vehicle manageme
 - ✅ IMPLEMENTED: Last service: wrench icon + service type
 - ✅ IMPLEMENTED: Displays in bottom sheet modal with full details
 - ✅ IMPLEMENTED: Uses `latestfuel`, `latestservice`, `latestmileage` from VehicleWithDetails interface[^11]
-
 
 ### **Empty States and Onboarding**
 
@@ -140,7 +135,6 @@ Create a modern, intuitive vehicles tab/page for a React Native vehicle manageme
 - Sharing feature: "Share vehicles with family or groups"
 - Use semi-transparent overlay with theme-colored pointers
 
-
 ### **Floating Action Button (FAB)**
 
 **Position and Style**:[^12]
@@ -151,7 +145,6 @@ Create a modern, intuitive vehicles tab/page for a React Native vehicle manageme
 - ✅ IMPLEMENTED: Elevation shadow for depth (shadowOffset, shadowOpacity, elevation)
 - ✅ IMPLEMENTED: Size: 56x56 (standard FAB dimensions)
 - ✅ IMPLEMENTED: On press, navigate to Add Vehicle screen
-
 
 ### **Performance Optimizations**
 
@@ -175,7 +168,6 @@ Create a modern, intuitive vehicles tab/page for a React Native vehicle manageme
 - ✅ IMPLEMENTED: Display 4 skeleton stat cards in overview section
 - ✅ IMPLEMENTED: Uses theme colors (disabled color for placeholders)
 - ✅ IMPLEMENTED: Matches actual card dimensions and layout
-
 
 ### **Styling Guidelines**
 
@@ -204,7 +196,6 @@ Create a modern, intuitive vehicles tab/page for a React Native vehicle manageme
 - Section margins: `theme.spacing.xl` (24px)
 - Tight spacing: `theme.spacing.sm` (8px)
 
-
 ### **Accessibility and UX**
 
 **Minimalist Design Principles**:[^5][^3]
@@ -220,7 +211,6 @@ Create a modern, intuitive vehicles tab/page for a React Native vehicle manageme
 - Pinch to zoom on vehicle photos
 - Pull to refresh main list
 - Long press on card for quick menu
-
 
 ### **Database Integration**
 
@@ -238,7 +228,6 @@ Use the following fields from your database schema:[^15][^11]
 
 - Function: `getuservehicleswithsharing(user_uuid)`
 - Returns vehicle data with sharing info and owner details
-
 
 ### **Component Structure**
 
@@ -264,7 +253,6 @@ VehiclesScreen
 │   └── ActionButtons
 └── FloatingActionButton
 ```
-
 
 ### **Success Criteria**
 
@@ -301,7 +289,7 @@ This implementation includes all major features from the design specification:
 - **Animations**: React Native Animated API with spring animations
 - **Performance**: useMemo for filtering, adjustsFontSizeToFit for text wrapping prevention
 
-***
+---
 
 This prompt provides a complete specification for modernizing your vehicles tab following 2025 automotive dashboard design trends while leveraging your existing database schema and Unistyles theme configuration.[^1][^2][^3][^10][^11]
 <span style="display:none">[^7][^8][^9]</span>
@@ -343,4 +331,3 @@ This prompt provides a complete specification for modernizing your vehicles tab 
 [^17]: https://www.esparkinfo.com/blog/react-native-best-practices
 
 [^18]: https://www.tekrevol.com/blogs/how-to-develop-a-car-maintenance-app/
-

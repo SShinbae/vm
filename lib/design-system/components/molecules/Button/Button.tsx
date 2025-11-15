@@ -1,15 +1,23 @@
-import { useColorScheme } from '@/hooks/use-color-scheme';
-import React from 'react';
-import { ActivityIndicator, Pressable, PressableProps, StyleSheet, View, ViewStyle } from 'react-native';
-import { allIcons } from '../../../icons';
-import { theme } from '../../../theme';
-import { tokens } from '../../../tokens';
-import { Icon } from '../../atoms/Icon';
-import { Text } from '../../atoms/Text';
+import { useColorScheme } from "@/hooks/use-color-scheme";
+import React from "react";
+import {
+  ActivityIndicator,
+  Pressable,
+  PressableProps,
+  StyleSheet,
+  View,
+  ViewStyle,
+} from "react-native";
+import { allIcons } from "../../../icons";
+import { theme } from "../../../theme";
+import { tokens } from "../../../tokens";
+import { Icon } from "../../atoms/Icon";
+import { Text } from "../../atoms/Text";
 
-export interface ButtonProps extends Omit<PressableProps, 'style' | 'children'> {
-  variant?: 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger';
-  size?: 'sm' | 'md' | 'lg';
+export interface ButtonProps
+  extends Omit<PressableProps, "style" | "children"> {
+  variant?: "primary" | "secondary" | "outline" | "ghost" | "danger";
+  size?: "sm" | "md" | "lg";
   fullWidth?: boolean;
   leftIcon?: keyof typeof allIcons;
   rightIcon?: keyof typeof allIcons;
@@ -21,8 +29,8 @@ export interface ButtonProps extends Omit<PressableProps, 'style' | 'children'> 
 }
 
 export const Button: React.FC<ButtonProps> = ({
-  variant = 'primary',
-  size = 'md',
+  variant = "primary",
+  size = "md",
   fullWidth = false,
   leftIcon,
   rightIcon,
@@ -64,43 +72,43 @@ export const Button: React.FC<ButtonProps> = ({
   const variantConfig = {
     primary: {
       background: colors.tint,
-      backgroundPressed: colors.tint + 'DD',
-      backgroundDisabled: colors.tint + '40',
-      text: '#FFFFFF',
-      textDisabled: '#FFFFFF80',
-      border: 'transparent',
+      backgroundPressed: colors.tint + "DD",
+      backgroundDisabled: colors.tint + "40",
+      text: "#FFFFFF",
+      textDisabled: "#FFFFFF80",
+      border: "transparent",
     },
     secondary: {
       background: colors.card,
-      backgroundPressed: colors.card + 'DD',
-      backgroundDisabled: colors.card + '40',
+      backgroundPressed: colors.card + "DD",
+      backgroundDisabled: colors.card + "40",
       text: colors.text,
       textDisabled: colors.textTertiary,
       border: colors.border,
     },
     outline: {
-      background: 'transparent',
-      backgroundPressed: colors.tint + '10',
-      backgroundDisabled: 'transparent',
+      background: "transparent",
+      backgroundPressed: colors.tint + "10",
+      backgroundDisabled: "transparent",
       text: colors.tint,
       textDisabled: colors.textTertiary,
       border: colors.tint,
     },
     ghost: {
-      background: 'transparent',
-      backgroundPressed: colors.tint + '10',
-      backgroundDisabled: 'transparent',
+      background: "transparent",
+      backgroundPressed: colors.tint + "10",
+      backgroundDisabled: "transparent",
       text: colors.tint,
       textDisabled: colors.textTertiary,
-      border: 'transparent',
+      border: "transparent",
     },
     danger: {
       background: colors.error,
-      backgroundPressed: colors.error + 'DD',
-      backgroundDisabled: colors.error + '40',
-      text: '#FFFFFF',
-      textDisabled: '#FFFFFF80',
-      border: 'transparent',
+      backgroundPressed: colors.error + "DD",
+      backgroundDisabled: colors.error + "40",
+      text: "#FFFFFF",
+      textDisabled: "#FFFFFF80",
+      border: "transparent",
     },
   };
 
@@ -116,22 +124,25 @@ export const Button: React.FC<ButtonProps> = ({
         {
           height: config.height,
           paddingHorizontal: config.paddingHorizontal,
-          backgroundColor: pressed && !isDisabled
-            ? colorConfig.backgroundPressed
-            : isDisabled
-            ? colorConfig.backgroundDisabled
-            : colorConfig.background,
-          borderWidth: variant === 'outline' || variant === 'secondary' ? 1 : 0,
-          borderColor: isDisabled ? colorConfig.border + '40' : colorConfig.border,
+          backgroundColor:
+            pressed && !isDisabled
+              ? colorConfig.backgroundPressed
+              : isDisabled
+                ? colorConfig.backgroundDisabled
+                : colorConfig.background,
+          borderWidth: variant === "outline" || variant === "secondary" ? 1 : 0,
+          borderColor: isDisabled
+            ? colorConfig.border + "40"
+            : colorConfig.border,
           borderRadius: tokens.radius.md,
-          width: fullWidth ? '100%' : 'auto',
+          width: fullWidth ? "100%" : "auto",
           opacity: isDisabled && !loading ? 0.5 : 1,
         },
         style,
       ]}
       accessibilityRole="button"
       accessibilityState={{ disabled: isDisabled, busy: loading }}
-      accessibilityLabel={typeof children === 'string' ? children : undefined}
+      accessibilityLabel={typeof children === "string" ? children : undefined}
       {...props}
     >
       {({ pressed }) => (
@@ -143,7 +154,7 @@ export const Button: React.FC<ButtonProps> = ({
               style={styles.loader}
             />
           )}
-          
+
           {!loading && leftIcon && (
             <Icon
               name={leftIcon}
@@ -180,14 +191,14 @@ export const Button: React.FC<ButtonProps> = ({
 
 const styles = StyleSheet.create({
   button: {
-    justifyContent: 'center',
-    alignItems: 'center',
-    alignSelf: 'flex-start',
+    justifyContent: "center",
+    alignItems: "center",
+    alignSelf: "flex-start",
   },
   content: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
   },
   loader: {
     marginRight: tokens.spacing.xs,

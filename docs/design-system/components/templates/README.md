@@ -16,18 +16,23 @@ Templates are the highest level in our atomic design system hierarchy. They defi
 ## Available Templates
 
 ### PageLayout
+
 Standard page wrapper for all screens with header, content, and footer sections.
 
 ### DashboardLayout
+
 Multi-section dashboard layout for overview/home screens.
 
 ### DetailLayout
+
 Detail/profile page layout with hero section and tabbed content.
 
 ### FormLayout
+
 Form page layout with single or multi-step support.
 
 ### ListLayout
+
 List/index page layout with search, filtering, and pagination.
 
 ---
@@ -37,6 +42,7 @@ List/index page layout with search, filtering, and pagination.
 Universal page wrapper that provides consistent structure for all screen types.
 
 ### Features
+
 - Integrated page header
 - Scrollable or fixed content
 - Footer section support
@@ -52,19 +58,19 @@ Universal page wrapper that provides consistent structure for all screen types.
 interface PageLayoutProps {
   // Header configuration (optional)
   header?: PageHeaderProps;
-  
+
   // Main content
   children: ReactNode;
-  
+
   // Footer content (optional)
   footer?: ReactNode;
-  
+
   // Layout behavior
   scrollable?: boolean; // default: true
   padding?: keyof typeof tokens.spacing; // default: 'md'
   safeArea?: boolean; // default: true
   keyboardAware?: boolean; // default: false
-  
+
   // States
   loading?: boolean;
   error?: string | null;
@@ -77,11 +83,11 @@ interface PageLayoutProps {
 #### Basic Page
 
 ```tsx
-import { PageLayout } from '@/lib/design-system/components/templates';
+import { PageLayout } from "@/lib/design-system/components/templates";
 
 function MyScreen() {
   return (
-    <PageLayout header={{ title: 'My Screen' }}>
+    <PageLayout header={{ title: "My Screen" }}>
       <Text>Screen content goes here</Text>
     </PageLayout>
   );
@@ -93,10 +99,10 @@ function MyScreen() {
 ```tsx
 function MyScreen() {
   const { data, isLoading, error, refetch } = useQuery();
-  
+
   return (
     <PageLayout
-      header={{ title: 'My Data' }}
+      header={{ title: "My Data" }}
       loading={isLoading}
       error={error?.message}
       onRetry={refetch}
@@ -113,10 +119,12 @@ function MyScreen() {
 function FormScreen() {
   return (
     <PageLayout
-      header={{ title: 'Edit Profile', showBackButton: true }}
+      header={{ title: "Edit Profile", showBackButton: true }}
       footer={
-        <View style={{ flexDirection: 'row', gap: 12 }}>
-          <Button variant="outline" onPress={handleCancel}>Cancel</Button>
+        <View style={{ flexDirection: "row", gap: 12 }}>
+          <Button variant="outline" onPress={handleCancel}>
+            Cancel
+          </Button>
           <Button onPress={handleSave}>Save</Button>
         </View>
       }
@@ -133,11 +141,7 @@ function FormScreen() {
 ```tsx
 function FixedLayoutScreen() {
   return (
-    <PageLayout
-      header={{ title: 'Camera' }}
-      scrollable={false}
-      padding="none"
-    >
+    <PageLayout header={{ title: "Camera" }} scrollable={false} padding="none">
       <CameraView style={{ flex: 1 }} />
     </PageLayout>
   );
@@ -151,6 +155,7 @@ function FixedLayoutScreen() {
 Multi-section dashboard layout for overview screens with metrics, charts, and activity feeds.
 
 ### Features
+
 - Flexible section composition
 - Metrics grid section
 - Charts/visualizations section
@@ -166,16 +171,16 @@ Multi-section dashboard layout for overview screens with metrics, charts, and ac
 interface DashboardLayoutProps {
   // Required header
   header: PageHeaderProps;
-  
+
   // Standard sections (all optional)
   metrics?: ReactNode;
   charts?: ReactNode;
   quickActions?: ReactNode;
   recentActivity?: ReactNode;
-  
+
   // Additional custom sections
   customSections?: ReactNode[];
-  
+
   // Pull to refresh
   refreshable?: boolean; // default: true
   onRefresh?: () => void;
@@ -188,35 +193,34 @@ interface DashboardLayoutProps {
 #### Full Dashboard
 
 ```tsx
-import { DashboardLayout } from '@/lib/design-system/components/templates';
-import { MetricCard } from '@/lib/design-system/components/organisms';
+import { DashboardLayout } from "@/lib/design-system/components/templates";
+import { MetricCard } from "@/lib/design-system/components/organisms";
 
 function Dashboard() {
   const { data, refetch, isRefreshing } = useDashboardData();
-  
+
   return (
     <DashboardLayout
-      header={{ title: 'Dashboard', actions: [{ icon: 'settings', onPress: openSettings }] }}
+      header={{
+        title: "Dashboard",
+        actions: [{ icon: "settings", onPress: openSettings }],
+      }}
       metrics={
-        <View style={{ flexDirection: 'row', gap: 12 }}>
+        <View style={{ flexDirection: "row", gap: 12 }}>
           <MetricCard label="Total Vehicles" value={data.totalVehicles} />
           <MetricCard label="Active Logs" value={data.activeLogs} />
         </View>
       }
-      charts={
-        <ChartSection data={data.fuelTrends} />
-      }
+      charts={<ChartSection data={data.fuelTrends} />}
       quickActions={
         <QuickActionGrid
           actions={[
-            { icon: 'add', label: 'Add Log', onPress: addLog },
-            { icon: 'car', label: 'Add Vehicle', onPress: addVehicle },
+            { icon: "add", label: "Add Log", onPress: addLog },
+            { icon: "car", label: "Add Vehicle", onPress: addVehicle },
           ]}
         />
       }
-      recentActivity={
-        <ActivityFeed items={data.recentLogs} />
-      }
+      recentActivity={<ActivityFeed items={data.recentLogs} />}
       onRefresh={refetch}
       refreshing={isRefreshing}
     />
@@ -230,7 +234,7 @@ function Dashboard() {
 function SimpleDashboard() {
   return (
     <DashboardLayout
-      header={{ title: 'Overview' }}
+      header={{ title: "Overview" }}
       metrics={<MetricsGrid />}
       quickActions={<ActionButtons />}
     />
@@ -244,7 +248,7 @@ function SimpleDashboard() {
 function ExtendedDashboard() {
   return (
     <DashboardLayout
-      header={{ title: 'Home' }}
+      header={{ title: "Home" }}
       metrics={<MetricsSection />}
       customSections={[
         <UpcomingMaintenance key="maintenance" />,
@@ -263,6 +267,7 @@ function ExtendedDashboard() {
 Detail/profile page layout with hero section, tabbed content, and related items.
 
 ### Features
+
 - Hero section for primary content
 - Horizontal scrollable tabs
 - Tab badges for counts/notifications
@@ -285,19 +290,19 @@ interface DetailTab {
 interface DetailLayoutProps {
   // Required header
   header: PageHeaderProps;
-  
+
   // Hero section (optional)
   hero?: ReactNode;
-  
+
   // Tabs configuration
   tabs?: DetailTab[];
   activeTab?: string; // for controlled tabs
   onTabChange?: (tabId: string) => void;
-  
+
   // Additional sections
   relatedItems?: ReactNode;
   actions?: ReactNode; // bottom action buttons
-  
+
   // Pull to refresh
   onRefresh?: () => void;
   refreshing?: boolean;
@@ -309,31 +314,31 @@ interface DetailLayoutProps {
 #### Vehicle Detail Page
 
 ```tsx
-import { DetailLayout } from '@/lib/design-system/components/templates';
+import { DetailLayout } from "@/lib/design-system/components/templates";
 
 function VehicleDetail({ vehicleId }: Props) {
   const { vehicle, logs, maintenance } = useVehicleData(vehicleId);
-  
+
   const tabs = [
     {
-      id: 'overview',
-      label: 'Overview',
+      id: "overview",
+      label: "Overview",
       content: <VehicleOverview vehicle={vehicle} />,
     },
     {
-      id: 'logs',
-      label: 'Logs',
+      id: "logs",
+      label: "Logs",
       badge: logs.length,
       content: <LogsList logs={logs} />,
     },
     {
-      id: 'maintenance',
-      label: 'Maintenance',
+      id: "maintenance",
+      label: "Maintenance",
       badge: maintenance.upcoming,
       content: <MaintenanceSchedule items={maintenance.items} />,
     },
   ];
-  
+
   return (
     <DetailLayout
       header={{
@@ -341,16 +346,18 @@ function VehicleDetail({ vehicleId }: Props) {
         subtitle: vehicle.plate,
         showBackButton: true,
         actions: [
-          { icon: 'edit', onPress: editVehicle },
-          { icon: 'share', onPress: shareVehicle },
+          { icon: "edit", onPress: editVehicle },
+          { icon: "share", onPress: shareVehicle },
         ],
       }}
       hero={<VehicleHeroImage image={vehicle.image} />}
       tabs={tabs}
       relatedItems={<RelatedVehicles groupId={vehicle.groupId} />}
       actions={
-        <View style={{ flexDirection: 'row', gap: 12 }}>
-          <Button variant="outline" onPress={addLog}>Add Log</Button>
+        <View style={{ flexDirection: "row", gap: 12 }}>
+          <Button variant="outline" onPress={addLog}>
+            Add Log
+          </Button>
           <Button onPress={scheduleMaintenance}>Schedule Service</Button>
         </View>
       }
@@ -363,11 +370,11 @@ function VehicleDetail({ vehicleId }: Props) {
 
 ```tsx
 function ProfilePage() {
-  const [activeTab, setActiveTab] = useState('info');
-  
+  const [activeTab, setActiveTab] = useState("info");
+
   return (
     <DetailLayout
-      header={{ title: 'Profile' }}
+      header={{ title: "Profile" }}
       tabs={tabs}
       activeTab={activeTab}
       onTabChange={setActiveTab}
@@ -381,13 +388,13 @@ function ProfilePage() {
 ```tsx
 function LogDetail({ logId }: Props) {
   const tabs = [
-    { id: 'details', label: 'Details', content: <LogDetails /> },
-    { id: 'expenses', label: 'Expenses', content: <ExpenseBreakdown /> },
+    { id: "details", label: "Details", content: <LogDetails /> },
+    { id: "expenses", label: "Expenses", content: <ExpenseBreakdown /> },
   ];
-  
+
   return (
     <DetailLayout
-      header={{ title: 'Log Entry', showBackButton: true }}
+      header={{ title: "Log Entry", showBackButton: true }}
       tabs={tabs}
     />
   );
@@ -401,6 +408,7 @@ function LogDetail({ logId }: Props) {
 Form page layout with single or multi-step support, progress tracking, and validation.
 
 ### Features
+
 - Single-step form support
 - Multi-step form wizard
 - Dot-based progress indicator
@@ -425,31 +433,31 @@ interface FormStep {
 interface FormLayoutProps {
   // Optional header
   header?: PageHeaderProps;
-  
+
   // Form metadata
   title?: string;
   description?: string;
-  
+
   // Multi-step configuration
   steps?: FormStep[];
   currentStep?: number; // controlled step index
   onStepChange?: (stepIndex: number) => void;
-  
+
   // Single-step content
   children?: ReactNode;
-  
+
   // Button labels
   submitLabel?: string; // default: 'Submit'
   previousLabel?: string; // default: 'Previous'
   nextLabel?: string; // default: 'Next'
-  
+
   // Actions
   onSubmit: () => void;
   onCancel?: () => void;
-  
+
   // Validation
   errors?: Record<string, string>;
-  
+
   // State
   loading?: boolean;
 }
@@ -460,15 +468,15 @@ interface FormLayoutProps {
 #### Single-Step Form
 
 ```tsx
-import { FormLayout } from '@/lib/design-system/components/templates';
+import { FormLayout } from "@/lib/design-system/components/templates";
 
 function CreateVehicleForm() {
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
-  
+
   return (
     <FormLayout
-      header={{ title: 'Add Vehicle', showBackButton: true }}
+      header={{ title: "Add Vehicle", showBackButton: true }}
       title="Vehicle Information"
       description="Enter the details of your vehicle"
       onSubmit={handleSubmit}
@@ -481,7 +489,12 @@ function CreateVehicleForm() {
       <Input label="License Plate" value={plate} onChangeText={setPlate} />
       <Input label="Make" value={make} onChangeText={setMake} />
       <Input label="Model" value={model} onChangeText={setModel} />
-      <Input label="Year" value={year} onChangeText={setYear} keyboardType="numeric" />
+      <Input
+        label="Year"
+        value={year}
+        onChangeText={setYear}
+        keyboardType="numeric"
+      />
     </FormLayout>
   );
 }
@@ -492,32 +505,32 @@ function CreateVehicleForm() {
 ```tsx
 function VehicleOnboarding() {
   const [currentStep, setCurrentStep] = useState(0);
-  
+
   const steps = [
     {
-      id: 'basic',
-      title: 'Basic Information',
-      description: 'Start with the basics',
+      id: "basic",
+      title: "Basic Information",
+      description: "Start with the basics",
       content: <BasicInfoFields />,
     },
     {
-      id: 'details',
-      title: 'Vehicle Details',
-      description: 'Tell us more about your vehicle',
+      id: "details",
+      title: "Vehicle Details",
+      description: "Tell us more about your vehicle",
       content: <DetailFields />,
       optional: true,
     },
     {
-      id: 'preferences',
-      title: 'Preferences',
-      description: 'Set up tracking preferences',
+      id: "preferences",
+      title: "Preferences",
+      description: "Set up tracking preferences",
       content: <PreferenceFields />,
     },
   ];
-  
+
   return (
     <FormLayout
-      header={{ title: 'Add Vehicle', showBackButton: true }}
+      header={{ title: "Add Vehicle", showBackButton: true }}
       steps={steps}
       currentStep={currentStep}
       onStepChange={setCurrentStep}
@@ -534,16 +547,12 @@ function VehicleOnboarding() {
 ```tsx
 function EditProfileForm() {
   const [errors, setErrors] = useState({
-    email: 'Email is required',
-    phone: 'Invalid phone number format',
+    email: "Email is required",
+    phone: "Invalid phone number format",
   });
-  
+
   return (
-    <FormLayout
-      title="Edit Profile"
-      onSubmit={handleSubmit}
-      errors={errors}
-    >
+    <FormLayout title="Edit Profile" onSubmit={handleSubmit} errors={errors}>
       <Input label="Email" error={errors.email} />
       <Input label="Phone" error={errors.phone} />
     </FormLayout>
@@ -558,6 +567,7 @@ function EditProfileForm() {
 List/index page layout with search, filtering, pagination, and empty states.
 
 ### Features
+
 - SearchBar integration
 - Generic type support
 - Empty state handling
@@ -574,37 +584,37 @@ List/index page layout with search, filtering, pagination, and empty states.
 interface ListLayoutProps<T> {
   // Optional header
   header?: PageHeaderProps;
-  
+
   // Search and filtering
   searchQuery?: string;
   onSearchChange?: (query: string) => void;
   onFilterPress?: () => void;
   onSortPress?: () => void;
   activeFilters?: number; // badge count
-  
+
   // List data (required)
   data: T[];
   renderItem: ListRenderItem<T>;
   keyExtractor?: (item: T, index: number) => string;
-  
+
   // Empty state
   emptyMessage?: string; // default: 'No items found'
   emptyComponent?: ReactNode;
-  
+
   // List sections
   listHeader?: ReactNode;
   listFooter?: ReactNode;
-  
+
   // Pull to refresh
   refreshable?: boolean; // default: true
   onRefresh?: () => void;
   refreshing?: boolean;
-  
+
   // Infinite scroll
   onLoadMore?: () => void;
   loadingMore?: boolean;
   hasMore?: boolean;
-  
+
   // State
   loading?: boolean;
 }
@@ -615,7 +625,7 @@ interface ListLayoutProps<T> {
 #### Basic List
 
 ```tsx
-import { ListLayout } from '@/lib/design-system/components/templates';
+import { ListLayout } from "@/lib/design-system/components/templates";
 
 interface Vehicle {
   id: string;
@@ -625,10 +635,10 @@ interface Vehicle {
 
 function VehiclesList() {
   const { vehicles, isLoading } = useVehicles();
-  
+
   return (
     <ListLayout<Vehicle>
-      header={{ title: 'My Vehicles' }}
+      header={{ title: "My Vehicles" }}
       data={vehicles}
       renderItem={({ item }) => (
         <VehicleCard vehicle={item} onPress={() => navigate(item.id)} />
@@ -645,15 +655,15 @@ function VehiclesList() {
 
 ```tsx
 function SearchableVehiclesList() {
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState("");
   const [activeFilters, setActiveFilters] = useState(0);
   const { vehicles, isLoading, refetch } = useVehicles({ search: searchQuery });
-  
+
   return (
     <ListLayout<Vehicle>
       header={{
-        title: 'Vehicles',
-        actions: [{ icon: 'add', onPress: addVehicle }],
+        title: "Vehicles",
+        actions: [{ icon: "add", onPress: addVehicle }],
       }}
       searchQuery={searchQuery}
       onSearchChange={setSearchQuery}
@@ -672,17 +682,12 @@ function SearchableVehiclesList() {
 
 ```tsx
 function InfiniteLogsList() {
-  const {
-    logs,
-    isLoading,
-    hasMore,
-    loadMore,
-    isLoadingMore,
-  } = useInfiniteLogs();
-  
+  const { logs, isLoading, hasMore, loadMore, isLoadingMore } =
+    useInfiniteLogs();
+
   return (
     <ListLayout<Log>
-      header={{ title: 'All Logs' }}
+      header={{ title: "All Logs" }}
       data={logs}
       renderItem={({ item }) => <LogListItem log={item} />}
       loading={isLoading}
@@ -720,19 +725,16 @@ function CustomEmptyList() {
 ```tsx
 function VehiclesWithStats() {
   const { vehicles, stats } = useVehiclesData();
-  
+
   return (
     <ListLayout<Vehicle>
       data={vehicles}
       renderItem={({ item }) => <VehicleCard vehicle={item} />}
       listHeader={
-        <StatsCard
-          totalVehicles={stats.total}
-          totalMileage={stats.mileage}
-        />
+        <StatsCard totalVehicles={stats.total} totalMileage={stats.mileage} />
       }
       listFooter={
-        <Text style={{ textAlign: 'center', padding: 16 }}>
+        <Text style={{ textAlign: "center", padding: 16 }}>
           Showing {vehicles.length} of {stats.total} vehicles
         </Text>
       }
@@ -793,8 +795,8 @@ function MultiStepFormWithPreview() {
       <DetailLayout
         hero={<VehiclePreview data={formData} />}
         tabs={[
-          { id: 'info', label: 'Information', content: <InfoPreview /> },
-          { id: 'settings', label: 'Settings', content: <SettingsPreview /> },
+          { id: "info", label: "Information", content: <InfoPreview /> },
+          { id: "settings", label: "Settings", content: <SettingsPreview /> },
         ]}
       />
     </FormLayout>
@@ -813,7 +815,7 @@ function ModalForm({ onClose, ...props }: ModalFormProps) {
     <FormLayout
       header={{
         title: props.title,
-        leftAction: { icon: 'close', onPress: onClose },
+        leftAction: { icon: "close", onPress: onClose },
       }}
       {...props}
     />
@@ -869,8 +871,8 @@ function VehicleListScreen() {
   return (
     <ListLayout
       header={{
-        title: 'Vehicles',
-        actions: [{ icon: 'add', onPress: addVehicle }],
+        title: "Vehicles",
+        actions: [{ icon: "add", onPress: addVehicle }],
       }}
       searchQuery={search}
       onSearchChange={setSearch}
@@ -930,11 +932,7 @@ function VehicleDetail() {
 
 // Avoid: Mixing template logic with content logic
 function VehicleDetail() {
-  return (
-    <ScrollView>
-      {/* Manual layout mixed with content */}
-    </ScrollView>
-  );
+  return <ScrollView>{/* Manual layout mixed with content */}</ScrollView>;
 }
 ```
 
@@ -960,10 +958,10 @@ Build complex UIs by composing templates with organisms:
 
 ```tsx
 <ListLayout
-  header={<PageHeader />}  // Organism
+  header={<PageHeader />} // Organism
   data={items}
-  renderItem={({ item }) => <ItemCard item={item} />}  // Organism
-  emptyComponent={<EmptyState />}  // Organism
+  renderItem={({ item }) => <ItemCard item={item} />} // Organism
+  emptyComponent={<EmptyState />} // Organism
 />
 ```
 
@@ -976,16 +974,12 @@ Build complex UIs by composing templates with organisms:
   loading={isLoading}
   error={error}
   onRetry={refetch}
-/>
+/>;
 
 // Avoid: Conditional rendering outside template
-{isLoading ? (
-  <Spinner />
-) : error ? (
-  <Error />
-) : (
-  <ListLayout data={vehicles} />
-)}
+{
+  isLoading ? <Spinner /> : error ? <Error /> : <ListLayout data={vehicles} />;
+}
 ```
 
 ### 6. Maintain Type Safety
@@ -1018,37 +1012,41 @@ Use generic types for type-safe list rendering:
 All templates include built-in accessibility features:
 
 ### Screen Readers
+
 - Proper heading hierarchy
 - Semantic roles for UI elements
 - Descriptive labels for actions
 - State announcements (loading, errors)
 
 ### Keyboard Navigation
+
 - Tab order follows visual hierarchy
 - Focus management for modals/sheets
 - Keyboard shortcuts where applicable
 
 ### Motion
+
 - Respects reduced motion preferences
 - Smooth scrolling with proper feedback
 - Loading indicators for async operations
 
 ### Testing
+
 ```tsx
 // Test accessibility in your screens
-import { render } from '@testing-library/react-native';
+import { render } from "@testing-library/react-native";
 
-test('should be accessible', () => {
+test("should be accessible", () => {
   const { getByRole, getByLabelText } = render(
     <ListLayout
-      header={{ title: 'Vehicles' }}
+      header={{ title: "Vehicles" }}
       data={vehicles}
       renderItem={renderItem}
-    />
+    />,
   );
-  
-  expect(getByRole('header')).toBeTruthy();
-  expect(getByLabelText('Search vehicles')).toBeTruthy();
+
+  expect(getByRole("header")).toBeTruthy();
+  expect(getByLabelText("Search vehicles")).toBeTruthy();
 });
 ```
 
@@ -1062,14 +1060,12 @@ test('should be accessible', () => {
 // Use keyExtractor for stable keys
 <ListLayout
   data={items}
-  keyExtractor={(item) => item.id}  // Not index!
+  keyExtractor={(item) => item.id} // Not index!
   renderItem={renderItem}
-/>
+/>;
 
 // Memoize render functions
-const renderItem = useCallback(({ item }) => (
-  <ItemCard item={item} />
-), []);
+const renderItem = useCallback(({ item }) => <ItemCard item={item} />, []);
 ```
 
 ### Avoid Inline Functions
@@ -1106,10 +1102,10 @@ const handleSearch = useCallback((query: string) => {
 
 ```tsx
 function SearchableList() {
-  const [query, setQuery] = useState('');
+  const [query, setQuery] = useState("");
   const debouncedQuery = useDebounce(query, 300);
   const { data } = useSearch(debouncedQuery);
-  
+
   return (
     <ListLayout
       searchQuery={query}
@@ -1127,11 +1123,11 @@ function SearchableList() {
 function VehiclesList() {
   const { vehicles, deleteVehicle } = useVehicles();
   const [optimisticData, setOptimisticData] = useState(vehicles);
-  
+
   const handleDelete = async (id: string) => {
     // Optimistically remove
-    setOptimisticData(prev => prev.filter(v => v.id !== id));
-    
+    setOptimisticData((prev) => prev.filter((v) => v.id !== id));
+
     try {
       await deleteVehicle(id);
     } catch (error) {
@@ -1139,7 +1135,7 @@ function VehiclesList() {
       setOptimisticData(vehicles);
     }
   };
-  
+
   return (
     <ListLayout
       data={optimisticData}
@@ -1155,13 +1151,13 @@ function VehiclesList() {
 
 ```tsx
 function StatefulList() {
-  const [activeTab, setActiveTab] = usePersistedState('detailTab', 'overview');
-  
+  const [activeTab, setActiveTab] = usePersistedState("detailTab", "overview");
+
   return (
     <DetailLayout
       tabs={tabs}
       activeTab={activeTab}
-      onTabChange={setActiveTab}  // Persists across navigation
+      onTabChange={setActiveTab} // Persists across navigation
     />
   );
 }
@@ -1207,7 +1203,7 @@ function StatefulList() {
 ```tsx
 <ListLayout
   data={items}
-  onRefresh={refetch}  // Must provide handler
+  onRefresh={refetch} // Must provide handler
   refreshing={isRefreshing}
 />
 ```
@@ -1232,41 +1228,39 @@ function StatefulList() {
 ### Unit Tests
 
 ```tsx
-import { render, screen } from '@testing-library/react-native';
-import { ListLayout } from '@/lib/design-system/components/templates';
+import { render, screen } from "@testing-library/react-native";
+import { ListLayout } from "@/lib/design-system/components/templates";
 
-test('renders list items', () => {
+test("renders list items", () => {
   const items = [
-    { id: '1', name: 'Item 1' },
-    { id: '2', name: 'Item 2' },
+    { id: "1", name: "Item 1" },
+    { id: "2", name: "Item 2" },
   ];
-  
+
   render(
     <ListLayout
       data={items}
       renderItem={({ item }) => <Text>{item.name}</Text>}
-    />
+    />,
   );
-  
-  expect(screen.getByText('Item 1')).toBeTruthy();
-  expect(screen.getByText('Item 2')).toBeTruthy();
+
+  expect(screen.getByText("Item 1")).toBeTruthy();
+  expect(screen.getByText("Item 2")).toBeTruthy();
 });
 ```
 
 ### Integration Tests
 
 ```tsx
-test('handles search', async () => {
-  const { getByPlaceholderText, queryByText } = render(
-    <VehiclesList />
-  );
-  
-  const searchInput = getByPlaceholderText('Search...');
-  fireEvent.changeText(searchInput, 'Toyota');
-  
+test("handles search", async () => {
+  const { getByPlaceholderText, queryByText } = render(<VehiclesList />);
+
+  const searchInput = getByPlaceholderText("Search...");
+  fireEvent.changeText(searchInput, "Toyota");
+
   await waitFor(() => {
-    expect(queryByText('Honda Civic')).toBeNull();
-    expect(getByText('Toyota Camry')).toBeTruthy();
+    expect(queryByText("Honda Civic")).toBeNull();
+    expect(getByText("Toyota Camry")).toBeTruthy();
   });
 });
 ```
@@ -1275,13 +1269,13 @@ test('handles search', async () => {
 
 ## API Reference Summary
 
-| Template | Primary Use Case | Key Features |
-|----------|-----------------|--------------|
-| PageLayout | Generic screens | Header, footer, loading, error states |
-| DashboardLayout | Overview screens | Multiple sections, metrics, charts |
-| DetailLayout | Detail pages | Hero, tabs, related items |
-| FormLayout | Forms & wizards | Multi-step, validation, progress |
-| ListLayout | Index pages | Search, filter, pagination |
+| Template        | Primary Use Case | Key Features                          |
+| --------------- | ---------------- | ------------------------------------- |
+| PageLayout      | Generic screens  | Header, footer, loading, error states |
+| DashboardLayout | Overview screens | Multiple sections, metrics, charts    |
+| DetailLayout    | Detail pages     | Hero, tabs, related items             |
+| FormLayout      | Forms & wizards  | Multi-step, validation, progress      |
+| ListLayout      | Index pages      | Search, filter, pagination            |
 
 ---
 
@@ -1298,6 +1292,7 @@ test('handles search', async () => {
 ## Support
 
 For questions or issues with template components:
+
 1. Check this documentation
 2. Review usage examples in the codebase
 3. Check component test files for edge cases

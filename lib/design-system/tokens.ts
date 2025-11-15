@@ -1,13 +1,13 @@
 /**
  * Design Tokens
- * 
+ *
  * Centralized design primitives for the Vehicle Management App.
  * All spacing, typography, colors, and other design decisions are defined here.
- * 
+ *
  * Usage:
  * ```typescript
  * import { tokens } from '@/lib/design-system/tokens';
- * 
+ *
  * const styles = {
  *   padding: tokens.spacing.md,
  *   fontSize: tokens.fontSize.base,
@@ -56,12 +56,12 @@ export const fontSize = {
  * Standard weights for typography hierarchy
  */
 export const fontWeight = {
-  light: '300',
-  regular: '400',
-  medium: '500',
-  semibold: '600',
-  bold: '700',
-  extrabold: '800',
+  light: "300",
+  regular: "400",
+  medium: "500",
+  semibold: "600",
+  bold: "700",
+  extrabold: "800",
 } as const;
 
 /**
@@ -109,49 +109,49 @@ export const borderWidth = {
  */
 export const shadows = {
   none: {
-    shadowColor: 'transparent',
+    shadowColor: "transparent",
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0,
     shadowRadius: 0,
     elevation: 0,
   },
   xs: {
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
     shadowRadius: 2,
     elevation: 1,
   },
   sm: {
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 2,
   },
   md: {
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.15,
     shadowRadius: 8,
     elevation: 4,
   },
   lg: {
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.2,
     shadowRadius: 16,
     elevation: 8,
   },
   xl: {
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 12 },
     shadowOpacity: 0.25,
     shadowRadius: 24,
     elevation: 12,
   },
   xxl: {
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 16 },
     shadowOpacity: 0.3,
     shadowRadius: 32,
@@ -178,10 +178,10 @@ export const animation = {
  * Native easing curves for smooth animations
  */
 export const easing = {
-  linear: 'linear',
-  easeIn: 'ease-in',
-  easeOut: 'ease-out',
-  easeInOut: 'ease-in-out',
+  linear: "linear",
+  easeIn: "ease-in",
+  easeOut: "ease-out",
+  easeInOut: "ease-in-out",
 } as const;
 
 /**

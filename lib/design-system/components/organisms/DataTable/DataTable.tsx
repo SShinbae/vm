@@ -1,17 +1,23 @@
-import { useColorScheme } from '@/hooks/use-color-scheme';
-import { Text } from '@/lib/design-system/components/atoms/Text';
-import { theme } from '@/lib/design-system/theme';
-import { tokens } from '@/lib/design-system/tokens';
-import React from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from 'react-native';
-import { DataTableProps } from './DataTable.types';
+import { useColorScheme } from "@/hooks/use-color-scheme";
+import { Text } from "@/lib/design-system/components/atoms/Text";
+import { theme } from "@/lib/design-system/theme";
+import { tokens } from "@/lib/design-system/tokens";
+import React from "react";
+import {
+  ActivityIndicator,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  View,
+} from "react-native";
+import { DataTableProps } from "./DataTable.types";
 
 export const DataTable = <T,>({
   data,
   columns,
   onRowPress,
   loading = false,
-  emptyMessage = 'No data available',
+  emptyMessage = "No data available",
   emptyState,
   showHeader = true,
   striped = false,
@@ -24,7 +30,7 @@ export const DataTable = <T,>({
     if (keyExtractor) {
       return keyExtractor(item, index);
     }
-    if (typeof item === 'object' && item !== null && 'id' in item) {
+    if (typeof item === "object" && item !== null && "id" in item) {
       return String((item as any).id);
     }
     return String(index);
@@ -55,7 +61,13 @@ export const DataTable = <T,>({
       <View style={styles.table}>
         {/* Header */}
         {showHeader && (
-          <View style={[styles.row, styles.headerRow, { borderBottomColor: colors.border }]}>
+          <View
+            style={[
+              styles.row,
+              styles.headerRow,
+              { borderBottomColor: colors.border },
+            ]}
+          >
             {columns.map((column, index) => (
               <View
                 key={index}
@@ -81,15 +93,17 @@ export const DataTable = <T,>({
             style={[
               styles.row,
               styles.dataRow,
-              striped && rowIndex % 2 === 1 && { backgroundColor: colors.surface },
+              striped &&
+                rowIndex % 2 === 1 && { backgroundColor: colors.surface },
               { borderBottomColor: colors.border },
             ]}
             disabled={!onRowPress}
           >
             {columns.map((column, colIndex) => {
-              const value = typeof column.key === 'string' && column.key in (item as object)
-                ? (item as any)[column.key]
-                : undefined;
+              const value =
+                typeof column.key === "string" && column.key in (item as object)
+                  ? (item as any)[column.key]
+                  : undefined;
 
               return (
                 <View
@@ -104,7 +118,9 @@ export const DataTable = <T,>({
                     column.render(value, item, rowIndex)
                   ) : (
                     <Text variant="body" size="sm" numberOfLines={2}>
-                      {value !== null && value !== undefined ? String(value) : '-'}
+                      {value !== null && value !== undefined
+                        ? String(value)
+                        : "-"}
                     </Text>
                   )}
                 </View>
@@ -122,13 +138,13 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   loadingContainer: {
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     minHeight: 200,
   },
   emptyContainer: {
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     minHeight: 200,
     paddingHorizontal: tokens.spacing.lg,
   },
@@ -136,19 +152,19 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   row: {
-    flexDirection: 'row',
+    flexDirection: "row",
     borderBottomWidth: 1,
   },
   headerRow: {
-    backgroundColor: 'transparent',
+    backgroundColor: "transparent",
   },
   dataRow: {
-    backgroundColor: 'transparent',
+    backgroundColor: "transparent",
   },
   cell: {
     paddingHorizontal: tokens.spacing.md,
     paddingVertical: tokens.spacing.sm,
-    justifyContent: 'center',
+    justifyContent: "center",
     minWidth: 120,
   },
   headerCell: {

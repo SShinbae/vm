@@ -29,14 +29,14 @@ import { DSText as Text } from '@/lib/design-system';
 
 ### Props
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `variant` | `'display' \| 'heading' \| 'title' \| 'body' \| 'caption' \| 'label'` | `'body'` | Text style preset |
-| `size` | `'xs' \| 'sm' \| 'md' \| 'lg' \| 'xl'` | `'md'` | Font size |
-| `weight` | `'light' \| 'regular' \| 'medium' \| 'semibold' \| 'bold'` | `'regular'` | Font weight |
-| `color` | `'primary' \| 'secondary' \| 'tertiary' \| 'success' \| 'error' \| 'warning' \| 'info'` | `'primary'` | Text color |
-| `align` | `'left' \| 'center' \| 'right' \| 'justify'` | `'left'` | Text alignment |
-| `numberOfLines` | `number` | - | Maximum lines to display |
+| Prop            | Type                                                                                    | Default     | Description              |
+| --------------- | --------------------------------------------------------------------------------------- | ----------- | ------------------------ |
+| `variant`       | `'display' \| 'heading' \| 'title' \| 'body' \| 'caption' \| 'label'`                   | `'body'`    | Text style preset        |
+| `size`          | `'xs' \| 'sm' \| 'md' \| 'lg' \| 'xl'`                                                  | `'md'`      | Font size                |
+| `weight`        | `'light' \| 'regular' \| 'medium' \| 'semibold' \| 'bold'`                              | `'regular'` | Font weight              |
+| `color`         | `'primary' \| 'secondary' \| 'tertiary' \| 'success' \| 'error' \| 'warning' \| 'info'` | `'primary'` | Text color               |
+| `align`         | `'left' \| 'center' \| 'right' \| 'justify'`                                            | `'left'`    | Text alignment           |
+| `numberOfLines` | `number`                                                                                | -           | Maximum lines to display |
 
 ### Examples
 
@@ -87,13 +87,13 @@ import { Icon } from '@/lib/design-system';
 
 ### Props
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `name` | `IconName` | **required** | Icon identifier from icon map |
-| `size` | `IconSize \| number` | `'md'` | Icon size (predefined or custom) |
-| `color` | `IconColor` | `'primary'` | Icon color |
-| `variant` | `'monochrome' \| 'hierarchical' \| 'palette' \| 'multicolor'` | `'monochrome'` | SF Symbol rendering style |
-| `weight` | `IconWeight` | `'regular'` | Icon stroke weight |
+| Prop      | Type                                                          | Default        | Description                      |
+| --------- | ------------------------------------------------------------- | -------------- | -------------------------------- |
+| `name`    | `IconName`                                                    | **required**   | Icon identifier from icon map    |
+| `size`    | `IconSize \| number`                                          | `'md'`         | Icon size (predefined or custom) |
+| `color`   | `IconColor`                                                   | `'primary'`    | Icon color                       |
+| `variant` | `'monochrome' \| 'hierarchical' \| 'palette' \| 'multicolor'` | `'monochrome'` | SF Symbol rendering style        |
+| `weight`  | `IconWeight`                                                  | `'regular'`    | Icon stroke weight               |
 
 ### Examples
 
@@ -140,13 +140,13 @@ import { Badge } from '@/lib/design-system';
 
 ### Props
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `variant` | `'success' \| 'warning' \| 'error' \| 'info' \| 'default'` | `'default'` | Badge color scheme |
-| `size` | `'sm' \| 'md' \| 'lg'` | `'md'` | Badge size |
-| `type` | `'filled' \| 'outlined' \| 'dot'` | `'filled'` | Badge style |
-| `count` | `number` | - | Numeric count to display |
-| `maxCount` | `number` | `99` | Maximum count before showing "+" |
+| Prop       | Type                                                       | Default     | Description                      |
+| ---------- | ---------------------------------------------------------- | ----------- | -------------------------------- |
+| `variant`  | `'success' \| 'warning' \| 'error' \| 'info' \| 'default'` | `'default'` | Badge color scheme               |
+| `size`     | `'sm' \| 'md' \| 'lg'`                                     | `'md'`      | Badge size                       |
+| `type`     | `'filled' \| 'outlined' \| 'dot'`                          | `'filled'`  | Badge style                      |
+| `count`    | `number`                                                   | -           | Numeric count to display         |
+| `maxCount` | `number`                                                   | `99`        | Maximum count before showing "+" |
 
 ### Examples
 
@@ -194,16 +194,16 @@ import { Avatar } from '@/lib/design-system';
 
 ### Props
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `size` | `'xs' \| 'sm' \| 'md' \| 'lg' \| 'xl' \| 'xxl'` | `'md'` | Avatar size |
-| `source` | `ImageSourcePropType` | - | Image source |
-| `name` | `string` | - | User name (for initials) |
-| `alt` | `string` | - | Accessibility label |
-| `status` | `'online' \| 'offline' \| 'busy' \| 'away'` | - | Status indicator |
-| `showStatus` | `boolean` | `false` | Show status indicator |
-| `backgroundColor` | `string` | - | Custom background color |
-| `textColor` | `string` | - | Custom text color |
+| Prop              | Type                                            | Default | Description              |
+| ----------------- | ----------------------------------------------- | ------- | ------------------------ |
+| `size`            | `'xs' \| 'sm' \| 'md' \| 'lg' \| 'xl' \| 'xxl'` | `'md'`  | Avatar size              |
+| `source`          | `ImageSourcePropType`                           | -       | Image source             |
+| `name`            | `string`                                        | -       | User name (for initials) |
+| `alt`             | `string`                                        | -       | Accessibility label      |
+| `status`          | `'online' \| 'offline' \| 'busy' \| 'away'`     | -       | Status indicator         |
+| `showStatus`      | `boolean`                                       | `false` | Show status indicator    |
+| `backgroundColor` | `string`                                        | -       | Custom background color  |
+| `textColor`       | `string`                                        | -       | Custom text color        |
 
 ### Examples
 
@@ -216,11 +216,11 @@ import { Avatar } from '@/lib/design-system';
 <Avatar source={{ uri: 'https://example.com/avatar.jpg' }} />
 
 // With status
-<Avatar 
-  name="John Doe" 
-  showStatus 
+<Avatar
+  name="John Doe"
+  showStatus
   status="online"
-  size="lg" 
+  size="lg"
 />
 
 // Different sizes
@@ -256,14 +256,14 @@ import { Divider } from '@/lib/design-system';
 
 ### Props
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `orientation` | `'horizontal' \| 'vertical'` | `'horizontal'` | Divider direction |
-| `thickness` | `'thin' \| 'medium' \| 'thick'` | `'thin'` | Line thickness |
-| `color` | `'default' \| 'light' \| 'dark'` | `'default'` | Line color |
-| `label` | `string` | - | Optional label text |
-| `labelPosition` | `'left' \| 'center' \| 'right'` | `'center'` | Label alignment |
-| `spacing` | `SpacingToken` | `'md'` | Vertical/horizontal margin |
+| Prop            | Type                             | Default        | Description                |
+| --------------- | -------------------------------- | -------------- | -------------------------- |
+| `orientation`   | `'horizontal' \| 'vertical'`     | `'horizontal'` | Divider direction          |
+| `thickness`     | `'thin' \| 'medium' \| 'thick'`  | `'thin'`       | Line thickness             |
+| `color`         | `'default' \| 'light' \| 'dark'` | `'default'`    | Line color                 |
+| `label`         | `string`                         | -              | Optional label text        |
+| `labelPosition` | `'left' \| 'center' \| 'right'`  | `'center'`     | Label alignment            |
+| `spacing`       | `SpacingToken`                   | `'md'`         | Vertical/horizontal margin |
 
 ### Examples
 
@@ -311,10 +311,10 @@ import { Spacer } from '@/lib/design-system';
 
 ### Props
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `size` | `SpacingToken` | `'md'` | Spacing size from design tokens |
-| `horizontal` | `boolean` | `false` | Horizontal spacing (otherwise vertical) |
+| Prop         | Type           | Default | Description                             |
+| ------------ | -------------- | ------- | --------------------------------------- |
+| `size`       | `SpacingToken` | `'md'`  | Spacing size from design tokens         |
+| `horizontal` | `boolean`      | `false` | Horizontal spacing (otherwise vertical) |
 
 ### Examples
 
@@ -354,34 +354,40 @@ import { Spacer } from '@/lib/design-system';
 ## Best Practices
 
 ### Text
+
 - Use semantic variants (`heading`, `body`, `caption`) instead of arbitrary sizes
 - Maintain consistent hierarchy (display → heading → title → body → caption)
 - Use `numberOfLines` for text truncation
 - Prefer semantic colors over custom colors
 
 ### Icon
+
 - Always provide meaningful icon names
 - Use consistent sizes throughout similar UI sections
 - Match icon color to surrounding text when appropriate
 - Consider accessibility - icons should supplement text, not replace it
 
 ### Badge
+
 - Use semantic variants for status (`success`, `error`, `warning`)
 - Keep badge text concise (1-2 words max)
 - Use dot badges for simple status indicators
 - Respect maxCount for large numbers
 
 ### Avatar
+
 - Always provide a `name` or `alt` text for accessibility
 - Use appropriate sizes for context (larger for profiles, smaller for lists)
 - Status indicators should be meaningful and consistent
 
 ### Divider
+
 - Use sparingly - too many dividers create visual clutter
 - Prefer `light` color for subtle separation
 - Labels should be short and descriptive
 
 ### Spacer
+
 - Use design tokens consistently (`sm`, `md`, `lg`, etc.)
 - Avoid arbitrary spacing - stick to the token scale
 - Consider responsive spacing for different screen sizes
@@ -393,6 +399,7 @@ import { Spacer } from '@/lib/design-system';
 ### Replacing Old Text Components
 
 **Before:**
+
 ```typescript
 <RNText style={{ fontSize: 16, fontWeight: 'bold', color: '#000' }}>
   Hello
@@ -400,6 +407,7 @@ import { Spacer } from '@/lib/design-system';
 ```
 
 **After:**
+
 ```typescript
 <Text variant="body" weight="bold">
   Hello
@@ -409,11 +417,13 @@ import { Spacer } from '@/lib/design-system';
 ### Replacing StyleSheet Spacing
 
 **Before:**
+
 ```typescript
 <View style={{ marginVertical: 16 }} />
 ```
 
 **After:**
+
 ```typescript
 <Spacer size="md" />
 ```
@@ -433,8 +443,9 @@ npm test -- --testPathPattern=atoms
 ## Next Steps
 
 Phase 3 will build **Molecule Components** using these atomic components:
+
 - Enhanced Button
-- Enhanced Input  
+- Enhanced Input
 - Enhanced Card
 - ListItem
 - Chip

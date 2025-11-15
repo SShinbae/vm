@@ -1,17 +1,23 @@
-import { useColorScheme } from '@/hooks/use-color-scheme';
-import React from 'react';
-import { ImageSourcePropType, Pressable, StyleSheet, View, ViewProps } from 'react-native';
-import { allIcons } from '../../../icons';
-import { theme } from '../../../theme';
-import { tokens } from '../../../tokens';
-import { Avatar } from '../../atoms/Avatar';
-import { Icon } from '../../atoms/Icon';
-import { Text } from '../../atoms/Text';
+import { useColorScheme } from "@/hooks/use-color-scheme";
+import React from "react";
+import {
+  ImageSourcePropType,
+  Pressable,
+  StyleSheet,
+  View,
+  ViewProps,
+} from "react-native";
+import { allIcons } from "../../../icons";
+import { theme } from "../../../theme";
+import { tokens } from "../../../tokens";
+import { Avatar } from "../../atoms/Avatar";
+import { Icon } from "../../atoms/Icon";
+import { Text } from "../../atoms/Text";
 
-export interface ChipProps extends Omit<ViewProps, 'style'> {
+export interface ChipProps extends Omit<ViewProps, "style"> {
   label: string;
-  variant?: 'default' | 'outlined' | 'filled';
-  size?: 'sm' | 'md';
+  variant?: "default" | "outlined" | "filled";
+  size?: "sm" | "md";
   selected?: boolean;
   disabled?: boolean;
   leftIcon?: keyof typeof allIcons;
@@ -22,8 +28,8 @@ export interface ChipProps extends Omit<ViewProps, 'style'> {
 
 export const Chip: React.FC<ChipProps> = ({
   label,
-  variant = 'default',
-  size = 'md',
+  variant = "default",
+  size = "md",
   selected = false,
   disabled = false,
   leftIcon,
@@ -41,14 +47,14 @@ export const Chip: React.FC<ChipProps> = ({
       paddingHorizontal: tokens.spacing.xs,
       fontSize: tokens.fontSize.xs,
       iconSize: 14 as const,
-      avatarSize: 'xs' as const,
+      avatarSize: "xs" as const,
     },
     md: {
       height: 32,
       paddingHorizontal: tokens.spacing.sm,
       fontSize: tokens.fontSize.sm,
       iconSize: 16 as const,
-      avatarSize: 'sm' as const,
+      avatarSize: "sm" as const,
     },
   };
 
@@ -57,21 +63,23 @@ export const Chip: React.FC<ChipProps> = ({
   const variantConfig = {
     default: {
       background: selected ? colors.tint : colors.card,
-      backgroundPressed: selected ? colors.tint + 'DD' : colors.card + 'DD',
-      text: selected ? '#FFFFFF' : colors.text,
+      backgroundPressed: selected ? colors.tint + "DD" : colors.card + "DD",
+      text: selected ? "#FFFFFF" : colors.text,
       border: colors.border,
     },
     outlined: {
-      background: selected ? colors.tint + '20' : 'transparent',
-      backgroundPressed: selected ? colors.tint + '30' : colors.tint + '10',
+      background: selected ? colors.tint + "20" : "transparent",
+      backgroundPressed: selected ? colors.tint + "30" : colors.tint + "10",
       text: selected ? colors.tint : colors.text,
       border: selected ? colors.tint : colors.border,
     },
     filled: {
       background: selected ? colors.tint : colors.backgroundSecondary,
-      backgroundPressed: selected ? colors.tint + 'DD' : colors.backgroundSecondary + 'DD',
-      text: selected ? '#FFFFFF' : colors.text,
-      border: 'transparent',
+      backgroundPressed: selected
+        ? colors.tint + "DD"
+        : colors.backgroundSecondary + "DD",
+      text: selected ? "#FFFFFF" : colors.text,
+      border: "transparent",
     },
   };
 
@@ -85,7 +93,7 @@ export const Chip: React.FC<ChipProps> = ({
           height: config.height,
           paddingHorizontal: config.paddingHorizontal,
           backgroundColor: colorConfig.background,
-          borderWidth: variant === 'outlined' || variant === 'default' ? 1 : 0,
+          borderWidth: variant === "outlined" || variant === "default" ? 1 : 0,
           borderColor: colorConfig.border,
           borderRadius: config.height / 2,
           opacity: disabled ? 0.5 : 1,
@@ -95,7 +103,7 @@ export const Chip: React.FC<ChipProps> = ({
     >
       {avatar && (
         <Avatar
-          source={typeof avatar === 'string' ? { uri: avatar } : avatar}
+          source={typeof avatar === "string" ? { uri: avatar } : avatar}
           name={label}
           size={config.avatarSize}
           style={styles.avatar}
@@ -131,11 +139,7 @@ export const Chip: React.FC<ChipProps> = ({
           accessibilityLabel={`Dismiss ${label}`}
           hitSlop={8}
         >
-          <Icon
-            name="close"
-            size={config.iconSize}
-            color="primary"
-          />
+          <Icon name="close" size={config.iconSize} color="primary" />
         </Pressable>
       )}
     </View>
@@ -148,7 +152,9 @@ export const Chip: React.FC<ChipProps> = ({
         disabled={disabled}
         style={({ pressed }) => [
           {
-            backgroundColor: pressed ? colorConfig.backgroundPressed : 'transparent',
+            backgroundColor: pressed
+              ? colorConfig.backgroundPressed
+              : "transparent",
             borderRadius: config.height / 2,
           },
         ]}
@@ -166,9 +172,9 @@ export const Chip: React.FC<ChipProps> = ({
 
 const styles = StyleSheet.create({
   chip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    alignSelf: 'flex-start',
+    flexDirection: "row",
+    alignItems: "center",
+    alignSelf: "flex-start",
   },
   avatar: {
     marginRight: tokens.spacing.xxs,

@@ -1,7 +1,13 @@
-import React, { useMemo } from 'react';
-import { View, Text, ScrollView, RefreshControl, ActivityIndicator } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { useStyles } from 'react-native-unistyles';
+import React, { useMemo } from "react";
+import {
+  View,
+  Text,
+  ScrollView,
+  RefreshControl,
+  ActivityIndicator,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { useStyles } from "react-native-unistyles";
 import {
   MetricCard,
   PeriodSelector,
@@ -11,12 +17,12 @@ import {
   UpcomingServiceCard,
   CostBreakdownCard,
   StatCard,
-} from '@/components/analytics';
+} from "@/components/analytics";
 import {
   useAnalyticsData,
   usePeriodSelector,
   useVehicleFilter,
-} from '@/hooks/useAnalytics';
+} from "@/hooks/useAnalytics";
 
 export default function OverviewTab() {
   const { theme } = useStyles();
@@ -35,7 +41,7 @@ export default function OverviewTab() {
       period,
       vehicleIds: selectedVehicleIds,
     }),
-    [period, selectedVehicleIds]
+    [period, selectedVehicleIds],
   );
 
   const { loading, error, costMetrics, fuelMetrics, serviceMetrics, refetch } =
@@ -43,18 +49,22 @@ export default function OverviewTab() {
 
   const hasData =
     costMetrics &&
-    (costMetrics.totalCost > 0 || fuelMetrics?.fuelUps || serviceMetrics?.totalServices);
+    (costMetrics.totalCost > 0 ||
+      fuelMetrics?.fuelUps ||
+      serviceMetrics?.totalServices);
 
   // Loading state
   if (loading || vehiclesLoading) {
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.background }}>
+      <SafeAreaView
+        style={{ flex: 1, backgroundColor: theme.colors.background }}
+      >
         <AnalyticsHeader />
         <View
           style={{
             flex: 1,
-            alignItems: 'center',
-            justifyContent: 'center',
+            alignItems: "center",
+            justifyContent: "center",
           }}
         >
           <ActivityIndicator size="large" color={theme.colors.primary} />
@@ -75,7 +85,9 @@ export default function OverviewTab() {
   // Error state
   if (error) {
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.background }}>
+      <SafeAreaView
+        style={{ flex: 1, backgroundColor: theme.colors.background }}
+      >
         <AnalyticsHeader />
         <View style={{ padding: theme.spacing.lg }}>
           <EmptyAnalytics
@@ -91,7 +103,9 @@ export default function OverviewTab() {
   // Empty state
   if (!hasData) {
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.background }}>
+      <SafeAreaView
+        style={{ flex: 1, backgroundColor: theme.colors.background }}
+      >
         <AnalyticsHeader />
         <View style={{ padding: theme.spacing.lg }}>
           <PeriodSelector
@@ -116,14 +130,18 @@ export default function OverviewTab() {
 
   // Calculate selected vehicle count
   const isAllSelected = selectedVehicleIds.length === 0;
-  const selectedVehicleCount = isAllSelected ? vehicles.length : selectedVehicleIds.length;
+  const selectedVehicleCount = isAllSelected
+    ? vehicles.length
+    : selectedVehicleIds.length;
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.background }}>
       <AnalyticsHeader />
       <ScrollView
         style={{ flex: 1 }}
-        refreshControl={<RefreshControl refreshing={loading} onRefresh={refetch} />}
+        refreshControl={
+          <RefreshControl refreshing={loading} onRefresh={refetch} />
+        }
         showsVerticalScrollIndicator={false}
       >
         <View style={{ padding: theme.spacing.lg }}>
@@ -144,7 +162,7 @@ export default function OverviewTab() {
           {/* Summary Section */}
           <Text
             style={{
-              fontSize: theme.fontSize['2xl'],
+              fontSize: theme.fontSize["2xl"],
               fontWeight: theme.fontWeight.bold,
               color: theme.colors.text,
               marginBottom: theme.spacing.md,
@@ -155,8 +173,10 @@ export default function OverviewTab() {
           </Text>
 
           {/* Metric Cards Grid */}
-          <View style={{ gap: theme.spacing.md, marginBottom: theme.spacing.md }}>
-            <View style={{ flexDirection: 'row', gap: theme.spacing.md }}>
+          <View
+            style={{ gap: theme.spacing.md, marginBottom: theme.spacing.md }}
+          >
+            <View style={{ flexDirection: "row", gap: theme.spacing.md }}>
               <View style={{ flex: 1 }}>
                 <MetricCard
                   title="Total Cost"
@@ -175,7 +195,7 @@ export default function OverviewTab() {
               </View>
             </View>
 
-            <View style={{ flexDirection: 'row', gap: theme.spacing.md }}>
+            <View style={{ flexDirection: "row", gap: theme.spacing.md }}>
               <View style={{ flex: 1 }}>
                 <MetricCard
                   title="Fuel Cost"
@@ -198,7 +218,7 @@ export default function OverviewTab() {
           {/* Cost Breakdown Section */}
           <Text
             style={{
-              fontSize: theme.fontSize['2xl'],
+              fontSize: theme.fontSize["2xl"],
               fontWeight: theme.fontWeight.bold,
               color: theme.colors.text,
               marginBottom: theme.spacing.md,
@@ -216,7 +236,7 @@ export default function OverviewTab() {
           {/* Quick Stats Section */}
           <Text
             style={{
-              fontSize: theme.fontSize['2xl'],
+              fontSize: theme.fontSize["2xl"],
               fontWeight: theme.fontWeight.bold,
               color: theme.colors.text,
               marginBottom: theme.spacing.md,
@@ -225,7 +245,13 @@ export default function OverviewTab() {
           >
             Quick Stats
           </Text>
-          <View style={{ flexDirection: 'row', gap: theme.spacing.md, marginBottom: theme.spacing.md }}>
+          <View
+            style={{
+              flexDirection: "row",
+              gap: theme.spacing.md,
+              marginBottom: theme.spacing.md,
+            }}
+          >
             <StatCard
               value={fuelMetrics?.averageConsumption.toFixed(1) || 0}
               label="L/100km"
@@ -234,10 +260,7 @@ export default function OverviewTab() {
               value={fuelMetrics?.totalDistance.toFixed(0) || 0}
               label="km traveled"
             />
-            <StatCard
-              value={selectedVehicleCount}
-              label="vehicles selected"
-            />
+            <StatCard value={selectedVehicleCount} label="vehicles selected" />
           </View>
 
           {/* Upcoming Maintenance Section */}
@@ -245,7 +268,7 @@ export default function OverviewTab() {
             <>
               <Text
                 style={{
-                  fontSize: theme.fontSize['2xl'],
+                  fontSize: theme.fontSize["2xl"],
                   fontWeight: theme.fontWeight.bold,
                   color: theme.colors.text,
                   marginBottom: theme.spacing.md,

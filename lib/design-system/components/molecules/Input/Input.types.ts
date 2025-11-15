@@ -1,1 +1,1 @@
-export type InputState = 'default' | 'error' | 'success' | 'disabled';
+export type InputState = "default" | "error" | "success" | "disabled";

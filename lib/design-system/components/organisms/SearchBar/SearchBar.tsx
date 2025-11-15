@@ -1,16 +1,16 @@
-import { useColorScheme } from '@/hooks/use-color-scheme';
-import { Icon } from '@/lib/design-system/components/atoms/Icon';
-import { theme } from '@/lib/design-system/theme';
-import React, { useState } from 'react';
-import { Pressable, Text, TextInput, View } from 'react-native';
-import { useStyles } from 'react-native-unistyles';
-import { stylesheet } from './SearchBar.styles';
-import { SearchBarProps } from './SearchBar.types';
+import { useColorScheme } from "@/hooks/use-color-scheme";
+import { Icon } from "@/lib/design-system/components/atoms/Icon";
+import { theme } from "@/lib/design-system/theme";
+import React, { useState } from "react";
+import { Pressable, Text, TextInput, View } from "react-native";
+import { useStyles } from "react-native-unistyles";
+import { stylesheet } from "./SearchBar.styles";
+import { SearchBarProps } from "./SearchBar.types";
 
 export const SearchBar: React.FC<SearchBarProps> = ({
   value,
   onChangeText,
-  placeholder = 'Search...',
+  placeholder = "Search...",
   onSearch,
   showFilter = false,
   onFilterPress,
@@ -20,7 +20,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
   autoFocus = false,
   disabled = false,
   showClear = true,
-  leftIcon = 'search',
+  leftIcon = "search",
   fullWidth = true,
 }) => {
   const { styles } = useStyles(stylesheet);
@@ -29,7 +29,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
   const [isFocused, setIsFocused] = useState(false);
 
   const handleClear = () => {
-    onChangeText('');
+    onChangeText("");
   };
 
   const handleSubmit = () => {
@@ -96,7 +96,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
             <Icon
               name="filter"
               size="sm"
-              color={activeFilters > 0 ? 'primary' : 'secondary'}
+              color={activeFilters > 0 ? "primary" : "secondary"}
             />
             {activeFilters > 0 && (
               <View style={styles.badge}>

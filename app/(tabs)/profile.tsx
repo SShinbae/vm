@@ -70,9 +70,14 @@ export default function ProfileScreen() {
     }
   };
 
-  const saveNotificationPreferences = async (prefs: typeof notificationPrefs) => {
+  const saveNotificationPreferences = async (
+    prefs: typeof notificationPrefs,
+  ) => {
     try {
-      await AsyncStorage.setItem("notification_preferences", JSON.stringify(prefs));
+      await AsyncStorage.setItem(
+        "notification_preferences",
+        JSON.stringify(prefs),
+      );
       setNotificationPrefs(prefs);
     } catch (error) {
       console.error("Error saving notification preferences:", error);
@@ -80,7 +85,10 @@ export default function ProfileScreen() {
     }
   };
 
-  const updateNotificationPref = (key: keyof typeof notificationPrefs, value: boolean) => {
+  const updateNotificationPref = (
+    key: keyof typeof notificationPrefs,
+    value: boolean,
+  ) => {
     const newPrefs = { ...notificationPrefs, [key]: value };
     saveNotificationPreferences(newPrefs);
   };
@@ -121,19 +129,15 @@ export default function ProfileScreen() {
   };
 
   const handleSignOut = () => {
-    showConfirm(
-      "Sign Out",
-      "Are you sure you want to sign out?",
-      async () => {
-        await signOut();
-        hideConfirm();
-        if (router.canGoBack()) {
-          router.back();
-        } else {
-          router.replace("/login");
-        }
+    showConfirm("Sign Out", "Are you sure you want to sign out?", async () => {
+      await signOut();
+      hideConfirm();
+      if (router.canGoBack()) {
+        router.back();
+      } else {
+        router.replace("/login");
       }
-    );
+    });
   };
 
   const formatJoinDate = (dateString: string) => {
@@ -166,7 +170,9 @@ export default function ProfileScreen() {
           style={{
             color: isActive ? theme.colors.white : theme.colors.textSecondary,
             fontSize: theme.fontSize.sm,
-            fontWeight: isActive ? theme.fontWeight.semibold : theme.fontWeight.normal,
+            fontWeight: isActive
+              ? theme.fontWeight.semibold
+              : theme.fontWeight.normal,
           }}
         >
           {tab}
@@ -176,7 +182,13 @@ export default function ProfileScreen() {
   };
 
   // Stat item component
-  const StatItem = ({ value, label }: { value: number | string; label: string }) => (
+  const StatItem = ({
+    value,
+    label,
+  }: {
+    value: number | string;
+    label: string;
+  }) => (
     <TouchableOpacity
       style={{
         flex: 1,
@@ -332,7 +344,11 @@ export default function ProfileScreen() {
           {subtitle}
         </Text>
       </View>
-      <IconSymbol name="chevron.right" size={20} color={theme.colors.textSecondary} />
+      <IconSymbol
+        name="chevron.right"
+        size={20}
+        color={theme.colors.textSecondary}
+      />
     </TouchableOpacity>
   );
 
@@ -394,7 +410,10 @@ export default function ProfileScreen() {
           borderBottomColor: theme.colors.border,
         }}
       >
-        <StatItem value={statsLoading ? "..." : stats.totalLogs} label="Total Logs" />
+        <StatItem
+          value={statsLoading ? "..." : stats.totalLogs}
+          label="Total Logs"
+        />
         <View
           style={{
             width: 1,
@@ -402,7 +421,10 @@ export default function ProfileScreen() {
             marginVertical: theme.spacing.sm,
           }}
         />
-        <StatItem value={statsLoading ? "..." : stats.activeGroups} label="Active Groups" />
+        <StatItem
+          value={statsLoading ? "..." : stats.activeGroups}
+          label="Active Groups"
+        />
         <View
           style={{
             width: 1,
@@ -410,7 +432,10 @@ export default function ProfileScreen() {
             marginVertical: theme.spacing.sm,
           }}
         />
-        <StatItem value={statsLoading ? "..." : stats.daysActive} label="Days Active" />
+        <StatItem
+          value={statsLoading ? "..." : stats.daysActive}
+          label="Days Active"
+        />
       </View>
 
       <View
@@ -448,7 +473,12 @@ export default function ProfileScreen() {
           icon="lock.shield"
           label="Privacy Settings"
           subtitle="Manage your privacy preferences"
-          onPress={() => Alert.alert("Coming Soon", "Privacy settings will be available soon")}
+          onPress={() =>
+            Alert.alert(
+              "Coming Soon",
+              "Privacy settings will be available soon",
+            )
+          }
         />
       </View>
     </>
@@ -594,9 +624,15 @@ export default function ProfileScreen() {
                 paddingVertical: theme.spacing.md,
                 paddingHorizontal: theme.spacing.lg,
                 borderRadius: theme.borderRadius.md,
-                backgroundColor: themeMode === mode ? theme.colors.primary : theme.colors.surface,
+                backgroundColor:
+                  themeMode === mode
+                    ? theme.colors.primary
+                    : theme.colors.surface,
                 borderWidth: 1,
-                borderColor: themeMode === mode ? theme.colors.primary : theme.colors.border,
+                borderColor:
+                  themeMode === mode
+                    ? theme.colors.primary
+                    : theme.colors.border,
                 alignItems: "center",
               }}
               onPress={() => setThemeMode(mode)}
@@ -610,7 +646,9 @@ export default function ProfileScreen() {
                       : "moon"
                 }
                 size={20}
-                color={themeMode === mode ? "white" : theme.colors.textSecondary}
+                color={
+                  themeMode === mode ? "white" : theme.colors.textSecondary
+                }
               />
               <Text
                 style={{
@@ -711,7 +749,15 @@ export default function ProfileScreen() {
 
   // Notifications tab content
   const renderNotificationsTab = () => {
-    const NotificationSwitch = ({ label, value, onToggle }: { label: string; value: boolean; onToggle: (val: boolean) => void }) => (
+    const NotificationSwitch = ({
+      label,
+      value,
+      onToggle,
+    }: {
+      label: string;
+      value: boolean;
+      onToggle: (val: boolean) => void;
+    }) => (
       <View
         style={{
           flexDirection: "row",
@@ -809,7 +855,9 @@ export default function ProfileScreen() {
           <NotificationSwitch
             label="Push Notifications"
             value={notificationPrefs.pushNotifications}
-            onToggle={(value) => updateNotificationPref("pushNotifications", value)}
+            onToggle={(value) =>
+              updateNotificationPref("pushNotifications", value)
+            }
           />
         </View>
       </>
@@ -907,7 +955,9 @@ export default function ProfileScreen() {
             Edit Profile
           </Text>
 
-          <View style={{ marginBottom: theme.spacing.lg, alignItems: "center" }}>
+          <View
+            style={{ marginBottom: theme.spacing.lg, alignItems: "center" }}
+          >
             <ImageUpload
               type="avatar"
               currentImageUrl={avatarUrl}

@@ -1,4 +1,4 @@
-import { createStyleSheet } from 'react-native-unistyles';
+import { createStyleSheet } from "react-native-unistyles";
 
 export const stylesheet = createStyleSheet((theme, runtime) => ({
   container: {
@@ -10,16 +10,16 @@ export const stylesheet = createStyleSheet((theme, runtime) => ({
     borderBottomWidth: 0,
   },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     paddingHorizontal: 16,
     paddingVertical: 12,
     minHeight: 56,
   },
   leftSection: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     flex: 1,
   },
   backButton: {
@@ -32,7 +32,7 @@ export const stylesheet = createStyleSheet((theme, runtime) => ({
   },
   title: {
     fontSize: 20,
-    fontWeight: '600',
+    fontWeight: "600",
     color: theme.colors.text,
   },
   subtitle: {
@@ -41,8 +41,8 @@ export const stylesheet = createStyleSheet((theme, runtime) => ({
     marginTop: 2,
   },
   actionsContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 8,
     marginLeft: 12,
   },

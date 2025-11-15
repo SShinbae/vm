@@ -1,9 +1,9 @@
-import type { ReactNode } from 'react';
-import type { ViewProps } from 'react-native';
-import type { tokens } from '../../../tokens';
-import type { PageHeaderProps } from '../../organisms/PageHeader/PageHeader.types';
+import type { ReactNode } from "react";
+import type { ViewProps } from "react-native";
+import type { tokens } from "../../../tokens";
+import type { PageHeaderProps } from "../../organisms/PageHeader/PageHeader.types";
 
-export interface PageLayoutProps extends Omit<ViewProps, 'style'> {
+export interface PageLayoutProps extends Omit<ViewProps, "style"> {
   /**
    * Page header configuration
    */
@@ -67,5 +67,5 @@ export interface PageLayoutProps extends Omit<ViewProps, 'style'> {
   /**
    * Additional content styles
    */
-  contentStyle?: ViewProps['style'];
+  contentStyle?: ViewProps["style"];
 }
