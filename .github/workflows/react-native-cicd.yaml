@@ -56,6 +56,26 @@ jobs:
     if: (github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')) || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     steps:
+      - name: 🧹 Free up disk space
+        run: |
+          echo "Disk space before cleanup:"
+          df -h
+          
+          # Remove unnecessary packages to free up space
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /opt/ghc
+          sudo rm -rf /usr/local/share/boost
+          sudo rm -rf "$AGENT_TOOLSDIRECTORY"
+          sudo rm -rf /usr/local/lib/android
+          sudo apt-get clean
+          
+          # Remove Docker images and containers
+          docker rmi $(docker images -q) -f || true
+          docker system prune -af || true
+          
+          echo "Disk space after cleanup:"
+          df -h
+
       - name: 🏗 Checkout repository
         uses: actions/checkout@v4
 
@@ -145,6 +165,15 @@ jobs:
         env:
           NODE_ENV: development
 
+      - name: 🧹 Clean up after dev build
+        if: github.event.inputs.buildType == 'all' || github.event_name == 'push'
+        run: |
+          echo "Cleaning up temporary build files..."
+          rm -rf ~/.gradle/caches/
+          rm -rf ~/.gradle/wrapper/
+          rm -rf node_modules/.cache
+          df -h
+
       - name: 📱 Build Production APK
         if: github.event.inputs.buildType == 'all' || github.event.inputs.buildType == 'prod-apk' || github.event_name == 'push'
         run: |
@@ -152,6 +181,15 @@ jobs:
           eas build --platform android --profile production-apk --local --non-interactive --output=./app-prod.apk
         env:
           NODE_ENV: production
+
+      - name: 🧹 Clean up after prod APK build
+        if: github.event.inputs.buildType == 'all' || github.event_name == 'push'
+        run: |
+          echo "Cleaning up temporary build files..."
+          rm -rf ~/.gradle/caches/
+          rm -rf ~/.gradle/wrapper/
+          rm -rf node_modules/.cache
+          df -h
 
       - name: 📱 Build Production AAB
         if: github.event.inputs.buildType == 'all' || github.event.inputs.buildType == 'prod-aab' || github.event_name == 'push'
