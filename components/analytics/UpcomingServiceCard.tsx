@@ -1,7 +1,7 @@
-import React from "react";
-import { View, Text } from "react-native";
-import { createStyleSheet, useStyles } from "react-native-unistyles";
 import { Ionicons } from "@expo/vector-icons";
+import React from "react";
+import { Text, View } from "react-native";
+import { createStyleSheet, useStyles } from "react-native-unistyles";
 import { UpcomingService } from "../../types/analytics";
 
 interface UpcomingServiceCardProps {
