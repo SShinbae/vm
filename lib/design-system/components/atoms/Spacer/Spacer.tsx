@@ -1,15 +1,15 @@
-import React from 'react';
-import { View, ViewProps } from 'react-native';
-import { tokens } from '../../../tokens';
+import React from "react";
+import { View, ViewProps } from "react-native";
+import { tokens } from "../../../tokens";
 
-export interface SpacerProps extends Omit<ViewProps, 'style'> {
+export interface SpacerProps extends Omit<ViewProps, "style"> {
   size?: keyof typeof tokens.spacing;
   horizontal?: boolean;
-  style?: ViewProps['style'];
+  style?: ViewProps["style"];
 }
 
 export const Spacer: React.FC<SpacerProps> = ({
-  size = 'md',
+  size = "md",
   horizontal = false,
   style,
   ...props

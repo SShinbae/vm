@@ -6,12 +6,12 @@ import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
 import { Platform } from "react-native";
 
-const MOCK_FUEL_PRICES = [1.99, 2.60, 3.20]; // RON95, RON97, Diesel?
+const MOCK_FUEL_PRICES = [1.99, 2.6, 3.2]; // RON95, RON97, Diesel?
 
 export const useAddFuelLog = () => {
   const { vehicleId } = useLocalSearchParams<{ vehicleId?: string }>();
   const [vehicles, setVehicles] = useState<VehicleWithDetails[]>([]);
-  
+
   const [formData, setFormData] = useState<FuelLogFormData>({
     vehicle_id: vehicleId || "",
     liters_filled: 0,
@@ -35,7 +35,7 @@ export const useAddFuelLog = () => {
       if (!error && data) {
         const allVehicles = [...data.ownVehicles, ...data.sharedVehicles];
         setVehicles(allVehicles);
-        
+
         // Set default vehicle if not passed in params
         if (!vehicleId && allVehicles.length > 0) {
           setFormData((prev) => ({ ...prev, vehicle_id: allVehicles[0].id }));
@@ -94,7 +94,7 @@ export const useAddFuelLog = () => {
     const num = parseFloat(value);
     if (isNaN(num) || num <= 0) return "Please enter a valid cost";
   };
-  
+
   const validateOdometer = (value: string) => {
     const num = parseInt(value.replace(/,/g, ""));
     if (isNaN(num) || num <= 0) return "Please enter a valid odometer reading";
@@ -153,12 +153,12 @@ export const useAddFuelLog = () => {
     isLocked: !!vehicleId,
     selectedVehicle: vehicles.find((v) => v.id === formData.vehicle_id),
     fuelPrices: MOCK_FUEL_PRICES,
-    
+
     // Modals
     showSuccessModal,
     showErrorModal,
     errorMessage,
-    
+
     // Handlers
     handleCostChange,
     handlePriceChange,

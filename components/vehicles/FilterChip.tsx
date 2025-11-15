@@ -30,10 +30,7 @@ export function FilterChip({
       onPress={() => onPress(filter)}
     >
       <Text
-        style={[
-          styles.filterChipText,
-          isActive && styles.filterChipTextActive,
-        ]}
+        style={[styles.filterChipText, isActive && styles.filterChipTextActive]}
       >
         {label}
       </Text>

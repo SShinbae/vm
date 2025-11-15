@@ -1,13 +1,19 @@
-import { useColorScheme } from '@/hooks/use-color-scheme';
-import React, { useState } from 'react';
-import { Pressable, StyleSheet, TextInput, TextInputProps, View } from 'react-native';
-import { allIcons } from '../../../icons';
-import { theme } from '../../../theme';
-import { tokens } from '../../../tokens';
-import { Icon } from '../../atoms/Icon';
-import { Text } from '../../atoms/Text';
+import { useColorScheme } from "@/hooks/use-color-scheme";
+import React, { useState } from "react";
+import {
+  Pressable,
+  StyleSheet,
+  TextInput,
+  TextInputProps,
+  View,
+} from "react-native";
+import { allIcons } from "../../../icons";
+import { theme } from "../../../theme";
+import { tokens } from "../../../tokens";
+import { Icon } from "../../atoms/Icon";
+import { Text } from "../../atoms/Text";
 
-export interface InputProps extends Omit<TextInputProps, 'style'> {
+export interface InputProps extends Omit<TextInputProps, "style"> {
   label?: string;
   helperText?: string;
   errorText?: string;
@@ -47,10 +53,10 @@ export const Input: React.FC<InputProps> = ({
   };
 
   // Icon color based on state
-  const getIconColor = (): 'primary' | 'secondary' | 'error' | 'success' => {
-    if (hasError) return 'error';
-    if (hasSuccess) return 'success';
-    return 'secondary';
+  const getIconColor = (): "primary" | "secondary" | "error" | "success" => {
+    if (hasError) return "error";
+    if (hasSuccess) return "success";
+    return "secondary";
   };
 
   const feedbackText = errorText || successText || helperText;
@@ -62,7 +68,7 @@ export const Input: React.FC<InputProps> = ({
           variant="label"
           weight="medium"
           style={styles.label}
-          color={hasError ? 'error' : 'primary'}
+          color={hasError ? "error" : "primary"}
         >
           {label}
         </Text>
@@ -75,7 +81,7 @@ export const Input: React.FC<InputProps> = ({
             borderColor: getBorderColor(),
             borderWidth: 1,
             borderRadius: tokens.radius.md,
-            backgroundColor: disabled ? colors.card + '40' : colors.card,
+            backgroundColor: disabled ? colors.card + "40" : colors.card,
           },
         ]}
       >
@@ -108,7 +114,7 @@ export const Input: React.FC<InputProps> = ({
             style={styles.rightIconContainer}
             onPress={onRightIconPress}
             disabled={!onRightIconPress}
-            accessibilityRole={onRightIconPress ? 'button' : 'none'}
+            accessibilityRole={onRightIconPress ? "button" : "none"}
           >
             <Icon name={rightIcon} size="sm" color={getIconColor()} />
           </Pressable>
@@ -119,7 +125,7 @@ export const Input: React.FC<InputProps> = ({
         <Text
           variant="caption"
           style={styles.feedbackText}
-          color={hasError ? 'error' : hasSuccess ? 'success' : 'secondary'}
+          color={hasError ? "error" : hasSuccess ? "success" : "secondary"}
         >
           {feedbackText}
         </Text>
@@ -130,17 +136,17 @@ export const Input: React.FC<InputProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    alignSelf: 'flex-start',
+    alignSelf: "flex-start",
   },
   fullWidth: {
-    width: '100%',
+    width: "100%",
   },
   label: {
     marginBottom: tokens.spacing.xs,
   },
   inputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     minHeight: 44,
   },
   input: {

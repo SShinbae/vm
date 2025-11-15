@@ -25,7 +25,7 @@ export function VehicleOption({
     borderColor: theme.colors.warning,
     backgroundColor: theme.colors.warning + "15",
   };
-  
+
   return (
     <TouchableOpacity
       style={[styles.vehicleOption, selectedStyles]}

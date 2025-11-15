@@ -8,7 +8,7 @@ if (typeof global.structuredClone === "undefined") {
 }
 
 // Mock AsyncStorage
-jest.mock('@react-native-async-storage/async-storage', () => ({
+jest.mock("@react-native-async-storage/async-storage", () => ({
   __esModule: true,
   default: {
     getItem: jest.fn(() => Promise.resolve(null)),
@@ -28,4 +28,3 @@ global.console = {
   warn: jest.fn(),
   error: jest.fn(),
 };
-

@@ -1,15 +1,11 @@
 echo "🔍 Running pre-commit checks..."
 
-# Run lint-staged for formatting and linting
-echo "🎨 Running linters and formatters..."
+# Run lint-staged for formatting, linting, and type checking
+echo "🎨 Running linters, formatters, and type checks..."
 npx lint-staged
 
-# Run TypeScript type checking
-echo "📝 Checking TypeScript types..."
-npx tsc --noEmit
-
 # Note: Full web build is skipped in pre-commit due to Expo web + Supabase compatibility issues
-# TypeScript check above ensures type safety
+# TypeScript check is handled by lint-staged above
 # Run 'npm run build' manually before deploying to production
 
 echo "✅ All pre-commit checks passed!"

@@ -1,32 +1,32 @@
-import { useColorScheme } from '@/hooks/use-color-scheme';
-import React from 'react';
-import { Pressable, StyleSheet, View, ViewProps } from 'react-native';
-import { theme } from '../../../theme';
-import { tokens } from '../../../tokens';
+import { useColorScheme } from "@/hooks/use-color-scheme";
+import React from "react";
+import { Pressable, StyleSheet, View, ViewProps } from "react-native";
+import { theme } from "../../../theme";
+import { tokens } from "../../../tokens";
 
-export interface CardProps extends Omit<ViewProps, 'style'> {
-  variant?: 'default' | 'elevated' | 'outlined' | 'filled';
+export interface CardProps extends Omit<ViewProps, "style"> {
+  variant?: "default" | "elevated" | "outlined" | "filled";
   padding?: keyof typeof tokens.spacing;
   onPress?: () => void;
   disabled?: boolean;
   children: React.ReactNode;
 }
 
-export interface CardHeaderProps extends Omit<ViewProps, 'style'> {
+export interface CardHeaderProps extends Omit<ViewProps, "style"> {
   children: React.ReactNode;
 }
 
-export interface CardContentProps extends Omit<ViewProps, 'style'> {
+export interface CardContentProps extends Omit<ViewProps, "style"> {
   children: React.ReactNode;
 }
 
-export interface CardFooterProps extends Omit<ViewProps, 'style'> {
+export interface CardFooterProps extends Omit<ViewProps, "style"> {
   children: React.ReactNode;
 }
 
 export const Card: React.FC<CardProps> = ({
-  variant = 'default',
-  padding = 'md',
+  variant = "default",
+  padding = "md",
   onPress,
   disabled = false,
   children,
@@ -39,13 +39,13 @@ export const Card: React.FC<CardProps> = ({
     default: {
       backgroundColor: colors.card,
       borderWidth: 0,
-      borderColor: 'transparent',
+      borderColor: "transparent",
       ...tokens.shadows.sm,
     },
     elevated: {
       backgroundColor: colors.card,
       borderWidth: 0,
-      borderColor: 'transparent',
+      borderColor: "transparent",
       ...tokens.shadows.md,
     },
     outlined: {
@@ -56,7 +56,7 @@ export const Card: React.FC<CardProps> = ({
     filled: {
       backgroundColor: colors.backgroundSecondary,
       borderWidth: 0,
-      borderColor: 'transparent',
+      borderColor: "transparent",
     },
   };
 
@@ -73,13 +73,16 @@ export const Card: React.FC<CardProps> = ({
           borderColor: style.borderColor,
           borderRadius: tokens.radius.lg,
           padding: paddingValue,
-          ...('shadowRadius' in style ? {
-            shadowColor: '#000',
-            shadowOffset: { width: 0, height: 2 },
-            shadowOpacity: (style as any).shadowOpacity,
-            shadowRadius: (style as any).shadowRadius,
-            elevation: (style as any).elevation || (style as any).shadowRadius,
-          } : {}),
+          ...("shadowRadius" in style
+            ? {
+                shadowColor: "#000",
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: (style as any).shadowOpacity,
+                shadowRadius: (style as any).shadowRadius,
+                elevation:
+                  (style as any).elevation || (style as any).shadowRadius,
+              }
+            : {}),
         },
       ]}
       {...props}
@@ -93,9 +96,7 @@ export const Card: React.FC<CardProps> = ({
       <Pressable
         onPress={onPress}
         disabled={disabled}
-        style={({ pressed }) => [
-          { opacity: pressed ? 0.8 : 1 },
-        ]}
+        style={({ pressed }) => [{ opacity: pressed ? 0.8 : 1 }]}
         accessibilityRole="button"
         accessibilityState={{ disabled }}
       >
@@ -107,19 +108,28 @@ export const Card: React.FC<CardProps> = ({
   return cardContent;
 };
 
-export const CardHeader: React.FC<CardHeaderProps> = ({ children, ...props }) => (
+export const CardHeader: React.FC<CardHeaderProps> = ({
+  children,
+  ...props
+}) => (
   <View style={styles.header} {...props}>
     {children}
   </View>
 );
 
-export const CardContent: React.FC<CardContentProps> = ({ children, ...props }) => (
+export const CardContent: React.FC<CardContentProps> = ({
+  children,
+  ...props
+}) => (
   <View style={styles.content} {...props}>
     {children}
   </View>
 );
 
-export const CardFooter: React.FC<CardFooterProps> = ({ children, ...props }) => (
+export const CardFooter: React.FC<CardFooterProps> = ({
+  children,
+  ...props
+}) => (
   <View style={styles.footer} {...props}>
     {children}
   </View>
@@ -127,7 +137,7 @@ export const CardFooter: React.FC<CardFooterProps> = ({ children, ...props }) =>
 
 const styles = StyleSheet.create({
   card: {
-    overflow: 'hidden',
+    overflow: "hidden",
   },
   header: {
     marginBottom: tokens.spacing.sm,

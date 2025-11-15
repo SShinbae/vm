@@ -1,27 +1,27 @@
-import { useColorScheme } from '@/hooks/use-color-scheme';
-import React from 'react';
-import { StyleSheet, View, ViewProps } from 'react-native';
-import { theme } from '../../../theme';
-import { tokens } from '../../../tokens';
-import { Text } from '../Text';
+import { useColorScheme } from "@/hooks/use-color-scheme";
+import React from "react";
+import { StyleSheet, View, ViewProps } from "react-native";
+import { theme } from "../../../theme";
+import { tokens } from "../../../tokens";
+import { Text } from "../Text";
 
-export interface DividerProps extends Omit<ViewProps, 'style'> {
-  orientation?: 'horizontal' | 'vertical';
-  thickness?: 'thin' | 'medium' | 'thick';
-  color?: 'default' | 'light' | 'dark';
+export interface DividerProps extends Omit<ViewProps, "style"> {
+  orientation?: "horizontal" | "vertical";
+  thickness?: "thin" | "medium" | "thick";
+  color?: "default" | "light" | "dark";
   label?: string;
-  labelPosition?: 'left' | 'center' | 'right';
+  labelPosition?: "left" | "center" | "right";
   spacing?: keyof typeof tokens.spacing;
-  style?: ViewProps['style'];
+  style?: ViewProps["style"];
 }
 
 export const Divider: React.FC<DividerProps> = ({
-  orientation = 'horizontal',
-  thickness = 'thin',
-  color = 'default',
+  orientation = "horizontal",
+  thickness = "thin",
+  color = "default",
   label,
-  labelPosition = 'center',
-  spacing = 'md',
+  labelPosition = "center",
+  spacing = "md",
   style,
   ...props
 }) => {
@@ -40,7 +40,7 @@ export const Divider: React.FC<DividerProps> = ({
   // Color mapping
   const colorMap = {
     default: colors.border,
-    light: colors.border + '40', // 25% opacity
+    light: colors.border + "40", // 25% opacity
     dark: colors.text,
   };
 
@@ -49,7 +49,7 @@ export const Divider: React.FC<DividerProps> = ({
   // Spacing
   const spacingValue = tokens.spacing[spacing];
 
-  if (orientation === 'vertical') {
+  if (orientation === "vertical") {
     return (
       <View
         style={[
@@ -82,14 +82,14 @@ export const Divider: React.FC<DividerProps> = ({
         accessibilityLabel={label}
         {...props}
       >
-        {labelPosition !== 'right' && (
+        {labelPosition !== "right" && (
           <View
             style={[
               styles.line,
               {
                 height: lineThickness,
                 backgroundColor: lineColor,
-                flex: labelPosition === 'left' ? 0.1 : 1,
+                flex: labelPosition === "left" ? 0.1 : 1,
               },
             ]}
           />
@@ -101,14 +101,14 @@ export const Divider: React.FC<DividerProps> = ({
         >
           {label}
         </Text>
-        {labelPosition !== 'left' && (
+        {labelPosition !== "left" && (
           <View
             style={[
               styles.line,
               {
                 height: lineThickness,
                 backgroundColor: lineColor,
-                flex: labelPosition === 'right' ? 0.1 : 1,
+                flex: labelPosition === "right" ? 0.1 : 1,
               },
             ]}
           />
@@ -137,17 +137,17 @@ export const Divider: React.FC<DividerProps> = ({
 
 const styles = StyleSheet.create({
   horizontal: {
-    width: '100%',
+    width: "100%",
   },
   verticalContainer: {
-    alignSelf: 'stretch',
+    alignSelf: "stretch",
   },
   horizontalWithLabel: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    width: '100%',
+    flexDirection: "row",
+    alignItems: "center",
+    width: "100%",
   },
   line: {
-    alignSelf: 'stretch',
+    alignSelf: "stretch",
   },
 });

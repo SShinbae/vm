@@ -1,13 +1,13 @@
-import { useColorScheme } from '@/hooks/use-color-scheme';
-import { Icon } from '@/lib/design-system/components/atoms/Icon';
-import { Spacer } from '@/lib/design-system/components/atoms/Spacer';
-import { Text } from '@/lib/design-system/components/atoms/Text';
-import { Card } from '@/lib/design-system/components/molecules/Card';
-import { theme } from '@/lib/design-system/theme';
-import { tokens } from '@/lib/design-system/tokens';
-import React from 'react';
-import { ActivityIndicator, StyleSheet, View } from 'react-native';
-import { MetricCardProps, TrendDirection } from './MetricCard.types';
+import { useColorScheme } from "@/hooks/use-color-scheme";
+import { Icon } from "@/lib/design-system/components/atoms/Icon";
+import { Spacer } from "@/lib/design-system/components/atoms/Spacer";
+import { Text } from "@/lib/design-system/components/atoms/Text";
+import { Card } from "@/lib/design-system/components/molecules/Card";
+import { theme } from "@/lib/design-system/theme";
+import { tokens } from "@/lib/design-system/tokens";
+import React from "react";
+import { ActivityIndicator, StyleSheet, View } from "react-native";
+import { MetricCardProps, TrendDirection } from "./MetricCard.types";
 
 export const MetricCard: React.FC<MetricCardProps> = ({
   label,
@@ -16,7 +16,7 @@ export const MetricCard: React.FC<MetricCardProps> = ({
   trend,
   trendValue,
   comparison,
-  variant = 'default',
+  variant = "default",
   loading = false,
   onPress,
   disabled = false,
@@ -26,9 +26,9 @@ export const MetricCard: React.FC<MetricCardProps> = ({
 
   const getTrendColor = (direction?: TrendDirection) => {
     switch (direction) {
-      case 'up':
+      case "up":
         return colors.success;
-      case 'down':
+      case "down":
         return colors.error;
       default:
         return colors.textSecondary;
@@ -37,24 +37,24 @@ export const MetricCard: React.FC<MetricCardProps> = ({
 
   const getTrendIcon = (direction?: TrendDirection) => {
     switch (direction) {
-      case 'up':
-        return 'up' as const;
-      case 'down':
-        return 'down' as const;
+      case "up":
+        return "up" as const;
+      case "down":
+        return "down" as const;
       default:
-        return 'forward' as const;
+        return "forward" as const;
     }
   };
 
   const getVariantColor = () => {
     switch (variant) {
-      case 'success':
+      case "success":
         return colors.success;
-      case 'warning':
+      case "warning":
         return colors.warning;
-      case 'error':
+      case "error":
         return colors.error;
-      case 'info':
+      case "info":
         return colors.info;
       default:
         return colors.tint;
@@ -80,8 +80,17 @@ export const MetricCard: React.FC<MetricCardProps> = ({
         {/* Icon */}
         {icon && (
           <>
-            <View style={[styles.iconContainer, { backgroundColor: getVariantColor() + '20' }]}>
-              <Icon name={icon} size="md" color={variant === 'default' ? 'primary' : variant} />
+            <View
+              style={[
+                styles.iconContainer,
+                { backgroundColor: getVariantColor() + "20" },
+              ]}
+            >
+              <Icon
+                name={icon}
+                size="md"
+                color={variant === "default" ? "primary" : variant}
+              />
             </View>
             <Spacer size="md" />
           </>
@@ -109,7 +118,13 @@ export const MetricCard: React.FC<MetricCardProps> = ({
                   <Icon
                     name={getTrendIcon(trend)}
                     size="xs"
-                    color={trend === 'up' ? 'success' : trend === 'down' ? 'error' : 'secondary'}
+                    color={
+                      trend === "up"
+                        ? "success"
+                        : trend === "down"
+                          ? "error"
+                          : "secondary"
+                    }
                   />
                   <Spacer size="xxs" horizontal />
                   <Text
@@ -141,23 +156,23 @@ const styles = StyleSheet.create({
   },
   loadingContainer: {
     height: 120,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   iconContainer: {
     width: 48,
     height: 48,
     borderRadius: tokens.radius.md,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   footer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: tokens.spacing.xs,
   },
   trendContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
   },
 });

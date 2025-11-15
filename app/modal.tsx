@@ -1,7 +1,7 @@
-import React from 'react';
-import { View, Text } from 'react-native';
-import { Link } from 'expo-router';
-import { useStyles } from 'react-native-unistyles';
+import React from "react";
+import { View, Text } from "react-native";
+import { Link } from "expo-router";
+import { useStyles } from "react-native-unistyles";
 
 export default function ModalScreen() {
   const { theme } = useStyles();
@@ -10,15 +10,15 @@ export default function ModalScreen() {
     <View
       style={{
         flex: 1,
-        alignItems: 'center',
-        justifyContent: 'center',
+        alignItems: "center",
+        justifyContent: "center",
         padding: theme.spacing.xl,
         backgroundColor: theme.colors.background,
       }}
     >
       <Text
         style={{
-          fontSize: theme.fontSize['2xl'],
+          fontSize: theme.fontSize["2xl"],
           fontWeight: theme.fontWeight.bold,
           color: theme.colors.text,
           marginBottom: theme.spacing.lg,
@@ -31,7 +31,7 @@ export default function ModalScreen() {
           style={{
             fontSize: theme.fontSize.base,
             color: theme.colors.primary,
-            textDecorationLine: 'underline',
+            textDecorationLine: "underline",
           }}
         >
           Go to home screen

@@ -1,1 +1,1 @@
-export type TabBarVariant = 'default' | 'underline' | 'pills';
+export type TabBarVariant = "default" | "underline" | "pills";

@@ -47,7 +47,11 @@ export function VehicleCard({ vehicle }: VehicleCardProps) {
       </View>
       {vehicle.shareCount > 0 && (
         <View style={styles.sharedBadge}>
-          <IconSymbol name="person.2.fill" size={12} color={theme.colors.white} />
+          <IconSymbol
+            name="person.2.fill"
+            size={12}
+            color={theme.colors.white}
+          />
           <Text style={styles.sharedBadgeText}>Shared</Text>
         </View>
       )}

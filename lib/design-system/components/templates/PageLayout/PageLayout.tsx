@@ -1,21 +1,21 @@
-import { useColorScheme } from '@/hooks/use-color-scheme';
-import React from 'react';
+import { useColorScheme } from "@/hooks/use-color-scheme";
+import React from "react";
 import {
-    ActivityIndicator,
-    KeyboardAvoidingView,
-    Platform,
-    SafeAreaView,
-    ScrollView,
-    StyleSheet,
-    View,
-} from 'react-native';
-import { theme } from '../../../theme';
-import { tokens } from '../../../tokens';
-import { Spacer } from '../../atoms/Spacer';
-import { Text } from '../../atoms/Text';
-import { Button } from '../../molecules/Button';
-import { PageHeader } from '../../organisms/PageHeader';
-import type { PageLayoutProps } from './PageLayout.types';
+  ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  View,
+} from "react-native";
+import { theme } from "../../../theme";
+import { tokens } from "../../../tokens";
+import { Spacer } from "../../atoms/Spacer";
+import { Text } from "../../atoms/Text";
+import { Button } from "../../molecules/Button";
+import { PageHeader } from "../../organisms/PageHeader";
+import type { PageLayoutProps } from "./PageLayout.types";
 
 export const PageLayout: React.FC<PageLayoutProps> = ({
   header,
@@ -23,7 +23,7 @@ export const PageLayout: React.FC<PageLayoutProps> = ({
   footer,
   scrollable = true,
   backgroundColor,
-  padding = 'md',
+  padding = "md",
   safeArea = true,
   keyboardAware = false,
   loading = false,
@@ -121,8 +121,8 @@ export const PageLayout: React.FC<PageLayoutProps> = ({
       return (
         <KeyboardAvoidingView
           style={styles.flex}
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
         >
           {content}
         </KeyboardAvoidingView>
@@ -159,12 +159,12 @@ const styles = StyleSheet.create({
   },
   centerContent: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     padding: tokens.spacing.xl,
   },
   footer: {
     borderTopWidth: 1,
-    borderTopColor: 'rgba(0, 0, 0, 0.1)',
+    borderTopColor: "rgba(0, 0, 0, 0.1)",
   },
 });

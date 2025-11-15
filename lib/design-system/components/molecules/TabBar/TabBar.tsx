@@ -1,12 +1,18 @@
-import { useColorScheme } from '@/hooks/use-color-scheme';
-import React from 'react';
-import { Pressable, ScrollView, StyleSheet, View, ViewProps } from 'react-native';
-import { allIcons } from '../../../icons';
-import { theme } from '../../../theme';
-import { tokens } from '../../../tokens';
-import { Badge } from '../../atoms/Badge';
-import { Icon } from '../../atoms/Icon';
-import { Text } from '../../atoms/Text';
+import { useColorScheme } from "@/hooks/use-color-scheme";
+import React from "react";
+import {
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  View,
+  ViewProps,
+} from "react-native";
+import { allIcons } from "../../../icons";
+import { theme } from "../../../theme";
+import { tokens } from "../../../tokens";
+import { Badge } from "../../atoms/Badge";
+import { Icon } from "../../atoms/Icon";
+import { Text } from "../../atoms/Text";
 
 export interface Tab {
   key: string;
@@ -16,11 +22,11 @@ export interface Tab {
   disabled?: boolean;
 }
 
-export interface TabBarProps extends Omit<ViewProps, 'style'> {
+export interface TabBarProps extends Omit<ViewProps, "style"> {
   tabs: Tab[];
   activeTab: string;
   onTabChange: (tabKey: string) => void;
-  variant?: 'default' | 'underline' | 'pills';
+  variant?: "default" | "underline" | "pills";
   scrollable?: boolean;
 }
 
@@ -28,7 +34,7 @@ export const TabBar: React.FC<TabBarProps> = ({
   tabs,
   activeTab,
   onTabChange,
-  variant = 'underline',
+  variant = "underline",
   scrollable = false,
   ...props
 }) => {
@@ -44,7 +50,7 @@ export const TabBar: React.FC<TabBarProps> = ({
         container: {
           paddingHorizontal: tokens.spacing.md,
           paddingVertical: tokens.spacing.sm,
-          backgroundColor: isActive ? colors.tint + '15' : 'transparent',
+          backgroundColor: isActive ? colors.tint + "15" : "transparent",
           borderRadius: 0,
         },
         text: isActive ? colors.tint : colors.textSecondary,
@@ -53,9 +59,9 @@ export const TabBar: React.FC<TabBarProps> = ({
         container: {
           paddingHorizontal: tokens.spacing.md,
           paddingVertical: tokens.spacing.sm,
-          backgroundColor: 'transparent',
+          backgroundColor: "transparent",
           borderBottomWidth: 2,
-          borderBottomColor: isActive ? colors.tint : 'transparent',
+          borderBottomColor: isActive ? colors.tint : "transparent",
           borderRadius: 0,
         },
         text: isActive ? colors.tint : colors.textSecondary,
@@ -68,7 +74,7 @@ export const TabBar: React.FC<TabBarProps> = ({
           borderRadius: tokens.radius.full,
           marginHorizontal: tokens.spacing.xxs,
         },
-        text: isActive ? '#FFFFFF' : colors.textSecondary,
+        text: isActive ? "#FFFFFF" : colors.textSecondary,
       },
     };
 
@@ -95,14 +101,14 @@ export const TabBar: React.FC<TabBarProps> = ({
             <Icon
               name={tab.icon}
               size="sm"
-              color={isActive ? 'tint' : 'secondary'}
+              color={isActive ? "tint" : "secondary"}
               style={styles.tabIcon}
             />
           )}
 
           <Text
             variant="label"
-            weight={isActive ? 'semibold' : 'medium'}
+            weight={isActive ? "semibold" : "medium"}
             style={{
               color: style.text,
             }}
@@ -129,7 +135,7 @@ export const TabBar: React.FC<TabBarProps> = ({
         styles.container,
         {
           backgroundColor: colors.card,
-          borderBottomWidth: variant === 'underline' ? 1 : 0,
+          borderBottomWidth: variant === "underline" ? 1 : 0,
           borderBottomColor: colors.border,
         },
       ]}
@@ -163,17 +169,17 @@ const styles = StyleSheet.create({
     flexGrow: 1,
   },
   container: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
   },
   tab: {
     minHeight: 44,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   tabContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
   },
   tabIcon: {
     marginRight: tokens.spacing.xs,

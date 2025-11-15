@@ -1,4 +1,4 @@
-import { DimensionValue } from 'react-native';
+import { DimensionValue } from "react-native";
 
 export interface DataTableColumn<T = any> {
   key: keyof T | string;

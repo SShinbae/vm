@@ -1,14 +1,14 @@
-import { useColorScheme } from '@/hooks/use-color-scheme';
-import React from 'react';
-import { Pressable, StyleSheet, View, ViewProps } from 'react-native';
-import { theme } from '../../../theme';
-import { tokens } from '../../../tokens';
-import { Icon } from '../../atoms/Icon';
-import { Text } from '../../atoms/Text';
-import { Button } from '../Button';
+import { useColorScheme } from "@/hooks/use-color-scheme";
+import React from "react";
+import { Pressable, StyleSheet, View, ViewProps } from "react-native";
+import { theme } from "../../../theme";
+import { tokens } from "../../../tokens";
+import { Icon } from "../../atoms/Icon";
+import { Text } from "../../atoms/Text";
+import { Button } from "../Button";
 
-export interface AlertProps extends Omit<ViewProps, 'style'> {
-  severity?: 'success' | 'warning' | 'error' | 'info';
+export interface AlertProps extends Omit<ViewProps, "style"> {
+  severity?: "success" | "warning" | "error" | "info";
   title?: string;
   message: string;
   dismissible?: boolean;
@@ -20,7 +20,7 @@ export interface AlertProps extends Omit<ViewProps, 'style'> {
 }
 
 export const Alert: React.FC<AlertProps> = ({
-  severity = 'info',
+  severity = "info",
   title,
   message,
   dismissible = false,
@@ -33,32 +33,32 @@ export const Alert: React.FC<AlertProps> = ({
 
   const severityConfig = {
     success: {
-      backgroundColor: colors.success + '15',
+      backgroundColor: colors.success + "15",
       borderColor: colors.success,
-      iconColor: 'success' as const,
-      icon: 'success' as const,
-      textColor: 'success' as const,
+      iconColor: "success" as const,
+      icon: "success" as const,
+      textColor: "success" as const,
     },
     warning: {
-      backgroundColor: colors.warning + '15',
+      backgroundColor: colors.warning + "15",
       borderColor: colors.warning,
-      iconColor: 'warning' as const,
-      icon: 'warning' as const,
-      textColor: 'warning' as const,
+      iconColor: "warning" as const,
+      icon: "warning" as const,
+      textColor: "warning" as const,
     },
     error: {
-      backgroundColor: colors.error + '15',
+      backgroundColor: colors.error + "15",
       borderColor: colors.error,
-      iconColor: 'error' as const,
-      icon: 'error' as const,
-      textColor: 'error' as const,
+      iconColor: "error" as const,
+      icon: "error" as const,
+      textColor: "error" as const,
     },
     info: {
-      backgroundColor: colors.info + '15',
+      backgroundColor: colors.info + "15",
       borderColor: colors.info,
-      iconColor: 'info' as const,
-      icon: 'info' as const,
-      textColor: 'info' as const,
+      iconColor: "info" as const,
+      icon: "info" as const,
+      textColor: "info" as const,
     },
   };
 
@@ -99,10 +99,7 @@ export const Alert: React.FC<AlertProps> = ({
             </Text>
           )}
 
-          <Text
-            variant="body"
-            color={config.textColor}
-          >
+          <Text variant="body" color={config.textColor}>
             {message}
           </Text>
 
@@ -126,11 +123,7 @@ export const Alert: React.FC<AlertProps> = ({
             accessibilityLabel="Dismiss alert"
             hitSlop={8}
           >
-            <Icon
-              name="close"
-              size="sm"
-              color={config.iconColor}
-            />
+            <Icon name="close" size="sm" color={config.iconColor} />
           </Pressable>
         )}
       </View>
@@ -140,11 +133,11 @@ export const Alert: React.FC<AlertProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    width: '100%',
+    width: "100%",
   },
   content: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
+    flexDirection: "row",
+    alignItems: "flex-start",
   },
   icon: {
     marginRight: tokens.spacing.sm,
@@ -158,7 +151,7 @@ const styles = StyleSheet.create({
   },
   action: {
     marginTop: tokens.spacing.sm,
-    alignSelf: 'flex-start',
+    alignSelf: "flex-start",
   },
   dismissButton: {
     marginLeft: tokens.spacing.sm,

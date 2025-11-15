@@ -1,5 +1,5 @@
-import { allIcons } from '@/lib/design-system/icons';
-import { ImageSourcePropType } from 'react-native';
+import { allIcons } from "@/lib/design-system/icons";
+import { ImageSourcePropType } from "react-native";
 
 export interface VehicleMetric {
   label: string;
@@ -37,7 +37,7 @@ export interface VehicleCardProps {
   /**
    * Status badge variant
    */
-  statusVariant?: 'success' | 'warning' | 'error' | 'info';
+  statusVariant?: "success" | "warning" | "error" | "info";
 
   /**
    * Key metrics to display

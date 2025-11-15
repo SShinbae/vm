@@ -1,4 +1,4 @@
-import { createStyleSheet } from 'react-native-unistyles';
+import { createStyleSheet } from "react-native-unistyles";
 
 export const stylesheet = createStyleSheet((theme) => ({
   container: {
@@ -7,17 +7,17 @@ export const stylesheet = createStyleSheet((theme) => ({
     paddingVertical: 8,
   },
   containerFullWidth: {
-    width: '100%',
+    width: "100%",
   },
   searchWrapper: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 8,
   },
   searchContainer: {
     flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     backgroundColor: theme.colors.surface,
     borderRadius: 12,
     paddingHorizontal: 12,
@@ -61,20 +61,20 @@ export const stylesheet = createStyleSheet((theme) => ({
     borderColor: theme.colors.primary,
   },
   badge: {
-    position: 'absolute',
+    position: "absolute",
     top: -4,
     right: -4,
     backgroundColor: theme.colors.primary,
     borderRadius: 10,
     minWidth: 20,
     height: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     paddingHorizontal: 6,
   },
   badgeText: {
-    color: '#FFFFFF',
+    color: "#FFFFFF",
     fontSize: 12,
-    fontWeight: '600',
+    fontWeight: "600",
   },
 }));

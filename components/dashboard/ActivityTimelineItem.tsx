@@ -23,9 +23,7 @@ export function ActivityTimelineItem({ item }: ActivityTimelineItemProps) {
           {item.vehicleName}
         </Text>
         <Text style={styles.activityValue}>{item.primaryValue}</Text>
-        <Text style={styles.activityTime}>
-          {formatRelativeTime(item.date)}
-        </Text>
+        <Text style={styles.activityTime}>{formatRelativeTime(item.date)}</Text>
       </View>
     </View>
   );

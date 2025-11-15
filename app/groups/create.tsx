@@ -49,7 +49,8 @@ export default function CreateGroupScreen() {
 
   const validateName = (value: string) => {
     if (!value.trim()) return "Group name is required";
-    if (value.trim().length < 2) return "Group name must be at least 2 characters";
+    if (value.trim().length < 2)
+      return "Group name must be at least 2 characters";
     return undefined;
   };
 

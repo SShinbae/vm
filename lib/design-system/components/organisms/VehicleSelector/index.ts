@@ -1,1 +1,1 @@
-export { VehicleSelector } from './VehicleSelector';
+export { VehicleSelector } from "./VehicleSelector";

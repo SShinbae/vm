@@ -113,7 +113,10 @@ export const useDashboardData = () => {
       const vehicleIds = allVehiclesData?.map((v: any) => v.vehicle_id) || [];
       const totalVehicles = vehicleIds.length;
       const totalMileage =
-        allVehiclesData?.reduce((sum: number, v: any) => sum + (v.current_mileage || 0), 0) || 0;
+        allVehiclesData?.reduce(
+          (sum: number, v: any) => sum + (v.current_mileage || 0),
+          0,
+        ) || 0;
 
       // Get monthly fuel cost (current month)
       const now = new Date();
@@ -127,11 +130,17 @@ export const useDashboardData = () => {
         .gte("date", startOfMonth.toISOString());
       if (fuelError) throw fuelError;
 
-      let monthlyFuelCost = currentMonthFuelData?.reduce((sum, f: any) => sum + (f.cost || 0), 0) || 0;
-      console.log(`📊 Dashboard - Monthly fuel cost for ${vehicleIds.length} vehicles: RM${monthlyFuelCost.toFixed(2)}`);
+      let monthlyFuelCost =
+        currentMonthFuelData?.reduce((sum, f: any) => sum + (f.cost || 0), 0) ||
+        0;
+      console.log(
+        `📊 Dashboard - Monthly fuel cost for ${vehicleIds.length} vehicles: RM${monthlyFuelCost.toFixed(2)}`,
+      );
 
       // Get upcoming services (services due in next 30 days) for ALL vehicles
-      const thirtyDaysLater = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+      const thirtyDaysLater = new Date(
+        now.getTime() + 30 * 24 * 60 * 60 * 1000,
+      );
 
       const { data: servicesData, error: servicesError } = await supabase
         .from("service_logs")
@@ -175,7 +184,7 @@ export const useDashboardData = () => {
           ...v,
           shareCount: v.vehicle_group_shares?.[0]?.count || 0,
         })) || [];
-      
+
       setVehicles(vehiclesWithShares);
     } catch (err: any) {
       console.error("Error fetching vehicles:", err);

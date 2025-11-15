@@ -1,26 +1,43 @@
-import { useColorScheme } from '@/hooks/use-color-scheme';
-import { SymbolView } from 'expo-symbols';
-import React from 'react';
-import { Platform, ViewProps } from 'react-native';
-import { allIcons } from '../../../icons';
-import { theme } from '../../../theme';
-import { iconSize } from '../../../tokens';
+import { useColorScheme } from "@/hooks/use-color-scheme";
+import { SymbolView } from "expo-symbols";
+import React from "react";
+import { Platform, ViewProps } from "react-native";
+import { allIcons } from "../../../icons";
+import { theme } from "../../../theme";
+import { iconSize } from "../../../tokens";
 
-export interface IconProps extends Omit<ViewProps, 'style'> {
+export interface IconProps extends Omit<ViewProps, "style"> {
   name: keyof typeof allIcons;
   size?: keyof typeof iconSize | number;
-  color?: 'primary' | 'secondary' | 'tertiary' | 'success' | 'error' | 'warning' | 'info' | 'tint';
-  variant?: 'monochrome' | 'hierarchical' | 'palette' | 'multicolor';
-  weight?: 'ultraLight' | 'thin' | 'light' | 'regular' | 'medium' | 'semibold' | 'bold' | 'heavy' | 'black';
-  style?: ViewProps['style'];
+  color?:
+    | "primary"
+    | "secondary"
+    | "tertiary"
+    | "success"
+    | "error"
+    | "warning"
+    | "info"
+    | "tint";
+  variant?: "monochrome" | "hierarchical" | "palette" | "multicolor";
+  weight?:
+    | "ultraLight"
+    | "thin"
+    | "light"
+    | "regular"
+    | "medium"
+    | "semibold"
+    | "bold"
+    | "heavy"
+    | "black";
+  style?: ViewProps["style"];
 }
 
 export const Icon: React.FC<IconProps> = ({
   name,
-  size = 'md',
-  color = 'primary',
-  variant = 'monochrome',
-  weight = 'regular',
+  size = "md",
+  color = "primary",
+  variant = "monochrome",
+  weight = "regular",
   style,
   ...props
 }) => {
@@ -28,7 +45,7 @@ export const Icon: React.FC<IconProps> = ({
   const colors = theme.getThemeColors(colorScheme);
 
   // Size calculation
-  const calculatedSize = typeof size === 'number' ? size : iconSize[size];
+  const calculatedSize = typeof size === "number" ? size : iconSize[size];
 
   // Color mapping
   const colorMap: Record<typeof color, string> = {
@@ -48,7 +65,7 @@ export const Icon: React.FC<IconProps> = ({
   const symbolName = allIcons[name];
 
   // iOS uses SF Symbols
-  if (Platform.OS === 'ios') {
+  if (Platform.OS === "ios") {
     return (
       <SymbolView
         name={symbolName as any}

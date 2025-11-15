@@ -1,10 +1,10 @@
-import { Icon } from '@/lib/design-system/components/atoms/Icon';
-import { useRouter } from 'expo-router';
-import React from 'react';
-import { Pressable, Text, View } from 'react-native';
-import { useStyles } from 'react-native-unistyles';
-import { stylesheet } from './PageHeader.styles';
-import { PageHeaderProps } from './PageHeader.types';
+import { Icon } from "@/lib/design-system/components/atoms/Icon";
+import { useRouter } from "expo-router";
+import React from "react";
+import { Pressable, Text, View } from "react-native";
+import { useStyles } from "react-native-unistyles";
+import { stylesheet } from "./PageHeader.styles";
+import { PageHeaderProps } from "./PageHeader.types";
 
 export const PageHeader: React.FC<PageHeaderProps> = ({
   title,
@@ -75,11 +75,7 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
                 accessibilityLabel={action.label || `Action ${index + 1}`}
                 accessibilityState={{ disabled: action.disabled }}
               >
-                <Icon
-                  name={action.icon}
-                  size={24}
-                  color="primary"
-                />
+                <Icon name={action.icon} size={24} color="primary" />
               </Pressable>
             ))}
           </View>

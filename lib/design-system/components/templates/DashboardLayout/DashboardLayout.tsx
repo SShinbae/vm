@@ -1,11 +1,11 @@
-import { useColorScheme } from '@/hooks/use-color-scheme';
-import React from 'react';
-import { RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
-import { theme } from '../../../theme';
-import { tokens } from '../../../tokens';
-import { Spacer } from '../../atoms/Spacer';
-import { PageHeader } from '../../organisms/PageHeader';
-import type { DashboardLayoutProps } from './DashboardLayout.types';
+import { useColorScheme } from "@/hooks/use-color-scheme";
+import React from "react";
+import { RefreshControl, ScrollView, StyleSheet, View } from "react-native";
+import { theme } from "../../../theme";
+import { tokens } from "../../../tokens";
+import { Spacer } from "../../atoms/Spacer";
+import { PageHeader } from "../../organisms/PageHeader";
+import type { DashboardLayoutProps } from "./DashboardLayout.types";
 
 export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
   header,
@@ -24,10 +24,10 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
   const colors = theme.getThemeColors(colorScheme);
 
   const sections = [
-    { key: 'metrics', content: metrics },
-    { key: 'quickActions', content: quickActions },
-    { key: 'charts', content: charts },
-    { key: 'recentActivity', content: recentActivity },
+    { key: "metrics", content: metrics },
+    { key: "quickActions", content: quickActions },
+    { key: "charts", content: charts },
+    { key: "recentActivity", content: recentActivity },
     ...customSections.map((section, index) => ({
       key: `custom-${index}`,
       content: section,
@@ -35,7 +35,10 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
   ].filter((section) => section.content);
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]} {...props}>
+    <View
+      style={[styles.container, { backgroundColor: colors.background }]}
+      {...props}
+    >
       <PageHeader {...header} />
       <ScrollView
         style={styles.scrollView}
@@ -74,6 +77,6 @@ const styles = StyleSheet.create({
     padding: tokens.spacing.md,
   },
   section: {
-    width: '100%',
+    width: "100%",
   },
 });

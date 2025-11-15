@@ -19,15 +19,30 @@ interface MetricCardProps {
 const getIconColors = (icon: string | undefined, theme: any) => {
   switch (icon) {
     case "cash-outline":
-      return { bg: theme.colors.green?.[100] || "#d1fae5", color: theme.colors.green?.[600] || "#059669" };
+      return {
+        bg: theme.colors.green?.[100] || "#d1fae5",
+        color: theme.colors.green?.[600] || "#059669",
+      };
     case "speedometer-outline":
-      return { bg: theme.colors.indigo?.[100] || "#e0e7ff", color: theme.colors.indigo?.[600] || "#4f46e5" };
+      return {
+        bg: theme.colors.indigo?.[100] || "#e0e7ff",
+        color: theme.colors.indigo?.[600] || "#4f46e5",
+      };
     case "water-outline":
-      return { bg: theme.colors.blue?.[100] || "#dbeafe", color: theme.colors.blue?.[600] || "#2563eb" };
+      return {
+        bg: theme.colors.blue?.[100] || "#dbeafe",
+        color: theme.colors.blue?.[600] || "#2563eb",
+      };
     case "build-outline":
-      return { bg: theme.colors.amber?.[100] || "#fef3c7", color: theme.colors.amber?.[600] || "#d97706" };
+      return {
+        bg: theme.colors.amber?.[100] || "#fef3c7",
+        color: theme.colors.amber?.[600] || "#d97706",
+      };
     default:
-      return { bg: theme.colors.gray?.[100] || "#f3f4f6", color: theme.colors.gray?.[600] || "#4b5563" };
+      return {
+        bg: theme.colors.gray?.[100] || "#f3f4f6",
+        color: theme.colors.gray?.[600] || "#4b5563",
+      };
   }
 };
 
@@ -46,17 +61,22 @@ export function MetricCard({
     <View style={styles.container}>
       <View style={styles.content}>
         {icon && (
-          <View style={[styles.iconContainer, { backgroundColor: iconColors.bg }]}>
-            <Ionicons
-              name={icon}
-              size={24}
-              color={color || iconColors.color}
-            />
+          <View
+            style={[styles.iconContainer, { backgroundColor: iconColors.bg }]}
+          >
+            <Ionicons name={icon} size={24} color={color || iconColors.color} />
           </View>
         )}
         <View style={styles.textContainer}>
           <Text style={styles.title}>{title}</Text>
-          <Text style={[styles.value, color && { color }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>{value}</Text>
+          <Text
+            style={[styles.value, color && { color }]}
+            numberOfLines={1}
+            adjustsFontSizeToFit
+            minimumFontScale={0.7}
+          >
+            {value}
+          </Text>
           {subtitle && <Text style={styles.subtitle}>{subtitle}</Text>}
         </View>
       </View>

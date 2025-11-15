@@ -32,7 +32,8 @@ export function useProfileStats() {
         .select("id")
         .eq("user_id", user.id);
 
-      const vehicleIds = (ownVehicles as { id: string }[] | null)?.map((v) => v.id) || [];
+      const vehicleIds =
+        (ownVehicles as { id: string }[] | null)?.map((v) => v.id) || [];
 
       // Get shared vehicle IDs
       const { data: groupMemberships } = await supabase
@@ -42,14 +43,18 @@ export function useProfileStats() {
 
       let sharedVehicleIds: string[] = [];
       if (groupMemberships && groupMemberships.length > 0) {
-        const groupIds = (groupMemberships as { group_id: string }[]).map((gm) => gm.group_id);
+        const groupIds = (groupMemberships as { group_id: string }[]).map(
+          (gm) => gm.group_id,
+        );
         const { data: sharedVehicles } = await supabase
           .from("vehicle_group_shares")
           .select("vehicle_id")
           .in("group_id", groupIds);
 
         if (sharedVehicles) {
-          sharedVehicleIds = (sharedVehicles as { vehicle_id: string }[]).map((sv) => sv.vehicle_id);
+          sharedVehicleIds = (sharedVehicles as { vehicle_id: string }[]).map(
+            (sv) => sv.vehicle_id,
+          );
         }
       }
 

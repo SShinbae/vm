@@ -20,17 +20,14 @@ export function FuelPriceChip({
     borderColor: theme.colors.warning,
     backgroundColor: theme.colors.warning + "15",
   };
-  
+
   return (
     <TouchableOpacity
       style={[styles.fuelPriceOption, selectedStyles]}
       onPress={onPress}
     >
       <Text
-        style={[
-          styles.fuelPriceOptionText,
-          isSelected && styles.selectedText,
-        ]}
+        style={[styles.fuelPriceOptionText, isSelected && styles.selectedText]}
       >
         RM {price.toFixed(2)}
       </Text>

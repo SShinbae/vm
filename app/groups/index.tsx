@@ -7,12 +7,12 @@ import { Image } from "expo-image";
 import { router } from "expo-router";
 import React, { useCallback, useEffect, useState } from "react";
 import {
-    ActivityIndicator,
-    RefreshControl,
-    ScrollView,
-    Text,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  RefreshControl,
+  ScrollView,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useStyles } from "react-native-unistyles";
@@ -61,9 +61,23 @@ export default function GroupsScreen() {
         onPress={() => router.push(`/groups/${group.id}` as any)}
         activeOpacity={0.7}
       >
-        <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", marginBottom: theme.spacing.md }}>
+        <View
+          style={{
+            flexDirection: "row",
+            justifyContent: "space-between",
+            alignItems: "flex-start",
+            marginBottom: theme.spacing.md,
+          }}
+        >
           <View style={{ flex: 1 }}>
-            <View style={{ flexDirection: "row", alignItems: "center", gap: theme.spacing.sm, marginBottom: theme.spacing.xs }}>
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                gap: theme.spacing.sm,
+                marginBottom: theme.spacing.xs,
+              }}
+            >
               <Text
                 style={{
                   fontSize: theme.fontSize.lg,
@@ -125,18 +139,29 @@ export default function GroupsScreen() {
             borderTopColor: theme.colors.border,
           }}
         >
-          <View style={{ flexDirection: "row", alignItems: "center", gap: theme.spacing.xs }}>
-            <IconSymbol name="person.2" size={16} color={theme.colors.textSecondary} />
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              gap: theme.spacing.xs,
+            }}
+          >
+            <IconSymbol
+              name="person.2"
+              size={16}
+              color={theme.colors.textSecondary}
+            />
             <Text
               style={{
                 fontSize: theme.fontSize.sm,
                 color: theme.colors.textSecondary,
               }}
             >
-              {group.member_count} {group.member_count === 1 ? "member" : "members"}
+              {group.member_count}{" "}
+              {group.member_count === 1 ? "member" : "members"}
             </Text>
           </View>
-          
+
           {/* Member Avatars */}
           {group.group_members && group.group_members.length > 0 && (
             <View style={{ flexDirection: "row", marginLeft: "auto" }}>
@@ -159,7 +184,11 @@ export default function GroupsScreen() {
                   {member.profiles?.avatar_url ? (
                     <Image
                       source={{ uri: member.profiles.avatar_url }}
-                      style={{ width: "100%", height: "100%", borderRadius: 14 }}
+                      style={{
+                        width: "100%",
+                        height: "100%",
+                        borderRadius: 14,
+                      }}
                       contentFit="cover"
                     />
                   ) : (
@@ -170,7 +199,9 @@ export default function GroupsScreen() {
                         color: theme.colors.primary,
                       }}
                     >
-                      {member.profiles?.full_name?.[0] || member.profiles?.email?.[0] || "?"}
+                      {member.profiles?.full_name?.[0] ||
+                        member.profiles?.email?.[0] ||
+                        "?"}
                     </Text>
                   )}
                 </View>
@@ -209,7 +240,9 @@ export default function GroupsScreen() {
 
   if (loading) {
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.background }}>
+      <SafeAreaView
+        style={{ flex: 1, backgroundColor: theme.colors.background }}
+      >
         <View
           style={{
             paddingHorizontal: theme.spacing.xl,
@@ -228,7 +261,9 @@ export default function GroupsScreen() {
             Groups
           </Text>
         </View>
-        <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
+        <View
+          style={{ flex: 1, alignItems: "center", justifyContent: "center" }}
+        >
           <ActivityIndicator size="large" color={theme.colors.primary} />
         </View>
       </SafeAreaView>
@@ -302,7 +337,11 @@ export default function GroupsScreen() {
               marginBottom: theme.spacing.lg,
             }}
           >
-            <IconSymbol name="person.3" size={40} color={theme.colors.textSecondary} />
+            <IconSymbol
+              name="person.3"
+              size={40}
+              color={theme.colors.textSecondary}
+            />
           </View>
           <Text
             style={{
@@ -322,7 +361,8 @@ export default function GroupsScreen() {
               marginBottom: theme.spacing.xl,
             }}
           >
-            Create a group to share vehicles with family, friends, or team members
+            Create a group to share vehicles with family, friends, or team
+            members
           </Text>
           <TouchableOpacity
             style={{

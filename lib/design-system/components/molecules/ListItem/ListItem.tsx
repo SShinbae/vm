@@ -1,12 +1,12 @@
-import { useColorScheme } from '@/hooks/use-color-scheme';
-import React from 'react';
-import { Pressable, StyleSheet, View, ViewProps } from 'react-native';
-import { theme } from '../../../theme';
-import { tokens } from '../../../tokens';
-import { Divider } from '../../atoms/Divider';
-import { Text } from '../../atoms/Text';
+import { useColorScheme } from "@/hooks/use-color-scheme";
+import React from "react";
+import { Pressable, StyleSheet, View, ViewProps } from "react-native";
+import { theme } from "../../../theme";
+import { tokens } from "../../../tokens";
+import { Divider } from "../../atoms/Divider";
+import { Text } from "../../atoms/Text";
 
-export interface ListItemProps extends Omit<ViewProps, 'style'> {
+export interface ListItemProps extends Omit<ViewProps, "style"> {
   title: string;
   subtitle?: string;
   description?: string;
@@ -43,18 +43,14 @@ export const ListItem: React.FC<ListItemProps> = ({
         ]}
         {...props}
       >
-        {leftElement && (
-          <View style={styles.leftElement}>
-            {leftElement}
-          </View>
-        )}
+        {leftElement && <View style={styles.leftElement}>{leftElement}</View>}
 
         <View style={styles.content}>
           <Text
             variant="body"
             weight="medium"
             numberOfLines={1}
-            color={disabled ? 'tertiary' : 'primary'}
+            color={disabled ? "tertiary" : "primary"}
           >
             {title}
           </Text>
@@ -83,9 +79,7 @@ export const ListItem: React.FC<ListItemProps> = ({
         </View>
 
         {rightElement && (
-          <View style={styles.rightElement}>
-            {rightElement}
-          </View>
+          <View style={styles.rightElement}>{rightElement}</View>
         )}
       </View>
 
@@ -101,7 +95,7 @@ export const ListItem: React.FC<ListItemProps> = ({
         style={({ pressed }) => [
           {
             opacity: pressed ? 0.7 : 1,
-            backgroundColor: pressed ? colors.tint + '10' : 'transparent',
+            backgroundColor: pressed ? colors.tint + "10" : "transparent",
           },
         ]}
         accessibilityRole="button"
@@ -119,21 +113,21 @@ export const ListItem: React.FC<ListItemProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    width: '100%',
+    width: "100%",
   },
   itemContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     paddingVertical: tokens.spacing.sm,
     paddingHorizontal: tokens.spacing.md,
   },
   leftElement: {
     marginRight: tokens.spacing.md,
-    justifyContent: 'center',
+    justifyContent: "center",
   },
   content: {
     flex: 1,
-    justifyContent: 'center',
+    justifyContent: "center",
   },
   subtitle: {
     marginTop: tokens.spacing.xxxs,
@@ -143,6 +137,6 @@ const styles = StyleSheet.create({
   },
   rightElement: {
     marginLeft: tokens.spacing.md,
-    justifyContent: 'center',
+    justifyContent: "center",
   },
 });

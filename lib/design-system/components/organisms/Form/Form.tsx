@@ -1,18 +1,18 @@
-import { Spacer } from '@/lib/design-system/components/atoms/Spacer';
-import { Button } from '@/lib/design-system/components/molecules/Button';
-import { Input } from '@/lib/design-system/components/molecules/Input';
-import { tokens } from '@/lib/design-system/tokens';
-import React, { useState } from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
-import { FormField, FormProps } from './Form.types';
+import { Spacer } from "@/lib/design-system/components/atoms/Spacer";
+import { Button } from "@/lib/design-system/components/molecules/Button";
+import { Input } from "@/lib/design-system/components/molecules/Input";
+import { tokens } from "@/lib/design-system/tokens";
+import React, { useState } from "react";
+import { ScrollView, StyleSheet, View } from "react-native";
+import { FormField, FormProps } from "./Form.types";
 
 export const Form: React.FC<FormProps> = ({
   fields,
   initialValues = {},
   onSubmit,
-  submitLabel = 'Submit',
+  submitLabel = "Submit",
   showCancel = false,
-  cancelLabel = 'Cancel',
+  cancelLabel = "Cancel",
   onCancel,
   loading = false,
   disabled = false,
@@ -21,10 +21,10 @@ export const Form: React.FC<FormProps> = ({
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const handleChange = (name: string, value: any) => {
-    setValues(prev => ({ ...prev, [name]: value }));
+    setValues((prev) => ({ ...prev, [name]: value }));
     // Clear error when user starts typing
     if (errors[name]) {
-      setErrors(prev => {
+      setErrors((prev) => {
         const newErrors = { ...prev };
         delete newErrors[name];
         return newErrors;
@@ -59,7 +59,7 @@ export const Form: React.FC<FormProps> = ({
   const handleSubmit = async () => {
     // Validate all fields
     const newErrors: Record<string, string> = {};
-    fields.forEach(field => {
+    fields.forEach((field) => {
       const error = validateField(field, values[field.name]);
       if (error) {
         newErrors[field.name] = error;
@@ -75,11 +75,11 @@ export const Form: React.FC<FormProps> = ({
   };
 
   const renderField = (field: FormField) => {
-    const value = values[field.name] || '';
+    const value = values[field.name] || "";
     const error = errors[field.name];
 
     switch (field.type) {
-      case 'textarea':
+      case "textarea":
         return (
           <Input
             key={field.name}
@@ -97,7 +97,7 @@ export const Form: React.FC<FormProps> = ({
           />
         );
 
-      case 'email':
+      case "email":
         return (
           <Input
             key={field.name}
@@ -107,14 +107,14 @@ export const Form: React.FC<FormProps> = ({
             placeholder={field.placeholder}
             errorText={error}
             disabled={disabled || field.disabled}
-            leftIcon={field.leftIcon || 'email'}
+            leftIcon={field.leftIcon || "email"}
             keyboardType="email-address"
             autoCapitalize="none"
             fullWidth
           />
         );
 
-      case 'password':
+      case "password":
         return (
           <Input
             key={field.name}
@@ -130,7 +130,7 @@ export const Form: React.FC<FormProps> = ({
           />
         );
 
-      case 'number':
+      case "number":
         return (
           <Input
             key={field.name}
@@ -165,7 +165,10 @@ export const Form: React.FC<FormProps> = ({
 
   return (
     <View style={styles.container}>
-      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        style={styles.scrollView}
+        showsVerticalScrollIndicator={false}
+      >
         {fields.map((field, index) => (
           <View key={field.name}>
             {renderField(field)}
@@ -212,7 +215,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   buttonContainer: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: tokens.spacing.sm,
   },
   button: {

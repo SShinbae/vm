@@ -1,3 +1,2 @@
-export * from './DetailLayout';
-export * from './DetailLayout.types';
-
+export * from "./DetailLayout";
+export * from "./DetailLayout.types";

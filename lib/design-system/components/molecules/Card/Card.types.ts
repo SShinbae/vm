@@ -1,1 +1,1 @@
-export type CardVariant = 'default' | 'elevated' | 'outlined' | 'filled';
+export type CardVariant = "default" | "elevated" | "outlined" | "filled";

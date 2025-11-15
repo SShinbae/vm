@@ -23,7 +23,6 @@ import { useDashboardData } from "@/hooks/useDashboardData";
 // import { ErrorState } from "@/components/ui/ErrorState";
 // import { EmptyVehiclesState } from "@/components/dashboard/EmptyVehiclesState";
 
-
 export default function DashboardScreen() {
   const { styles, theme } = useStyles(stylesheet);
   const {

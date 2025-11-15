@@ -1,18 +1,18 @@
-import React, { useMemo } from 'react';
-import { View, Text, ScrollView, RefreshControl } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { useStyles } from 'react-native-unistyles';
+import React, { useMemo } from "react";
+import { View, Text, ScrollView, RefreshControl } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { useStyles } from "react-native-unistyles";
 import {
   PeriodSelector,
   VehicleFilter,
   EmptyAnalytics,
   AnalyticsHeader,
-} from '@/components/analytics';
+} from "@/components/analytics";
 import {
   useAnalyticsData,
   usePeriodSelector,
   useVehicleFilter,
-} from '@/hooks/useAnalytics';
+} from "@/hooks/useAnalytics";
 
 export default function PerformanceTab() {
   const { theme } = useStyles();
@@ -31,20 +31,30 @@ export default function PerformanceTab() {
       period,
       vehicleIds: selectedVehicleIds,
     }),
-    [period, selectedVehicleIds]
+    [period, selectedVehicleIds],
   );
 
-  const { loading, error, vehicleComparison, refetch } = useAnalyticsData(filters);
+  const { loading, error, vehicleComparison, refetch } =
+    useAnalyticsData(filters);
 
   const hasData = vehicleComparison && vehicleComparison.length > 0;
 
   // Loading state
   if (loading || vehiclesLoading) {
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.background }}>
+      <SafeAreaView
+        style={{ flex: 1, backgroundColor: theme.colors.background }}
+      >
         <AnalyticsHeader />
-        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-          <Text style={{ fontSize: theme.fontSize.base, color: theme.colors.textSecondary }}>
+        <View
+          style={{ flex: 1, alignItems: "center", justifyContent: "center" }}
+        >
+          <Text
+            style={{
+              fontSize: theme.fontSize.base,
+              color: theme.colors.textSecondary,
+            }}
+          >
             Loading vehicle performance...
           </Text>
         </View>
@@ -55,7 +65,9 @@ export default function PerformanceTab() {
   // Error state
   if (error) {
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.background }}>
+      <SafeAreaView
+        style={{ flex: 1, backgroundColor: theme.colors.background }}
+      >
         <EmptyAnalytics
           icon="alert-circle-outline"
           title="Error Loading Data"
@@ -68,7 +80,9 @@ export default function PerformanceTab() {
   // Empty state
   if (!hasData) {
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.background }}>
+      <SafeAreaView
+        style={{ flex: 1, backgroundColor: theme.colors.background }}
+      >
         <View style={{ padding: theme.spacing.lg }}>
           <View style={{ marginBottom: theme.spacing.lg }}>
             <PeriodSelector
@@ -95,21 +109,25 @@ export default function PerformanceTab() {
   }
 
   // Sort vehicles by total cost (descending)
-  const sortedVehicles = [...vehicleComparison].sort((a, b) => b.totalCost - a.totalCost);
+  const sortedVehicles = [...vehicleComparison].sort(
+    (a, b) => b.totalCost - a.totalCost,
+  );
 
   // Find best and worst performers
   const mostEfficient = [...vehicleComparison].sort(
-    (a, b) => a.fuelEfficiency - b.fuelEfficiency
+    (a, b) => a.fuelEfficiency - b.fuelEfficiency,
   )[0];
   const leastEfficient = [...vehicleComparison].sort(
-    (a, b) => b.fuelEfficiency - a.fuelEfficiency
+    (a, b) => b.fuelEfficiency - a.fuelEfficiency,
   )[0];
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.background }}>
       <ScrollView
         style={{ flex: 1 }}
-        refreshControl={<RefreshControl refreshing={loading} onRefresh={refetch} />}
+        refreshControl={
+          <RefreshControl refreshing={loading} onRefresh={refetch} />
+        }
         showsVerticalScrollIndicator={false}
       >
         <View style={{ padding: theme.spacing.lg }}>
@@ -145,7 +163,7 @@ export default function PerformanceTab() {
               </Text>
               <View
                 style={{
-                  flexDirection: 'row',
+                  flexDirection: "row",
                   gap: theme.spacing.md,
                   marginBottom: theme.spacing.md,
                 }}
@@ -157,7 +175,7 @@ export default function PerformanceTab() {
                     backgroundColor: theme.colors.surface,
                     borderRadius: theme.borderRadius.lg,
                     padding: theme.spacing.lg,
-                    alignItems: 'center',
+                    alignItems: "center",
                   }}
                 >
                   <Text
@@ -176,7 +194,7 @@ export default function PerformanceTab() {
                       color: theme.colors.text,
                       fontWeight: theme.fontWeight.bold,
                       marginBottom: theme.spacing.xs,
-                      textAlign: 'center',
+                      textAlign: "center",
                     }}
                     numberOfLines={1}
                   >
@@ -200,7 +218,7 @@ export default function PerformanceTab() {
                     backgroundColor: theme.colors.surface,
                     borderRadius: theme.borderRadius.lg,
                     padding: theme.spacing.lg,
-                    alignItems: 'center',
+                    alignItems: "center",
                   }}
                 >
                   <Text
@@ -219,7 +237,7 @@ export default function PerformanceTab() {
                       color: theme.colors.text,
                       fontWeight: theme.fontWeight.bold,
                       marginBottom: theme.spacing.xs,
-                      textAlign: 'center',
+                      textAlign: "center",
                     }}
                     numberOfLines={1}
                   >
@@ -267,8 +285,8 @@ export default function PerformanceTab() {
               {/* Vehicle Header */}
               <View
                 style={{
-                  flexDirection: 'row',
-                  alignItems: 'center',
+                  flexDirection: "row",
+                  alignItems: "center",
                   marginBottom: theme.spacing.md,
                   gap: theme.spacing.md,
                 }}
@@ -280,8 +298,8 @@ export default function PerformanceTab() {
                     height: 40,
                     borderRadius: 20,
                     backgroundColor: theme.colors.primary,
-                    alignItems: 'center',
-                    justifyContent: 'center',
+                    alignItems: "center",
+                    justifyContent: "center",
                   }}
                 >
                   <Text
@@ -310,17 +328,25 @@ export default function PerformanceTab() {
               </View>
 
               {/* Vehicle Metrics */}
-              <View style={{ gap: theme.spacing.sm, marginBottom: theme.spacing.md }}>
+              <View
+                style={{
+                  gap: theme.spacing.sm,
+                  marginBottom: theme.spacing.md,
+                }}
+              >
                 {/* Total Cost */}
                 <View
                   style={{
-                    flexDirection: 'row',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
+                    flexDirection: "row",
+                    justifyContent: "space-between",
+                    alignItems: "center",
                   }}
                 >
                   <Text
-                    style={{ fontSize: theme.fontSize.sm, color: theme.colors.textSecondary }}
+                    style={{
+                      fontSize: theme.fontSize.sm,
+                      color: theme.colors.textSecondary,
+                    }}
                   >
                     Total Cost
                   </Text>
@@ -338,13 +364,16 @@ export default function PerformanceTab() {
                 {/* Cost per km */}
                 <View
                   style={{
-                    flexDirection: 'row',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
+                    flexDirection: "row",
+                    justifyContent: "space-between",
+                    alignItems: "center",
                   }}
                 >
                   <Text
-                    style={{ fontSize: theme.fontSize.sm, color: theme.colors.textSecondary }}
+                    style={{
+                      fontSize: theme.fontSize.sm,
+                      color: theme.colors.textSecondary,
+                    }}
                   >
                     Cost per km
                   </Text>
@@ -362,13 +391,16 @@ export default function PerformanceTab() {
                 {/* Fuel Efficiency */}
                 <View
                   style={{
-                    flexDirection: 'row',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
+                    flexDirection: "row",
+                    justifyContent: "space-between",
+                    alignItems: "center",
                   }}
                 >
                   <Text
-                    style={{ fontSize: theme.fontSize.sm, color: theme.colors.textSecondary }}
+                    style={{
+                      fontSize: theme.fontSize.sm,
+                      color: theme.colors.textSecondary,
+                    }}
                   >
                     Fuel Efficiency
                   </Text>
@@ -386,13 +418,16 @@ export default function PerformanceTab() {
                 {/* Distance Traveled */}
                 <View
                   style={{
-                    flexDirection: 'row',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
+                    flexDirection: "row",
+                    justifyContent: "space-between",
+                    alignItems: "center",
                   }}
                 >
                   <Text
-                    style={{ fontSize: theme.fontSize.sm, color: theme.colors.textSecondary }}
+                    style={{
+                      fontSize: theme.fontSize.sm,
+                      color: theme.colors.textSecondary,
+                    }}
                   >
                     Distance Traveled
                   </Text>
@@ -410,13 +445,16 @@ export default function PerformanceTab() {
                 {/* Services */}
                 <View
                   style={{
-                    flexDirection: 'row',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
+                    flexDirection: "row",
+                    justifyContent: "space-between",
+                    alignItems: "center",
                   }}
                 >
                   <Text
-                    style={{ fontSize: theme.fontSize.sm, color: theme.colors.textSecondary }}
+                    style={{
+                      fontSize: theme.fontSize.sm,
+                      color: theme.colors.textSecondary,
+                    }}
                   >
                     Services
                   </Text>
@@ -448,12 +486,12 @@ export default function PerformanceTab() {
                     height: 8,
                     backgroundColor: theme.colors.border,
                     borderRadius: theme.borderRadius.sm,
-                    overflow: 'hidden',
+                    overflow: "hidden",
                   }}
                 >
                   <View
                     style={{
-                      height: '100%',
+                      height: "100%",
                       width: `${(vehicle.totalCost / sortedVehicles[0].totalCost) * 100}%`,
                       backgroundColor: theme.colors.analytics.cost,
                       borderRadius: theme.borderRadius.sm,

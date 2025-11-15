@@ -12,8 +12,12 @@ type StatCardProps = {
 export function StatCard({ title, value, icon, trend }: StatCardProps) {
   const { styles, theme } = useStyles(stylesheet);
 
-  const trendColor = trend && trend > 0 ? theme.colors.success : theme.colors.error;
-  const trendBg = trend && trend > 0 ? theme.colors.success + "20" : theme.colors.error + "20";
+  const trendColor =
+    trend && trend > 0 ? theme.colors.success : theme.colors.error;
+  const trendBg =
+    trend && trend > 0
+      ? theme.colors.success + "20"
+      : theme.colors.error + "20";
 
   return (
     <View style={styles.statCard}>
