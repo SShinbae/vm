@@ -558,6 +558,7 @@ return (
 <QueryClientProvider client={queryClient}>
 <AuthProvider>
 <Router>
+
 <div className="min-h-screen bg-gray-50">
 <Layout>
 <Routes>
@@ -958,6 +959,7 @@ likeMutation.mutate(post.id);
 };
 
 return (
+
 <article className={bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow ${className}}>
 <div className="p-6">
 <div className="flex items-center justify-between mb-4">
@@ -1043,6 +1045,7 @@ lg: 'w-12 h-12',
 };
 
 return (
+
 <div className={flex justify-center items-center ${className}}>
       <div
         className={${sizeClasses[size]} border-2 border-gray-300 border-t-blue-600 rounded-full animate-spin}
@@ -1079,6 +1082,7 @@ console.error('Uncaught error:', error, errorInfo);
 public render() {
 if (this.state.hasError) {
 return (
+
 <div className="min-h-screen flex items-center justify-center bg-gray-50">
 <div className="max-w-md w-full bg-white rounded-lg shadow-md p-6 text-center">
 <h2 className="text-2xl font-bold text-gray-900 mb-4">

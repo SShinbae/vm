@@ -41,6 +41,7 @@ computed: heavyComputation(item)
 }, [data]);
 
 return (
+
 <div>
 {processedData.map(item => (
 <Item key={item.id} item={item} onUpdate={onUpdate} />
