@@ -90,10 +90,10 @@ const stylesheet = createStyleSheet((theme) => ({
     height: "100%",
   },
   fuelBar: {
-    backgroundColor: theme.colors.blue?.[500] || "#3b82f6",
+    backgroundColor: theme.colors.analytics.fuel,
   },
   serviceBar: {
-    backgroundColor: theme.colors.amber?.[500] || "#f59e0b",
+    backgroundColor: theme.colors.analytics.service,
   },
   legend: {
     gap: theme.spacing.md,
@@ -114,10 +114,10 @@ const stylesheet = createStyleSheet((theme) => ({
     borderRadius: theme.borderRadius.full,
   },
   fuelDot: {
-    backgroundColor: theme.colors.blue?.[500] || "#3b82f6",
+    backgroundColor: theme.colors.analytics.fuel,
   },
   serviceDot: {
-    backgroundColor: theme.colors.amber?.[500] || "#f59e0b",
+    backgroundColor: theme.colors.analytics.service,
   },
   legendLabel: {
     fontSize: theme.fontSize.sm,

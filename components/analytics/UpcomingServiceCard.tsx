@@ -25,7 +25,7 @@ export function UpcomingServiceCard({ service }: UpcomingServiceCardProps) {
     const dueDate = new Date(today);
     dueDate.setDate(today.getDate() + daysUntilDue);
 
-    return dueDate.toISOString().split('T')[0];
+    return dueDate.toISOString().split("T")[0];
   };
 
   return (
@@ -35,7 +35,7 @@ export function UpcomingServiceCard({ service }: UpcomingServiceCardProps) {
           <Ionicons
             name="build-outline"
             size={20}
-            color={theme.colors.amber?.[600] || "#d97706"}
+            color={theme.colors.warning}
           />
         </View>
         <View style={styles.textContainer}>
@@ -73,7 +73,7 @@ const stylesheet = createStyleSheet((theme) => ({
   },
   iconContainer: {
     padding: theme.spacing.sm,
-    backgroundColor: theme.colors.amber?.[100] || "#fef3c7",
+    backgroundColor: theme.colors.gray?.[100] || "#f3f4f6",
     borderRadius: theme.borderRadius.full,
     alignItems: "center",
     justifyContent: "center",
