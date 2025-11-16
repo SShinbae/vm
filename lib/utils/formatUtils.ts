@@ -59,10 +59,7 @@ export function safeNumericValue<T extends Record<string, any>>(
  * @returns Formatted currency string
  */
 export function safeGetExpenseAmount(
-  expenseBreakdown:
-    | Array<{ category: string; amount: number }>
-    | null
-    | undefined,
+  expenseBreakdown: { category: string; amount: number }[] | null | undefined,
   category: string,
   decimals: number = 2,
 ): string {

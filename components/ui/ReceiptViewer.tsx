@@ -345,13 +345,13 @@ export function ReceiptViewer({
 }
 
 interface ReceiptListProps {
-  receipts: Array<{
+  receipts: {
     id: string;
     imageUrl: string;
     ocrData?: OCRExtractedData;
     serviceName?: string;
     date?: string;
-  }>;
+  }[];
   onReceiptPress?: (receipt: any) => void;
   onReceiptDelete?: (receiptId: string) => void;
 }

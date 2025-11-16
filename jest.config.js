@@ -11,7 +11,8 @@ module.exports = {
     "^@utils(.*)$": "<rootDir>/src/utils$1",
     "^@hooks(.*)$": "<rootDir>/src/hooks$1",
     "^@assets(.*)$": "<rootDir>/assets$1",
-    "\.(jpg|jpeg|png|gif|webp|svg)$": "<rootDir>/__mocks__/fileMock.js",
+    "\\.(jpg|jpeg|png|gif|webp|svg)$": "<rootDir>/__mocks__/fileMock.js",
+    "react-native-unistyles": "<rootDir>/__mocks__/react-native-unistyles.ts",
   },
   collectCoverageFrom: [
     "src/**/*.{js,jsx,ts,tsx}",

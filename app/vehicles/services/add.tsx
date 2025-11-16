@@ -1,23 +1,23 @@
+import { IconSymbol } from "@/components/ui/icon-symbol";
+import { Colors } from "@/constants/theme";
+import { useColorScheme } from "@/hooks/use-color-scheme";
+import { VehicleService } from "@/lib/services/vehicleService";
+import { ServiceItemFormData, ServiceTemplateFormData } from "@/types";
+import { router } from "expo-router";
 import React, { useState } from "react";
 import {
-  View,
+  ActivityIndicator,
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
-  ScrollView,
-  KeyboardAvoidingView,
-  Platform,
-  StyleSheet,
-  Alert,
-  ActivityIndicator,
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { router } from "expo-router";
-import { ServiceTemplateFormData, ServiceItemFormData } from "@/types";
-import { VehicleService } from "@/lib/services/vehicleService";
-import { Colors } from "@/constants/theme";
-import { useColorScheme } from "@/hooks/use-color-scheme";
-import { IconSymbol } from "@/components/ui/icon-symbol";
 
 export default function AddServiceScreen() {
   const [formData, setFormData] = useState<ServiceTemplateFormData>({
@@ -131,7 +131,7 @@ export default function AddServiceScreen() {
             style={styles.removeItemButton}
             onPress={() => removeItem(index)}
           >
-            <IconSymbol name="trash" size={16} color="#ff4444" />
+            <IconSymbol name="trash" size={16} color={colors.error} />
           </TouchableOpacity>
         )}
       </View>
@@ -230,7 +230,7 @@ export default function AddServiceScreen() {
       marginBottom: 8,
     },
     requiredLabel: {
-      color: "#ff4444",
+      color: colors.error,
     },
     input: {
       backgroundColor: colors.background,

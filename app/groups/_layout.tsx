@@ -1,6 +1,6 @@
-import { Stack } from "expo-router";
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
+import { Stack } from "expo-router";
 
 export default function GroupsLayout() {
   const colorScheme = useColorScheme();
@@ -18,6 +18,7 @@ export default function GroupsLayout() {
         },
       }}
     >
+      <Stack.Screen name="index" />
       <Stack.Screen name="create" />
       <Stack.Screen name="[id]" />
       <Stack.Screen name="[id]/edit" />

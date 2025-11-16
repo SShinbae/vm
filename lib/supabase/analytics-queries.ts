@@ -1,8 +1,8 @@
 import { supabase } from "../../services/supabaseClient";
-import { FuelLog, ServiceLog, MileageLog, Vehicle } from "../../types";
+import { FuelLog, MileageLog, ServiceLog, Vehicle } from "../../types";
 import {
-  AnalyticsFilters,
   AnalyticsData,
+  AnalyticsFilters,
   VehicleWithLogs,
 } from "../../types/analytics";
 
@@ -237,9 +237,54 @@ export async function fetchAccessibleVehicles(
 
     if (ownError) throw ownError;
 
-    // TODO: Add group-shared vehicles when RPC function is created
-    // For now, just return owned vehicles
-    return (ownVehicles as Vehicle[]) || [];
+    // Fetch shared vehicles through groups
+    let sharedVehicleIds: string[] = [];
+
+    // Get user's group memberships
+    const { data: userGroups, error: groupError } = await supabase
+      .from("group_members")
+      .select("group_id")
+      .eq("user_id", userId);
+
+    if (!groupError && userGroups && userGroups.length > 0) {
+      const groupIds = userGroups.map((g: { group_id: string }) => g.group_id);
+
+      // Get vehicles shared with these groups
+      const { data: sharedVehicles, error: shareError } = await supabase
+        .from("vehicle_group_shares")
+        .select("vehicle_id")
+        .in("group_id", groupIds);
+
+      if (!shareError && sharedVehicles) {
+        sharedVehicleIds = sharedVehicles.map(
+          (sv: { vehicle_id: string }) => sv.vehicle_id,
+        );
+      }
+    }
+
+    // If we have shared vehicles, fetch them
+    let groupVehicles: Vehicle[] = [];
+    if (sharedVehicleIds.length > 0) {
+      const { data: sharedVehiclesData, error: sharedError } = await supabase
+        .from("vehicles")
+        .select("*")
+        .in("id", sharedVehicleIds);
+
+      if (!sharedError && sharedVehiclesData) {
+        groupVehicles = sharedVehiclesData as Vehicle[];
+      }
+    }
+
+    // Combine owned and shared vehicles, removing duplicates
+    const allVehicles = [
+      ...((ownVehicles as Vehicle[]) || []),
+      ...groupVehicles,
+    ];
+    const uniqueVehicles = Array.from(
+      new Map(allVehicles.map((v) => [v.id, v])).values(),
+    );
+
+    return uniqueVehicles;
   } catch (error) {
     console.error("Error fetching accessible vehicles:", error);
     throw error;

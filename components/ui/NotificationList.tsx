@@ -1,9 +1,9 @@
-import React from "react";
-import { View, Text, FlatList, TouchableOpacity, Alert } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import React from "react";
+import { Alert, FlatList, Text, TouchableOpacity, View } from "react-native";
+import { useThemeColor } from "../../hooks/use-theme-color";
 import { useNotifications } from "../../lib/contexts/NotificationContext";
 import { NotificationData } from "../../lib/services/notificationService";
-import { useThemeColor } from "../../hooks/use-theme-color";
 import { formatDistanceToNow } from "../../lib/utils/dateUtils";
 
 interface NotificationItemProps {
@@ -57,23 +57,6 @@ function NotificationItem({ notification, onPress }: NotificationItemProps) {
     }
   };
 
-  const getIconColor = () => {
-    switch (notification.type) {
-      case "mileage_log":
-        return "#007AFF";
-      case "fuel_log":
-        return "#FF9500";
-      case "service_log":
-        return "#FF3B30";
-      case "group_member":
-        return "#34C759";
-      case "group_invite":
-        return "#AF52DE";
-      default:
-        return mutedTextColor;
-    }
-  };
-
   return (
     <TouchableOpacity
       onPress={handlePress}
@@ -83,11 +66,7 @@ function NotificationItem({ notification, onPress }: NotificationItemProps) {
       <View className="p-4">
         <View className="flex-row items-start">
           <View className="mr-3 mt-1">
-            <Ionicons
-              name={getIcon() as any}
-              size={24}
-              color={getIconColor()}
-            />
+            <Ionicons name={getIcon() as any} size={24} color={textColor} />
           </View>
 
           <View className="flex-1">

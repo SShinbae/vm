@@ -12,16 +12,19 @@
     "export": "expo export --platform web",
     "test": "jest",
     "lint": "prettier --check .",
+    "lint:fix": "prettier --write . && eslint --fix .",
     "prepare": "husky",
     "format": "prettier --write ."
   },
   "lint-staged": {
+    "*.{js,jsx,ts,tsx,json,css,md}": [
+      "prettier --check"
+    ],
     "*.{js,jsx,ts,tsx}": [
-      "npx eslint --fix",
-      "npx prettier --write"
+      "eslint --max-warnings=0"
     ],
     "*.{ts,tsx}": [
-      "bash -c 'npx tsc --noEmit'"
+      "bash -c 'tsc --noEmit'"
     ]
   },
   "dependencies": {
@@ -97,6 +100,7 @@
     "prettier": "^3.6.2",
     "react-dom": "19.1.0",
     "react-image-crop": "^11.0.10",
+    "react-native-svg-transformer": "^1.5.2",
     "react-native-web": "^0.21.1",
     "recharts": "^3.2.1",
     "ts-jest": "^29.4.5",

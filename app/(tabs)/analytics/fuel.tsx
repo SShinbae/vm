@@ -1,24 +1,23 @@
-import React, { useMemo } from "react";
-import { View, Text, ScrollView, RefreshControl } from "react-native";
-import { createStyleSheet, useStyles } from "react-native-unistyles";
-import { SafeAreaView } from "react-native-safe-area-context";
 import {
+  EmptyAnalytics,
   MetricCard,
   PeriodSelector,
-  VehicleFilter,
-  EmptyAnalytics,
-  AnalyticsHeader,
   TrendLineChart,
-} from "../../../components/analytics";
+  VehicleFilter,
+} from "@/components/analytics";
 import {
   useAnalyticsData,
+  useAnalyticsTrends,
   usePeriodSelector,
   useVehicleFilter,
-  useAnalyticsTrends,
-} from "../../../hooks/useAnalytics";
+} from "@/hooks/useAnalytics";
+import React, { useMemo } from "react";
+import { RefreshControl, ScrollView, Text, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { useStyles } from "react-native-unistyles";
 
 export default function FuelTab() {
-  const { styles, theme } = useStyles(stylesheet);
+  const { theme } = useStyles();
   const { period, setPeriod, periods } = usePeriodSelector();
   const {
     vehicles,
@@ -43,67 +42,177 @@ export default function FuelTab() {
 
   const hasData = fuelMetrics && fuelMetrics.fuelUps > 0;
 
+  // Loading state
   if (loading || vehiclesLoading) {
     return (
-      <SafeAreaView style={styles.container}>
-        <AnalyticsHeader />
-        <View style={styles.loadingContainer}>
-          <Text style={styles.loadingText}>Loading fuel analytics...</Text>
+      <SafeAreaView
+        style={{
+          flex: 1,
+          backgroundColor: theme.colors.background,
+        }}
+      >
+        <View
+          style={{
+            flex: 1,
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <Text
+            style={{
+              fontSize: theme.fontSize.base,
+              color: theme.colors.textSecondary,
+            }}
+          >
+            Loading fuel analytics...
+          </Text>
         </View>
       </SafeAreaView>
     );
   }
 
+  // Error state
   if (error) {
     return (
-      <SafeAreaView style={styles.container}>
-        <EmptyAnalytics
-          icon="alert-circle-outline"
-          title="Error Loading Data"
-          message="Failed to load fuel analytics. Please try again."
-        />
+      <SafeAreaView
+        style={{ flex: 1, backgroundColor: theme.colors.background }}
+      >
+        <ScrollView style={{ flex: 1 }}>
+          <View
+            style={{
+              paddingHorizontal: theme.spacing.xl,
+              paddingVertical: theme.spacing.lg,
+            }}
+          >
+            <Text
+              style={{
+                fontSize: theme.fontSize["3xl"],
+                fontWeight: theme.fontWeight.bold,
+                color: theme.colors.text,
+                marginBottom: theme.spacing.xs,
+              }}
+            >
+              Fuel Analytics
+            </Text>
+            <Text
+              style={{
+                fontSize: theme.fontSize.base,
+                color: theme.colors.textSecondary,
+              }}
+            >
+              Track fuel consumption and efficiency
+            </Text>
+          </View>
+          <View style={{ padding: theme.spacing.lg }}>
+            <EmptyAnalytics
+              icon="alert-circle-outline"
+              title="Error Loading Data"
+              message="Failed to load fuel analytics. Please try again."
+            />
+          </View>
+        </ScrollView>
       </SafeAreaView>
     );
   }
 
+  // Empty state
   if (!hasData) {
     return (
-      <SafeAreaView style={styles.container}>
-        <View style={styles.filtersContainer}>
-          <PeriodSelector
-            selectedPeriod={period}
-            onPeriodChange={setPeriod}
-            periods={periods}
+      <SafeAreaView
+        style={{ flex: 1, backgroundColor: theme.colors.background }}
+      >
+        <ScrollView style={{ flex: 1 }}>
+          <View
+            style={{
+              paddingHorizontal: theme.spacing.xl,
+              paddingVertical: theme.spacing.lg,
+            }}
+          >
+            <Text
+              style={{
+                fontSize: theme.fontSize["3xl"],
+                fontWeight: theme.fontWeight.bold,
+                color: theme.colors.text,
+                marginBottom: theme.spacing.xs,
+              }}
+            >
+              Fuel Analytics
+            </Text>
+            <Text
+              style={{
+                fontSize: theme.fontSize.base,
+                color: theme.colors.textSecondary,
+              }}
+            >
+              Track fuel consumption and efficiency
+            </Text>
+          </View>
+          <View style={{ padding: theme.spacing.lg }}>
+            <View style={{ marginBottom: theme.spacing.lg }}>
+              <PeriodSelector
+                selectedPeriod={period}
+                onPeriodChange={setPeriod}
+                periods={periods}
+              />
+              <VehicleFilter
+                vehicles={vehicles}
+                selectedVehicleIds={selectedVehicleIds}
+                onToggleVehicle={toggleVehicle}
+                onSelectAll={selectAll}
+                onClearAll={clearAll}
+              />
+            </View>
+          </View>
+          <EmptyAnalytics
+            icon="water-outline"
+            title="No Fuel Data"
+            message="Start logging your fuel fill-ups to see analytics here."
           />
-          <VehicleFilter
-            vehicles={vehicles}
-            selectedVehicleIds={selectedVehicleIds}
-            onToggleVehicle={toggleVehicle}
-            onSelectAll={selectAll}
-            onClearAll={clearAll}
-          />
-        </View>
-        <EmptyAnalytics
-          icon="water-outline"
-          title="No Fuel Data"
-          message="Start logging your fuel fill-ups to see analytics here."
-        />
+        </ScrollView>
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.background }}>
       <ScrollView
-        style={styles.scrollView}
+        style={{ flex: 1 }}
         refreshControl={
           <RefreshControl refreshing={loading} onRefresh={refetch} />
         }
         showsVerticalScrollIndicator={false}
       >
-        <View style={styles.content}>
+        {/* Header */}
+        <View
+          style={{
+            paddingHorizontal: theme.spacing.xl,
+            paddingVertical: theme.spacing.lg,
+            backgroundColor: theme.colors.background,
+          }}
+        >
+          <Text
+            style={{
+              fontSize: theme.fontSize["3xl"],
+              fontWeight: theme.fontWeight.bold,
+              color: theme.colors.text,
+              marginBottom: theme.spacing.xs,
+            }}
+          >
+            Fuel Analytics
+          </Text>
+          <Text
+            style={{
+              fontSize: theme.fontSize.base,
+              color: theme.colors.textSecondary,
+            }}
+          >
+            Track fuel consumption and efficiency
+          </Text>
+        </View>
+
+        <View style={{ padding: theme.spacing.lg }}>
           {/* Filters */}
-          <View style={styles.filtersContainer}>
+          <View style={{ marginBottom: theme.spacing.lg }}>
             <PeriodSelector
               selectedPeriod={period}
               onPeriodChange={setPeriod}
@@ -119,9 +228,27 @@ export default function FuelTab() {
           </View>
 
           {/* Fuel Efficiency Metrics */}
-          <Text style={styles.sectionTitle}>Fuel Efficiency</Text>
-          <View style={styles.metricsGrid}>
-            <View style={styles.metricCardWrapper}>
+          <Text
+            style={{
+              fontSize: theme.fontSize.xl,
+              fontWeight: theme.fontWeight.bold,
+              color: theme.colors.text,
+              marginBottom: theme.spacing.md,
+              marginTop: theme.spacing.lg,
+            }}
+          >
+            Fuel Efficiency
+          </Text>
+
+          {/* First Row: Avg Consumption & Total Distance */}
+          <View
+            style={{
+              flexDirection: "row",
+              gap: theme.spacing.md,
+              marginBottom: theme.spacing.md,
+            }}
+          >
+            <View style={{ flex: 1 }}>
               <MetricCard
                 title="Average Consumption"
                 value={`${fuelMetrics.averageConsumption.toFixed(1)}`}
@@ -131,7 +258,7 @@ export default function FuelTab() {
                 trend={trendAnalysis || undefined}
               />
             </View>
-            <View style={styles.metricCardWrapper}>
+            <View style={{ flex: 1 }}>
               <MetricCard
                 title="Total Distance"
                 value={`${fuelMetrics.totalDistance.toFixed(0)}`}
@@ -142,8 +269,15 @@ export default function FuelTab() {
             </View>
           </View>
 
-          <View style={styles.metricsGrid}>
-            <View style={styles.metricCardWrapper}>
+          {/* Second Row: Best & Worst Efficiency */}
+          <View
+            style={{
+              flexDirection: "row",
+              gap: theme.spacing.md,
+              marginBottom: theme.spacing.md,
+            }}
+          >
+            <View style={{ flex: 1 }}>
               <MetricCard
                 title="Best Efficiency"
                 value={`${fuelMetrics.bestEfficiency.toFixed(1)}`}
@@ -152,7 +286,7 @@ export default function FuelTab() {
                 color={theme.colors.success}
               />
             </View>
-            <View style={styles.metricCardWrapper}>
+            <View style={{ flex: 1 }}>
               <MetricCard
                 title="Worst Efficiency"
                 value={`${fuelMetrics.worstEfficiency.toFixed(1)}`}
@@ -164,9 +298,27 @@ export default function FuelTab() {
           </View>
 
           {/* Cost Metrics */}
-          <Text style={styles.sectionTitle}>Fuel Costs</Text>
-          <View style={styles.metricsGrid}>
-            <View style={styles.metricCardWrapper}>
+          <Text
+            style={{
+              fontSize: theme.fontSize.xl,
+              fontWeight: theme.fontWeight.bold,
+              color: theme.colors.text,
+              marginBottom: theme.spacing.md,
+              marginTop: theme.spacing.lg,
+            }}
+          >
+            Fuel Costs
+          </Text>
+
+          {/* Third Row: Total Cost & Avg Price */}
+          <View
+            style={{
+              flexDirection: "row",
+              gap: theme.spacing.md,
+              marginBottom: theme.spacing.md,
+            }}
+          >
+            <View style={{ flex: 1 }}>
               <MetricCard
                 title="Total Fuel Cost"
                 value={`RM${costMetrics?.totalFuelCost.toFixed(2) || "0.00"}`}
@@ -175,7 +327,7 @@ export default function FuelTab() {
                 color={theme.colors.analytics.cost}
               />
             </View>
-            <View style={styles.metricCardWrapper}>
+            <View style={{ flex: 1 }}>
               <MetricCard
                 title="Average Price"
                 value={`RM${fuelMetrics.averageFuelPrice.toFixed(2)}`}
@@ -186,33 +338,135 @@ export default function FuelTab() {
             </View>
           </View>
 
-          {/* Fill-up Stats */}
-          <Text style={styles.sectionTitle}>Fill-up Statistics</Text>
-          <View style={styles.statsRow}>
-            <View style={styles.statCard}>
-              <Text style={styles.statValue}>{fuelMetrics.fuelUps}</Text>
-              <Text style={styles.statLabel}>Total Fill-ups</Text>
+          {/* Fill-up Statistics */}
+          <Text
+            style={{
+              fontSize: theme.fontSize.xl,
+              fontWeight: theme.fontWeight.bold,
+              color: theme.colors.text,
+              marginBottom: theme.spacing.md,
+              marginTop: theme.spacing.lg,
+            }}
+          >
+            Fill-up Statistics
+          </Text>
+          <View
+            style={{
+              flexDirection: "row",
+              gap: theme.spacing.md,
+              marginBottom: theme.spacing.md,
+            }}
+          >
+            {/* Total Fill-ups */}
+            <View
+              style={{
+                flex: 1,
+                backgroundColor: theme.colors.surface,
+                borderRadius: theme.borderRadius.lg,
+                padding: theme.spacing.lg,
+                alignItems: "center",
+              }}
+            >
+              <Text
+                style={{
+                  fontSize: theme.fontSize["2xl"],
+                  fontWeight: theme.fontWeight.bold,
+                  color: theme.colors.text,
+                  marginBottom: theme.spacing.xs,
+                }}
+              >
+                {fuelMetrics.fuelUps}
+              </Text>
+              <Text
+                style={{
+                  fontSize: theme.fontSize.xs,
+                  color: theme.colors.textSecondary,
+                  textAlign: "center",
+                }}
+              >
+                Total Fill-ups
+              </Text>
             </View>
-            <View style={styles.statCard}>
-              <Text style={styles.statValue}>
+
+            {/* Liters Filled */}
+            <View
+              style={{
+                flex: 1,
+                backgroundColor: theme.colors.surface,
+                borderRadius: theme.borderRadius.lg,
+                padding: theme.spacing.lg,
+                alignItems: "center",
+              }}
+            >
+              <Text
+                style={{
+                  fontSize: theme.fontSize["2xl"],
+                  fontWeight: theme.fontWeight.bold,
+                  color: theme.colors.text,
+                  marginBottom: theme.spacing.xs,
+                }}
+              >
                 {fuelMetrics.totalLitersFilled.toFixed(0)}
               </Text>
-              <Text style={styles.statLabel}>Liters Filled</Text>
+              <Text
+                style={{
+                  fontSize: theme.fontSize.xs,
+                  color: theme.colors.textSecondary,
+                  textAlign: "center",
+                }}
+              >
+                Liters Filled
+              </Text>
             </View>
-            <View style={styles.statCard}>
-              <Text style={styles.statValue}>
+
+            {/* km/fill-up */}
+            <View
+              style={{
+                flex: 1,
+                backgroundColor: theme.colors.surface,
+                borderRadius: theme.borderRadius.lg,
+                padding: theme.spacing.lg,
+                alignItems: "center",
+              }}
+            >
+              <Text
+                style={{
+                  fontSize: theme.fontSize["2xl"],
+                  fontWeight: theme.fontWeight.bold,
+                  color: theme.colors.text,
+                  marginBottom: theme.spacing.xs,
+                }}
+              >
                 {fuelMetrics.fuelUps > 0
                   ? (fuelMetrics.totalDistance / fuelMetrics.fuelUps).toFixed(0)
                   : 0}
               </Text>
-              <Text style={styles.statLabel}>km/fill-up</Text>
+              <Text
+                style={{
+                  fontSize: theme.fontSize.xs,
+                  color: theme.colors.textSecondary,
+                  textAlign: "center",
+                }}
+              >
+                km/fill-up
+              </Text>
             </View>
           </View>
 
           {/* Trend Chart */}
           {trendData.length > 0 && (
             <>
-              <Text style={styles.sectionTitle}>Efficiency Trend</Text>
+              <Text
+                style={{
+                  fontSize: theme.fontSize.xl,
+                  fontWeight: theme.fontWeight.bold,
+                  color: theme.colors.text,
+                  marginBottom: theme.spacing.md,
+                  marginTop: theme.spacing.lg,
+                }}
+              >
+                Efficiency Trend
+              </Text>
               <TrendLineChart
                 data={trendData}
                 title="Fuel Consumption Over Time"
@@ -222,75 +476,10 @@ export default function FuelTab() {
             </>
           )}
 
-          <View style={styles.spacing} />
+          {/* Bottom spacing */}
+          <View style={{ height: theme.spacing.xl }} />
         </View>
       </ScrollView>
     </SafeAreaView>
   );
 }
-
-const stylesheet = createStyleSheet((theme) => ({
-  container: {
-    flex: 1,
-    backgroundColor: theme.colors.background,
-  },
-  loadingContainer: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  loadingText: {
-    fontSize: theme.fontSize.base,
-    color: theme.colors.textSecondary,
-  },
-  scrollView: {
-    flex: 1,
-  },
-  content: {
-    padding: theme.spacing.lg,
-  },
-  filtersContainer: {
-    marginBottom: theme.spacing.lg,
-  },
-  sectionTitle: {
-    fontSize: theme.fontSize.xl,
-    fontWeight: theme.fontWeight.bold,
-    color: theme.colors.text,
-    marginBottom: theme.spacing.md,
-    marginTop: theme.spacing.lg,
-  },
-  metricsGrid: {
-    flexDirection: "row",
-    gap: theme.spacing.md,
-    marginBottom: theme.spacing.md,
-  },
-  metricCardWrapper: {
-    flex: 1,
-  },
-  statsRow: {
-    flexDirection: "row",
-    gap: theme.spacing.md,
-    marginBottom: theme.spacing.md,
-  },
-  statCard: {
-    flex: 1,
-    backgroundColor: theme.colors.surface,
-    borderRadius: theme.borderRadius.lg,
-    padding: theme.spacing.lg,
-    alignItems: "center",
-  },
-  statValue: {
-    fontSize: theme.fontSize["2xl"],
-    fontWeight: theme.fontWeight.bold,
-    color: theme.colors.text,
-    marginBottom: theme.spacing.xs,
-  },
-  statLabel: {
-    fontSize: theme.fontSize.xs,
-    color: theme.colors.textSecondary,
-    textAlign: "center",
-  },
-  spacing: {
-    height: theme.spacing.xl,
-  },
-}));

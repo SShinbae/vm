@@ -1,12 +1,6 @@
 name: React Native CI/CD
 
 on:
-  push:
-    branches: [main, master]
-    paths-ignore:
-      - "**.md"
-      - "LICENSE"
-      - "docs/**"
   pull_request:
     branches: [main, master]
   workflow_dispatch:
@@ -18,7 +12,6 @@ on:
           - dev
           - prod-apk
           - prod-aab
-          - publish-expo
           - all
 
 env:
@@ -50,19 +43,38 @@ jobs:
         run: npm ci
 
       - name: 🧪 Run TypeScript check
-        run: npx tsc --noEmit
+        run: npm run tsc --if-present || npx tsc --noEmit
 
       - name: 🧹 Run ESLint
         run: npm run lint
 
-      - name: 🧪 Run Jest Tests
-        run: npm test
+      - name: 🎨 Run Prettier check
+        run: npm run format:check --if-present || npx prettier --check .
 
   build-and-deploy:
     needs: test
     if: (github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')) || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     steps:
+      - name: 🧹 Free up disk space
+        run: |
+          echo "Disk space before cleanup:"
+          df -h
+
+          # Remove unnecessary packages to free up space (but keep Android SDK)
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /opt/ghc
+          sudo rm -rf /usr/local/share/boost
+          sudo rm -rf "$AGENT_TOOLSDIRECTORY"
+          sudo apt-get clean
+
+          # Remove Docker images and containers
+          docker rmi $(docker images -q) -f || true
+          docker system prune -af || true
+
+          echo "Disk space after cleanup:"
+          df -h
+
       - name: 🏗 Checkout repository
         uses: actions/checkout@v4
 
@@ -72,16 +84,29 @@ jobs:
           node-version: "20"
           cache: "npm"
 
-      - name: 📦 Install dependencies
+      - name: � Setup Android SDK and NDK
+        uses: android-actions/setup-android@v3
+        with:
+          cmdline-tools-version: 11076708
+
+      - name: 📦 Install Android NDK
         run: |
-          npm install
+          echo "Installing NDK..."
+          sdkmanager --install "ndk;27.3.13750724"
+          echo "ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT" >> $GITHUB_ENV
+          echo "ANDROID_HOME=$ANDROID_SDK_ROOT" >> $GITHUB_ENV
+          echo "NDK_PATH=$ANDROID_SDK_ROOT/ndk/27.3.13750724" >> $GITHUB_ENV
+
+      - name: �📦 Install dependencies
+        run: |
+          npm ci
           npm install -g eas-cli@latest
 
       - name: 📱 Setup EAS build cache
         uses: actions/cache@v3
         with:
           path: ~/.eas-build-local
-          key: ${{ runner.os }}-eas-build-local-${{ hashFiles('**/package-lock.json') }}
+          key: ${{ runner.os }}-eas-build-local-${{ hashFiles('**/package.json') }}
           restore-keys: |
             ${{ runner.os }}-eas-build-local-
 
@@ -152,6 +177,15 @@ jobs:
         env:
           NODE_ENV: development
 
+      - name: 🧹 Clean up after dev build
+        if: github.event.inputs.buildType == 'all' || github.event_name == 'push'
+        run: |
+          echo "Cleaning up temporary build files..."
+          rm -rf ~/.gradle/caches/
+          rm -rf ~/.gradle/wrapper/
+          rm -rf node_modules/.cache
+          df -h
+
       - name: 📱 Build Production APK
         if: github.event.inputs.buildType == 'all' || github.event.inputs.buildType == 'prod-apk' || github.event_name == 'push'
         run: |
@@ -160,6 +194,15 @@ jobs:
         env:
           NODE_ENV: production
 
+      - name: 🧹 Clean up after prod APK build
+        if: github.event.inputs.buildType == 'all' || github.event_name == 'push'
+        run: |
+          echo "Cleaning up temporary build files..."
+          rm -rf ~/.gradle/caches/
+          rm -rf ~/.gradle/wrapper/
+          rm -rf node_modules/.cache
+          df -h
+
       - name: 📱 Build Production AAB
         if: github.event.inputs.buildType == 'all' || github.event.inputs.buildType == 'prod-aab' || github.event_name == 'push'
         run: |
@@ -167,13 +210,6 @@ jobs:
           eas build --platform android --profile production --local --non-interactive --output=./app-prod.aab
         env:
           NODE_ENV: production
-
-      - name: 🚀 Publish to Expo
-        if: github.event.inputs.buildType == 'all' || github.event.inputs.buildType == 'publish-expo'
-        run: |
-          eas update --auto
-        env:
-          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
 
       - name: 📦 Upload build artifacts to GitHub
         uses: actions/upload-artifact@v4

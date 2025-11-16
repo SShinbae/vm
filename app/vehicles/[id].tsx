@@ -1,6 +1,7 @@
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { AlertModal, ConfirmModal } from "@/components/ui/Modal";
 import { ServiceReceiptIndicator } from "@/components/ui/ReceiptViewer";
+import { SkeletonVehicleDetail } from "@/components/ui/Skeleton";
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { VehicleService } from "@/lib/services/vehicleService";
@@ -12,7 +13,6 @@ import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
 import Head from "expo-router/head";
 import React, { useCallback, useEffect, useState } from "react";
 import {
-  ActivityIndicator,
   Alert,
   Dimensions,
   Platform,
@@ -143,6 +143,7 @@ export default function VehicleDetailScreen() {
                   await VehicleService.getUserGroups();
 
                 if (groupsError || !groups || groups.length === 0) {
+                  setSharingLoading(false);
                   showAlert(
                     "Error",
                     "No groups found. You need to be a member of at least one group to share vehicles.",
@@ -160,6 +161,7 @@ export default function VehicleDetailScreen() {
                   );
 
                 if (shareError) {
+                  setSharingLoading(false);
                   showAlert(
                     "Error",
                     "Failed to share vehicle: " + shareError,
@@ -179,6 +181,7 @@ export default function VehicleDetailScreen() {
                         }
                       : null,
                   );
+                  setSharingLoading(false);
                   showAlert(
                     "Success",
                     `Vehicle shared with ${groups.length} group(s)`,
@@ -187,9 +190,8 @@ export default function VehicleDetailScreen() {
                 }
               } catch (error) {
                 console.error("Error sharing vehicle:", error);
-                showAlert("Error", "Failed to share vehicle", "error");
-              } finally {
                 setSharingLoading(false);
+                showAlert("Error", "Failed to share vehicle", "error");
               }
             },
           },
@@ -1147,9 +1149,7 @@ export default function VehicleDetailScreen() {
           <title>Loading Vehicle - Vehicle Management</title>
         </Head>
         <SafeAreaView style={styles.container}>
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color={colors.tint} />
-          </View>
+          <SkeletonVehicleDetail />
         </SafeAreaView>
       </React.Fragment>
     );
@@ -1274,7 +1274,7 @@ export default function VehicleDetailScreen() {
                       <IconSymbol
                         name="trash"
                         size={isDesktopWeb ? 18 : 16}
-                        color="#ff4444"
+                        color={colors.error}
                       />
                     </TouchableOpacity>
                   </View>
@@ -1361,27 +1361,27 @@ export default function VehicleDetailScreen() {
                 </TouchableOpacity>
 
                 {sharingExpanded &&
-                  vehicle.sharing_info?.shared_with_groups &&
-                  vehicle.sharing_info.shared_with_groups.length > 0 && (
-                    <View style={styles.sharingGroupsList}>
-                      {vehicle.sharing_info.shared_with_groups.map(
-                        (groupName, index) => (
-                          <View key={index} style={styles.sharingGroupItem}>
-                            <View style={styles.sharingGroupAvatar}>
-                              <IconSymbol
-                                name="person.3.fill"
-                                size={16}
-                                color={colors.tint}
-                              />
-                            </View>
-                            <Text style={styles.sharingGroupName}>
-                              {groupName}
-                            </Text>
+                vehicle.sharing_info?.shared_with_groups &&
+                vehicle.sharing_info.shared_with_groups.length > 0 ? (
+                  <View style={styles.sharingGroupsList}>
+                    {vehicle.sharing_info.shared_with_groups.map(
+                      (groupName, index) => (
+                        <View key={index} style={styles.sharingGroupItem}>
+                          <View style={styles.sharingGroupAvatar}>
+                            <IconSymbol
+                              name="person.3.fill"
+                              size={16}
+                              color={colors.tint}
+                            />
                           </View>
-                        ),
-                      )}
-                    </View>
-                  )}
+                          <Text style={styles.sharingGroupName}>
+                            {groupName}
+                          </Text>
+                        </View>
+                      ),
+                    )}
+                  </View>
+                ) : null}
               </View>
             )}
 

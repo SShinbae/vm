@@ -60,26 +60,26 @@ export function Button({
     switch (variant) {
       case "secondary":
         baseStyle.push({
-          backgroundColor: colors.icon + "20",
-          borderColor: colors.icon + "30",
+          backgroundColor: colors.backgroundSecondary,
+          borderColor: colors.border,
           borderWidth: 1,
         });
         break;
       case "outline":
         baseStyle.push({
           backgroundColor: "transparent",
-          borderColor: colors.tint,
+          borderColor: colors.primary,
           borderWidth: 1,
         });
         break;
       case "danger":
         baseStyle.push({
-          backgroundColor: "#ff4444",
+          backgroundColor: colors.error,
         });
         break;
       default:
         baseStyle.push({
-          backgroundColor: colors.tint,
+          backgroundColor: colors.primary,
         });
     }
 
@@ -122,14 +122,14 @@ export function Button({
         baseStyle.push({ color: colors.text });
         break;
       case "outline":
-        baseStyle.push({ color: colors.tint });
+        baseStyle.push({ color: colors.primary });
         break;
       case "danger":
-        baseStyle.push({ color: "white" });
+        baseStyle.push({ color: "#FFFFFF" });
         break;
       default:
-        // Primary button: use white text for better contrast with tint background
-        baseStyle.push({ color: "white" });
+        // Primary button: use white text for better contrast with primary background
+        baseStyle.push({ color: "#FFFFFF" });
     }
 
     // Custom text style
@@ -156,12 +156,12 @@ export function Button({
       case "secondary":
         return colors.text;
       case "outline":
-        return colors.tint;
+        return colors.primary;
       case "danger":
-        return "white";
+        return "#FFFFFF";
       default:
-        // Primary button: use white icons for better contrast with tint background
-        return "white";
+        // Primary button: use white icons for better contrast with primary background
+        return "#FFFFFF";
     }
   };
 
@@ -171,8 +171,8 @@ export function Button({
         <ActivityIndicator
           color={
             variant === "outline" || variant === "secondary"
-              ? colors.tint
-              : "white"
+              ? colors.primary
+              : "#FFFFFF"
           }
           size="small"
         />

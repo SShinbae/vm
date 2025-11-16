@@ -9,24 +9,44 @@ export default function VehiclesLayout() {
     <Stack
       screenOptions={{
         headerShown: false,
-        headerStyle: {
+        contentStyle: {
           backgroundColor: Colors[colorScheme ?? "light"].background,
-        },
-        headerTintColor: Colors[colorScheme ?? "light"].text,
-        headerTitleStyle: {
-          fontWeight: "600",
         },
       }}
     >
-      <Stack.Screen name="add" />
+      <Stack.Screen
+        name="add"
+        options={{
+          headerShown: false,
+          presentation: "card",
+          animation: "slide_from_right",
+          contentStyle: {
+            backgroundColor: Colors[colorScheme ?? "light"].background,
+          },
+        }}
+      />
       <Stack.Screen
         name="[id]"
         options={{
           headerShown: false,
         }}
       />
-      <Stack.Screen name="[id]/edit" />
-      <Stack.Screen name="services/add" />
+      <Stack.Screen
+        name="[id]/edit"
+        options={{
+          headerShown: false,
+          presentation: "card",
+          animation: "slide_from_right",
+        }}
+      />
+      <Stack.Screen
+        name="services/add"
+        options={{
+          headerShown: false,
+          presentation: "card",
+          animation: "slide_from_right",
+        }}
+      />
     </Stack>
   );
 }

@@ -1,7 +1,6 @@
 import React, { createContext, useContext } from "react";
 import { WebAlertProvider } from "@/components/ui/WebAlertProvider";
-import { useWebAlert } from "@/hooks/use-web-alert";
-import { AlertButton, AlertOptions } from "@/hooks/use-web-alert";
+import { useWebAlert, AlertButton, AlertOptions } from "@/hooks/use-web-alert";
 
 interface DialogContextValue {
   alert: (

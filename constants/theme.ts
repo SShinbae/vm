@@ -5,11 +5,26 @@
 
 import { Platform } from "react-native";
 
-// Modern color palette
-const warmBeige = "#DFD0B8"; // Primary light
-const mutedBrown = "#948979"; // Secondary light
-const darkCharcoal = "#222831"; // Primary dark
-const slateGray = "#393E46"; // Secondary dark
+// Blue Bayoux color palette
+const blueBayoux = {
+  50: "#f3f8f8",
+  100: "#e0ebed",
+  200: "#c5d8dc",
+  300: "#9cbcc4",
+  400: "#6c97a4",
+  500: "#517c89",
+  600: "#41606c",
+  700: "#3d5661",
+  800: "#384a52",
+  900: "#323f47",
+  950: "#1e292e",
+};
+
+// Modern color palette using Blue Bayoux
+const warmBeige = blueBayoux[300]; // Primary light (#9cbcc4)
+const mutedBrown = blueBayoux[500]; // Secondary light (#517c89)
+const darkCharcoal = blueBayoux[900]; // Primary dark (#323f47)
+const slateGray = blueBayoux[700]; // Secondary dark (#3d5661)
 
 // Semantic colors
 const semanticColors = {
@@ -46,6 +61,7 @@ export const Colors = {
     backgroundSecondary: warmBeige,
     surface: "#F8F9FA",
     tint: tintColorLight,
+    primary: mutedBrown, // Primary color for components
 
     // Navigation & UI
     icon: textColors.light.secondary,
@@ -74,7 +90,7 @@ export const Colors = {
     chart: {
       primary: mutedBrown,
       secondary: warmBeige,
-      tertiary: "#C4B5A0",
+      tertiary: blueBayoux[200],
       fuel: "#10B981",
       service: "#F59E0B",
       mileage: "#3B82F6",
@@ -84,7 +100,7 @@ export const Colors = {
     // Gradients
     gradients: {
       primary: [mutedBrown, warmBeige] as const,
-      secondary: [warmBeige, "#F5F0E8"] as const,
+      secondary: [warmBeige, blueBayoux[100]] as const,
       card: ["#FFFFFF", "#FEFEFE"] as const,
     },
     facebook: {
@@ -109,6 +125,7 @@ export const Colors = {
     backgroundSecondary: slateGray,
     surface: "#2D3748",
     tint: tintColorDark,
+    primary: warmBeige, // Primary color for components
 
     // Navigation & UI
     icon: textColors.dark.secondary,
@@ -146,9 +163,9 @@ export const Colors = {
 
     // Gradients
     gradients: {
-      primary: [warmBeige, "#C4B5A0"] as const,
-      secondary: [slateGray, "#4A5568"] as const,
-      card: [slateGray, "#4A5568"] as const,
+      primary: [warmBeige, blueBayoux[400]] as const,
+      secondary: [slateGray, blueBayoux[800]] as const,
+      card: [slateGray, blueBayoux[800]] as const,
     },
     facebook: {
       primary: "#1877F2",
