@@ -1,7 +1,8 @@
 echo "🔍 Running pre-commit checks..."
 
 # Run lint-staged for formatting, linting, and type checking
-echo "🎨 Running linters, formatters, and type checks..."
+echo "🎨 Checking code formatting, linting, and types..."
+echo "💡 If checks fail, run 'npm run lint:fix' to auto-fix issues"
 npx lint-staged
 
 # Note: Full web build is skipped in pre-commit due to Expo web + Supabase compatibility issues

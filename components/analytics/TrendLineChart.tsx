@@ -1,7 +1,7 @@
 import React from "react";
-import { View, Text, Dimensions } from "react-native";
-import { createStyleSheet, useStyles } from "react-native-unistyles";
+import { Dimensions, Text, View } from "react-native";
 import { LineChart } from "react-native-chart-kit";
+import { createStyleSheet, useStyles } from "react-native-unistyles";
 import { TrendDataPoint } from "../../types/analytics";
 
 interface TrendLineChartProps {
@@ -44,7 +44,7 @@ export function TrendLineChart({
           return d.date.slice(5, 10); // MM-DD
         }
         return "";
-      } catch (error) {
+      } catch {
         console.warn("Invalid date format in trend data:", d.date);
         return "";
       }

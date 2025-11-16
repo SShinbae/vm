@@ -1,6 +1,7 @@
 # Analytics Shared Vehicles Implementation
 
 ## Overview
+
 This document outlines the changes made to implement shared vehicles in the analytics page and verify consistent permission logic across the application.
 
 ## Changes Made
@@ -12,6 +13,7 @@ This document outlines the changes made to implement shared vehicles in the anal
 **Function Updated**: `fetchAccessibleVehicles()`
 
 **What Changed**:
+
 - Previously only fetched user's owned vehicles
 - Now fetches both owned AND shared vehicles (through group memberships)
 - Logic:
@@ -22,6 +24,7 @@ This document outlines the changes made to implement shared vehicles in the anal
   5. Return complete list for analytics
 
 **Impact**:
+
 - Analytics overview now includes data from all accessible vehicles (owned + shared)
 - Vehicle filter dropdown shows all accessible vehicles
 - Cost, fuel, and service metrics now aggregate data from shared vehicles
@@ -31,6 +34,7 @@ This document outlines the changes made to implement shared vehicles in the anal
 #### Current Permission Model (Verified)
 
 **For Shared Vehicles**:
+
 - ✅ **View Logs**: All members (owner + group members) can view
 - ✅ **Add Logs**: All members (owner + group members) can add
 - ✅ **Edit Logs**: All members (owner + group members) can edit
@@ -72,8 +76,8 @@ This document outlines the changes made to implement shared vehicles in the anal
 
 ```typescript
 // Error codes used in the application:
-"PERMISSION_DENIED_SHARED_VEHICLE" // User is not the vehicle owner
-"PERMISSION_DENIED_ACCESS"          // User has no access to the vehicle
+"PERMISSION_DENIED_SHARED_VEHICLE"; // User is not the vehicle owner
+"PERMISSION_DENIED_ACCESS"; // User has no access to the vehicle
 ```
 
 ### 3. Current Implementation Pattern
@@ -110,6 +114,7 @@ if (vehicle.user_id !== userId) {
 ## Testing Recommendations
 
 ### 1. Analytics Page Testing
+
 - [ ] Verify owned vehicles appear in analytics
 - [ ] Verify shared vehicles appear in analytics
 - [ ] Verify vehicle filter shows all accessible vehicles
@@ -119,6 +124,7 @@ if (vehicle.user_id !== userId) {
 ### 2. Permission Testing
 
 #### As Vehicle Owner:
+
 - [ ] Can view own vehicle logs
 - [ ] Can add logs to own vehicle
 - [ ] Can edit logs on own vehicle
@@ -126,6 +132,7 @@ if (vehicle.user_id !== userId) {
 - [ ] Can delete own vehicle
 
 #### As Group Member (Shared Vehicle):
+
 - [ ] Can view shared vehicle logs
 - [ ] Can add logs to shared vehicle
 - [ ] Can edit logs on shared vehicle
@@ -133,7 +140,9 @@ if (vehicle.user_id !== userId) {
 - [ ] ❌ Cannot delete shared vehicle (should show error)
 
 ### 3. Error Message Testing
+
 Test that appropriate error messages are shown:
+
 - Mileage log deletion by non-owner
 - Fuel log deletion by non-owner
 - Service log deletion by non-owner

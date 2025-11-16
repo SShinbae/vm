@@ -1,6 +1,7 @@
 # Vehicle Edit Permissions Update - Group Members Can Edit
 
 ## Overview
+
 This document outlines the changes made to enable group members to edit shared vehicle details, not just the vehicle owner.
 
 ## Changes Made
@@ -12,18 +13,21 @@ This document outlines the changes made to enable group members to edit shared v
 **Function Updated**: `updateVehicle()`
 
 **What Changed**:
+
 - Added permission check using `canUserAccessVehicle()` helper
 - Now allows both vehicle owners AND group members to edit
 - Checks if user has access through ownership OR group sharing
 - Returns proper error message if no access
 
 **Before**:
+
 ```typescript
 // No access check - relied only on RLS policies
 // Users could only edit if they owned the vehicle
 ```
 
 **After**:
+
 ```typescript
 // Check if user has access to this vehicle (owner or group member)
 const hasAccess = await this.canUserAccessVehicle(id, user.id);
@@ -79,6 +83,7 @@ if (!hasAccess) {
 **Changes**:
 
 1. **Added import**:
+
    ```typescript
    import { canUserAccessVehicle } from "../utils/serviceUtils";
    ```
@@ -94,6 +99,7 @@ if (!hasAccess) {
    - Uses `canUserAccessVehicle()` helper
 
 **Before**:
+
 ```typescript
 // Check ownership
 if ((imageRecord as any).vehicles.user_id !== user.id) {
@@ -106,6 +112,7 @@ if ((imageRecord as any).vehicles.user_id !== user.id) {
 ```
 
 **After**:
+
 ```typescript
 // Check if user has access to this vehicle (owner or group member)
 const vehicleId = (imageRecord as any).vehicle_id;
@@ -124,18 +131,18 @@ if (!hasAccess) {
 
 ### For Shared Vehicles:
 
-| Action | Owner | Group Members | Status |
-|--------|-------|---------------|--------|
-| **View Vehicle** | ✅ Yes | ✅ Yes | Already Working |
-| **Edit Vehicle** | ✅ Yes | ✅ Yes | **NEW - Updated** |
-| **Delete Vehicle** | ✅ Yes | ❌ No | Unchanged |
-| **View Logs** | ✅ Yes | ✅ Yes | Already Working |
-| **Add Logs** | ✅ Yes | ✅ Yes | Already Working |
-| **Edit Logs** | ✅ Yes | ✅ Yes | Already Working |
-| **Delete Logs** | ✅ Yes | ❌ No | Unchanged |
-| **Upload Images** | ✅ Yes | ✅ Yes | **NEW - Updated** |
-| **Update Images** | ✅ Yes | ✅ Yes | **NEW - Updated** |
-| **Delete Images** | ✅ Yes | ✅ Yes | **NEW - Updated** |
+| Action             | Owner  | Group Members | Status            |
+| ------------------ | ------ | ------------- | ----------------- |
+| **View Vehicle**   | ✅ Yes | ✅ Yes        | Already Working   |
+| **Edit Vehicle**   | ✅ Yes | ✅ Yes        | **NEW - Updated** |
+| **Delete Vehicle** | ✅ Yes | ❌ No         | Unchanged         |
+| **View Logs**      | ✅ Yes | ✅ Yes        | Already Working   |
+| **Add Logs**       | ✅ Yes | ✅ Yes        | Already Working   |
+| **Edit Logs**      | ✅ Yes | ✅ Yes        | Already Working   |
+| **Delete Logs**    | ✅ Yes | ❌ No         | Unchanged         |
+| **Upload Images**  | ✅ Yes | ✅ Yes        | **NEW - Updated** |
+| **Update Images**  | ✅ Yes | ✅ Yes        | **NEW - Updated** |
+| **Delete Images**  | ✅ Yes | ✅ Yes        | **NEW - Updated** |
 
 ## Implementation Details
 
@@ -193,18 +200,21 @@ export const canUserAccessVehicle = async (
 ## Testing Recommendations
 
 ### As Vehicle Owner:
+
 - [x] Can view vehicle details
 - [x] Can edit vehicle details
 - [x] Can delete vehicle
 - [x] Can upload/update/delete vehicle images
 
 ### As Group Member (Shared Vehicle):
+
 - [x] Can view vehicle details
 - [x] **Can now edit vehicle details** ✨ NEW
 - [x] ❌ Cannot delete vehicle (should show error)
 - [x] **Can now upload/update/delete vehicle images** ✨ NEW
 
 ### Specific Tests:
+
 1. Edit shared vehicle make/model as group member
 2. Update shared vehicle year/license plate as group member
 3. Upload new image to shared vehicle as group member
@@ -263,12 +273,14 @@ CREATE POLICY "Users can manage accessible vehicle images" ON vehicle_images
 ## Summary
 
 ✅ Group members can now:
+
 - Edit vehicle details (make, model, year, license plate, VIN)
 - Upload vehicle images
 - Update vehicle images (caption, order)
 - Delete vehicle images
 
 ❌ Group members still cannot:
+
 - Delete the vehicle itself (only owner)
 - Delete logs (only owner)
 
