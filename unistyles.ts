@@ -3,17 +3,17 @@ import { UnistylesRegistry } from "react-native-unistyles";
 // Define your theme
 export const lightTheme = {
   colors: {
-    primary: "#007AFF",
-    secondary: "#5856D6",
-    success: "#34C759",
-    warning: "#FF9500",
-    error: "#FF3B30",
+    primary: "#517c89", // Blue Bayoux 500
+    secondary: "#9cbcc4", // Blue Bayoux 300
+    success: "#10B981",
+    warning: "#F59E0B",
+    error: "#EF4444",
     background: "#FFFFFF",
-    surface: "#F2F2F7",
-    text: "#000000",
-    textSecondary: "#8E8E93",
-    border: "#C6C6C8",
-    disabled: "#E5E5EA",
+    surface: "#f3f8f8", // Blue Bayoux 50
+    text: "#1e292e", // Blue Bayoux 950
+    textSecondary: "#668995", // Blue Bayoux 600
+    border: "#c9dce0", // Blue Bayoux 200
+    disabled: "#e1eef0", // Blue Bayoux 100
     white: "#FFFFFF",
     black: "#000000",
     gray: {
@@ -29,14 +29,14 @@ export const lightTheme = {
       900: "#111827",
     },
     analytics: {
-      fuel: "#4CAF50",
-      service: "#2196F3",
-      cost: "#FF9800",
-      warning: "#FF5722",
-      success: "#8BC34A",
-      neutral: "#9E9E9E",
-      purple: "#9C27B0",
-      teal: "#009688",
+      fuel: "#10B981", // Green
+      service: "#517c89", // Blue Bayoux 500
+      cost: "#F59E0B", // Amber
+      warning: "#EF4444", // Red
+      success: "#10B981", // Green
+      neutral: "#668995", // Blue Bayoux 600
+      purple: "#8B5CF6", // Purple
+      teal: "#14B8A6", // Teal
     },
   },
   spacing: {
@@ -77,17 +77,17 @@ export const lightTheme = {
 
 export const darkTheme = {
   colors: {
-    primary: "#0A84FF",
-    secondary: "#5E5CE6",
-    success: "#30D158",
-    warning: "#FF9F0A",
-    error: "#FF453A",
-    background: "#000000",
-    surface: "#1C1C1E",
-    text: "#FFFFFF",
-    textSecondary: "#98989D",
-    border: "#38383A",
-    disabled: "#3A3A3C",
+    primary: "#9cbcc4", // Blue Bayoux 300 (brighter for dark mode)
+    secondary: "#517c89", // Blue Bayoux 500
+    success: "#10B981",
+    warning: "#F59E0B",
+    error: "#EF4444",
+    background: "#1e292e", // Blue Bayoux 950
+    surface: "#283a41", // Blue Bayoux 900
+    text: "#f3f8f8", // Blue Bayoux 50
+    textSecondary: "#9cbcc4", // Blue Bayoux 300
+    border: "#3f5862", // Blue Bayoux 800
+    disabled: "#3f5862", // Blue Bayoux 800
     white: "#FFFFFF",
     black: "#000000",
     gray: {
@@ -103,14 +103,14 @@ export const darkTheme = {
       900: "#FFFFFF",
     },
     analytics: {
-      fuel: "#66BB6A",
-      service: "#42A5F5",
-      cost: "#FFA726",
-      warning: "#FF7043",
-      success: "#9CCC65",
-      neutral: "#BDBDBD",
-      purple: "#AB47BC",
-      teal: "#26A69A",
+      fuel: "#10B981", // Green
+      service: "#9cbcc4", // Blue Bayoux 300 (brighter for dark)
+      cost: "#F59E0B", // Amber
+      warning: "#EF4444", // Red
+      success: "#10B981", // Green
+      neutral: "#9cbcc4", // Blue Bayoux 300
+      purple: "#A78BFA", // Purple (lighter for dark)
+      teal: "#2DD4BF", // Teal (lighter for dark)
     },
   },
   spacing: {
@@ -165,7 +165,7 @@ UnistylesRegistry.addThemes({
 })
   .addBreakpoints(breakpoints)
   .addConfig({
-    adaptiveThemes: true, // Automatically switch themes based on system settings
+    adaptiveThemes: false, // Manually controlled via ThemeContext
   });
 
 // Export types for TypeScript

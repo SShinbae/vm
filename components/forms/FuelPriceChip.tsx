@@ -15,10 +15,10 @@ export function FuelPriceChip({
 }: FuelPriceChipProps) {
   const { styles, theme } = useStyles(stylesheet);
 
-  // Use 'warning' color as the tint
+  // Use 'primary' color as the tint
   const selectedStyles = isSelected && {
-    borderColor: theme.colors.warning,
-    backgroundColor: theme.colors.warning + "15",
+    borderColor: theme.colors.primary,
+    backgroundColor: theme.colors.primary + "15",
   };
 
   return (
@@ -53,6 +53,6 @@ const stylesheet = createStyleSheet((theme) => ({
     color: theme.colors.text,
   },
   selectedText: {
-    color: theme.colors.warning,
+    color: theme.colors.primary,
   },
 }));

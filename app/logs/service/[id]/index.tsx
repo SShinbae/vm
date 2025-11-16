@@ -1,5 +1,6 @@
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { ReceiptViewer } from "@/components/ui/ReceiptViewer";
+import { SkeletonCard } from "@/components/ui/Skeleton";
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { ServiceLogService } from "@/lib/services/loggingService";
@@ -7,7 +8,6 @@ import { ServiceLog, ServiceType } from "@/types";
 import { router, useLocalSearchParams } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
-  ActivityIndicator,
   Alert,
   ScrollView,
   StyleSheet,
@@ -333,9 +333,13 @@ export default function ServiceLogDetailScreen() {
           </TouchableOpacity>
           <Text style={styles.title}>Service Details</Text>
         </View>
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={colors.tint} />
-        </View>
+        <ScrollView
+          style={styles.content}
+          contentContainerStyle={styles.scrollContent}
+        >
+          <SkeletonCard lines={6} style={{ marginBottom: 16 }} />
+          <SkeletonCard lines={4} />
+        </ScrollView>
       </SafeAreaView>
     );
   }

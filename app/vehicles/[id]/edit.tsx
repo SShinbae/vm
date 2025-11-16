@@ -80,15 +80,6 @@ export default function EditVehicleScreen() {
   const handleSave = async () => {
     if (!vehicle) return;
 
-    // Check if this is a shared vehicle - only owners can edit vehicle details
-    if (isSharedVehicle) {
-      setErrorMessage(
-        "Only the vehicle owner can edit vehicle details. You have read-only access to this shared vehicle.",
-      );
-      setShowErrorModal(true);
-      return;
-    }
-
     // Validation
     if (!formData.make.trim()) {
       setErrorMessage("Please enter the vehicle make");
@@ -207,7 +198,7 @@ export default function EditVehicleScreen() {
   const styles = StyleSheet.create({
     container: {
       flex: 1,
-      backgroundColor: isWeb ? colors.icon + "08" : colors.background,
+      backgroundColor: colors.background,
     },
     header: {
       flexDirection: "row",
@@ -396,8 +387,8 @@ export default function EditVehicleScreen() {
                   color={colors.icon}
                 />
                 <Text style={styles.sharedNoticeText}>
-                  This is a shared vehicle. Only the owner can edit vehicle
-                  details.
+                  This is a shared vehicle. You can edit details as a group
+                  member.
                 </Text>
               </View>
             )}
@@ -411,7 +402,6 @@ export default function EditVehicleScreen() {
                 onUploadError={handleImageError}
                 placeholder="Add Vehicle Photo"
                 style={styles.avatarUpload}
-                disabled={isSharedVehicle}
               />
               <Text style={styles.avatarLabel}>Vehicle Photo (Optional)</Text>
             </View>
@@ -436,7 +426,6 @@ export default function EditVehicleScreen() {
                       formData.make ? validateMake(formData.make) : undefined
                     }
                     leftIcon="car"
-                    editable={!isSharedVehicle}
                   />
                 </View>
 
@@ -454,7 +443,6 @@ export default function EditVehicleScreen() {
                     error={
                       formData.model ? validateModel(formData.model) : undefined
                     }
-                    editable={!isSharedVehicle}
                   />
                 </View>
               </View>
@@ -476,7 +464,6 @@ export default function EditVehicleScreen() {
                     : undefined
                 }
                 leftIcon="calendar"
-                editable={!isSharedVehicle}
               />
 
               <Input
@@ -499,7 +486,6 @@ export default function EditVehicleScreen() {
                 }
                 helperText="Enter the license plate number as shown on your vehicle"
                 leftIcon="number"
-                editable={!isSharedVehicle}
               />
 
               <Input
@@ -516,7 +502,6 @@ export default function EditVehicleScreen() {
                 error={formData.vin ? validateVin(formData.vin) : undefined}
                 helperText="Vehicle Identification Number (17 characters)"
                 leftIcon="barcode"
-                editable={!isSharedVehicle}
               />
             </View>
 
@@ -532,7 +517,7 @@ export default function EditVehicleScreen() {
               <Button
                 title="Update Vehicle"
                 onPress={handleSave}
-                disabled={!isFormValid() || !hasChanges() || isSharedVehicle}
+                disabled={!isFormValid() || !hasChanges()}
                 loading={saving}
                 icon="checkmark"
                 style={styles.saveButton}

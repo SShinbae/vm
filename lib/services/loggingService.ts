@@ -1277,10 +1277,58 @@ export class ServiceLogService {
           "User does not have access to vehicle for deletion:",
           existingLog.vehicle_id,
         );
+
+        // Check if the log belongs to a shared vehicle that user can only view
+        const { data: vehicle, error: vehicleError } = await supabase
+          .from("vehicles")
+          .select("user_id, make, model, year")
+          .eq("id", existingLog.vehicle_id)
+          .single<{
+            user_id: string;
+            make: string;
+            model: string;
+            year: number;
+          }>();
+
+        if (!vehicleError && vehicle && vehicle.user_id !== user.id) {
+          return {
+            data: null,
+            error: "PERMISSION_DENIED_SHARED_VEHICLE",
+            loading: false,
+          };
+        }
+
         return {
           data: null,
-          error:
-            "Access denied - you do not have permission to delete this service log",
+          error: "PERMISSION_DENIED_ACCESS",
+          loading: false,
+        };
+      }
+
+      // Check if user is the vehicle owner (only owner can delete logs)
+      const { data: vehicle, error: vehicleError } = await supabase
+        .from("vehicles")
+        .select("user_id")
+        .eq("id", existingLog.vehicle_id)
+        .single<{ user_id: string }>();
+
+      if (vehicleError) {
+        console.error(
+          "Error fetching vehicle for ownership check:",
+          vehicleError,
+        );
+        return {
+          data: null,
+          error: "Failed to verify vehicle ownership",
+          loading: false,
+        };
+      }
+
+      // Only the vehicle owner can delete logs
+      if (vehicle.user_id !== user.id) {
+        return {
+          data: null,
+          error: "PERMISSION_DENIED_SHARED_VEHICLE",
           loading: false,
         };
       }

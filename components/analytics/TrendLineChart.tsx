@@ -64,13 +64,13 @@ export function TrendLineChart({
     backgroundGradientTo: theme.colors.surface,
     decimalPlaces: 1,
     color: (opacity = 1) => {
-      const isDark = theme.colors.background === "#000000";
+      const isDark = theme.colors.background === "#1e292e";
       return isDark
         ? `rgba(255, 255, 255, ${opacity})`
         : `rgba(0, 0, 0, ${opacity})`;
     },
     labelColor: (opacity = 1) => {
-      const isDark = theme.colors.background === "#000000";
+      const isDark = theme.colors.background === "#1e292e";
       return isDark
         ? `rgba(255, 255, 255, ${opacity * 0.7})`
         : `rgba(0, 0, 0, ${opacity * 0.7})`;

@@ -4,6 +4,7 @@ import {
   VehicleImage,
   VehicleImageInsert,
 } from "../../types/database-v2";
+import { canUserAccessVehicle } from "../utils/serviceUtils";
 
 export class ImageUploadService {
   // Maximum file size (5MB)
@@ -146,6 +147,107 @@ export class ImageUploadService {
   }
 
   /**
+   * Upload profile avatar from URI (for mobile platforms)
+   * This method handles the URI directly without converting to File object
+   * to avoid ArrayBuffer blob issues on React Native
+   */
+  static async uploadProfileAvatarFromUri(
+    uri: string,
+  ): Promise<ApiResponse<string>> {
+    try {
+      console.log("🚀 Starting avatar upload from URI...");
+      console.log("📄 URI:", uri);
+
+      const {
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser();
+
+      if (userError || !user) {
+        console.error("❌ User authentication failed:", userError);
+        return { data: null, error: "User not authenticated", loading: false };
+      }
+
+      console.log("✅ User authenticated:", user.id);
+
+      // Fetch the image and convert to base64
+      const response = await fetch(uri);
+      const blob = await response.blob();
+
+      // Convert blob to base64 using FileReader
+      const base64 = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          const base64String = reader.result as string;
+          // Remove the data URL prefix (e.g., "data:image/jpeg;base64,")
+          const base64Data = base64String.split(",")[1];
+          resolve(base64Data);
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      });
+
+      // Get file extension from URI or default to jpg
+      const fileExtension = uri.split(".").pop()?.toLowerCase() || "jpg";
+      const fileName = this.generateFileName(
+        user.id,
+        "avatar",
+        `image.${fileExtension}`,
+      );
+
+      console.log("📝 Generated filename:", fileName);
+
+      // Upload using base64 data
+      console.log("📤 Uploading to Supabase storage...");
+      const { decode } = await import("base64-arraybuffer");
+      const arrayBuffer = decode(base64);
+
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from("profile-avatars")
+        .upload(fileName, arrayBuffer, {
+          contentType: blob.type || "image/jpeg",
+          cacheControl: "3600",
+          upsert: false,
+        });
+
+      if (uploadError) {
+        console.error("❌ Storage upload failed:", uploadError);
+        return { data: null, error: uploadError.message, loading: false };
+      }
+
+      console.log("✅ Storage upload successful:", uploadData);
+
+      // Get public URL
+      const { data: urlData } = supabase.storage
+        .from("profile-avatars")
+        .getPublicUrl(fileName);
+
+      console.log("🔗 Generated public URL:", urlData.publicUrl);
+
+      // Update user profile with new avatar URL
+      console.log("💾 Updating profile in database...");
+      const { error: updateError } = await supabase
+        .from("profiles")
+        // @ts-expect-error - Supabase type inference issue with update
+        .update({ avatar_url: urlData.publicUrl })
+        .eq("id", user.id);
+
+      if (updateError) {
+        console.error("❌ Profile update failed:", updateError);
+        // Try to cleanup uploaded file
+        await supabase.storage.from("profile-avatars").remove([fileName]);
+        return { data: null, error: updateError.message, loading: false };
+      }
+
+      console.log("✅ Avatar upload complete! URL:", urlData.publicUrl);
+      return { data: urlData.publicUrl, error: null, loading: false };
+    } catch (error) {
+      console.error("💥 Unexpected error uploading avatar from URI:", error);
+      return { data: null, error: "Failed to upload avatar", loading: false };
+    }
+  }
+
+  /**
    * Upload vehicle image
    */
   static async uploadVehicleImage(
@@ -197,7 +299,7 @@ export class ImageUploadService {
       );
 
       // Upload to storage
-      const { data: uploadData, error: uploadError } = await supabase.storage
+      const { error: uploadError } = await supabase.storage
         .from("vehicle-images")
         .upload(fileName, file, {
           cacheControl: "3600",
@@ -283,6 +385,169 @@ export class ImageUploadService {
   }
 
   /**
+   * Upload vehicle image from URI (for mobile platforms)
+   * This method handles the URI directly without converting to File object
+   * to avoid ArrayBuffer blob issues on React Native
+   */
+  static async uploadVehicleImageFromUri(
+    vehicleId: string,
+    uri: string,
+    imageType: "vehicle_main" | "vehicle_gallery" = "vehicle_gallery",
+    caption?: string,
+  ): Promise<ApiResponse<VehicleImage>> {
+    try {
+      console.log("🚀 Starting vehicle image upload from URI...");
+      console.log("📄 URI:", uri);
+
+      const {
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser();
+
+      if (userError || !user) {
+        return { data: null, error: "User not authenticated", loading: false };
+      }
+
+      // Verify user owns the vehicle
+      const { data: vehicle, error: vehicleError } = await supabase
+        .from("vehicles")
+        .select("user_id")
+        .eq("id", vehicleId)
+        .single<{ user_id: string }>();
+
+      if (vehicleError || !vehicle) {
+        return { data: null, error: "Vehicle not found", loading: false };
+      }
+
+      if (vehicle.user_id !== user.id) {
+        return {
+          data: null,
+          error: "You can only upload images for your own vehicles",
+          loading: false,
+        };
+      }
+
+      // Fetch the image and convert to base64
+      const response = await fetch(uri);
+      const blob = await response.blob();
+
+      // Convert blob to base64 using FileReader
+      const base64 = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          const base64String = reader.result as string;
+          const base64Data = base64String.split(",")[1];
+          resolve(base64Data);
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      });
+
+      // Get file extension from URI or default to jpg
+      const fileExtension = uri.split(".").pop()?.toLowerCase() || "jpg";
+      const fileName = this.generateFileName(
+        user.id,
+        `vehicle_${vehicleId}`,
+        `image.${fileExtension}`,
+      );
+
+      console.log("📝 Generated filename:", fileName);
+
+      // Upload using base64 data
+      console.log("📤 Uploading to Supabase storage...");
+      const { decode } = await import("base64-arraybuffer");
+      const arrayBuffer = decode(base64);
+
+      const { error: uploadError } = await supabase.storage
+        .from("vehicle-images")
+        .upload(fileName, arrayBuffer, {
+          contentType: blob.type || "image/jpeg",
+          cacheControl: "3600",
+          upsert: false,
+        });
+
+      if (uploadError) {
+        console.error("Error uploading vehicle image:", uploadError);
+        return { data: null, error: uploadError.message, loading: false };
+      }
+
+      // Get public URL
+      const { data: urlData } = supabase.storage
+        .from("vehicle-images")
+        .getPublicUrl(fileName);
+
+      // Get next display order for gallery images
+      let displayOrder = 0;
+      if (imageType === "vehicle_gallery") {
+        const { data: existingImages } = await supabase
+          .from("vehicle_images")
+          .select("display_order")
+          .eq("vehicle_id", vehicleId)
+          .eq("image_type", "vehicle_gallery")
+          .order("display_order", { ascending: false })
+          .limit(1);
+
+        // @ts-expect-error - Supabase type inference issue with select
+        displayOrder = (existingImages?.[0]?.display_order || 0) + 1;
+      }
+
+      // Create vehicle image record
+      const imageData: VehicleImageInsert = {
+        vehicle_id: vehicleId,
+        image_url: urlData.publicUrl,
+        image_type: imageType,
+        caption: caption || null,
+        display_order: displayOrder,
+        uploaded_by: user.id,
+      };
+
+      const { data: imageRecord, error: imageError } = await supabase
+        .from("vehicle_images")
+        // @ts-expect-error - Supabase type inference issue with insert
+        .insert(imageData)
+        .select()
+        .single();
+
+      if (imageError) {
+        console.error("Error creating image record:", imageError);
+        // Try to cleanup uploaded file
+        await supabase.storage.from("vehicle-images").remove([fileName]);
+        return { data: null, error: imageError.message, loading: false };
+      }
+
+      // If this is a main image, update vehicle record
+      if (imageType === "vehicle_main") {
+        const { error: vehicleUpdateError } = await supabase
+          .from("vehicles")
+          // @ts-expect-error - Supabase type inference issue with update
+          .update({ main_image_url: urlData.publicUrl })
+          .eq("id", vehicleId);
+
+        if (vehicleUpdateError) {
+          console.error(
+            "Error updating vehicle main image:",
+            vehicleUpdateError,
+          );
+          // Continue anyway, the image record was created successfully
+        }
+      }
+
+      console.log("✅ Vehicle image uploaded successfully:", urlData.publicUrl);
+      return { data: imageRecord, error: null, loading: false };
+    } catch (error) {
+      console.error(
+        "Unexpected error uploading vehicle image from URI:",
+        error,
+      );
+      return {
+        data: null,
+        error: "Failed to upload vehicle image",
+        loading: false,
+      };
+    }
+  }
+
+  /**
    * Get vehicle images
    */
   static async getVehicleImages(
@@ -344,11 +609,14 @@ export class ImageUploadService {
         return { data: null, error: "Image not found", loading: false };
       }
 
-      // Check ownership
-      if ((imageRecord as any).vehicles.user_id !== user.id) {
+      // Check if user has access to this vehicle (owner or group member)
+      const vehicleId = (imageRecord as any).vehicle_id;
+      const hasAccess = await canUserAccessVehicle(vehicleId, user.id);
+
+      if (!hasAccess) {
         return {
           data: null,
-          error: "You can only delete your own vehicle images",
+          error: "You do not have permission to delete this image",
           loading: false,
         };
       }
@@ -434,10 +702,14 @@ export class ImageUploadService {
         return { data: null, error: "Image not found", loading: false };
       }
 
-      if ((imageRecord as any).vehicles.user_id !== user.id) {
+      // Check if user has access to this vehicle (owner or group member)
+      const vehicleId = (imageRecord as any).vehicle_id;
+      const hasAccess = await canUserAccessVehicle(vehicleId, user.id);
+
+      if (!hasAccess) {
         return {
           data: null,
-          error: "You can only modify your own vehicle images",
+          error: "You do not have permission to modify this image",
           loading: false,
         };
       }

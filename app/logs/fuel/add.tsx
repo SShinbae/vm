@@ -73,7 +73,7 @@ export default function AddFuelLogScreen() {
       <SafeAreaView style={styles.container}>
         <CustomHeader />
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={theme.colors.warning} />
+          <ActivityIndicator size="large" color={theme.colors.primary} />
         </View>
       </SafeAreaView>
     );
@@ -255,7 +255,7 @@ export default function AddFuelLogScreen() {
 const stylesheet = createStyleSheet((theme) => ({
   container: {
     flex: 1,
-    backgroundColor: theme.colors.surface, // Use a subtle off-white/grey bg
+    backgroundColor: theme.colors.background,
   },
   // --- New Header Styles ---
   customHeader: {
@@ -263,7 +263,7 @@ const stylesheet = createStyleSheet((theme) => ({
     alignItems: "center",
     paddingHorizontal: theme.spacing.lg,
     paddingVertical: theme.spacing.md,
-    backgroundColor: theme.colors.surface, // Match container bg
+    backgroundColor: theme.colors.background,
     borderBottomWidth: 1,
     borderBottomColor: theme.colors.border,
   },

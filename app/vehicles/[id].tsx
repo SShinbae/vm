@@ -1,6 +1,7 @@
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { AlertModal, ConfirmModal } from "@/components/ui/Modal";
 import { ServiceReceiptIndicator } from "@/components/ui/ReceiptViewer";
+import { SkeletonVehicleDetail } from "@/components/ui/Skeleton";
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { VehicleService } from "@/lib/services/vehicleService";
@@ -12,7 +13,6 @@ import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
 import Head from "expo-router/head";
 import React, { useCallback, useEffect, useState } from "react";
 import {
-  ActivityIndicator,
   Alert,
   Dimensions,
   Platform,
@@ -1149,9 +1149,7 @@ export default function VehicleDetailScreen() {
           <title>Loading Vehicle - Vehicle Management</title>
         </Head>
         <SafeAreaView style={styles.container}>
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color={colors.tint} />
-          </View>
+          <SkeletonVehicleDetail />
         </SafeAreaView>
       </React.Fragment>
     );
@@ -1276,7 +1274,7 @@ export default function VehicleDetailScreen() {
                       <IconSymbol
                         name="trash"
                         size={isDesktopWeb ? 18 : 16}
-                        color="#ff4444"
+                        color={colors.error}
                       />
                     </TouchableOpacity>
                   </View>

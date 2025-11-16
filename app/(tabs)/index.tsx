@@ -1,8 +1,8 @@
 import { IconSymbol } from "@/components/ui/icon-symbol";
+import { SkeletonDashboard } from "@/components/ui/Skeleton";
 import { router } from "expo-router";
 import React from "react";
 import {
-  ActivityIndicator,
   RefreshControl,
   ScrollView,
   Text,
@@ -40,10 +40,7 @@ export default function DashboardScreen() {
   if (loading) {
     return (
       <SafeAreaView style={styles.container}>
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={theme.colors.primary} />
-          <Text style={styles.loadingText}>Loading dashboard...</Text>
-        </View>
+        <SkeletonDashboard />
       </SafeAreaView>
     );
   }

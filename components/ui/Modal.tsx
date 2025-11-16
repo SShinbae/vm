@@ -1,21 +1,21 @@
-import React from "react";
-import {
-  Modal as RNModal,
-  View,
-  Text,
-  TouchableOpacity,
-  TouchableWithoutFeedback,
-  StyleSheet,
-  ViewStyle,
-  TextStyle,
-  Dimensions,
-  Platform,
-} from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
-import { IconSymbol } from "./icon-symbol";
+import React from "react";
+import {
+  Dimensions,
+  Platform,
+  Modal as RNModal,
+  StyleSheet,
+  Text,
+  TextStyle,
+  TouchableOpacity,
+  TouchableWithoutFeedback,
+  View,
+  ViewStyle,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { Button } from "./Button";
+import { IconSymbol } from "./icon-symbol";
 
 // Import createPortal for web platform
 let createPortal: any = null;
@@ -494,13 +494,13 @@ export function AlertModal({
   const getIconColor = () => {
     switch (variant) {
       case "success":
-        return "#4CAF50";
+        return colors.success;
       case "warning":
-        return "#FF9800";
+        return colors.warning;
       case "error":
-        return "#ff4444";
+        return colors.error;
       default:
-        return colors.tint;
+        return colors.primary;
     }
   };
 

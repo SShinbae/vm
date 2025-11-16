@@ -1,21 +1,20 @@
-import React, { useMemo } from "react";
-import { View, Text, ScrollView, RefreshControl } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { useStyles } from "react-native-unistyles";
 import {
+  EmptyAnalytics,
   MetricCard,
   PeriodSelector,
-  VehicleFilter,
-  EmptyAnalytics,
-  AnalyticsHeader,
   TrendLineChart,
+  VehicleFilter,
 } from "@/components/analytics";
 import {
   useAnalyticsData,
+  useAnalyticsTrends,
   usePeriodSelector,
   useVehicleFilter,
-  useAnalyticsTrends,
 } from "@/hooks/useAnalytics";
+import React, { useMemo } from "react";
+import { RefreshControl, ScrollView, Text, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { useStyles } from "react-native-unistyles";
 
 export default function FuelTab() {
   const { theme } = useStyles();
@@ -52,7 +51,6 @@ export default function FuelTab() {
           backgroundColor: theme.colors.background,
         }}
       >
-        <AnalyticsHeader />
         <View
           style={{
             flex: 1,
@@ -79,11 +77,40 @@ export default function FuelTab() {
       <SafeAreaView
         style={{ flex: 1, backgroundColor: theme.colors.background }}
       >
-        <EmptyAnalytics
-          icon="alert-circle-outline"
-          title="Error Loading Data"
-          message="Failed to load fuel analytics. Please try again."
-        />
+        <ScrollView style={{ flex: 1 }}>
+          <View
+            style={{
+              paddingHorizontal: theme.spacing.xl,
+              paddingVertical: theme.spacing.lg,
+            }}
+          >
+            <Text
+              style={{
+                fontSize: theme.fontSize["3xl"],
+                fontWeight: theme.fontWeight.bold,
+                color: theme.colors.text,
+                marginBottom: theme.spacing.xs,
+              }}
+            >
+              Fuel Analytics
+            </Text>
+            <Text
+              style={{
+                fontSize: theme.fontSize.base,
+                color: theme.colors.textSecondary,
+              }}
+            >
+              Track fuel consumption and efficiency
+            </Text>
+          </View>
+          <View style={{ padding: theme.spacing.lg }}>
+            <EmptyAnalytics
+              icon="alert-circle-outline"
+              title="Error Loading Data"
+              message="Failed to load fuel analytics. Please try again."
+            />
+          </View>
+        </ScrollView>
       </SafeAreaView>
     );
   }
@@ -94,27 +121,54 @@ export default function FuelTab() {
       <SafeAreaView
         style={{ flex: 1, backgroundColor: theme.colors.background }}
       >
-        <View style={{ padding: theme.spacing.lg }}>
-          <View style={{ marginBottom: theme.spacing.lg }}>
-            <PeriodSelector
-              selectedPeriod={period}
-              onPeriodChange={setPeriod}
-              periods={periods}
-            />
-            <VehicleFilter
-              vehicles={vehicles}
-              selectedVehicleIds={selectedVehicleIds}
-              onToggleVehicle={toggleVehicle}
-              onSelectAll={selectAll}
-              onClearAll={clearAll}
-            />
+        <ScrollView style={{ flex: 1 }}>
+          <View
+            style={{
+              paddingHorizontal: theme.spacing.xl,
+              paddingVertical: theme.spacing.lg,
+            }}
+          >
+            <Text
+              style={{
+                fontSize: theme.fontSize["3xl"],
+                fontWeight: theme.fontWeight.bold,
+                color: theme.colors.text,
+                marginBottom: theme.spacing.xs,
+              }}
+            >
+              Fuel Analytics
+            </Text>
+            <Text
+              style={{
+                fontSize: theme.fontSize.base,
+                color: theme.colors.textSecondary,
+              }}
+            >
+              Track fuel consumption and efficiency
+            </Text>
           </View>
-        </View>
-        <EmptyAnalytics
-          icon="water-outline"
-          title="No Fuel Data"
-          message="Start logging your fuel fill-ups to see analytics here."
-        />
+          <View style={{ padding: theme.spacing.lg }}>
+            <View style={{ marginBottom: theme.spacing.lg }}>
+              <PeriodSelector
+                selectedPeriod={period}
+                onPeriodChange={setPeriod}
+                periods={periods}
+              />
+              <VehicleFilter
+                vehicles={vehicles}
+                selectedVehicleIds={selectedVehicleIds}
+                onToggleVehicle={toggleVehicle}
+                onSelectAll={selectAll}
+                onClearAll={clearAll}
+              />
+            </View>
+          </View>
+          <EmptyAnalytics
+            icon="water-outline"
+            title="No Fuel Data"
+            message="Start logging your fuel fill-ups to see analytics here."
+          />
+        </ScrollView>
       </SafeAreaView>
     );
   }
@@ -128,6 +182,34 @@ export default function FuelTab() {
         }
         showsVerticalScrollIndicator={false}
       >
+        {/* Header */}
+        <View
+          style={{
+            paddingHorizontal: theme.spacing.xl,
+            paddingVertical: theme.spacing.lg,
+            backgroundColor: theme.colors.background,
+          }}
+        >
+          <Text
+            style={{
+              fontSize: theme.fontSize["3xl"],
+              fontWeight: theme.fontWeight.bold,
+              color: theme.colors.text,
+              marginBottom: theme.spacing.xs,
+            }}
+          >
+            Fuel Analytics
+          </Text>
+          <Text
+            style={{
+              fontSize: theme.fontSize.base,
+              color: theme.colors.textSecondary,
+            }}
+          >
+            Track fuel consumption and efficiency
+          </Text>
+        </View>
+
         <View style={{ padding: theme.spacing.lg }}>
           {/* Filters */}
           <View style={{ marginBottom: theme.spacing.lg }}>

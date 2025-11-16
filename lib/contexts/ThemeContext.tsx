@@ -1,6 +1,7 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { Platform, useColorScheme as useNativeColorScheme } from "react-native";
+import { UnistylesRuntime } from "react-native-unistyles";
 
 export type ThemeMode = "system" | "light" | "dark";
 export type ColorScheme = "light" | "dark";
@@ -41,6 +42,11 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
       : themeMode === "dark"
         ? "dark"
         : "light";
+
+  // Sync unistyles theme with color scheme
+  useEffect(() => {
+    UnistylesRuntime.setTheme(colorScheme);
+  }, [colorScheme]);
 
   // Handle hydration for web
   useEffect(() => {
@@ -95,13 +101,16 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
       const isDark = colorScheme === "dark";
       root.style.setProperty(
         "--background-color",
-        isDark ? "#222831" : "#FFFFFF",
+        isDark ? "#1e292e" : "#FFFFFF", // Blue Bayoux 950 for dark
       );
-      root.style.setProperty("--text-color", isDark ? "#F9FAFB" : "#1F2937");
+      root.style.setProperty(
+        "--text-color",
+        isDark ? "#f3f8f8" : "#1e292e", // Blue Bayoux 50/950
+      );
 
       // Also update the body background for consistency
-      document.body.style.backgroundColor = isDark ? "#222831" : "#FFFFFF";
-      document.body.style.color = isDark ? "#F9FAFB" : "#1F2937";
+      document.body.style.backgroundColor = isDark ? "#1e292e" : "#FFFFFF";
+      document.body.style.color = isDark ? "#f3f8f8" : "#1e292e";
 
       // Debug log for web
       console.log("Theme applied to web:", { themeMode, colorScheme, isDark });

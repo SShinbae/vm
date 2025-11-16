@@ -3,6 +3,7 @@ import { useColorScheme } from "@/hooks/use-color-scheme";
 import { ImageUploadService } from "@/lib/services/imageUploadService";
 import { Image } from "expo-image";
 import * as ImagePicker from "expo-image-picker";
+import { MediaTypeOptions } from "expo-image-picker";
 import React, { useRef, useState } from "react";
 import {
   ActivityIndicator,
@@ -86,7 +87,7 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
       }
 
       const result = await ImagePicker.launchCameraAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        mediaTypes: MediaTypeOptions.Images,
         allowsEditing: true,
         aspect: type === "avatar" ? [1, 1] : [4, 3],
         quality: 0.8,
@@ -114,7 +115,7 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
       }
 
       const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        mediaTypes: MediaTypeOptions.Images,
         allowsEditing: true,
         aspect: type === "avatar" ? [1, 1] : [4, 3],
         quality: 0.8,
@@ -136,63 +137,84 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
       setUploading(true);
       setLocalImageUri(uri);
 
-      let file: File;
-
       if (Platform.OS === "web") {
         // Web: Convert URI to File for upload service
         const response = await fetch(uri);
         const blob = await response.blob();
         const fileName = `image_${Date.now()}.jpg`;
-        file = new File([blob], fileName, { type: "image/jpeg" });
-      } else {
-        // Mobile: Create File from ArrayBuffer
-        const response = await fetch(uri);
-        const arrayBuffer = await response.arrayBuffer();
-        const fileName = `image_${Date.now()}.jpg`;
+        const file = new File([blob], fileName, { type: "image/jpeg" });
 
-        // Create a proper File object for mobile using ArrayBuffer
-        const uint8Array = new Uint8Array(arrayBuffer);
-        file = new File([uint8Array], fileName, { type: "image/jpeg" });
-      }
-
-      // Validate file
-      const validation = ImageUploadService.validateImageFile(file);
-      if (!validation.isValid) {
-        onUploadError?.(validation.error!);
-        Alert.alert("Invalid File", validation.error!);
-        setLocalImageUri(null);
-        return;
-      }
-
-      let result;
-      if (type === "avatar") {
-        result = await ImageUploadService.uploadProfileAvatar(file);
-      } else {
-        if (!vehicleId) {
-          throw new Error("Vehicle ID is required for vehicle images");
+        // Validate file
+        const validation = ImageUploadService.validateImageFile(file);
+        if (!validation.isValid) {
+          onUploadError?.(validation.error!);
+          Alert.alert("Invalid File", validation.error!);
+          setLocalImageUri(null);
+          return;
         }
-        result = await ImageUploadService.uploadVehicleImage(
-          vehicleId,
-          file,
-          type === "vehicle_main" ? "vehicle_main" : "vehicle_gallery",
-        );
-      }
 
-      if (result.error) {
-        onUploadError?.(result.error);
-        Alert.alert("Upload Failed", result.error);
-        setLocalImageUri(null);
+        let result;
+        if (type === "avatar") {
+          result = await ImageUploadService.uploadProfileAvatar(file);
+        } else {
+          if (!vehicleId) {
+            throw new Error("Vehicle ID is required for vehicle images");
+          }
+          result = await ImageUploadService.uploadVehicleImage(
+            vehicleId,
+            file,
+            type === "vehicle_main" ? "vehicle_main" : "vehicle_gallery",
+          );
+        }
+
+        if (result.error) {
+          onUploadError?.(result.error);
+          Alert.alert("Upload Failed", result.error);
+          setLocalImageUri(null);
+        } else {
+          const imageUrl =
+            type === "avatar"
+              ? typeof result.data === "string"
+                ? result.data
+                : result.data!.image_url
+              : typeof result.data === "string"
+                ? result.data
+                : result.data!.image_url;
+          onUploadComplete?.(imageUrl as string);
+          Alert.alert("Success", "Image uploaded successfully!");
+        }
       } else {
-        const imageUrl =
-          type === "avatar"
-            ? typeof result.data === "string"
-              ? result.data
-              : result.data!.image_url
-            : typeof result.data === "string"
-              ? result.data
-              : result.data!.image_url;
-        onUploadComplete?.(imageUrl as string);
-        Alert.alert("Success", "Image uploaded successfully!");
+        // Mobile: Use direct URI upload to avoid ArrayBuffer blob issues
+        let result;
+        if (type === "avatar") {
+          result = await ImageUploadService.uploadProfileAvatarFromUri(uri);
+        } else {
+          if (!vehicleId) {
+            throw new Error("Vehicle ID is required for vehicle images");
+          }
+          result = await ImageUploadService.uploadVehicleImageFromUri(
+            vehicleId,
+            uri,
+            type === "vehicle_main" ? "vehicle_main" : "vehicle_gallery",
+          );
+        }
+
+        if (result.error) {
+          onUploadError?.(result.error);
+          Alert.alert("Upload Failed", result.error);
+          setLocalImageUri(null);
+        } else {
+          const imageUrl =
+            type === "avatar"
+              ? typeof result.data === "string"
+                ? result.data
+                : result.data!.image_url
+              : typeof result.data === "string"
+                ? result.data
+                : result.data!.image_url;
+          onUploadComplete?.(imageUrl as string);
+          Alert.alert("Success", "Image uploaded successfully!");
+        }
       }
     } catch (error: any) {
       onUploadError?.(error.message);
@@ -203,19 +225,18 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
     }
   };
 
-  const validateImageSize = (width: number, height: number): boolean => {
-    const maxDimension = 4096; // Typical max for mobile devices
-
-    if (width > maxDimension || height > maxDimension) {
-      Alert.alert(
-        "Image Too Large",
-        `Please select a smaller image (max ${maxDimension}px)`,
-      );
-      return false;
-    }
-
-    return true;
-  };
+  // Utility function for future use - validates image dimensions
+  // const validateImageSize = (width: number, height: number): boolean => {
+  //   const maxDimension = 4096; // Typical max for mobile devices
+  //   if (width > maxDimension || height > maxDimension) {
+  //     Alert.alert(
+  //       "Image Too Large",
+  //       `Please select a smaller image (max ${maxDimension}px)`,
+  //     );
+  //     return false;
+  //   }
+  //   return true;
+  // };
 
   const handleCropComplete = (croppedFile: File) => {
     console.log("🎯 Crop complete, received file:", croppedFile);
