@@ -17,9 +17,9 @@ export default {
       package: "com.vehiclesmanagement.app",
       adaptiveIcon: {
         backgroundColor: "#E6F4FE",
-        foregroundImage: "./assets/images/launch-icon-foreground.png",
-        backgroundImage: "./assets/images/launch-icon-foreground.png",
-        monochromeImage: "./assets/images/vm_logo_foreground.png",
+        foregroundImage: "./assets/images/android-icon-foreground.png",
+        backgroundImage: "./assets/images/android-icon-background.png",
+        monochromeImage: "./assets/images/android-icon-monochrome.png",
       },
       edgeToEdgeEnabled: true,
       predictiveBackGestureEnabled: false,
