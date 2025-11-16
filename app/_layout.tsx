@@ -79,10 +79,13 @@ function RootLayoutContent() {
         )}
         <AuthGuard>
           <View style={{ flex: 1 }}>
-            <Stack>
+            <Stack screenOptions={{ headerShown: false }}>
               <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
               <Stack.Screen name="(auth)" options={{ headerShown: false }} />
               <Stack.Screen name="auth" options={{ headerShown: false }} />
+              <Stack.Screen name="vehicles" options={{ headerShown: false }} />
+              <Stack.Screen name="logs" options={{ headerShown: false }} />
+              <Stack.Screen name="groups" options={{ headerShown: false }} />
               <Stack.Screen
                 name="modal"
                 options={{ presentation: "modal", title: "Modal" }}

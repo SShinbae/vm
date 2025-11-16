@@ -3,8 +3,6 @@ import { DatePicker } from "@/components/ui/DatePicker";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { Input } from "@/components/ui/Input";
 import { AlertModal } from "@/components/ui/Modal";
-import { Colors } from "@/constants/theme";
-import { useColorScheme } from "@/hooks/use-color-scheme";
 import { FuelLogService } from "@/lib/services/loggingService";
 import { FuelLog, FuelLogFormData, Vehicle } from "@/types";
 import { router, useLocalSearchParams } from "expo-router";
@@ -14,12 +12,12 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
-  StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { createStyleSheet, useStyles } from "react-native-unistyles";
 
 type FuelLogWithVehicle = FuelLog & {
   vehicles: Vehicle | null;
@@ -27,6 +25,7 @@ type FuelLogWithVehicle = FuelLog & {
 
 export default function EditFuelLogScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
+  const { styles, theme } = useStyles(stylesheet);
   const [fuelLog, setFuelLog] = useState<FuelLogWithVehicle | null>(null);
   const [formData, setFormData] = useState<FuelLogFormData>({
     vehicle_id: "",
@@ -42,8 +41,6 @@ export default function EditFuelLogScreen() {
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [showErrorModal, setShowErrorModal] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
-  const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? "light"];
   const isWeb = Platform.OS === "web";
 
   // Auto-calculate liters based on cost and fuel price (only this direction)
@@ -213,188 +210,27 @@ export default function EditFuelLogScreen() {
     );
   };
 
-  const styles = StyleSheet.create({
-    container: {
-      flex: 1,
-      backgroundColor: isWeb ? colors.icon + "08" : colors.background,
-    },
-    header: {
-      flexDirection: "row",
-      alignItems: "center",
-      paddingHorizontal: 20,
-      paddingVertical: 16,
-      borderBottomWidth: 1,
-      borderBottomColor: colors.icon + "20",
-      backgroundColor: colors.background,
-    },
-    backButton: {
-      marginRight: 16,
-      padding: 4,
-    },
-    headerTitle: {
-      fontSize: 24,
-      fontWeight: "bold",
-      color: colors.text,
-      flex: 1,
-    },
-    content: {
-      flex: 1,
-    },
-    scrollContent: {
-      padding: isWeb ? 40 : 20,
-      paddingBottom: 100,
-      ...(isWeb && {
-        maxWidth: 600,
-        width: "100%",
-        alignSelf: "center",
-      }),
-    },
-    title: {
-      fontSize: 32,
-      fontWeight: "bold",
-      color: colors.text,
-      marginBottom: 8,
-      textAlign: isWeb ? "center" : "left",
-    },
-    subtitle: {
-      fontSize: 16,
-      color: colors.icon,
-      marginBottom: 32,
-      textAlign: isWeb ? "center" : "left",
-    },
-    card: {
-      backgroundColor: colors.background,
-      borderRadius: isWeb ? 16 : 12,
-      padding: isWeb ? 32 : 20,
-      ...(isWeb && {
-        shadowColor: colorScheme === "dark" ? "#ffffff" : "#000000",
-        shadowOffset: {
-          width: 0,
-          height: 4,
-        },
-        shadowOpacity: colorScheme === "dark" ? 0.1 : 0.08,
-        shadowRadius: 12,
-        elevation: 4,
-      }),
-    },
-    section: {
-      marginBottom: 24,
-    },
-    sectionTitle: {
-      fontSize: 18,
-      fontWeight: "600",
-      color: colors.text,
-      marginBottom: 16,
-    },
-    inputContainer: {
-      marginBottom: 20,
-    },
-    label: {
-      fontSize: 16,
-      fontWeight: "500",
-      color: colors.text,
-      marginBottom: 8,
-    },
-    requiredLabel: {
-      color: "#ff4444",
-    },
-    row: {
-      flexDirection: isWeb ? "row" : "column",
-      gap: 16,
-    },
-    flex1: {
-      flex: 1,
-    },
-    loadingContainer: {
-      flex: 1,
-      justifyContent: "center",
-      alignItems: "center",
-    },
-    vehicleInfo: {
-      backgroundColor: colors.icon + "10",
-      borderRadius: 8,
-      padding: 12,
-      flexDirection: "row",
-      alignItems: "center",
-      gap: 12,
-    },
-    vehicleIcon: {
-      width: 32,
-      height: 32,
-      borderRadius: 16,
-      backgroundColor: colors.tint,
-      alignItems: "center",
-      justifyContent: "center",
-    },
-    vehicleText: {
-      fontSize: 16,
-      fontWeight: "500",
-      color: colors.text,
-    },
-    vehiclePlate: {
-      fontSize: 14,
-      color: colors.icon,
-      marginTop: 2,
-    },
-    fuelPriceSelector: {
-      flexDirection: "row",
-      gap: 8,
-    },
-    fuelPriceOption: {
-      flex: 1,
-      backgroundColor: colors.background,
-      borderWidth: 1,
-      borderColor: colors.icon + "30",
-      borderRadius: 8,
-      paddingVertical: 12,
-      paddingHorizontal: 16,
-      alignItems: "center",
-    },
-    fuelPriceOptionSelected: {
-      borderColor: colors.tint,
-      backgroundColor: colors.tint + "10",
-    },
-    fuelPriceOptionText: {
-      fontSize: 16,
-      fontWeight: "600",
-      color: colors.text,
-    },
-    fuelPriceOptionTextSelected: {
-      color: colors.tint,
-    },
-    inputReadOnly: {
-      backgroundColor: colors.icon + "10",
-      color: colors.icon,
-    },
-    buttonContainer: {
-      flexDirection: "row",
-      gap: 12,
-      marginTop: 32,
-    },
-    cancelButton: {
-      flex: 1,
-    },
-    saveButton: {
-      flex: 2,
-    },
-  });
+  // Custom Header Component
+  const CustomHeader = () => (
+    <View style={styles.customHeader}>
+      <TouchableOpacity
+        style={styles.customBackButton}
+        onPress={() => router.back()}
+      >
+        <IconSymbol name="chevron.left" size={24} color={theme.colors.text} />
+      </TouchableOpacity>
+      <View style={styles.titleContainer}>
+        <Text style={styles.headerTitle}>Edit Fuel Log</Text>
+      </View>
+    </View>
+  );
 
   if (dataLoading) {
     return (
       <SafeAreaView style={styles.container}>
-        {!isWeb && (
-          <View style={styles.header}>
-            <TouchableOpacity
-              style={styles.backButton}
-              onPress={() => router.back()}
-            >
-              <IconSymbol name="chevron.left" size={24} color={colors.text} />
-            </TouchableOpacity>
-            <Text style={styles.headerTitle}>Edit Fuel Log</Text>
-          </View>
-        )}
+        <CustomHeader />
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={colors.tint} />
+          <ActivityIndicator size="large" color={theme.colors.primary} />
         </View>
       </SafeAreaView>
     );
@@ -402,24 +238,14 @@ export default function EditFuelLogScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      {!isWeb && (
-        <View style={styles.header}>
-          <TouchableOpacity
-            style={styles.backButton}
-            onPress={() => router.back()}
-          >
-            <IconSymbol name="chevron.left" size={24} color={colors.text} />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>Edit Fuel Log</Text>
-        </View>
-      )}
+      <CustomHeader />
 
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={styles.content}
       >
         <ScrollView
-          contentContainerStyle={styles.scrollContent}
+          contentContainerStyle={styles.scrollContent(isWeb)}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
@@ -430,7 +256,7 @@ export default function EditFuelLogScreen() {
             </>
           )}
 
-          <View style={styles.card}>
+          <View style={styles.card(isWeb)}>
             <View style={styles.inputContainer}>
               <Text style={styles.label}>Vehicle</Text>
               {fuelLog?.vehicles && (
@@ -638,3 +464,170 @@ export default function EditFuelLogScreen() {
     </SafeAreaView>
   );
 }
+
+// --- Stylesheet ---
+const stylesheet = createStyleSheet((theme) => ({
+  container: {
+    flex: 1,
+    backgroundColor: theme.colors.background,
+  },
+  // --- Custom Header Styles ---
+  customHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: theme.spacing.lg,
+    paddingVertical: theme.spacing.md,
+    backgroundColor: theme.colors.background,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.border,
+  },
+  customBackButton: {
+    marginRight: theme.spacing.md,
+    padding: theme.spacing.xs,
+  },
+  titleContainer: {
+    flex: 1,
+  },
+  headerTitle: {
+    fontSize: 24,
+    fontWeight: "bold",
+    color: theme.colors.text,
+  },
+  // --- End of Header Styles ---
+  content: {
+    flex: 1,
+  },
+  scrollContent: (isWeb: boolean) => ({
+    padding: isWeb ? theme.spacing.xxl : theme.spacing.lg,
+    paddingBottom: 100,
+    ...(isWeb && {
+      maxWidth: 600,
+      width: "100%",
+      alignSelf: "center",
+    }),
+  }),
+  title: {
+    fontSize: 32,
+    fontWeight: "bold",
+    color: theme.colors.text,
+    marginBottom: theme.spacing.sm,
+    textAlign: "center",
+  },
+  subtitle: {
+    fontSize: theme.fontSize.base,
+    color: theme.colors.textSecondary,
+    marginBottom: theme.spacing.xl,
+    textAlign: "center",
+  },
+  card: (isWeb: boolean) => ({
+    backgroundColor: theme.colors.surface,
+    borderRadius: isWeb ? theme.borderRadius.xl : theme.borderRadius.lg,
+    padding: isWeb ? theme.spacing.xxl : theme.spacing.lg,
+    ...(isWeb && {
+      shadowColor: "#000000",
+      shadowOffset: {
+        width: 0,
+        height: 4,
+      },
+      shadowOpacity: 0.1,
+      shadowRadius: 12,
+      elevation: 4,
+    }),
+  }),
+  section: {
+    marginBottom: theme.spacing.xl,
+  },
+  sectionTitle: {
+    fontSize: theme.fontSize.lg,
+    fontWeight: "600",
+    color: theme.colors.text,
+    marginBottom: theme.spacing.md,
+  },
+  inputContainer: {
+    marginBottom: theme.spacing.lg,
+  },
+  label: {
+    fontSize: theme.fontSize.base,
+    fontWeight: "500",
+    color: theme.colors.text,
+    marginBottom: theme.spacing.sm,
+  },
+  requiredLabel: {
+    color: theme.colors.error,
+  },
+  row: {
+    flexDirection: "row",
+    gap: theme.spacing.md,
+  },
+  flex1: {
+    flex: 1,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  vehicleInfo: {
+    backgroundColor: theme.colors.surface,
+    borderRadius: theme.borderRadius.md,
+    padding: theme.spacing.md,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: theme.spacing.md,
+  },
+  vehicleIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: theme.colors.primary,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  vehicleText: {
+    fontSize: theme.fontSize.base,
+    fontWeight: "500",
+    color: theme.colors.text,
+  },
+  vehiclePlate: {
+    fontSize: theme.fontSize.sm,
+    color: theme.colors.textSecondary,
+    marginTop: 2,
+  },
+  fuelPriceSelector: {
+    flexDirection: "row",
+    gap: theme.spacing.sm,
+  },
+  fuelPriceOption: {
+    flex: 1,
+    backgroundColor: theme.colors.surface,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    borderRadius: theme.borderRadius.md,
+    paddingVertical: theme.spacing.md,
+    paddingHorizontal: theme.spacing.lg,
+    alignItems: "center",
+  },
+  fuelPriceOptionSelected: {
+    borderColor: theme.colors.primary,
+    backgroundColor: theme.colors.primary + "15",
+  },
+  fuelPriceOptionText: {
+    fontSize: theme.fontSize.base,
+    fontWeight: "600",
+    color: theme.colors.text,
+  },
+  fuelPriceOptionTextSelected: {
+    color: theme.colors.primary,
+  },
+  buttonContainer: {
+    flexDirection: "row",
+    gap: theme.spacing.md,
+    marginTop: theme.spacing.xxl,
+  },
+  cancelButton: {
+    flex: 1,
+  },
+  saveButton: {
+    flex: 2,
+  },
+}));

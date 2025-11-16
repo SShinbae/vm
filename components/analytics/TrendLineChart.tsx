@@ -1,7 +1,7 @@
 import React from "react";
-import { View, Text, Dimensions } from "react-native";
-import { createStyleSheet, useStyles } from "react-native-unistyles";
+import { Dimensions, Text, View } from "react-native";
 import { LineChart } from "react-native-chart-kit";
+import { createStyleSheet, useStyles } from "react-native-unistyles";
 import { TrendDataPoint } from "../../types/analytics";
 
 interface TrendLineChartProps {
@@ -44,7 +44,7 @@ export function TrendLineChart({
           return d.date.slice(5, 10); // MM-DD
         }
         return "";
-      } catch (error) {
+      } catch {
         console.warn("Invalid date format in trend data:", d.date);
         return "";
       }
@@ -64,13 +64,13 @@ export function TrendLineChart({
     backgroundGradientTo: theme.colors.surface,
     decimalPlaces: 1,
     color: (opacity = 1) => {
-      const isDark = theme.colors.background === "#000000";
+      const isDark = theme.colors.background === "#1e292e";
       return isDark
         ? `rgba(255, 255, 255, ${opacity})`
         : `rgba(0, 0, 0, ${opacity})`;
     },
     labelColor: (opacity = 1) => {
-      const isDark = theme.colors.background === "#000000";
+      const isDark = theme.colors.background === "#1e292e";
       return isDark
         ? `rgba(255, 255, 255, ${opacity * 0.7})`
         : `rgba(0, 0, 0, ${opacity * 0.7})`;

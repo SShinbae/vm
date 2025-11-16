@@ -16,7 +16,7 @@ This document outlines critical calculation errors and unimplemented features fo
 
 ### 1. Incorrect Fuel Cost Calculation
 
-**File:** [app/(tabs)/analytics/fuel.tsx:171](app/(tabs)/analytics/fuel.tsx#L171)
+**File:** [app/(tabs)/analytics/fuel.tsx:171](<app/(tabs)/analytics/fuel.tsx#L171>)
 **Severity:** 🔴 HIGH
 **Impact:** Displays incorrect fuel cost to users
 
@@ -34,12 +34,14 @@ This document outlines critical calculation errors and unimplemented features fo
 ```
 
 **What's wrong:**
+
 - This calculation multiplies `totalLitersFilled` by `averageFuelPrice`
 - However, `averageFuelPrice` is already cost per liter (calculated as `totalCost / totalLitersFilled` in [calculations.ts:85-86](lib/analytics/calculations.ts#L85-L86))
 - The actual total fuel cost is already calculated in `calculateCostMetrics()` ([calculations.ts:108-111](lib/analytics/calculations.ts#L108-L111))
 - This creates an incorrect value that doesn't match the real expenditure
 
 **Example:**
+
 ```
 Real data:
 - Fill-up 1: 40L at RM2.50/L = RM100
@@ -57,17 +59,18 @@ Should use the direct totalFuelCost value instead.
 
 #### Fix Required
 
-**Step 1:** Add `costMetrics` to the destructured hook return in [fuel.tsx:40](app/(tabs)/analytics/fuel.tsx#L40)
+**Step 1:** Add `costMetrics` to the destructured hook return in [fuel.tsx:40](<app/(tabs)/analytics/fuel.tsx#L40>)
 
 ```typescript
 // Current (line 40):
 const { loading, error, fuelMetrics, refetch } = useAnalyticsData(filters);
 
 // Change to:
-const { loading, error, fuelMetrics, costMetrics, refetch } = useAnalyticsData(filters);
+const { loading, error, fuelMetrics, costMetrics, refetch } =
+  useAnalyticsData(filters);
 ```
 
-**Step 2:** Update the MetricCard to use the correct value ([fuel.tsx:171](app/(tabs)/analytics/fuel.tsx#L171))
+**Step 2:** Update the MetricCard to use the correct value ([fuel.tsx:171](<app/(tabs)/analytics/fuel.tsx#L171>))
 
 ```typescript
 // Change from:
@@ -86,7 +89,7 @@ Looking at [useAnalytics.ts:94-102](hooks/useAnalytics.ts#L94-L102), the hook al
 return {
   loading,
   error,
-  costMetrics,  // ✓ Already included
+  costMetrics, // ✓ Already included
   fuelMetrics,
   serviceMetrics,
   vehicleComparison,
@@ -126,6 +129,7 @@ if (distance > 0 && distance < 10000) {
 ```
 
 **Issues:**
+
 1. No validation that `currentLog.liters_filled` is positive (could be 0 or negative from data entry errors)
 2. No logging or warning when data is excluded due to validation failures
 3. Users won't know if their data has quality issues
@@ -142,7 +146,9 @@ if (distance > 0 && distance < 10000) {
 
   // Validate liters filled
   if (currentLog.liters_filled <= 0) {
-    console.warn(`Invalid fuel data: ${currentLog.id} has non-positive liters (${currentLog.liters_filled})`);
+    console.warn(
+      `Invalid fuel data: ${currentLog.id} has non-positive liters (${currentLog.liters_filled})`,
+    );
     continue;
   }
 
@@ -155,7 +161,9 @@ if (distance > 0 && distance < 10000) {
     if (consumption < bestEfficiency) bestEfficiency = consumption;
     if (consumption > worstEfficiency) worstEfficiency = consumption;
   } else {
-    console.warn(`Unrealistic fuel consumption calculated: ${consumption.toFixed(2)} L/100km for log ${currentLog.id}`);
+    console.warn(
+      `Unrealistic fuel consumption calculated: ${consumption.toFixed(2)} L/100km for log ${currentLog.id}`,
+    );
   }
 }
 ```
@@ -178,6 +186,7 @@ labels: data.map((d) => d.label || d.date.slice(5)),
 ```
 
 **Issues:**
+
 - Assumes `d.date` exists and is a string
 - Assumes date is in ISO format (YYYY-MM-DD) where `.slice(5)` gets MM-DD
 - No error handling if date is undefined, null, or in wrong format
@@ -232,11 +241,13 @@ return (ownVehicles as Vehicle[]) || [];
 #### Fix Required
 
 **Option 1:** Remove group support from analytics until backend is ready
+
 - Remove `groupId` from `AnalyticsFilters` type
 - Remove group-related UI elements
 - Document as future feature
 
 **Option 2:** Implement group vehicle fetching (requires backend work)
+
 - Create Supabase RPC function to fetch group-shared vehicles
 - Update `fetchAccessibleVehicles()` to include group vehicles
 - Add permission checks for group analytics access
@@ -266,6 +277,7 @@ const percentageChange =
 ```
 
 **Issues:**
+
 1. No validation that `t.value` is a valid number (could be `NaN`)
 2. No handling of extreme outliers
 3. `firstAvg` could be 0, handled, but `secondAvg` could be `NaN` if values are invalid
@@ -282,7 +294,9 @@ if (trends.length >= 2) {
 
   // Calculate with NaN filtering
   const getValidAverage = (data: TrendDataPoint[]) => {
-    const validValues = data.map(t => t.value).filter(v => !isNaN(v) && isFinite(v));
+    const validValues = data
+      .map((t) => t.value)
+      .filter((v) => !isNaN(v) && isFinite(v));
     if (validValues.length === 0) return 0;
     return validValues.reduce((sum, v) => sum + v, 0) / validValues.length;
   };
@@ -334,11 +348,13 @@ if (trends.length >= 2) {
 #### Options
 
 **Option 1:** Remove dead code
+
 ```typescript
 // Delete the function if not planned for use
 ```
 
 **Option 2:** Complete the feature
+
 1. Add to analytics response type as required field
 2. Create LocationCostChart component
 3. Add tab or section in analytics UI
@@ -350,31 +366,34 @@ if (trends.length >= 2) {
 
 ## Summary Table
 
-| # | Issue | File | Lines | Severity | Status |
-|---|-------|------|-------|----------|--------|
-| 1 | Incorrect fuel cost calculation | fuel.tsx | 171 | 🔴 HIGH | ❌ Not Fixed |
-| 2 | Missing costMetrics destructuring | fuel.tsx | 40 | 🔴 HIGH | ❌ Not Fixed |
-| 3 | No validation for fuel data quality | calculations.ts | 65-79 | 🟡 MEDIUM | ❌ Not Fixed |
-| 4 | Unsafe date string slicing | TrendLineChart.tsx | 37 | 🟡 MEDIUM | ❌ Not Fixed |
-| 5 | Group vehicles not implemented | analytics-queries.ts | 240 | 🟡 MEDIUM | ⚠️ TODO exists |
-| 6 | Missing NaN guards in trends | useAnalytics.ts | 156-179 | 🟡 MEDIUM | ❌ Not Fixed |
-| 7 | Location costs not integrated | calculations.ts | 389-414 | 🟢 LOW | ⚠️ Dead code |
+| #   | Issue                               | File                 | Lines   | Severity  | Status         |
+| --- | ----------------------------------- | -------------------- | ------- | --------- | -------------- |
+| 1   | Incorrect fuel cost calculation     | fuel.tsx             | 171     | 🔴 HIGH   | ❌ Not Fixed   |
+| 2   | Missing costMetrics destructuring   | fuel.tsx             | 40      | 🔴 HIGH   | ❌ Not Fixed   |
+| 3   | No validation for fuel data quality | calculations.ts      | 65-79   | 🟡 MEDIUM | ❌ Not Fixed   |
+| 4   | Unsafe date string slicing          | TrendLineChart.tsx   | 37      | 🟡 MEDIUM | ❌ Not Fixed   |
+| 5   | Group vehicles not implemented      | analytics-queries.ts | 240     | 🟡 MEDIUM | ⚠️ TODO exists |
+| 6   | Missing NaN guards in trends        | useAnalytics.ts      | 156-179 | 🟡 MEDIUM | ❌ Not Fixed   |
+| 7   | Location costs not integrated       | calculations.ts      | 389-414 | 🟢 LOW    | ⚠️ Dead code   |
 
 ---
 
 ## Recommended Fix Order
 
 ### Phase 1: Critical Fixes (Do Immediately)
+
 1. ✅ Fix fuel cost calculation in fuel.tsx (Issue #1)
 2. ✅ Add costMetrics destructuring in fuel.tsx (Issue #2)
 3. ✅ Test with real data to verify correct values
 
 ### Phase 2: Data Quality (Next Sprint)
+
 4. ⚠️ Add validation and warnings for fuel efficiency calculations (Issue #3)
 5. ⚠️ Add NaN guards to trend analysis (Issue #6)
 6. ⚠️ Improve date handling in TrendLineChart (Issue #4)
 
 ### Phase 3: Feature Decisions (Backlog)
+
 7. 📋 Decide on group vehicles feature - implement or remove from filters (Issue #5)
 8. 📋 Decide on location cost analysis - implement UI or delete function (Issue #7)
 
@@ -411,6 +430,7 @@ Even though the current wrong formula might produce correct-looking numbers in s
 ### Code Quality Impact
 
 These issues represent technical debt that could:
+
 - Erode user trust if incorrect values are shown
 - Cause silent failures that are hard to debug
 - Make the codebase harder to maintain

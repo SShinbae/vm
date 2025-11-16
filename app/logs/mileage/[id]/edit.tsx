@@ -172,7 +172,7 @@ export default function EditMileageLogScreen() {
   const styles = StyleSheet.create({
     container: {
       flex: 1,
-      backgroundColor: isWeb ? colors.icon + "08" : colors.background,
+      backgroundColor: colors.background,
     },
     header: {
       flexDirection: "row",

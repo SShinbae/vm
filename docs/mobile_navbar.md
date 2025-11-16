@@ -4,7 +4,7 @@
 
 Based on the improvements suggested, here's a comprehensive prompt you can use to implement or enhance your bottom navbar:
 
-***
+---
 
 ## Prompt: Create a Responsive Mobile Bottom Navigation Bar
 
@@ -15,20 +15,18 @@ I'm building a React Native app using Expo Router with React Native Unistyles fo
 
 ### Design Specifications
 
-- Create a bottom tab navigation bar with 3-5 primary destinations (Home, Vehicles, Analytics, Logs,  Profile)
+- Create a bottom tab navigation bar with 3-5 primary destinations (Home, Vehicles, Analytics, Logs, Profile)
 - Each tab icon must have minimum touch targets of 48×48dp with adequate spacing between items
 - Implement clear visual distinction between active (primary color) and inactive states (textSecondary with 60% opacity)
 - Ensure the tab bar respects device safe areas and sits above the home indicator on gesture-based devices
 - Groups will be in profile tabs
 
-
 ### Responsive Behavior
 
 - Use Unistyles breakpoints to adapt the navbar:
-    - Mobile (xs-sm): Bottom position with 60px height
-    - Tablet/larger (md+): Consider left-side positioning with 70px height
+  - Mobile (xs-sm): Bottom position with 60px height
+  - Tablet/larger (md+): Consider left-side positioning with 70px height
 - Apply responsive sizing for icons (24px on mobile, 28px on tablets) and labels (fontSize.xs on mobile, fontSize.sm on tablets)
-
 
 ### Technical Implementation
 
@@ -36,7 +34,6 @@ I'm building a React Native app using Expo Router with React Native Unistyles fo
 - Wrap the app in `SafeAreaProvider` and use `useSafeAreaInsets` hook for proper padding
 - Implement lazy loading (default) for tab screens to optimize performance
 - Add subtle micro-interactions: scale animation (0.95-1.0) on press with 200ms duration
-
 
 ### Styling with Unistyles
 
@@ -48,13 +45,11 @@ Create a responsive stylesheet that uses:
 - `theme.colors.primary` for active state
 - `theme.colors.textSecondary` for inactive state
 
-
 ### Accessibility
 
 - Include `accessibilityLabel` and `accessibilityState` for each tab
 - Maintain WCAG contrast ratio of 4.5:1 for text/icons and 3:1 for UI components
 - Add `accessibilityRole="button"` and proper focus indicators
-
 
 ### Additional Features
 
@@ -65,7 +60,7 @@ Create a responsive stylesheet that uses:
 
 **Output:** Provide the complete implementation including the tab bar component, stylesheet using Unistyles, and integration code with proper TypeScript typing based on my existing navigation types (TabStackParamList from `index.ts`).
 
-***
+---
 
 This prompt includes all the key improvements from my suggestions and is tailored to your specific tech stack, making it ready to use with an AI coding assistant or as developer documentation.[^1][^2][^3][^6][^10][^11][^12][^13]
 <span style="display:none">[^4][^5][^7][^8][^9]</span>
@@ -97,4 +92,3 @@ This prompt includes all the key improvements from my suggestions and is tailore
 [^12]: unistyles.ts
 
 [^13]: index.ts
-

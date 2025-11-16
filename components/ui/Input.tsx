@@ -118,9 +118,9 @@ export const Input = forwardRef<TextInput, InputProps>(
 
       // State styles
       if (error) {
-        baseStyle.push({ borderColor: "#ff4444" });
+        baseStyle.push({ borderColor: colors.error });
       } else if (success) {
-        baseStyle.push({ borderColor: "#4CAF50" });
+        baseStyle.push({ borderColor: colors.success });
       }
 
       if (disabled) {
@@ -184,10 +184,10 @@ export const Input = forwardRef<TextInput, InputProps>(
 
     const getHelperTextStyle = (): TextStyle[] => {
       if (error) {
-        return [styles.helperText, styles.errorText];
+        return [styles.helperText, { color: colors.error }];
       }
       if (success) {
-        return [styles.helperText, styles.successText];
+        return [styles.helperText, { color: colors.success }];
       }
       return [styles.helperText, { color: colors.icon }];
     };
@@ -203,10 +203,16 @@ export const Input = forwardRef<TextInput, InputProps>(
       }
     };
 
+    const getBorderColor = () => {
+      if (error) return colors.error;
+      if (success) return colors.success;
+      if (isFocused) return colors.primary;
+      return colors.icon;
+    };
+
     const getIconColor = () => {
-      if (error) return "#ff4444";
-      if (success) return "#4CAF50";
-      if (isFocused) return colors.tint;
+      if (error) return colors.error;
+      if (success) return colors.success;
       return colors.icon;
     };
 
@@ -218,7 +224,12 @@ export const Input = forwardRef<TextInput, InputProps>(
         {label && (
           <Text style={getLabelStyle()}>
             {label}
-            {required && <Text style={styles.requiredAsterisk}> *</Text>}
+            {required && (
+              <Text style={[styles.requiredAsterisk, { color: colors.error }]}>
+                {" "}
+                *
+              </Text>
+            )}
           </Text>
         )}
 

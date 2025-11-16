@@ -406,14 +406,14 @@ const LogCard = ({ log, type }: { log: any; type: LogType }) => {
         case "fuel":
           return {
             title: `${log.cost ? `RM${log.cost}` : ""} `,
-            subtitle: `${log.liters_filled} L`,             odometer: log.odometer_reading               ? `${log.odometer_reading.toLocaleString()} km`
+            subtitle: `${log.liters*filled} L`,             odometer: log.odometer_reading               ? `${log.odometer_reading.toLocaleString()} km`
               : null,
             icon: "fuelpump",
             color: "#4CAF50",
           };
         case "service":
           return {
-            title: log.service_type?.replace("_", " ").toUpperCase(),
+            title: log.service_type?.replace("*", " ").toUpperCase(),
             subtitle: `${formatServiceItems(log.description)}${log.cost ? ` • RM${log.cost}` : ""}`,
             icon: "wrench",
             color: "\#FF9800",
@@ -464,7 +464,7 @@ return (
                 />
               )}
             </View>
-            {/* <Text style={styles.logSubtitle}>{details.subtitle}</Text> */}
+            {/_ <Text style={styles.logSubtitle}>{details.subtitle}</Text> _/}
             <Text style={styles.logSubtitle}>{details.subtitle}</Text>
             {details.odometer \&\& (
               <Text style={styles.logOdometer}>{details.odometer}</Text>
@@ -990,21 +990,21 @@ Based on modern React Native UI trends for 2025, here are comprehensive redesign
 ```tsx
 const styles = StyleSheet.create({
   // ... other styles
-  
+
   tabs: {
-    flexDirection: 'row',
+    flexDirection: "row",
     marginHorizontal: 20,
     marginVertical: 16,
-    backgroundColor: colors.icon + '10', // Light background
+    backgroundColor: colors.icon + "10", // Light background
     borderRadius: 12,
     padding: 4,
     gap: 4,
   },
   tabButton: {
     flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
     paddingVertical: 10,
     paddingHorizontal: 12,
     borderRadius: 8,
@@ -1013,7 +1013,7 @@ const styles = StyleSheet.create({
   },
   activeTab: {
     backgroundColor: colors.background, // or 'white'
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.08,
     shadowRadius: 4,
@@ -1036,8 +1036,8 @@ const styles = StyleSheet.create({
     padding: 20, // Increased padding
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: colors.icon + '10', // Lighter border
-    
+    borderColor: colors.icon + "10", // Lighter border
+
     // Modern shadow
     shadowColor: colors.text,
     shadowOffset: { width: 0, height: 4 },
@@ -1045,14 +1045,14 @@ const styles = StyleSheet.create({
     shadowRadius: 12,
     elevation: 3,
   },
-  
+
   // Larger, more prominent icons
   logIcon: {
     width: 48, // Increased from 40
     height: 48,
     borderRadius: 24,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     marginRight: 16,
   },
 });
@@ -1061,7 +1061,7 @@ const styles = StyleSheet.create({
 **Swipeable Cards** - Implement swipe actions for delete/edit using `react-native-gesture-handler` for a more intuitive mobile experience :[^6][^4]
 
 ```tsx
-import Swipeable from 'react-native-gesture-handler/Swipeable';
+import Swipeable from "react-native-gesture-handler/Swipeable";
 
 const renderRightActions = () => (
   <View style={styles.swipeActions}>
@@ -1077,9 +1077,8 @@ const renderRightActions = () => (
 // Wrap LogCard content in Swipeable
 <Swipeable renderRightActions={renderRightActions}>
   {/* Card content */}
-</Swipeable>
+</Swipeable>;
 ```
-
 
 ## Improved Visual Hierarchy
 
@@ -1089,20 +1088,20 @@ const renderRightActions = () => (
 const styles = StyleSheet.create({
   logTitle: {
     fontSize: 18, // Increased from 16
-    fontWeight: '700', // Bolder
+    fontWeight: "700", // Bolder
     color: colors.text,
     letterSpacing: -0.3, // Tighter tracking
   },
   logSubtitle: {
     fontSize: 15, // Increased from 14
     color: colors.icon,
-    fontWeight: '500', // Medium weight
+    fontWeight: "500", // Medium weight
     marginTop: 4,
   },
   logDate: {
     fontSize: 13,
-    color: colors.icon + '60',
-    fontWeight: '400',
+    color: colors.icon + "60",
+    fontWeight: "400",
     marginTop: 6,
   },
 });
@@ -1113,16 +1112,15 @@ const styles = StyleSheet.create({
 ```tsx
 const getLogGradient = (type: LogType) => {
   switch (type) {
-    case 'mileage':
-      return ['#2196F3', '#1976D2'];
-    case 'fuel':
-      return ['#4CAF50', '#388E3C'];
-    case 'service':
-      return ['#FF9800', '#F57C00'];
+    case "mileage":
+      return ["#2196F3", "#1976D2"];
+    case "fuel":
+      return ["#4CAF50", "#388E3C"];
+    case "service":
+      return ["#FF9800", "#F57C00"];
   }
 };
 ```
-
 
 ## Modern Interactions
 
@@ -1145,7 +1143,7 @@ const SkeletonCard = () => (
 **Haptic Feedback** - Add tactile responses for button presses using `expo-haptics` :[^6]
 
 ```tsx
-import * as Haptics from 'expo-haptics';
+import * as Haptics from "expo-haptics";
 
 const handleDeletePress = () => {
   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -1153,13 +1151,14 @@ const handleDeletePress = () => {
 };
 ```
 
-
 ## Vehicle Section Redesign
 
 **Collapsible Sections** - Make vehicle headers collapsible to reduce scrolling :[^3]
 
 ```tsx
-const [expandedVehicles, setExpandedVehicles] = useState<Set<string>>(new Set());
+const [expandedVehicles, setExpandedVehicles] = useState<Set<string>>(
+  new Set(),
+);
 
 const toggleVehicle = (vehicleId: string) => {
   const newExpanded = new Set(expandedVehicles);
@@ -1182,7 +1181,6 @@ const toggleVehicle = (vehicleId: string) => {
 </View>
 ```
 
-
 ## Additional Modern Features
 
 **Floating Action Button** - Replace the top-right add button with a modern FAB :[^7][^6]
@@ -1190,20 +1188,20 @@ const toggleVehicle = (vehicleId: string) => {
 ```tsx
 <TouchableOpacity style={styles.fab}>
   <IconSymbol name="plus" size={24} color="white" />
-</TouchableOpacity>
+</TouchableOpacity>;
 
 const styles = StyleSheet.create({
   fab: {
-    position: 'absolute',
+    position: "absolute",
     right: 20,
     bottom: 20,
     width: 56,
     height: 56,
     borderRadius: 28,
     backgroundColor: colors.tint,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#000',
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
@@ -1215,7 +1213,11 @@ const styles = StyleSheet.create({
 **Filter and Sort Options** - Add a filter bar below tabs with chips for quick filtering :[^9][^3]
 
 ```tsx
-<ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterBar}>
+<ScrollView
+  horizontal
+  showsHorizontalScrollIndicator={false}
+  style={styles.filterBar}
+>
   <TouchableOpacity style={styles.filterChip}>
     <Text>All Time</Text>
   </TouchableOpacity>
@@ -1274,4 +1276,3 @@ These modern design patterns will significantly enhance your logs screen's usabi
 [^19]: https://m2.material.io/components/cards
 
 [^20]: https://blog.logrocket.com/ux-design/tabs-ux-best-practices/
-

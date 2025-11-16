@@ -1,4 +1,3 @@
-
 ## Key Issues Identified
 
 Your current implementation has **coordinate calculation problems** on both web and mobile, particularly with how the crop area is translated from display coordinates to actual image coordinates.[^1][^2][^3]
@@ -31,7 +30,7 @@ const handleSave = async () => {
 
     // CRITICAL FIX: Get the actual natural image dimensions
     let originalWidth, originalHeight;
-    
+
     if (Platform.OS === "web") {
       // For web, we need to create a new Image object to get natural dimensions
       const img = new window.Image();
@@ -52,7 +51,7 @@ const handleSave = async () => {
             originalHeight = height;
             resolve(null);
           },
-          reject
+          reject,
         );
       });
     }
@@ -71,7 +70,7 @@ const handleSave = async () => {
     const containerAspectRatio = containerWidth / containerHeight;
 
     let displayWidth, displayHeight, offsetX, offsetY;
-    
+
     if (imageAspectRatio > containerAspectRatio) {
       // Image is wider - fits by width
       displayWidth = containerWidth;
@@ -134,7 +133,7 @@ const handleSave = async () => {
       {
         compress: 0.9,
         format: ImageManipulator.SaveFormat.JPEG,
-      }
+      },
     );
 
     console.log("✅ Image cropped successfully:", result.uri);
@@ -146,7 +145,7 @@ const handleSave = async () => {
       const blob = await response.blob();
       const fileName = `cropped_avatar_${Date.now()}.jpg`;
       const file = new File([blob], fileName, { type: "image/jpeg" });
-      
+
       console.log("✅ Created File object for web:", file);
       onCropComplete(file);
     } else {
@@ -155,7 +154,7 @@ const handleSave = async () => {
       const blob = await response.blob();
       const fileName = `cropped_avatar_${Date.now()}.jpg`;
       const file = new File([blob], fileName, { type: "image/jpeg" });
-      
+
       console.log("✅ Created File object for mobile:", file);
       onCropComplete(file);
     }
@@ -169,7 +168,6 @@ const handleSave = async () => {
   }
 };
 ```
-
 
 ## 2. Fix Image Loading in ImageCropModal
 
@@ -190,13 +188,18 @@ const onImageLoad = useCallback(
           if (imageRef.current) {
             naturalWidth = (imageRef.current as any).naturalWidth;
             naturalHeight = (imageRef.current as any).naturalHeight;
-            
+
             console.log("✅ Web image loaded:", {
               naturalWidth,
               naturalHeight,
             });
 
-            if (!naturalWidth || !naturalHeight || naturalWidth === 0 || naturalHeight === 0) {
+            if (
+              !naturalWidth ||
+              !naturalHeight ||
+              naturalWidth === 0 ||
+              naturalHeight === 0
+            ) {
               console.error("❌ Invalid image dimensions from ref");
               return;
             }
@@ -211,7 +214,7 @@ const onImageLoad = useCallback(
         const source = event.nativeEvent.source;
         naturalWidth = source.width;
         naturalHeight = source.height;
-        
+
         console.log("✅ Mobile image loaded:", {
           naturalWidth,
           naturalHeight,
@@ -226,7 +229,7 @@ const onImageLoad = useCallback(
       }
     }
   },
-  [aspectRatio]
+  [aspectRatio],
 );
 
 // NEW HELPER FUNCTION: Extract crop area initialization
@@ -279,7 +282,6 @@ const initializeCropArea = (naturalWidth: number, naturalHeight: number) => {
 };
 ```
 
-
 ## 3. Fix Profile.tsx ImageUpload Usage
 
 Update how you use the ImageUpload component in profile.tsx:[^5][^4]
@@ -305,7 +307,6 @@ Update how you use the ImageUpload component in profile.tsx:[^5][^4]
 />
 ```
 
-
 ## 4. Fix Mobile Native Cropping
 
 For mobile devices using `expo-crop-image`, ensure proper aspect ratio:[^1]
@@ -325,19 +326,19 @@ if (Platform.OS !== "web" && ImageEditor) {
       onEditingComplete={async (result) => {
         try {
           console.log("📱 Mobile crop result:", result);
-          
+
           // Convert URI to File object
           const response = await fetch(result.uri);
           const blob = await response.blob();
           const fileName = `cropped_avatar_${Date.now()}.jpg`;
           const file = new File([blob], fileName, { type: "image/jpeg" });
-          
+
           console.log("✅ Mobile crop - Created File object:", {
             name: file.name,
             size: file.size,
             type: file.type,
           });
-          
+
           onCropComplete(file);
           onClose();
         } catch (error: any) {
@@ -353,7 +354,6 @@ if (Platform.OS !== "web" && ImageEditor) {
   );
 }
 ```
-
 
 ## 5. Additional Improvements
 
@@ -371,26 +371,24 @@ try {
 }
 ```
 
-
 ### B. Add Image Size Validation
 
 ```typescript
 // Before cropping, validate image size
 const validateImageSize = (width: number, height: number) => {
   const maxDimension = 4096; // Typical max for mobile devices
-  
+
   if (width > maxDimension || height > maxDimension) {
     Alert.alert(
       "Image Too Large",
-      "Please select a smaller image (max 4096px)"
+      "Please select a smaller image (max 4096px)",
     );
     return false;
   }
-  
+
   return true;
 };
 ```
-
 
 ## Summary
 
@@ -407,7 +405,7 @@ These fixes ensure that:
 - The cropped area matches what users see in the preview[^1]
 - Files are properly formatted for upload to Supabase[^5]
 - Aspect ratios are maintained across platforms[^7]
-<span style="display:none">[^10][^11][^12][^13][^14][^15][^16][^17][^18][^19][^20][^21][^22][^23][^24][^25][^8][^9]</span>
+  <span style="display:none">[^10][^11][^12][^13][^14][^15][^16][^17][^18][^19][^20][^21][^22][^23][^24][^25][^8][^9]</span>
 
 <div align="center">⁂</div>
 
@@ -460,4 +458,3 @@ These fixes ensure that:
 [^24]: https://classic.yarnpkg.com/en/package/@expo/image-utils
 
 [^25]: https://stackoverflow.com/questions/tagged/expo-camera?tab=newest\&page=3
-

@@ -1,43 +1,32 @@
 import React, { useState, useEffect, useCallback } from "react";
 import {
   View,
-  Text,
   TouchableOpacity,
-  ScrollView,
-  StyleSheet,
-  ActivityIndicator,
   RefreshControl,
-  Platform,
+  ScrollView,
+  ActivityIndicator,
 } from "react-native";
 import { Image } from "expo-image";
-import { SafeAreaView } from "react-native-safe-area-context";
 import { router, useLocalSearchParams } from "expo-router";
 import {
   GroupService,
   GroupInvitationService,
 } from "@/lib/services/groupService";
 import { VehicleService } from "@/lib/services/vehicleService";
-import {
-  GroupWithMembers,
-  GroupInvitationWithDetails,
-  VehicleWithGroupInfo,
-} from "@/types";
-import { Colors } from "@/constants/theme";
-import { useColorScheme } from "@/hooks/use-color-scheme";
+import { GroupWithMembers, GroupInvitationWithDetails } from "@/types";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { useAuth } from "@/lib/contexts/AuthContext";
 import { useDialog } from "@/lib/contexts/DialogContext";
-import {
-  SkeletonHeader,
-  SkeletonStats,
-  SkeletonList,
-} from "@/components/ui/Skeleton";
-import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
 import { formatDateWithPrefix } from "@/lib/utils/dateUtils";
+import { PageHeader } from "@/lib/design-system/components/organisms/PageHeader";
+import { Text } from "@/lib/design-system/components/atoms/Text";
+import { useStyles } from "react-native-unistyles";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 type TabType = "members" | "invitations" | "vehicles";
 
 export default function GroupDetailScreen() {
+  const { theme } = useStyles();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { user } = useAuth();
   const dialog = useDialog();
@@ -49,9 +38,6 @@ export default function GroupDetailScreen() {
   const [sharedVehicles, setSharedVehicles] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? "light"];
-  const isWeb = Platform.OS === "web";
 
   const fetchGroupData = useCallback(async () => {
     if (!id) return;
@@ -78,7 +64,7 @@ export default function GroupDetailScreen() {
     }
 
     setLoading(false);
-  }, [id]);
+  }, [id, dialog]);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -174,131 +160,127 @@ export default function GroupDetailScreen() {
     fetchGroupData();
   }, [fetchGroupData]);
 
-  const VehicleCard = ({ vehicle }: { vehicle: VehicleWithGroupInfo }) => (
-    <TouchableOpacity
-      style={styles.vehicleCard}
-      onPress={() => router.push(`/vehicles/${vehicle.id}` as any)}
-    >
-      <View style={styles.vehicleHeader}>
-        {vehicle.main_image_url ? (
-          <Image
-            source={{ uri: vehicle.main_image_url }}
-            style={styles.vehicleImage}
-            contentFit="cover"
-            cachePolicy="memory-disk"
-            transition={200}
-          />
-        ) : (
-          <View style={styles.vehicleIcon}>
-            <IconSymbol name="car.fill" size={20} color="white" />
-          </View>
-        )}
-        <View style={styles.vehicleInfo}>
-          <Text style={styles.vehicleName}>
-            {vehicle.year} {vehicle.make} {vehicle.model}
-          </Text>
-          <Text style={styles.vehiclePlate}>{vehicle.license_plate}</Text>
-          {vehicle.owner_profile && (
-            <Text style={styles.vehicleOwner}>
-              Shared by{" "}
-              {vehicle.owner_profile.full_name || vehicle.owner_profile.email}
-            </Text>
-          )}
-        </View>
-        <View style={styles.vehicleActions}>
-          <IconSymbol name="chevron.right" size={16} color={colors.icon} />
-        </View>
-      </View>
-    </TouchableOpacity>
-  );
-
-  const TabButton = ({
-    type,
-    label,
-    count,
-  }: {
-    type: TabType;
-    label: string;
-    count?: number;
-  }) => (
-    <TouchableOpacity
-      style={[
-        styles.tabButton,
-        activeTab === type && {
-          backgroundColor: colors.tint,
-          borderColor: colors.tint,
-        },
-      ]}
-      onPress={() => setActiveTab(type)}
-    >
-      <Text
-        style={[
-          styles.tabButtonText,
-          { color: activeTab === type ? "white" : colors.text },
-        ]}
+  if (loading) {
+    return (
+      <SafeAreaView
+        style={{ flex: 1, backgroundColor: theme.colors.background }}
       >
-        {label}
-      </Text>
-      {count !== undefined && count > 0 && (
+        <PageHeader title="Loading..." showBack />
         <View
-          style={[
-            styles.badge,
-            { backgroundColor: activeTab === type ? "white" : colors.tint },
-          ]}
+          style={{ flex: 1, alignItems: "center", justifyContent: "center" }}
         >
-          <Text
-            style={[
-              styles.badgeText,
-              { color: activeTab === type ? colors.tint : "white" },
-            ]}
-          >
-            {count}
-          </Text>
+          <ActivityIndicator size="large" color={theme.colors.primary} />
         </View>
-      )}
-    </TouchableOpacity>
-  );
+      </SafeAreaView>
+    );
+  }
+
+  if (!group) {
+    return (
+      <SafeAreaView
+        style={{ flex: 1, backgroundColor: theme.colors.background }}
+      >
+        <PageHeader title="Group Not Found" showBack />
+        <View
+          style={{
+            flex: 1,
+            alignItems: "center",
+            justifyContent: "center",
+            padding: theme.spacing.lg,
+          }}
+        >
+          <Text>This group does not exist or you don&apos;t have access.</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  const isOwner = group.owner_id === user?.id;
 
   const MemberCard = ({ member }: { member: any }) => {
-    const isOwner = member.user_id === group?.owner_id;
+    const isMemberOwner = member.user_id === group.owner_id;
     const isCurrentUser = member.user_id === user?.id;
 
     return (
-      <View style={styles.memberCard}>
-        <View style={styles.memberHeader}>
+      <View
+        style={{
+          backgroundColor: theme.colors.surface,
+          borderRadius: theme.spacing.md,
+          padding: theme.spacing.md,
+          marginBottom: theme.spacing.sm,
+          borderWidth: 1,
+          borderColor: theme.colors.border,
+        }}
+      >
+        <View style={{ flexDirection: "row", alignItems: "flex-start" }}>
           {member.profiles?.avatar_url ? (
             <Image
               source={{ uri: member.profiles.avatar_url }}
-              style={styles.memberAvatar}
+              style={{
+                width: 40,
+                height: 40,
+                borderRadius: 20,
+                marginRight: theme.spacing.sm,
+              }}
               contentFit="cover"
-              cachePolicy="memory-disk"
-              transition={200}
             />
           ) : (
-            <View style={styles.memberIcon}>
-              <IconSymbol name="person.fill" size={20} color="white" />
+            <View
+              style={{
+                width: 40,
+                height: 40,
+                borderRadius: 20,
+                backgroundColor: theme.colors.primary + "20",
+                alignItems: "center",
+                justifyContent: "center",
+                marginRight: theme.spacing.sm,
+              }}
+            >
+              <IconSymbol
+                name="person.fill"
+                size={20}
+                color={theme.colors.primary}
+              />
             </View>
           )}
-          <View style={styles.memberInfo}>
-            <View style={styles.memberTitleRow}>
-              <Text style={styles.memberName}>
+          <View style={{ flex: 1 }}>
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                marginBottom: 4,
+                gap: 8,
+              }}
+            >
+              <Text weight="semibold">
                 {member.profiles?.full_name || member.profiles?.email}
                 {isCurrentUser && " (You)"}
               </Text>
-              {isOwner && (
-                <View style={styles.ownerBadge}>
-                  <Text style={styles.ownerBadgeText}>Owner</Text>
+              {isMemberOwner && (
+                <View
+                  style={{
+                    backgroundColor: theme.colors.primary + "20",
+                    paddingHorizontal: 6,
+                    paddingVertical: 2,
+                    borderRadius: 4,
+                  }}
+                >
+                  <Text size="xs" color="primary" weight="semibold">
+                    OWNER
+                  </Text>
                 </View>
               )}
             </View>
-            <Text style={styles.memberEmail}>{member.profiles?.email}</Text>
-            <Text style={styles.joinedDate}>
+            <Text size="sm" color="secondary">
+              {member.profiles?.email}
+            </Text>
+            <Text size="xs" color="secondary">
               {formatDateWithPrefix(member.joined_at, "Joined")}
             </Text>
           </View>
-          {!isOwner && !isCurrentUser && group?.owner_id === user?.id && (
+          {!isMemberOwner && !isCurrentUser && isOwner && (
             <TouchableOpacity
-              style={styles.removeButton}
+              style={{ padding: 8 }}
               onPress={() =>
                 handleRemoveMember(
                   member.user_id,
@@ -306,7 +288,7 @@ export default function GroupDetailScreen() {
                 )
               }
             >
-              <IconSymbol name="trash" size={16} color="#ff4444" />
+              <IconSymbol name="trash" size={16} color={theme.colors.error} />
             </TouchableOpacity>
           )}
         </View>
@@ -319,477 +301,131 @@ export default function GroupDetailScreen() {
   }: {
     invitation: GroupInvitationWithDetails;
   }) => (
-    <View style={styles.invitationCard}>
-      <View style={styles.invitationHeader}>
-        <View style={styles.invitationIcon}>
-          <IconSymbol name="envelope.fill" size={18} color={colors.tint} />
+    <View
+      style={{
+        backgroundColor: theme.colors.surface,
+        borderRadius: theme.spacing.md,
+        padding: theme.spacing.md,
+        marginBottom: theme.spacing.sm,
+        borderWidth: 1,
+        borderColor: theme.colors.border,
+      }}
+    >
+      <View style={{ flexDirection: "row", alignItems: "flex-start" }}>
+        <View
+          style={{
+            width: 36,
+            height: 36,
+            borderRadius: 18,
+            backgroundColor: theme.colors.primary + "20",
+            alignItems: "center",
+            justifyContent: "center",
+            marginRight: theme.spacing.sm,
+          }}
+        >
+          <IconSymbol
+            name="envelope.fill"
+            size={18}
+            color={theme.colors.primary}
+          />
         </View>
-        <View style={styles.invitationInfo}>
-          <Text style={styles.invitationEmail}>{invitation.email}</Text>
-          <Text style={styles.invitationStatus}>
+        <View style={{ flex: 1 }}>
+          <Text weight="semibold">{invitation.email}</Text>
+          <Text size="sm" color="secondary">
             Status:{" "}
             {invitation.status.charAt(0).toUpperCase() +
               invitation.status.slice(1)}
           </Text>
-          <Text style={styles.invitationDate}>
+          <Text size="xs" color="secondary">
             {formatDateWithPrefix(invitation.created_at, "Sent")}
           </Text>
         </View>
-        {group?.owner_id === user?.id && (
+        {isOwner && (
           <TouchableOpacity
-            style={styles.cancelButton}
+            style={{ padding: 8 }}
             onPress={() =>
               handleCancelInvitation(invitation.id, invitation.email)
             }
           >
-            <IconSymbol name="xmark" size={16} color="#ff4444" />
+            <IconSymbol name="xmark" size={16} color={theme.colors.error} />
           </TouchableOpacity>
         )}
       </View>
     </View>
   );
 
-  const styles = StyleSheet.create({
-    container: {
-      flex: 1,
-      backgroundColor: colors.background,
-    },
-    header: {
-      flexDirection: "row",
-      alignItems: "center",
-      paddingHorizontal: 20,
-      paddingVertical: 16,
-      borderBottomWidth: 1,
-      borderBottomColor: colors.icon + "20",
-    },
-    backButton: {
-      marginRight: 16,
-      padding: 4,
-    },
-    title: {
-      fontSize: 24,
-      fontWeight: "bold",
-      color: colors.text,
-      flex: 1,
-    },
-    headerButtons: {
-      flexDirection: "row",
-      gap: 12,
-    },
-    headerButton: {
-      backgroundColor: colors.tint,
-      paddingHorizontal: 12,
-      paddingVertical: 6,
-      borderRadius: 6,
-      flexDirection: "row",
-      alignItems: "center",
-      gap: 4,
-    },
-    headerButtonText: {
-      color: "white",
-      fontSize: 12,
-      fontWeight: "600",
-    },
-    leaveButton: {
-      backgroundColor: "transparent",
-      borderWidth: 1,
-      borderColor: "#ff4444",
-    },
-    leaveButtonText: {
-      color: "#ff4444",
-    },
-    groupInfo: {
-      padding: 20,
-      borderBottomWidth: 1,
-      borderBottomColor: colors.icon + "20",
-    },
-    groupDescription: {
-      fontSize: 16,
-      color: colors.text,
-      lineHeight: 22,
-      marginBottom: 12,
-    },
-    groupStats: {
-      flexDirection: "row",
-      gap: 24,
-    },
-    stat: {
-      alignItems: "center",
-    },
-    statValue: {
-      fontSize: 20,
-      fontWeight: "bold",
-      color: colors.tint,
-    },
-    statLabel: {
-      fontSize: 12,
-      color: colors.icon,
-      textTransform: "uppercase",
-      letterSpacing: 0.5,
-    },
-    tabs: {
-      flexDirection: "row",
-      paddingHorizontal: 20,
-      paddingVertical: 12,
-      gap: 12,
-    },
-    tabButton: {
-      flex: 1,
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "center",
-      paddingVertical: 10,
-      paddingHorizontal: 16,
-      borderRadius: 8,
-      borderWidth: 1,
-      borderColor: colors.icon + "30",
-      backgroundColor: colors.background,
-      gap: 8,
-    },
-    tabButtonText: {
-      fontSize: 14,
-      fontWeight: "500",
-    },
-    badge: {
-      minWidth: 18,
-      height: 18,
-      borderRadius: 9,
-      alignItems: "center",
-      justifyContent: "center",
-      paddingHorizontal: 6,
-    },
-    badgeText: {
-      fontSize: 11,
-      fontWeight: "bold",
-    },
-    content: {
-      flex: 1,
-    },
-    scrollContent: {
-      padding: 20,
-    },
-    memberCard: {
-      backgroundColor: colors.background,
-      borderRadius: 12,
-      padding: 16,
-      marginBottom: 12,
-      borderWidth: 1,
-      borderColor: colors.icon + "20",
-    },
-    memberHeader: {
-      flexDirection: "row",
-      alignItems: "flex-start",
-    },
-    memberIcon: {
-      width: 40,
-      height: 40,
-      borderRadius: 20,
-      backgroundColor: colors.tint,
-      alignItems: "center",
-      justifyContent: "center",
-      marginRight: 12,
-    },
-    memberAvatar: {
-      width: 40,
-      height: 40,
-      borderRadius: 20,
-      marginRight: 12,
-      backgroundColor: colors.icon + "20",
-    },
-    memberInfo: {
-      flex: 1,
-    },
-    memberTitleRow: {
-      flexDirection: "row",
-      alignItems: "center",
-      marginBottom: 4,
-      gap: 8,
-    },
-    memberName: {
-      fontSize: 16,
-      fontWeight: "600",
-      color: colors.text,
-      flex: 1,
-    },
-    ownerBadge: {
-      backgroundColor: colors.tint + "20",
-      paddingHorizontal: 6,
-      paddingVertical: 2,
-      borderRadius: 4,
-    },
-    ownerBadgeText: {
-      fontSize: 10,
-      fontWeight: "600",
-      color: colors.tint,
-      textTransform: "uppercase",
-    },
-    memberEmail: {
-      fontSize: 14,
-      color: colors.icon,
-      marginBottom: 4,
-    },
-    joinedDate: {
-      fontSize: 12,
-      color: colors.icon,
-    },
-    removeButton: {
-      padding: 8,
-    },
-    invitationCard: {
-      backgroundColor: colors.background,
-      borderRadius: 12,
-      padding: 16,
-      marginBottom: 12,
-      borderWidth: 1,
-      borderColor: colors.icon + "20",
-    },
-    invitationHeader: {
-      flexDirection: "row",
-      alignItems: "flex-start",
-    },
-    invitationIcon: {
-      width: 36,
-      height: 36,
-      borderRadius: 18,
-      backgroundColor: colors.tint + "20",
-      alignItems: "center",
-      justifyContent: "center",
-      marginRight: 12,
-    },
-    invitationInfo: {
-      flex: 1,
-    },
-    invitationEmail: {
-      fontSize: 16,
-      fontWeight: "600",
-      color: colors.text,
-      marginBottom: 4,
-    },
-    invitationStatus: {
-      fontSize: 14,
-      color: colors.icon,
-      marginBottom: 4,
-    },
-    invitationDate: {
-      fontSize: 12,
-      color: colors.icon,
-    },
-    cancelButton: {
-      padding: 8,
-    },
-    vehicleCard: {
-      backgroundColor: colors.background,
-      borderRadius: 12,
-      padding: 16,
-      marginBottom: 12,
-      borderWidth: 1,
-      borderColor: colors.icon + "20",
-      elevation: 2,
-      shadowColor: "#000",
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.1,
-      shadowRadius: 4,
-    },
-    vehicleHeader: {
-      flexDirection: "row",
-      alignItems: "center",
-    },
-    vehicleIcon: {
-      width: 40,
-      height: 40,
-      borderRadius: 20,
-      backgroundColor: colors.tint,
-      alignItems: "center",
-      justifyContent: "center",
-      marginRight: 12,
-    },
-    vehicleImage: {
-      width: 40,
-      height: 40,
-      borderRadius: 20,
-      marginRight: 12,
-      backgroundColor: colors.icon + "20",
-    },
-    vehicleInfo: {
-      flex: 1,
-    },
-    vehicleName: {
-      fontSize: 16,
-      fontWeight: "600",
-      color: colors.text,
-      marginBottom: 4,
-    },
-    vehiclePlate: {
-      fontSize: 14,
-      color: colors.icon,
-      marginBottom: 4,
-    },
-    vehicleOwner: {
-      fontSize: 12,
-      color: colors.tint,
-      fontStyle: "italic",
-    },
-    vehicleActions: {
-      padding: 8,
-    },
-    emptyContainer: {
-      flex: 1,
-      justifyContent: "center",
-      alignItems: "center",
-      paddingVertical: 60,
-    },
-    emptyIcon: {
-      width: 64,
-      height: 64,
-      borderRadius: 32,
-      backgroundColor: colors.icon + "20",
-      alignItems: "center",
-      justifyContent: "center",
-      marginBottom: 16,
-    },
-    emptyTitle: {
-      fontSize: 18,
-      fontWeight: "600",
-      color: colors.text,
-      marginBottom: 8,
-    },
-    emptyDescription: {
-      fontSize: 14,
-      color: colors.icon,
-      textAlign: "center",
-      lineHeight: 20,
-    },
-    loadingContainer: {
-      flex: 1,
-      justifyContent: "center",
-      alignItems: "center",
-    },
-  });
-
-  if (loading) {
-    return (
-      <SafeAreaView style={styles.container}>
-        <SkeletonHeader showBackButton showActions={false} />
-
-        <View style={styles.groupInfo}>
-          <SkeletonStats count={2} />
-        </View>
-
-        <View style={styles.tabs}>
-          <View style={[styles.tabButton, { backgroundColor: colors.tint }]}>
-            <Text style={[styles.tabButtonText, { color: "white" }]}>
-              Members
-            </Text>
-          </View>
+  const VehicleCard = ({ vehicle }: { vehicle: any }) => (
+    <TouchableOpacity
+      style={{
+        backgroundColor: theme.colors.surface,
+        borderRadius: theme.spacing.md,
+        padding: theme.spacing.md,
+        marginBottom: theme.spacing.sm,
+        borderWidth: 1,
+        borderColor: theme.colors.border,
+      }}
+      onPress={() => router.push(`/vehicles/${vehicle.id}` as any)}
+    >
+      <View style={{ flexDirection: "row", alignItems: "center" }}>
+        {vehicle.main_image_url ? (
+          <Image
+            source={{ uri: vehicle.main_image_url }}
+            style={{
+              width: 60,
+              height: 60,
+              borderRadius: 8,
+              marginRight: theme.spacing.sm,
+            }}
+            contentFit="cover"
+          />
+        ) : (
           <View
-            style={[styles.tabButton, { backgroundColor: colors.background }]}
+            style={{
+              width: 60,
+              height: 60,
+              borderRadius: 8,
+              backgroundColor: theme.colors.primary + "20",
+              alignItems: "center",
+              justifyContent: "center",
+              marginRight: theme.spacing.sm,
+            }}
           >
-            <Text style={[styles.tabButtonText, { color: colors.text }]}>
-              Invitations
-            </Text>
-          </View>
-        </View>
-
-        <SkeletonList itemCount={3} showAvatar lines={3} />
-      </SafeAreaView>
-    );
-  }
-
-  if (!group) {
-    return (
-      <SafeAreaView style={styles.container}>
-        {!isWeb && (
-          <View style={styles.header}>
-            <TouchableOpacity
-              style={styles.backButton}
-              onPress={() => router.back()}
-            >
-              <IconSymbol name="chevron.left" size={24} color={colors.text} />
-            </TouchableOpacity>
-            <Text style={styles.title}>Group Not Found</Text>
+            <IconSymbol
+              name="car.fill"
+              size={24}
+              color={theme.colors.primary}
+            />
           </View>
         )}
-      </SafeAreaView>
-    );
-  }
-
-  const isOwner = group.owner_id === user?.id;
-
-  return (
-    <SafeAreaView style={styles.container}>
-      {!isWeb && (
-        <View style={styles.header}>
-          <TouchableOpacity
-            style={styles.backButton}
-            onPress={() => router.back()}
-          >
-            <IconSymbol name="chevron.left" size={24} color={colors.text} />
-          </TouchableOpacity>
-          <Text style={styles.title} numberOfLines={1}>
-            {group.name}
+        <View style={{ flex: 1 }}>
+          <Text weight="semibold">
+            {vehicle.year} {vehicle.make} {vehicle.model}
           </Text>
-          {isOwner ? (
-            <View style={styles.headerButtons}>
-              <TouchableOpacity
-                style={styles.headerButton}
-                onPress={() => router.push(`/groups/${group.id}/invite` as any)}
-              >
-                <IconSymbol name="plus" size={12} color="white" />
-                <Text style={styles.headerButtonText}>Invite</Text>
-              </TouchableOpacity>
-            </View>
-          ) : (
-            <View style={styles.headerButtons}>
-              <TouchableOpacity
-                style={[styles.headerButton, styles.leaveButton]}
-                onPress={handleLeaveGroup}
-              >
-                <IconSymbol name="minus" size={12} color="#ff4444" />
-                <Text style={[styles.headerButtonText, styles.leaveButtonText]}>
-                  Leave
-                </Text>
-              </TouchableOpacity>
-            </View>
+          <Text size="sm" color="secondary">
+            {vehicle.license_plate}
+          </Text>
+          {vehicle.owner_profile && (
+            <Text size="xs" color="secondary">
+              Shared by{" "}
+              {vehicle.owner_profile.full_name || vehicle.owner_profile.email}
+            </Text>
           )}
         </View>
-      )}
-
-      {group.description && (
-        <View style={styles.groupInfo}>
-          <Text style={styles.groupDescription}>{group.description}</Text>
-          <View style={styles.groupStats}>
-            <View style={styles.stat}>
-              <Text style={styles.statValue}>{group.member_count}</Text>
-              <Text style={styles.statLabel}>Members</Text>
-            </View>
-            <View style={styles.stat}>
-              <Text style={styles.statValue}>{invitations.length}</Text>
-              <Text style={styles.statLabel}>Pending</Text>
-            </View>
-          </View>
-        </View>
-      )}
-
-      <View style={styles.tabs}>
-        <TabButton type="members" label="Members" count={group.member_count} />
-        <TabButton
-          type="vehicles"
-          label="Shared Vehicles"
-          count={sharedVehicles.length}
+        <IconSymbol
+          name="chevron.right"
+          size={16}
+          color={theme.colors.textSecondary}
         />
-        {isOwner && (
-          <TabButton
-            type="invitations"
-            label="Invitations"
-            count={invitations.length}
-          />
-        )}
       </View>
+    </TouchableOpacity>
+  );
 
-      {activeTab === "members" ? (
+  const renderTabContent = () => {
+    if (activeTab === "members") {
+      return (
         <ScrollView
-          style={styles.content}
-          contentContainerStyle={styles.scrollContent}
+          style={{ flex: 1 }}
+          contentContainerStyle={{ padding: theme.spacing.md }}
           refreshControl={
             <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
           }
@@ -799,55 +435,295 @@ export default function GroupDetailScreen() {
             <MemberCard key={member.id} member={member} />
           ))}
         </ScrollView>
-      ) : activeTab === "vehicles" ? (
-        sharedVehicles.length === 0 ? (
-          <View style={styles.emptyContainer}>
-            <View style={styles.emptyIcon}>
-              <IconSymbol name="car" size={24} color={colors.icon} />
+      );
+    }
+
+    if (activeTab === "vehicles") {
+      if (sharedVehicles.length === 0) {
+        return (
+          <View
+            style={{
+              flex: 1,
+              alignItems: "center",
+              justifyContent: "center",
+              padding: theme.spacing.xl,
+            }}
+          >
+            <View
+              style={{
+                width: 60,
+                height: 60,
+                borderRadius: 30,
+                backgroundColor: theme.colors.surface,
+                alignItems: "center",
+                justifyContent: "center",
+                marginBottom: theme.spacing.md,
+              }}
+            >
+              <IconSymbol
+                name="car"
+                size={24}
+                color={theme.colors.textSecondary}
+              />
             </View>
-            <Text style={styles.emptyTitle}>No shared vehicles</Text>
-            <Text style={styles.emptyDescription}>
+            <Text weight="semibold" style={{ marginBottom: theme.spacing.xs }}>
+              No shared vehicles
+            </Text>
+            <Text
+              size="sm"
+              color="secondary"
+              style={{ textAlign: "center", maxWidth: 300 }}
+            >
               Group members can share their vehicles here. Enable sharing in
-              your vehicle settings to share with this group.
+              your vehicle settings.
             </Text>
           </View>
-        ) : (
-          <ScrollView
-            style={styles.content}
-            contentContainerStyle={styles.scrollContent}
-            refreshControl={
-              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-            }
-            showsVerticalScrollIndicator={false}
-          >
-            {sharedVehicles.map((vehicle) => (
-              <VehicleCard key={vehicle.id} vehicle={vehicle} />
-            ))}
-          </ScrollView>
-        )
-      ) : invitations.length === 0 ? (
-        <View style={styles.emptyContainer}>
-          <View style={styles.emptyIcon}>
-            <IconSymbol name="envelope" size={24} color={colors.icon} />
-          </View>
-          <Text style={styles.emptyTitle}>No invitations</Text>
-          <Text style={styles.emptyDescription}>
-            Send invitations to add new members to this group
-          </Text>
-        </View>
-      ) : (
+        );
+      }
+
+      return (
         <ScrollView
-          style={styles.content}
-          contentContainerStyle={styles.scrollContent}
+          style={{ flex: 1 }}
+          contentContainerStyle={{ padding: theme.spacing.md }}
           refreshControl={
             <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
           }
           showsVerticalScrollIndicator={false}
         >
-          {invitations.map((invitation) => (
-            <InvitationCard key={invitation.id} invitation={invitation} />
+          {sharedVehicles.map((vehicle) => (
+            <VehicleCard key={vehicle.id} vehicle={vehicle} />
           ))}
         </ScrollView>
+      );
+    }
+
+    // Invitations tab
+    if (invitations.length === 0) {
+      return (
+        <View
+          style={{
+            flex: 1,
+            alignItems: "center",
+            justifyContent: "center",
+            padding: theme.spacing.xl,
+          }}
+        >
+          <View
+            style={{
+              width: 60,
+              height: 60,
+              borderRadius: 30,
+              backgroundColor: theme.colors.surface,
+              alignItems: "center",
+              justifyContent: "center",
+              marginBottom: theme.spacing.md,
+            }}
+          >
+            <IconSymbol
+              name="envelope"
+              size={24}
+              color={theme.colors.textSecondary}
+            />
+          </View>
+          <Text weight="semibold" style={{ marginBottom: theme.spacing.xs }}>
+            No invitations
+          </Text>
+          <Text size="sm" color="secondary">
+            Send invitations to add new members to this group
+          </Text>
+        </View>
+      );
+    }
+
+    return (
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={{ padding: theme.spacing.md }}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
+        showsVerticalScrollIndicator={false}
+      >
+        {invitations.map((invitation) => (
+          <InvitationCard key={invitation.id} invitation={invitation} />
+        ))}
+      </ScrollView>
+    );
+  };
+
+  return (
+    <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.background }}>
+      <PageHeader
+        title={group.name}
+        showBack
+        actions={
+          isOwner
+            ? [
+                {
+                  icon: "add",
+                  label: "Invite",
+                  onPress: () =>
+                    router.push(`/groups/${group.id}/invite` as any),
+                },
+              ]
+            : undefined
+        }
+      />
+
+      {/* Group Info Section */}
+      {group.description && (
+        <View
+          style={{
+            padding: theme.spacing.md,
+            backgroundColor: theme.colors.surface,
+          }}
+        >
+          <Text color="secondary" style={{ marginBottom: theme.spacing.sm }}>
+            {group.description}
+          </Text>
+          <View style={{ flexDirection: "row", gap: theme.spacing.lg }}>
+            <View>
+              <Text size="xl" weight="bold">
+                {group.member_count}
+              </Text>
+              <Text size="sm" color="secondary">
+                Members
+              </Text>
+            </View>
+            <View>
+              <Text size="xl" weight="bold">
+                {invitations.length}
+              </Text>
+              <Text size="sm" color="secondary">
+                Pending
+              </Text>
+            </View>
+            <View>
+              <Text size="xl" weight="bold">
+                {sharedVehicles.length}
+              </Text>
+              <Text size="sm" color="secondary">
+                Vehicles
+              </Text>
+            </View>
+          </View>
+        </View>
+      )}
+
+      {/* Tabs */}
+      <View
+        style={{
+          flexDirection: "row",
+          padding: theme.spacing.sm,
+          gap: theme.spacing.xs,
+          borderBottomWidth: 1,
+          borderBottomColor: theme.colors.border,
+        }}
+      >
+        <TouchableOpacity
+          style={{
+            flex: 1,
+            paddingVertical: theme.spacing.sm,
+            paddingHorizontal: theme.spacing.md,
+            borderRadius: theme.spacing.sm,
+            backgroundColor:
+              activeTab === "members" ? theme.colors.primary : "transparent",
+            alignItems: "center",
+          }}
+          onPress={() => setActiveTab("members")}
+        >
+          <Text
+            weight="semibold"
+            size="sm"
+            style={{
+              color: activeTab === "members" ? "white" : theme.colors.text,
+            }}
+          >
+            Members ({group.member_count})
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={{
+            flex: 1,
+            paddingVertical: theme.spacing.sm,
+            paddingHorizontal: theme.spacing.md,
+            borderRadius: theme.spacing.sm,
+            backgroundColor:
+              activeTab === "vehicles" ? theme.colors.primary : "transparent",
+            alignItems: "center",
+          }}
+          onPress={() => setActiveTab("vehicles")}
+        >
+          <Text
+            weight="semibold"
+            size="sm"
+            style={{
+              color: activeTab === "vehicles" ? "white" : theme.colors.text,
+            }}
+          >
+            Vehicles ({sharedVehicles.length})
+          </Text>
+        </TouchableOpacity>
+
+        {isOwner && (
+          <TouchableOpacity
+            style={{
+              flex: 1,
+              paddingVertical: theme.spacing.sm,
+              paddingHorizontal: theme.spacing.md,
+              borderRadius: theme.spacing.sm,
+              backgroundColor:
+                activeTab === "invitations"
+                  ? theme.colors.primary
+                  : "transparent",
+              alignItems: "center",
+            }}
+            onPress={() => setActiveTab("invitations")}
+          >
+            <Text
+              weight="semibold"
+              size="sm"
+              style={{
+                color:
+                  activeTab === "invitations" ? "white" : theme.colors.text,
+              }}
+            >
+              Invitations ({invitations.length})
+            </Text>
+          </TouchableOpacity>
+        )}
+      </View>
+
+      {/* Tab Content */}
+      {renderTabContent()}
+
+      {/* Leave Group Button (for non-owners) */}
+      {!isOwner && (
+        <View
+          style={{
+            padding: theme.spacing.md,
+            borderTopWidth: 1,
+            borderTopColor: theme.colors.border,
+          }}
+        >
+          <TouchableOpacity
+            style={{
+              backgroundColor: theme.colors.error + "10",
+              paddingVertical: theme.spacing.sm,
+              paddingHorizontal: theme.spacing.md,
+              borderRadius: theme.spacing.sm,
+              borderWidth: 1,
+              borderColor: theme.colors.error,
+              alignItems: "center",
+            }}
+            onPress={handleLeaveGroup}
+          >
+            <Text color="error" weight="semibold">
+              Leave Group
+            </Text>
+          </TouchableOpacity>
+        </View>
       )}
     </SafeAreaView>
   );

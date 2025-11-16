@@ -1,6 +1,6 @@
-import { Stack } from "expo-router";
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
+import { Stack } from "expo-router";
 
 export default function LogsLayout() {
   const colorScheme = useColorScheme();
@@ -18,9 +18,9 @@ export default function LogsLayout() {
         },
       }}
     >
-      <Stack.Screen name="mileage" />
-      <Stack.Screen name="fuel" />
-      <Stack.Screen name="service" />
+      <Stack.Screen name="mileage" options={{ headerShown: false }} />
+      <Stack.Screen name="fuel" options={{ headerShown: false }} />
+      <Stack.Screen name="service" options={{ headerShown: false }} />
     </Stack>
   );
 }

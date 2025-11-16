@@ -1,7 +1,8 @@
+import { useAlert, withWebAlert } from "@/components/ui";
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { Link, router, useLocalSearchParams } from "expo-router";
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Dimensions,
@@ -12,7 +13,6 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { withWebAlert, useAlert } from "@/components/ui";
 
 const { width: screenWidth } = Dimensions.get("window");
 
@@ -83,11 +83,11 @@ function EmailConfirmationScreen() {
       width: 80,
       height: 80,
       borderRadius: 40,
-      backgroundColor: colors.facebook?.secondary || "#4CAF50",
+      backgroundColor: colors.facebook?.secondary || colors.success,
       alignItems: "center",
       justifyContent: "center",
       marginBottom: 24,
-      shadowColor: colors.facebook?.secondary || "#4CAF50",
+      shadowColor: colors.facebook?.secondary || colors.success,
       shadowOffset: {
         width: 0,
         height: 4,
@@ -117,7 +117,7 @@ function EmailConfirmationScreen() {
     },
     emailText: {
       fontSize: 16,
-      color: colors.facebook?.primary || colors.tint,
+      color: colors.facebook?.primary || colors.primary,
       textAlign: "center",
       fontWeight: "600",
       marginBottom: 32,
@@ -126,7 +126,7 @@ function EmailConfirmationScreen() {
       backgroundColor: colors.facebook?.card || colors.background,
       borderRadius: 12,
       padding: 24,
-      shadowColor: "#000",
+      shadowColor: colors.text,
       shadowOffset: {
         width: 0,
         height: 2,

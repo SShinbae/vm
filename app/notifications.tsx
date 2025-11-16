@@ -1,15 +1,14 @@
-import { Ionicons } from "@expo/vector-icons";
-import { router } from "expo-router";
 import React from "react";
 import { Platform, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { NotificationList } from "../components/ui/NotificationList";
-import { useThemeColor } from "../hooks/use-theme-color";
-import { NotificationData } from "../lib/services/notificationService";
+import { router } from "expo-router";
+import { useStyles } from "react-native-unistyles";
+import { IconSymbol } from "@/components/ui/icon-symbol";
+import { NotificationList } from "@/components/ui/NotificationList";
+import { NotificationData } from "@/lib/services/notificationService";
 
 export default function NotificationsScreen() {
-  const backgroundColor = useThemeColor({}, "background") as string;
-  const textColor = useThemeColor({}, "text") as string;
+  const { theme } = useStyles();
 
   const handleNotificationPress = (notification: NotificationData) => {
     // Navigate based on notification type
@@ -33,22 +32,41 @@ export default function NotificationsScreen() {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor }} edges={["top"]}>
+    <SafeAreaView
+      style={{ flex: 1, backgroundColor: theme.colors.background }}
+      edges={["top"]}
+    >
       {/* Header */}
-      <View className="flex-row items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-gray-700">
-        <View className="flex-row items-center">
+      <View
+        style={{
+          flexDirection: "row",
+          alignItems: "center",
+          justifyContent: "space-between",
+          paddingHorizontal: theme.spacing.lg,
+          paddingVertical: theme.spacing.md,
+          borderBottomWidth: 1,
+          borderBottomColor: theme.colors.border,
+        }}
+      >
+        <View style={{ flexDirection: "row", alignItems: "center" }}>
           <TouchableOpacity
             onPress={() => router.back()}
-            className="mr-3 p-1"
+            style={{ marginRight: theme.spacing.md, padding: theme.spacing.xs }}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
-            <Ionicons
-              name={Platform.OS === "ios" ? "chevron-back" : "arrow-back"}
+            <IconSymbol
+              name={Platform.OS === "ios" ? "chevron.left" : "arrow.left"}
               size={24}
-              color={textColor}
+              color={theme.colors.text}
             />
           </TouchableOpacity>
-          <Text className="text-xl font-semibold" style={{ color: textColor }}>
+          <Text
+            style={{
+              fontSize: theme.fontSize.xl,
+              fontWeight: theme.fontWeight.semibold,
+              color: theme.colors.text,
+            }}
+          >
             Notifications
           </Text>
         </View>

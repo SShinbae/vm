@@ -1,13 +1,13 @@
-import React from "react";
-import {
-  View,
-  StyleSheet,
-  ViewStyle,
-  TouchableOpacity,
-  TouchableOpacityProps,
-} from "react-native";
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
+import React from "react";
+import {
+  StyleSheet,
+  TouchableOpacity,
+  TouchableOpacityProps,
+  View,
+  ViewStyle,
+} from "react-native";
 
 interface CardProps {
   children: React.ReactNode;
@@ -40,7 +40,7 @@ export function Card({
     switch (variant) {
       case "elevated":
         baseStyle.push({
-          backgroundColor: colors.background,
+          backgroundColor: colors.card,
           elevation: 4,
           shadowColor: "#000",
           shadowOffset: { width: 0, height: 2 },
@@ -51,23 +51,23 @@ export function Card({
         break;
       case "outlined":
         baseStyle.push({
-          backgroundColor: colors.background,
+          backgroundColor: colors.card,
           borderWidth: 1,
-          borderColor: colors.icon + "30",
+          borderColor: colors.border,
         });
         break;
       case "filled":
         baseStyle.push({
-          backgroundColor: colors.icon + "05",
-          borderWidth: 1,
-          borderColor: colors.icon + "10",
+          backgroundColor: colors.surface,
+          borderWidth: 0,
+          borderColor: "transparent",
         });
         break;
       default:
         baseStyle.push({
-          backgroundColor: colors.background,
+          backgroundColor: colors.card,
           borderWidth: 1,
-          borderColor: colors.icon + "20",
+          borderColor: colors.border,
         });
     }
 

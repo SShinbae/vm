@@ -1,5 +1,3 @@
-
-
 # Senior Developer Task: Analytics Page Implementation
 
 ## Project Context
@@ -72,7 +70,7 @@ export interface UpcomingService {
   serviceDueAt: number;
   daysUntilDue?: number;
   kmUntilDue: number;
-  status: 'overdue' | 'due_soon' | 'upcoming';
+  status: "overdue" | "due_soon" | "upcoming";
 }
 
 export interface TrendDataPoint {
@@ -97,7 +95,6 @@ export interface AnalyticsFilters {
 }
 ```
 
-
 ### 2. Analytics Utilities
 
 **Location:** `lib/analytics/calculations.ts`
@@ -108,46 +105,45 @@ Implement calculation functions:
 // Core calculation functions
 export function calculateFuelEfficiency(
   fuelLogs: FuelLog[],
-  mileageLogs: MileageLog[]
+  mileageLogs: MileageLog[],
 ): FuelEfficiencyMetrics;
 
 export function calculateCostMetrics(
   fuelLogs: FuelLog[],
   serviceLogs: ServiceLog[],
-  totalDistance: number
+  totalDistance: number,
 ): CostMetrics;
 
 export function calculateServiceMetrics(
   serviceLogs: ServiceLog[],
-  vehicles: Vehicle[]
+  vehicles: Vehicle[],
 ): ServiceMetrics;
 
 export function getUpcomingServices(
   serviceLogs: ServiceLog[],
-  vehicles: Vehicle[]
+  vehicles: Vehicle[],
 ): UpcomingService[];
 
 export function calculateVehicleComparison(
-  vehicles: VehicleWithLogs[]
+  vehicles: VehicleWithLogs[],
 ): VehiclePerformance[];
 
 export function generateTrendData(
   logs: (FuelLog | ServiceLog)[],
   period: AnalyticsPeriod,
-  metric: 'cost' | 'efficiency' | 'frequency'
+  metric: "cost" | "efficiency" | "frequency",
 ): TrendDataPoint[];
 
 export function filterLogsByPeriod<T extends { date: string }>(
   logs: T[],
   startDate: Date,
-  endDate: Date
+  endDate: Date,
 ): T[];
 
 export function groupLogsByMonth<T extends { date: string }>(
-  logs: T[]
+  logs: T[],
 ): Record<string, T[]>;
 ```
-
 
 ### 3. Analytics Data Hooks
 
@@ -187,11 +183,10 @@ export function usePeriodSelector() {
     { label: '6 Months', days: 180 },
     { label: '1 Year', days: 365 },
   ], []);
-  
+
   return { period, setPeriod, periods };
 }
 ```
-
 
 ### 4. Analytics Screens
 
@@ -207,7 +202,6 @@ app/(tabs)/analytics/
 ├── service.tsx          # Service analytics tab
 └── performance.tsx      # Vehicle comparison tab
 ```
-
 
 #### 4a. Analytics Layout
 
@@ -235,7 +229,6 @@ export default function AnalyticsLayout() {
 }
 ```
 
-
 #### 4b. Overview Tab
 
 **File:** `app/(tabs)/analytics/index.tsx`
@@ -251,7 +244,6 @@ Display:
 - Monthly trend chart (line chart showing costs over time)
 - Quick stats grid (total fuel-ups, total services, total distance)
 
-
 #### 4c. Fuel Analytics Tab
 
 **File:** `app/(tabs)/analytics/fuel.tsx`
@@ -265,7 +257,6 @@ Display:
 - Location-based cost comparison (if location data exists)
 - Best/worst efficiency records
 - Cost per fuel-up statistics
-
 
 #### 4d. Service Analytics Tab
 
@@ -281,7 +272,6 @@ Display:
 - Upcoming maintenance calendar (cards for services due)
 - Most frequent service types
 
-
 #### 4e. Vehicle Comparison Tab
 
 **File:** `app/(tabs)/analytics/performance.tsx`
@@ -294,7 +284,6 @@ Display:
 - Service frequency per vehicle
 - Total distance traveled per vehicle
 - Detailed breakdown per selected vehicle
-
 
 ### 5. Reusable Analytics Components
 
@@ -316,7 +305,6 @@ components/analytics/
 └── AnalyticsHeader.tsx      # Shared header with filters
 ```
 
-
 #### Component Guidelines:
 
 **MetricCard.tsx**
@@ -328,7 +316,7 @@ interface MetricCardProps {
   subtitle?: string;
   icon?: React.ReactNode;
   trend?: {
-    direction: 'up' | 'down' | 'neutral';
+    direction: "up" | "down" | "neutral";
     percentage: number;
   };
   color?: string;
@@ -357,7 +345,6 @@ interface TrendLineChartProps {
 // Use a chart library like react-native-chart-kit or victory-native
 ```
 
-
 ### 6. Supabase Queries
 
 **Location:** `lib/supabase/analytics-queries.ts`
@@ -367,7 +354,7 @@ Create optimized database queries:
 ```typescript
 export async function fetchAnalyticsData(
   userId: string,
-  filters: AnalyticsFilters
+  filters: AnalyticsFilters,
 ): Promise<{
   fuelLogs: FuelLog[];
   serviceLogs: ServiceLog[];
@@ -383,19 +370,18 @@ export async function fetchAnalyticsData(
 export async function fetchVehicleWithLogs(
   vehicleId: string,
   startDate: Date,
-  endDate: Date
+  endDate: Date,
 ): Promise<VehicleWithLogs> {
   // Fetch vehicle with all logs in date range
 }
 
 export async function fetchUpcomingServices(
-  userId: string
+  userId: string,
 ): Promise<ServiceLog[]> {
   // Get services with next_service_due populated
   // Sort by urgency
 }
 ```
-
 
 ### 7. Export Functionality
 
@@ -406,7 +392,7 @@ Implement data export:
 ```typescript
 export async function exportAnalyticsToCSV(
   data: AnalyticsData,
-  filename: string
+  filename: string,
 ): Promise<void> {
   // Convert analytics data to CSV format
   // Use expo-file-system and expo-sharing
@@ -414,13 +400,12 @@ export async function exportAnalyticsToCSV(
 
 export async function generateAnalyticsReport(
   data: AnalyticsData,
-  period: AnalyticsPeriod
+  period: AnalyticsPeriod,
 ): Promise<string> {
   // Generate formatted text report
   // Return shareable string
 }
 ```
-
 
 ### 8. Styling
 
@@ -440,26 +425,25 @@ analytics: {
 }
 ```
 
-
 ## Implementation Requirements
 
 ### Data Processing Rules
 
 1. **Fuel Efficiency Calculation:**
-    - Use odometer_reading from consecutive fuel logs
-    - Formula: (liters_filled / distance_traveled) * 100 = L/100km
-    - Exclude logs with missing odometer readings
-    - Handle edge cases (first log, insufficient data)
+   - Use odometer_reading from consecutive fuel logs
+   - Formula: (liters_filled / distance_traveled) \* 100 = L/100km
+   - Exclude logs with missing odometer readings
+   - Handle edge cases (first log, insufficient data)
 2. **Cost Per Km:**
-    - Total costs / total distance traveled
-    - Calculate from mileage_logs distance deltas
+   - Total costs / total distance traveled
+   - Calculate from mileage_logs distance deltas
 3. **Service Intervals:**
-    - Calculate km between services of same type
-    - Use odometer_reading from service_logs
+   - Calculate km between services of same type
+   - Use odometer_reading from service_logs
 4. **Upcoming Services:**
-    - Parse next_service_due field
-    - Calculate based on current_mileage and service due mileage/date
-    - Status: overdue (past due), due_soon (<1000km or <30 days), upcoming
+   - Parse next_service_due field
+   - Calculate based on current_mileage and service due mileage/date
+   - Status: overdue (past due), due_soon (<1000km or <30 days), upcoming
 
 ### UI/UX Requirements
 
@@ -499,7 +483,6 @@ analytics: {
 - [ ] Verify calculations accuracy with known data
 - [ ] Test performance with 100+ logs
 
-
 ## Database Considerations
 
 **No schema changes needed** - use existing tables:[^1][^2]
@@ -517,7 +500,6 @@ Ensure queries filter by:
 - `vehicle_id` (filters.vehicleIds)
 - Group membership (filters.groupId via vehicle_group_shares)
 
-
 ## Dependencies to Install
 
 ```bash
@@ -526,7 +508,6 @@ npx expo install expo-file-system
 npx expo install expo-sharing
 npm install date-fns
 ```
-
 
 ## Priority Order
 
@@ -547,7 +528,6 @@ npm install date-fns
 - Keep components under 250 lines (extract when larger)
 - Create custom hooks for shared logic
 
-
 ## Success Criteria
 
 - Users can view comprehensive analytics for their vehicle maintenance
@@ -557,7 +537,7 @@ npm install date-fns
 - Code is maintainable and well-typed
 - Export functionality works across platforms
 
-***
+---
 
 Begin implementation with Phase 1, ensuring TypeScript types are comprehensive before writing component code. Use the existing `supabaseClient.ts` for database access and follow the Unistyles patterns from `UNISTYLES_MIGRATION.md`.[^2][^3][^1]
 <span style="display:none">[^4]</span>
@@ -571,4 +551,3 @@ Begin implementation with Phase 1, ensuring TypeScript types are comprehensive b
 [^3]: favicon.jpg
 
 [^4]: index.ts
-

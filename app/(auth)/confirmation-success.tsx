@@ -1,7 +1,7 @@
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { router } from "expo-router";
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Dimensions,
@@ -65,14 +65,14 @@ export default function ConfirmationSuccessScreen() {
       marginBottom: 32,
     },
     successIcon: {
-      width: 100,
-      height: 100,
-      borderRadius: 50,
-      backgroundColor: "#4CAF50",
-      alignItems: "center",
+      width: 120,
+      height: 120,
+      borderRadius: 60,
+      backgroundColor: colors.success,
       justifyContent: "center",
+      alignItems: "center",
       marginBottom: 24,
-      shadowColor: "#4CAF50",
+      shadowColor: colors.success,
       shadowOffset: {
         width: 0,
         height: 6,
@@ -111,7 +111,7 @@ export default function ConfirmationSuccessScreen() {
       backgroundColor: colors.facebook?.card || colors.background,
       borderRadius: 16,
       padding: 32,
-      shadowColor: "#000",
+      shadowColor: colors.text,
       shadowOffset: {
         width: 0,
         height: 4,
@@ -136,12 +136,12 @@ export default function ConfirmationSuccessScreen() {
       marginBottom: 32,
     },
     primaryButton: {
-      backgroundColor: colors.facebook?.primary || colors.tint,
+      backgroundColor: colors.facebook?.primary || colors.primary,
       borderRadius: 12,
       paddingVertical: 18,
       alignItems: "center",
       minHeight: 56,
-      shadowColor: colors.facebook?.primary || colors.tint,
+      shadowColor: colors.facebook?.primary || colors.primary,
       shadowOffset: {
         width: 0,
         height: 3,
@@ -180,7 +180,7 @@ export default function ConfirmationSuccessScreen() {
     },
     featureIcon: {
       fontSize: 18,
-      color: "#4CAF50",
+      color: colors.success,
       marginRight: 12,
       width: 20,
     },

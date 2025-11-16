@@ -1,4 +1,3 @@
-
 ## Project Development Prompt
 
 **Role**: You are an expert React Native developer specializing in mobile dashboard UIs, TypeScript, Supabase integration, and React Native Unistyles.[^1][^2]
@@ -36,26 +35,26 @@
 **Task**: Create a modern mobile dashboard for the main home screen that displays:[^2][^1]
 
 1. **Stats Card Grid Section**:
-    - Display 4 key metrics in a 2x2 grid: Total Vehicles, Total Mileage (sum across all vehicles), Monthly Fuel Cost, Upcoming Services
-    - Each card should show the metric value, a relevant emoji icon, and percentage change indicator
-    - Use theme.colors.surface for card background with shadow elevation
-    - Cards should be responsive with 47% width and theme.spacing.md gap
+   - Display 4 key metrics in a 2x2 grid: Total Vehicles, Total Mileage (sum across all vehicles), Monthly Fuel Cost, Upcoming Services
+   - Each card should show the metric value, a relevant emoji icon, and percentage change indicator
+   - Use theme.colors.surface for card background with shadow elevation
+   - Cards should be responsive with 47% width and theme.spacing.md gap
 2. **Vehicle List Section**:
-    - Fetch and display user's vehicles from Supabase using the vehicles table
-    - Each vehicle card shows: year/make/model, license plate, main_image_url (with placeholder if null), current_mileage, color
-    - Include a badge indicating if vehicle is shared with groups (vehicle_group_shares table)
-    - Use FlatList for performance with proper keyExtractor
-    - Cards should have theme.borderRadius.xl and elevation shadows
+   - Fetch and display user's vehicles from Supabase using the vehicles table
+   - Each vehicle card shows: year/make/model, license plate, main_image_url (with placeholder if null), current_mileage, color
+   - Include a badge indicating if vehicle is shared with groups (vehicle_group_shares table)
+   - Use FlatList for performance with proper keyExtractor
+   - Cards should have theme.borderRadius.xl and elevation shadows
 3. **Recent Activity Timeline**:
-    - Fetch and combine recent entries from mileage_logs, fuel_logs, and service_logs (limit 5 most recent)
-    - Display in chronological order with color-coded icons based on activity type
-    - Each timeline item shows: activity type, date (formatted as relative time), primary value, and vehicle name
-    - Use theme.colors.warning for fuel, theme.colors.error for service, theme.colors.primary for mileage
+   - Fetch and combine recent entries from mileage_logs, fuel_logs, and service_logs (limit 5 most recent)
+   - Display in chronological order with color-coded icons based on activity type
+   - Each timeline item shows: activity type, date (formatted as relative time), primary value, and vehicle name
+   - Use theme.colors.warning for fuel, theme.colors.error for service, theme.colors.primary for mileage
 4. **Quick Action Buttons**:
-    - 4 circular action buttons in a row: "Add Fuel", "Log Service", "Update Mileage", "Add Vehicle"
-    - Each button uses theme-based colored backgrounds with opacity (e.g., theme.colors.primary + '15')
-    - Large touch targets (56px) optimized for mobile with theme.spacing.lg padding
-    - Navigate to respective screens using Expo Router navigation
+   - 4 circular action buttons in a row: "Add Fuel", "Log Service", "Update Mileage", "Add Vehicle"
+   - Each button uses theme-based colored backgrounds with opacity (e.g., theme.colors.primary + '15')
+   - Large touch targets (56px) optimized for mobile with theme.spacing.lg padding
+   - Navigate to respective screens using Expo Router navigation
 
 **Technical Requirements**:[^6][^2]
 
@@ -96,8 +95,6 @@
 
 **Additional Context**: The dashboard should feel modern, clean, and highly usable on mobile devices with intuitive gestures and smooth animations. Prioritize displaying the most relevant information at a glance while providing easy access to detailed views through navigation.[^8][^2][^6][^1]
 
-
-
 [^1]: https://www.atlassian.com/blog/artificial-intelligence/ultimate-guide-writing-ai-prompts
 
 [^2]: https://www.prompthub.us/blog/10-best-practices-for-prompt-engineering-with-any-model
@@ -135,4 +132,3 @@
 [^18]: https://www.huit.harvard.edu/news/ai-prompts
 
 [^19]: https://dev.to/itshayder/how-to-write-ai-prompts-that-actually-work-4-game-changing-tips-388h
-
