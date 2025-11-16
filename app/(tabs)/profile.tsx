@@ -870,25 +870,6 @@ export default function ProfileScreen() {
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.background }}>
       <View
         style={{
-          paddingHorizontal: theme.spacing.xl,
-          paddingVertical: theme.spacing.lg,
-          borderBottomWidth: 1,
-          borderBottomColor: theme.colors.border,
-        }}
-      >
-        <Text
-          style={{
-            fontSize: theme.fontSize["3xl"],
-            fontWeight: theme.fontWeight.bold,
-            color: theme.colors.text,
-          }}
-        >
-          Profile
-        </Text>
-      </View>
-
-      <View
-        style={{
           flexDirection: "row",
           padding: theme.spacing.lg,
           gap: theme.spacing.sm,

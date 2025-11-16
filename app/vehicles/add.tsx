@@ -1,5 +1,4 @@
 import { Button } from "@/components/ui/Button";
-import { Card, CardContent } from "@/components/ui/Card";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { ImageUpload } from "@/components/ui/ImageUpload";
 import { Input } from "@/components/ui/Input";
@@ -144,7 +143,7 @@ export default function AddVehicleScreen() {
   const styles = StyleSheet.create({
     container: {
       flex: 1,
-      backgroundColor: isWeb ? colors.icon + "08" : colors.background,
+      backgroundColor: colors.background,
     },
     header: {
       flexDirection: "row",
@@ -250,7 +249,10 @@ export default function AddVehicleScreen() {
   });
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView
+      style={styles.container}
+      edges={["top", "bottom", "left", "right"]}
+    >
       {!isWeb && (
         <View style={styles.header}>
           <TouchableOpacity

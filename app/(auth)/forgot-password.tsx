@@ -1,18 +1,18 @@
+import { Colors } from "@/constants/theme";
+import { useColorScheme } from "@/hooks/use-color-scheme";
+import { useAuth } from "@/lib/contexts/AuthContext";
+import { router } from "expo-router";
 import React, { useState } from "react";
 import {
-  View,
+  ActivityIndicator,
+  Alert,
+  StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
-  Alert,
-  StyleSheet,
-  ActivityIndicator,
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { router } from "expo-router";
-import { useAuth } from "@/lib/contexts/AuthContext";
-import { Colors } from "@/constants/theme";
-import { useColorScheme } from "@/hooks/use-color-scheme";
 
 export default function ForgotPasswordScreen() {
   const [email, setEmail] = useState("");
@@ -55,7 +55,7 @@ export default function ForgotPasswordScreen() {
   const styles = StyleSheet.create({
     container: {
       flex: 1,
-      backgroundColor: colors.background,
+      backgroundColor: colors.surface,
     },
     content: {
       flex: 1,
@@ -71,7 +71,7 @@ export default function ForgotPasswordScreen() {
     },
     subtitle: {
       fontSize: 16,
-      color: colors.icon,
+      color: colors.textSecondary,
       textAlign: "center",
       marginBottom: 40,
       lineHeight: 22,
@@ -86,9 +86,9 @@ export default function ForgotPasswordScreen() {
       marginBottom: 8,
     },
     input: {
-      backgroundColor: colors.background,
+      backgroundColor: colors.card,
       borderWidth: 1,
-      borderColor: colors.icon,
+      borderColor: colors.border,
       borderRadius: 8,
       paddingHorizontal: 16,
       paddingVertical: 12,
@@ -96,7 +96,7 @@ export default function ForgotPasswordScreen() {
       color: colors.text,
     },
     button: {
-      backgroundColor: colors.tint,
+      backgroundColor: colors.buttonPrimary,
       borderRadius: 8,
       paddingVertical: 16,
       alignItems: "center",
@@ -115,7 +115,7 @@ export default function ForgotPasswordScreen() {
       alignItems: "center",
     },
     cancelButtonText: {
-      color: colors.icon,
+      color: colors.textSecondary,
       fontSize: 16,
       fontWeight: "500",
     },
@@ -137,7 +137,7 @@ export default function ForgotPasswordScreen() {
             value={email}
             onChangeText={setEmail}
             placeholder="Enter your email"
-            placeholderTextColor={colors.icon}
+            placeholderTextColor={colors.textTertiary}
             keyboardType="email-address"
             autoCapitalize="none"
             autoCorrect={false}

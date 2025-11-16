@@ -8,26 +8,26 @@ interface GoogleVisionConfig {
 }
 
 interface GoogleVisionResponse {
-  responses: Array<{
-    textAnnotations: Array<{
+  responses: {
+    textAnnotations: {
       description: string;
       boundingPoly?: any;
       confidence?: number;
-    }>;
+    }[];
     fullTextAnnotation?: {
       text: string;
       confidence?: number;
-      pages?: Array<{
+      pages?: {
         confidence?: number;
         width?: number;
         height?: number;
-      }>;
+      }[];
     };
     error?: {
       code: number;
       message: string;
     };
-  }>;
+  }[];
 }
 
 export class GoogleVisionService {

@@ -487,6 +487,25 @@ export class VehicleService {
         return { data: null, error: "User not authenticated", loading: false };
       }
 
+      // Check if user has access to this vehicle (owner or group member)
+      const hasAccess = await this.canUserAccessVehicle(id, user.id);
+      if (!hasAccess) {
+        // Check if user owns the vehicle
+        const { data: vehicle } = await supabase
+          .from("vehicles")
+          .select("user_id")
+          .eq("id", id)
+          .single<{ user_id: string }>();
+
+        if (!vehicle || vehicle.user_id !== user.id) {
+          return {
+            data: null,
+            error: "You do not have permission to edit this vehicle",
+            loading: false,
+          };
+        }
+      }
+
       // Check for duplicate license plate if updating
       if (updates.license_plate) {
         const { data: existing } = await supabase

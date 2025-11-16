@@ -1,3 +1,4 @@
+import { useAlert, withWebAlert } from "@/components/ui";
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useAuth } from "@/lib/contexts/AuthContext";
@@ -16,7 +17,6 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { withWebAlert, useAlert } from "@/components/ui";
 
 const { width: screenWidth } = Dimensions.get("window");
 
@@ -52,7 +52,7 @@ function LoginScreen() {
   const styles = StyleSheet.create({
     container: {
       flex: 1,
-      backgroundColor: colors.facebook?.background || colors.surface,
+      backgroundColor: colors.surface,
     },
     scrollContainer: {
       flexGrow: 1,
@@ -72,7 +72,7 @@ function LoginScreen() {
     logo: {
       fontSize: 48,
       fontWeight: "bold",
-      color: colors.facebook?.primary || colors.tint,
+      color: colors.primary,
       marginBottom: 8,
       textAlign: "center",
     },
@@ -84,15 +84,17 @@ function LoginScreen() {
     },
     subtitle: {
       fontSize: 16,
-      color: colors.facebook?.gray || colors.icon,
+      color: colors.textSecondary,
       textAlign: "center",
       marginBottom: 40,
     },
     card: {
-      backgroundColor: colors.facebook?.card || colors.background,
+      backgroundColor: colors.card,
       borderRadius: 12,
       padding: 24,
-      shadowColor: "#000",
+      borderWidth: 1,
+      borderColor: colors.cardBorder,
+      shadowColor: colors.text,
       shadowOffset: {
         width: 0,
         height: 2,
@@ -106,9 +108,9 @@ function LoginScreen() {
       marginBottom: 20,
     },
     input: {
-      backgroundColor: colors.facebook?.lightGray || colors.surface,
+      backgroundColor: colors.background,
       borderWidth: 1,
-      borderColor: colors.facebook?.divider || colors.border,
+      borderColor: colors.border,
       borderRadius: 8,
       paddingHorizontal: 16,
       paddingVertical: 14,
@@ -117,9 +119,9 @@ function LoginScreen() {
       minHeight: 52,
     },
     inputFocused: {
-      borderColor: colors.facebook?.primary || colors.tint,
+      borderColor: colors.tint,
       borderWidth: 2,
-      backgroundColor: colors.facebook?.card || colors.background,
+      backgroundColor: colors.card,
     },
     checkboxContainer: {
       flexDirection: "row",
@@ -130,29 +132,29 @@ function LoginScreen() {
       width: 20,
       height: 20,
       borderWidth: 2,
-      borderColor: colors.facebook?.divider || colors.border,
+      borderColor: colors.border,
       borderRadius: 4,
       marginRight: 12,
       alignItems: "center",
       justifyContent: "center",
     },
     checkboxChecked: {
-      backgroundColor: colors.facebook?.primary || colors.tint,
-      borderColor: colors.facebook?.primary || colors.tint,
+      backgroundColor: colors.primary,
+      borderColor: colors.primary,
     },
     checkboxText: {
       fontSize: 14,
-      color: colors.facebook?.gray || colors.icon,
+      color: colors.textSecondary,
       flex: 1,
     },
     button: {
-      backgroundColor: colors.facebook?.primary || colors.tint,
+      backgroundColor: colors.buttonPrimary,
       borderRadius: 8,
       paddingVertical: 16,
       alignItems: "center",
       marginBottom: 16,
       minHeight: 52,
-      shadowColor: colors.facebook?.primary || colors.tint,
+      shadowColor: colors.primary,
       shadowOffset: {
         width: 0,
         height: 2,
@@ -176,7 +178,7 @@ function LoginScreen() {
       marginBottom: 24,
     },
     forgotPasswordText: {
-      color: colors.facebook?.primary || colors.tint,
+      color: colors.link,
       fontSize: 14,
       fontWeight: "500",
     },
@@ -188,20 +190,22 @@ function LoginScreen() {
     dividerLine: {
       flex: 1,
       height: 1,
-      backgroundColor: colors.facebook?.divider || colors.border,
+      backgroundColor: colors.divider,
     },
     dividerText: {
-      color: colors.facebook?.gray || colors.icon,
+      color: colors.textSecondary,
       fontSize: 14,
       marginHorizontal: 16,
       fontWeight: "500",
     },
     signupContainer: {
       alignItems: "center",
-      backgroundColor: colors.facebook?.card || colors.background,
+      backgroundColor: colors.card,
       borderRadius: 12,
       padding: 20,
-      shadowColor: "#000",
+      borderWidth: 1,
+      borderColor: colors.cardBorder,
+      shadowColor: colors.text,
       shadowOffset: {
         width: 0,
         height: 1,
@@ -211,21 +215,20 @@ function LoginScreen() {
       elevation: 2,
     },
     signupText: {
-      color: colors.facebook?.gray || colors.icon,
+      color: colors.textSecondary,
       fontSize: 14,
       marginBottom: 16,
       textAlign: "center",
     },
     signupButton: {
-      backgroundColor:
-        colors.facebook?.secondary || colors.facebook?.primary || colors.tint,
+      backgroundColor: colors.buttonSecondary,
       borderRadius: 8,
       paddingVertical: 12,
       paddingHorizontal: 24,
       minHeight: 44,
     },
     signupButtonText: {
-      color: "#FFFFFF",
+      color: colors.text,
       fontSize: 14,
       fontWeight: "600",
     },
@@ -256,9 +259,7 @@ function LoginScreen() {
                   value={email}
                   onChangeText={setEmail}
                   placeholder="Email address"
-                  placeholderTextColor={
-                    colors.facebook?.placeholder || colors.icon
-                  }
+                  placeholderTextColor={colors.textTertiary}
                   keyboardType="email-address"
                   autoCapitalize="none"
                   autoCorrect={false}
@@ -273,9 +274,7 @@ function LoginScreen() {
                   value={password}
                   onChangeText={setPassword}
                   placeholder="Password"
-                  placeholderTextColor={
-                    colors.facebook?.placeholder || colors.icon
-                  }
+                  placeholderTextColor={colors.textTertiary}
                   secureTextEntry
                   autoCapitalize="none"
                   autoCorrect={false}

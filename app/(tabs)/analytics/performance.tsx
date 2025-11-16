@@ -1,18 +1,17 @@
-import React, { useMemo } from "react";
-import { View, Text, ScrollView, RefreshControl } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { useStyles } from "react-native-unistyles";
 import {
+  EmptyAnalytics,
   PeriodSelector,
   VehicleFilter,
-  EmptyAnalytics,
-  AnalyticsHeader,
 } from "@/components/analytics";
 import {
   useAnalyticsData,
   usePeriodSelector,
   useVehicleFilter,
 } from "@/hooks/useAnalytics";
+import React, { useMemo } from "react";
+import { RefreshControl, ScrollView, Text, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { useStyles } from "react-native-unistyles";
 
 export default function PerformanceTab() {
   const { theme } = useStyles();
@@ -45,7 +44,6 @@ export default function PerformanceTab() {
       <SafeAreaView
         style={{ flex: 1, backgroundColor: theme.colors.background }}
       >
-        <AnalyticsHeader />
         <View
           style={{ flex: 1, alignItems: "center", justifyContent: "center" }}
         >
@@ -68,11 +66,40 @@ export default function PerformanceTab() {
       <SafeAreaView
         style={{ flex: 1, backgroundColor: theme.colors.background }}
       >
-        <EmptyAnalytics
-          icon="alert-circle-outline"
-          title="Error Loading Data"
-          message="Failed to load vehicle performance data. Please try again."
-        />
+        <ScrollView style={{ flex: 1 }}>
+          <View
+            style={{
+              paddingHorizontal: theme.spacing.xl,
+              paddingVertical: theme.spacing.lg,
+            }}
+          >
+            <Text
+              style={{
+                fontSize: theme.fontSize["3xl"],
+                fontWeight: theme.fontWeight.bold,
+                color: theme.colors.text,
+                marginBottom: theme.spacing.xs,
+              }}
+            >
+              Performance
+            </Text>
+            <Text
+              style={{
+                fontSize: theme.fontSize.base,
+                color: theme.colors.textSecondary,
+              }}
+            >
+              Compare vehicle efficiency and costs
+            </Text>
+          </View>
+          <View style={{ padding: theme.spacing.lg }}>
+            <EmptyAnalytics
+              icon="alert-circle-outline"
+              title="Error Loading Data"
+              message="Failed to load vehicle performance data. Please try again."
+            />
+          </View>
+        </ScrollView>
       </SafeAreaView>
     );
   }
@@ -83,27 +110,54 @@ export default function PerformanceTab() {
       <SafeAreaView
         style={{ flex: 1, backgroundColor: theme.colors.background }}
       >
-        <View style={{ padding: theme.spacing.lg }}>
-          <View style={{ marginBottom: theme.spacing.lg }}>
-            <PeriodSelector
-              selectedPeriod={period}
-              onPeriodChange={setPeriod}
-              periods={periods}
-            />
-            <VehicleFilter
-              vehicles={vehicles}
-              selectedVehicleIds={selectedVehicleIds}
-              onToggleVehicle={toggleVehicle}
-              onSelectAll={selectAll}
-              onClearAll={clearAll}
-            />
+        <ScrollView style={{ flex: 1 }}>
+          <View
+            style={{
+              paddingHorizontal: theme.spacing.xl,
+              paddingVertical: theme.spacing.lg,
+            }}
+          >
+            <Text
+              style={{
+                fontSize: theme.fontSize["3xl"],
+                fontWeight: theme.fontWeight.bold,
+                color: theme.colors.text,
+                marginBottom: theme.spacing.xs,
+              }}
+            >
+              Performance
+            </Text>
+            <Text
+              style={{
+                fontSize: theme.fontSize.base,
+                color: theme.colors.textSecondary,
+              }}
+            >
+              Compare vehicle efficiency and costs
+            </Text>
           </View>
-        </View>
-        <EmptyAnalytics
-          icon="car-outline"
-          title="No Vehicle Data"
-          message="Start logging data for your vehicles to see performance comparisons."
-        />
+          <View style={{ padding: theme.spacing.lg }}>
+            <View style={{ marginBottom: theme.spacing.lg }}>
+              <PeriodSelector
+                selectedPeriod={period}
+                onPeriodChange={setPeriod}
+                periods={periods}
+              />
+              <VehicleFilter
+                vehicles={vehicles}
+                selectedVehicleIds={selectedVehicleIds}
+                onToggleVehicle={toggleVehicle}
+                onSelectAll={selectAll}
+                onClearAll={clearAll}
+              />
+            </View>
+          </View>
+          <EmptyAnalytics
+            icon="car-outline"
+            title="No Vehicle Data"
+            message="Start logging data for your vehicles to see performance comparisons."
+          />
+        </ScrollView>
       </SafeAreaView>
     );
   }
@@ -130,6 +184,34 @@ export default function PerformanceTab() {
         }
         showsVerticalScrollIndicator={false}
       >
+        {/* Header */}
+        <View
+          style={{
+            paddingHorizontal: theme.spacing.xl,
+            paddingVertical: theme.spacing.lg,
+            backgroundColor: theme.colors.background,
+          }}
+        >
+          <Text
+            style={{
+              fontSize: theme.fontSize["3xl"],
+              fontWeight: theme.fontWeight.bold,
+              color: theme.colors.text,
+              marginBottom: theme.spacing.xs,
+            }}
+          >
+            Performance
+          </Text>
+          <Text
+            style={{
+              fontSize: theme.fontSize.base,
+              color: theme.colors.textSecondary,
+            }}
+          >
+            Compare vehicle efficiency and costs
+          </Text>
+        </View>
+
         <View style={{ padding: theme.spacing.lg }}>
           {/* Filters */}
           <View style={{ marginBottom: theme.spacing.lg }}>

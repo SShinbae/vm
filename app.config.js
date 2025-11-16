@@ -17,9 +17,9 @@ export default {
       package: "com.vehiclesmanagement.app",
       adaptiveIcon: {
         backgroundColor: "#E6F4FE",
-        foregroundImage: "./assets/images/android-icon-foreground.png",
-        backgroundImage: "./assets/images/android-icon-background.png",
-        monochromeImage: "./assets/images/android-icon-monochrome.png",
+        foregroundImage: "./assets/images/launch-icon-foreground.png",
+        backgroundImage: "./assets/images/launch-icon-foreground.png",
+        monochromeImage: "./assets/images/vm_logo_foreground.png",
       },
       edgeToEdgeEnabled: true,
       predictiveBackGestureEnabled: false,
@@ -33,7 +33,7 @@ export default {
       description:
         "Comprehensive vehicle management and maintenance tracking system",
       lang: "en",
-      themeColor: "#E6F4FE",
+      themeColor: "#517c89", // blueBayoux[500]
       backgroundColor: "#ffffff",
     },
     plugins: [
@@ -48,7 +48,7 @@ export default {
           backgroundColor: "#E6F4FE",
           dark: {
             image: "./assets/images/vm_logo.png",
-            backgroundColor: "#1a1a1a",
+            backgroundColor: "#202f36",
           },
         },
       ],

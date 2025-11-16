@@ -44,7 +44,7 @@ export function VehicleSelector({
                 <IconSymbol
                   name="car.fill"
                   size={16}
-                  color={theme.colors.warning}
+                  color={theme.colors.primary}
                 />
               </View>
             )}
@@ -134,7 +134,7 @@ const stylesheet = createStyleSheet((theme) => ({
     borderRadius: theme.borderRadius.full,
   },
   vehicleIconPlaceholder: {
-    backgroundColor: theme.colors.warning + "15",
+    backgroundColor: theme.colors.primary + "15",
     alignItems: "center",
     justifyContent: "center",
   },

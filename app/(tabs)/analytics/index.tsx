@@ -1,28 +1,22 @@
-import React, { useMemo } from "react";
 import {
-  View,
-  Text,
-  ScrollView,
-  RefreshControl,
-  ActivityIndicator,
-} from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { useStyles } from "react-native-unistyles";
-import {
+  CostBreakdownCard,
+  EmptyAnalytics,
   MetricCard,
   PeriodSelector,
-  VehicleFilter,
-  EmptyAnalytics,
-  AnalyticsHeader,
-  UpcomingServiceCard,
-  CostBreakdownCard,
   StatCard,
+  UpcomingServiceCard,
+  VehicleFilter,
 } from "@/components/analytics";
+import { SkeletonAnalytics } from "@/components/ui/Skeleton";
 import {
   useAnalyticsData,
   usePeriodSelector,
   useVehicleFilter,
 } from "@/hooks/useAnalytics";
+import React, { useMemo } from "react";
+import { RefreshControl, ScrollView, Text, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { useStyles } from "react-native-unistyles";
 
 export default function OverviewTab() {
   const { theme } = useStyles();
@@ -59,25 +53,7 @@ export default function OverviewTab() {
       <SafeAreaView
         style={{ flex: 1, backgroundColor: theme.colors.background }}
       >
-        <AnalyticsHeader />
-        <View
-          style={{
-            flex: 1,
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
-          <ActivityIndicator size="large" color={theme.colors.primary} />
-          <Text
-            style={{
-              fontSize: theme.fontSize.base,
-              color: theme.colors.textSecondary,
-              marginTop: theme.spacing.md,
-            }}
-          >
-            Loading analytics...
-          </Text>
-        </View>
+        <SkeletonAnalytics />
       </SafeAreaView>
     );
   }
@@ -88,14 +64,40 @@ export default function OverviewTab() {
       <SafeAreaView
         style={{ flex: 1, backgroundColor: theme.colors.background }}
       >
-        <AnalyticsHeader />
-        <View style={{ padding: theme.spacing.lg }}>
-          <EmptyAnalytics
-            icon="alert-circle-outline"
-            title="Error Loading Data"
-            message="Failed to load analytics data. Please try again."
-          />
-        </View>
+        <ScrollView style={{ flex: 1 }}>
+          <View
+            style={{
+              paddingHorizontal: theme.spacing.xl,
+              paddingVertical: theme.spacing.lg,
+            }}
+          >
+            <Text
+              style={{
+                fontSize: theme.fontSize["3xl"],
+                fontWeight: theme.fontWeight.bold,
+                color: theme.colors.text,
+                marginBottom: theme.spacing.xs,
+              }}
+            >
+              Analytics
+            </Text>
+            <Text
+              style={{
+                fontSize: theme.fontSize.base,
+                color: theme.colors.textSecondary,
+              }}
+            >
+              Track costs, fuel, and maintenance
+            </Text>
+          </View>
+          <View style={{ padding: theme.spacing.lg }}>
+            <EmptyAnalytics
+              icon="alert-circle-outline"
+              title="Error Loading Data"
+              message="Failed to load analytics data. Please try again."
+            />
+          </View>
+        </ScrollView>
       </SafeAreaView>
     );
   }
@@ -106,22 +108,48 @@ export default function OverviewTab() {
       <SafeAreaView
         style={{ flex: 1, backgroundColor: theme.colors.background }}
       >
-        <AnalyticsHeader />
-        <View style={{ padding: theme.spacing.lg }}>
-          <PeriodSelector
-            selectedPeriod={period}
-            onPeriodChange={setPeriod}
-            periods={periods}
-          />
-          <VehicleFilter
-            vehicles={vehicles}
-            selectedVehicleIds={selectedVehicleIds}
-            onToggleVehicle={toggleVehicle}
-            onSelectAll={selectAll}
-            onClearAll={clearAll}
-          />
-        </View>
-        <EmptyAnalytics />
+        <ScrollView style={{ flex: 1 }}>
+          <View
+            style={{
+              paddingHorizontal: theme.spacing.xl,
+              paddingVertical: theme.spacing.lg,
+            }}
+          >
+            <Text
+              style={{
+                fontSize: theme.fontSize["3xl"],
+                fontWeight: theme.fontWeight.bold,
+                color: theme.colors.text,
+                marginBottom: theme.spacing.xs,
+              }}
+            >
+              Analytics
+            </Text>
+            <Text
+              style={{
+                fontSize: theme.fontSize.base,
+                color: theme.colors.textSecondary,
+              }}
+            >
+              Track costs, fuel, and maintenance
+            </Text>
+          </View>
+          <View style={{ padding: theme.spacing.lg }}>
+            <PeriodSelector
+              selectedPeriod={period}
+              onPeriodChange={setPeriod}
+              periods={periods}
+            />
+            <VehicleFilter
+              vehicles={vehicles}
+              selectedVehicleIds={selectedVehicleIds}
+              onToggleVehicle={toggleVehicle}
+              onSelectAll={selectAll}
+              onClearAll={clearAll}
+            />
+          </View>
+          <EmptyAnalytics />
+        </ScrollView>
       </SafeAreaView>
     );
   }
@@ -136,7 +164,6 @@ export default function OverviewTab() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.background }}>
-      <AnalyticsHeader />
       <ScrollView
         style={{ flex: 1 }}
         refreshControl={
@@ -144,6 +171,34 @@ export default function OverviewTab() {
         }
         showsVerticalScrollIndicator={false}
       >
+        {/* Header */}
+        <View
+          style={{
+            paddingHorizontal: theme.spacing.xl,
+            paddingVertical: theme.spacing.lg,
+            backgroundColor: theme.colors.background,
+          }}
+        >
+          <Text
+            style={{
+              fontSize: theme.fontSize["3xl"],
+              fontWeight: theme.fontWeight.bold,
+              color: theme.colors.text,
+              marginBottom: theme.spacing.xs,
+            }}
+          >
+            Analytics
+          </Text>
+          <Text
+            style={{
+              fontSize: theme.fontSize.base,
+              color: theme.colors.textSecondary,
+            }}
+          >
+            Track costs, fuel, and maintenance
+          </Text>
+        </View>
+
         <View style={{ padding: theme.spacing.lg }}>
           {/* Filters */}
           <PeriodSelector

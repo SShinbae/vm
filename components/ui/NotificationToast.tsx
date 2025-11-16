@@ -1,15 +1,15 @@
+import { Ionicons } from "@expo/vector-icons";
 import React, { useEffect, useRef } from "react";
 import {
-  View,
-  Text,
   Animated,
-  TouchableOpacity,
   Dimensions,
   Platform,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import { NotificationData } from "../../lib/services/notificationService";
 import { useThemeColor } from "../../hooks/use-theme-color";
+import { NotificationData } from "../../lib/services/notificationService";
 
 const { width: screenWidth } = Dimensions.get("window");
 const TOAST_WIDTH = screenWidth - 32;
@@ -116,25 +116,6 @@ export function NotificationToast({
     }
   };
 
-  const getIconColor = () => {
-    if (!notification) return textColor;
-
-    switch (notification.type) {
-      case "mileage_log":
-        return "#007AFF";
-      case "fuel_log":
-        return "#FF9500";
-      case "service_log":
-        return "#FF3B30";
-      case "group_member":
-        return "#34C759";
-      case "group_invite":
-        return "#AF52DE";
-      default:
-        return textColor;
-    }
-  };
-
   if (!notification) return null;
 
   return (
@@ -162,11 +143,7 @@ export function NotificationToast({
         <View className="p-4">
           <View className="flex-row items-start">
             <View className="mr-3 mt-1">
-              <Ionicons
-                name={getIcon() as any}
-                size={24}
-                color={getIconColor()}
-              />
+              <Ionicons name={getIcon() as any} size={24} color={textColor} />
             </View>
 
             <View className="flex-1">

@@ -1,6 +1,8 @@
+import { ActionMenu, ActionMenuItem } from "@/components/ui/ActionMenu";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { AlertModal, ConfirmModal } from "@/components/ui/Modal";
 import { ServiceReceiptIndicator } from "@/components/ui/ReceiptViewer";
+import { SkeletonLogList } from "@/components/ui/Skeleton";
 import {
   FuelLogService,
   MileageLogService,
@@ -20,14 +22,12 @@ import { Image } from "expo-image";
 import { router } from "expo-router";
 import React, { useCallback, useState } from "react";
 import {
-  Animated,
   RefreshControl,
   ScrollView,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
-import Swipeable from "react-native-gesture-handler/Swipeable";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useStyles } from "react-native-unistyles";
 
@@ -45,6 +45,9 @@ export default function LogsScreen() {
   const [expandedVehicles, setExpandedVehicles] = useState<Set<string>>(
     new Set(),
   );
+  const [showAllLogsForVehicle, setShowAllLogsForVehicle] = useState<
+    Set<string>
+  >(new Set());
 
   // Modal states
   const [deleteModalVisible, setDeleteModalVisible] = useState(false);
@@ -241,64 +244,17 @@ export default function LogsScreen() {
     });
   };
 
-  const renderRightActions = (
-    type: LogType,
-    id: string,
-    description: string,
-  ) => {
-    const RightActions = (
-      progress: Animated.AnimatedInterpolation<number>,
-      dragX: Animated.AnimatedInterpolation<number>,
-    ) => {
-      const trans = dragX.interpolate({
-        inputRange: [-160, 0],
-        outputRange: [0, 160],
-        extrapolate: "clamp",
-      });
-
-      return (
-        <Animated.View
-          style={{
-            flexDirection: "row",
-            alignItems: "center",
-            justifyContent: "flex-end",
-            transform: [{ translateX: trans }],
-          }}
-        >
-          <TouchableOpacity
-            style={{
-              backgroundColor: theme.colors.primary,
-              justifyContent: "center",
-              alignItems: "center",
-              width: 80,
-              height: "100%",
-            }}
-            onPress={() => {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              handleEditLog(type, id);
-            }}
-          >
-            <IconSymbol name="pencil" size={20} color="white" />
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={{
-              backgroundColor: theme.colors.error,
-              justifyContent: "center",
-              alignItems: "center",
-              width: 80,
-              height: "100%",
-            }}
-            onPress={() => {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-              handleDeleteLog(type, id, description);
-            }}
-          >
-            <IconSymbol name="trash" size={20} color="white" />
-          </TouchableOpacity>
-        </Animated.View>
-      );
-    };
-    return RightActions;
+  const toggleShowAllLogs = (vehicleId: string) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setShowAllLogsForVehicle((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(vehicleId)) {
+        newSet.delete(vehicleId);
+      } else {
+        newSet.add(vehicleId);
+      }
+      return newSet;
+    });
   };
 
   useFocusEffect(
@@ -560,7 +516,7 @@ export default function LogsScreen() {
         case "fuel":
           return {
             icon: "fuelpump",
-            color: theme.colors.warning,
+            color: theme.colors.primary,
             title: `${log.liters_filled?.toFixed(2) || 0}L - RM${log.cost?.toFixed(2) || 0}`,
             subtitle: log.location || "No location",
             odometer: log.odometer_reading
@@ -586,243 +542,122 @@ export default function LogsScreen() {
 
     const details = getLogDetails();
 
-    if (!canModify) {
-      return (
-        <TouchableOpacity
-          style={{
-            backgroundColor: theme.colors.surface,
-            borderRadius: theme.borderRadius.xl,
-            padding: theme.spacing.xl,
-            marginBottom: theme.spacing.md,
-            borderWidth: 1,
-            borderColor: theme.colors.border,
-            shadowColor: theme.colors.black,
-            shadowOffset: { width: 0, height: 4 },
-            shadowOpacity: 0.06,
-            shadowRadius: 12,
-            elevation: 3,
-            ...(log.is_shared_vehicle && {
-              borderColor: theme.colors.primary + "40",
-              backgroundColor: theme.colors.primary + "05",
-            }),
-          }}
-          onPress={() => type === "service" && handleViewServiceDetail(log.id)}
-          activeOpacity={0.7}
-        >
-          <View style={{ flexDirection: "row", alignItems: "flex-start" }}>
-            <View
-              style={{
-                width: 48,
-                height: 48,
-                borderRadius: 24,
-                backgroundColor: details.color + "20",
-                alignItems: "center",
-                justifyContent: "center",
-                marginRight: theme.spacing.lg,
-              }}
-            >
-              <IconSymbol
-                name={details.icon as any}
-                size={24}
-                color={details.color}
-              />
-            </View>
-            <View style={{ flex: 1 }}>
-              <View
-                style={{
-                  flexDirection: "row",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  marginBottom: theme.spacing.xs,
-                }}
-              >
-                <Text
-                  style={{
-                    fontSize: theme.fontSize.lg,
-                    fontWeight: theme.fontWeight.bold,
-                    color: theme.colors.text,
-                    letterSpacing: -0.3,
-                  }}
-                >
-                  {details.title}
-                </Text>
-                {type === "service" && details.hasReceipt && (
-                  <ServiceReceiptIndicator
-                    hasReceipt={details.hasReceipt}
-                    receiptUrl={details.receiptUrl}
-                    onPress={() => handleViewServiceDetail(log.id)}
-                    size={18}
-                  />
-                )}
-              </View>
-              <Text
-                style={{
-                  fontSize: theme.fontSize.base,
-                  color: theme.colors.textSecondary,
-                  fontWeight: theme.fontWeight.medium,
-                  marginTop: theme.spacing.xs,
-                }}
-              >
-                {details.subtitle}
-              </Text>
-              {details.odometer && (
-                <Text
-                  style={{
-                    fontSize: theme.fontSize.sm,
-                    color: theme.colors.textSecondary,
-                    marginBottom: theme.spacing.xs,
-                  }}
-                >
-                  {details.odometer}
-                </Text>
-              )}
-              <Text
-                style={{
-                  fontSize: theme.fontSize.sm,
-                  color: theme.colors.textSecondary,
-                  fontWeight: theme.fontWeight.normal,
-                  marginTop: theme.spacing.sm,
-                }}
-              >
-                {formatDate(log.date)}
-              </Text>
-            </View>
-            <View
-              style={{
-                flexDirection: "column",
-                alignItems: "center",
-                justifyContent: "center",
-                padding: theme.spacing.xs,
-                opacity: 0.6,
-              }}
-            >
-              <IconSymbol
-                name="eye"
-                size={18}
-                color={theme.colors.textSecondary}
-              />
-              <Text
-                style={{
-                  fontSize: theme.fontSize.xs,
-                  color: theme.colors.textSecondary,
-                  marginTop: theme.spacing.xs,
-                  textAlign: "center",
-                }}
-              >
-                View Only
-              </Text>
-            </View>
-          </View>
-        </TouchableOpacity>
-      );
-    }
+    const actionMenuItems: ActionMenuItem[] = [
+      {
+        label: "Edit",
+        icon: "pencil",
+        onPress: () => handleEditLog(type, log.id),
+        disabled: !canModify,
+      },
+      {
+        label: "Delete",
+        icon: "trash",
+        onPress: () => handleDeleteLog(type, log.id, details.title),
+        variant: "danger",
+        disabled: !canModify,
+      },
+    ];
 
     return (
-      <Swipeable
-        renderRightActions={renderRightActions(type, log.id, details.title)}
-      >
-        <TouchableOpacity
-          style={{
+      <TouchableOpacity
+        style={{
+          backgroundColor: theme.colors.background,
+          borderRadius: theme.borderRadius.lg,
+          padding: theme.spacing.lg,
+          marginBottom: theme.spacing.md,
+          borderWidth: 1,
+          borderColor: theme.colors.border,
+          ...(log.is_shared_vehicle && {
+            borderColor: theme.colors.primary + "40",
             backgroundColor: theme.colors.surface,
-            borderRadius: theme.borderRadius.xl,
-            padding: theme.spacing.xl,
-            marginBottom: theme.spacing.md,
-            borderWidth: 1,
-            borderColor: theme.colors.border,
-            shadowColor: theme.colors.black,
-            shadowOffset: { width: 0, height: 4 },
-            shadowOpacity: 0.06,
-            shadowRadius: 12,
-            elevation: 3,
-            ...(log.is_shared_vehicle && {
-              borderColor: theme.colors.primary + "40",
-              backgroundColor: theme.colors.primary + "05",
-            }),
-          }}
-          onPress={() => type === "service" && handleViewServiceDetail(log.id)}
-          activeOpacity={0.7}
-        >
-          <View style={{ flexDirection: "row", alignItems: "flex-start" }}>
+          }),
+        }}
+        onPress={() => type === "service" && handleViewServiceDetail(log.id)}
+        activeOpacity={0.7}
+      >
+        <View style={{ flexDirection: "row", alignItems: "flex-start" }}>
+          <View
+            style={{
+              width: 48,
+              height: 48,
+              borderRadius: 24,
+              backgroundColor: details.color + "15",
+              alignItems: "center",
+              justifyContent: "center",
+              marginRight: theme.spacing.lg,
+            }}
+          >
+            <IconSymbol
+              name={details.icon as any}
+              size={24}
+              color={details.color}
+            />
+          </View>
+          <View style={{ flex: 1 }}>
             <View
               style={{
-                width: 48,
-                height: 48,
-                borderRadius: 24,
-                backgroundColor: details.color + "20",
+                flexDirection: "row",
                 alignItems: "center",
-                justifyContent: "center",
-                marginRight: theme.spacing.lg,
+                justifyContent: "space-between",
+                marginBottom: theme.spacing.xs,
               }}
             >
-              <IconSymbol
-                name={details.icon as any}
-                size={24}
-                color={details.color}
-              />
-            </View>
-            <View style={{ flex: 1 }}>
-              <View
-                style={{
-                  flexDirection: "row",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  marginBottom: theme.spacing.xs,
-                }}
-              >
-                <Text
-                  style={{
-                    fontSize: theme.fontSize.lg,
-                    fontWeight: theme.fontWeight.bold,
-                    color: theme.colors.text,
-                    letterSpacing: -0.3,
-                  }}
-                >
-                  {details.title}
-                </Text>
-                {type === "service" && details.hasReceipt && (
-                  <ServiceReceiptIndicator
-                    hasReceipt={details.hasReceipt}
-                    receiptUrl={details.receiptUrl}
-                    onPress={() => handleViewServiceDetail(log.id)}
-                    size={18}
-                  />
-                )}
-              </View>
               <Text
                 style={{
-                  fontSize: theme.fontSize.base,
-                  color: theme.colors.textSecondary,
-                  fontWeight: theme.fontWeight.medium,
-                  marginTop: theme.spacing.xs,
+                  fontSize: theme.fontSize.lg,
+                  fontWeight: theme.fontWeight.bold,
+                  color: theme.colors.text,
+                  letterSpacing: -0.3,
                 }}
               >
-                {details.subtitle}
+                {details.title}
               </Text>
-              {details.odometer && (
-                <Text
-                  style={{
-                    fontSize: theme.fontSize.sm,
-                    color: theme.colors.textSecondary,
-                    marginBottom: theme.spacing.xs,
-                  }}
-                >
-                  {details.odometer}
-                </Text>
+              {type === "service" && details.hasReceipt && (
+                <ServiceReceiptIndicator
+                  hasReceipt={details.hasReceipt}
+                  receiptUrl={details.receiptUrl}
+                  onPress={() => handleViewServiceDetail(log.id)}
+                  size={18}
+                />
               )}
+            </View>
+            <Text
+              style={{
+                fontSize: theme.fontSize.base,
+                color: theme.colors.textSecondary,
+                fontWeight: theme.fontWeight.medium,
+                marginTop: theme.spacing.xs,
+              }}
+            >
+              {details.subtitle}
+            </Text>
+            {details.odometer && (
               <Text
                 style={{
                   fontSize: theme.fontSize.sm,
                   color: theme.colors.textSecondary,
-                  fontWeight: theme.fontWeight.normal,
-                  marginTop: theme.spacing.sm,
+                  marginBottom: theme.spacing.xs,
                 }}
               >
-                {formatDate(log.date)}
+                {details.odometer}
               </Text>
-            </View>
+            )}
+            <Text
+              style={{
+                fontSize: theme.fontSize.sm,
+                color: theme.colors.textSecondary,
+                fontWeight: theme.fontWeight.normal,
+                marginTop: theme.spacing.sm,
+              }}
+            >
+              {formatDate(log.date)}
+            </Text>
           </View>
-        </TouchableOpacity>
-      </Swipeable>
+          <View style={{ marginLeft: theme.spacing.sm }}>
+            <ActionMenu items={actionMenuItems} />
+          </View>
+        </View>
+      </TouchableOpacity>
     );
   };
 
@@ -884,50 +719,6 @@ export default function LogsScreen() {
     }
   };
 
-  const SkeletonCard = () => (
-    <View
-      style={{
-        backgroundColor: theme.colors.surface,
-        borderRadius: theme.borderRadius.xl,
-        padding: theme.spacing.xl,
-        marginBottom: theme.spacing.md,
-        borderWidth: 1,
-        borderColor: theme.colors.border,
-        flexDirection: "row",
-        alignItems: "center",
-      }}
-    >
-      <View
-        style={{
-          width: 48,
-          height: 48,
-          borderRadius: 24,
-          backgroundColor: theme.colors.disabled,
-          marginRight: theme.spacing.lg,
-        }}
-      />
-      <View style={{ flex: 1 }}>
-        <View
-          style={{
-            height: 18,
-            backgroundColor: theme.colors.disabled,
-            borderRadius: 4,
-            marginBottom: theme.spacing.sm,
-            width: "60%",
-          }}
-        />
-        <View
-          style={{
-            height: 14,
-            backgroundColor: theme.colors.disabled,
-            borderRadius: 4,
-            width: "40%",
-          }}
-        />
-      </View>
-    </View>
-  );
-
   if (loading) {
     return (
       <SafeAreaView
@@ -966,11 +757,7 @@ export default function LogsScreen() {
           <TabButton type="service" label="Service" icon="wrench" />
         </View>
         <ScrollView style={{ flex: 1 }}>
-          <View style={{ padding: theme.spacing.xl }}>
-            {[1, 2, 3].map((i) => (
-              <SkeletonCard key={i} />
-            ))}
-          </View>
+          <SkeletonLogList itemCount={5} />
         </ScrollView>
       </SafeAreaView>
     );
@@ -1112,6 +899,9 @@ export default function LogsScreen() {
             const isSharedVehicle =
               logs.length > 0 && (logs[0].is_shared_vehicle || false);
             const isExpanded = expandedVehicles.has(vehicleId);
+            const showAll = showAllLogsForVehicle.has(vehicleId);
+            const displayedLogs = showAll ? logs : logs.slice(0, 3);
+            const hasMoreLogs = logs.length > 3;
 
             return (
               <View key={vehicleId}>
@@ -1129,9 +919,74 @@ export default function LogsScreen() {
                       paddingBottom: theme.spacing.sm,
                     }}
                   >
-                    {logs.map((log) => (
+                    {displayedLogs.map((log) => (
                       <LogCard key={log.id} log={log} type={activeTab} />
                     ))}
+                    {hasMoreLogs && !showAll && (
+                      <TouchableOpacity
+                        style={{
+                          backgroundColor: theme.colors.surface,
+                          borderRadius: theme.borderRadius.lg,
+                          padding: theme.spacing.md,
+                          marginBottom: theme.spacing.md,
+                          borderWidth: 1,
+                          borderColor: theme.colors.border,
+                          alignItems: "center",
+                          flexDirection: "row",
+                          justifyContent: "center",
+                          gap: theme.spacing.sm,
+                        }}
+                        onPress={() => toggleShowAllLogs(vehicleId)}
+                      >
+                        <Text
+                          style={{
+                            fontSize: theme.fontSize.base,
+                            fontWeight: theme.fontWeight.semibold,
+                            color: theme.colors.primary,
+                          }}
+                        >
+                          See {logs.length - 3} more{" "}
+                          {logs.length - 3 === 1 ? "log" : "logs"}
+                        </Text>
+                        <IconSymbol
+                          name="chevron.down"
+                          size={16}
+                          color={theme.colors.primary}
+                        />
+                      </TouchableOpacity>
+                    )}
+                    {hasMoreLogs && showAll && (
+                      <TouchableOpacity
+                        style={{
+                          backgroundColor: theme.colors.surface,
+                          borderRadius: theme.borderRadius.lg,
+                          padding: theme.spacing.md,
+                          marginBottom: theme.spacing.md,
+                          borderWidth: 1,
+                          borderColor: theme.colors.border,
+                          alignItems: "center",
+                          flexDirection: "row",
+                          justifyContent: "center",
+                          gap: theme.spacing.sm,
+                        }}
+                        onPress={() => toggleShowAllLogs(vehicleId)}
+                      >
+                        <Text
+                          style={{
+                            fontSize: theme.fontSize.base,
+                            fontWeight: theme.fontWeight.semibold,
+                            color: theme.colors.primary,
+                          }}
+                        >
+                          Show less
+                        </Text>
+                        <IconSymbol
+                          name="chevron.up"
+                          size={16}
+                          color={theme.colors.primary}
+                        />
+                      </TouchableOpacity>
+                    )}
                   </View>
                 )}
               </View>

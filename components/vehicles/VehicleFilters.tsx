@@ -20,7 +20,7 @@ export function VehicleFilters({
 }: VehicleFiltersProps) {
   const { styles } = useStyles(stylesheet);
 
-  const filters: Array<{ filter: FilterType; label: string }> = [
+  const filters: { filter: FilterType; label: string }[] = [
     { filter: "all", label: "All Vehicles" },
     { filter: "own", label: "My Vehicles" },
     { filter: "shared", label: "Shared" },

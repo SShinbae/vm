@@ -1,4 +1,5 @@
 import { IconSymbol } from "@/components/ui/icon-symbol";
+import { SkeletonList } from "@/components/ui/Skeleton";
 import { useAuth } from "@/lib/contexts/AuthContext";
 import { useDialog } from "@/lib/contexts/DialogContext";
 import { GroupService } from "@/lib/services/groupService";
@@ -7,7 +8,6 @@ import { Image } from "expo-image";
 import { router } from "expo-router";
 import React, { useCallback, useEffect, useState } from "react";
 import {
-  ActivityIndicator,
   RefreshControl,
   ScrollView,
   Text,
@@ -261,11 +261,7 @@ export default function GroupsScreen() {
             Groups
           </Text>
         </View>
-        <View
-          style={{ flex: 1, alignItems: "center", justifyContent: "center" }}
-        >
-          <ActivityIndicator size="large" color={theme.colors.primary} />
-        </View>
+        <SkeletonList itemCount={4} showAvatar lines={3} />
       </SafeAreaView>
     );
   }

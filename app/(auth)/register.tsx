@@ -1,3 +1,4 @@
+import { withWebAlert } from "@/components/ui";
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useAuth } from "@/lib/contexts/AuthContext";
@@ -17,7 +18,6 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { withWebAlert } from "@/components/ui";
 
 const { width: screenWidth } = Dimensions.get("window");
 
@@ -124,7 +124,7 @@ function RegisterScreen() {
   const styles = StyleSheet.create({
     container: {
       flex: 1,
-      backgroundColor: colors.facebook?.background || colors.surface,
+      backgroundColor: colors.surface,
     },
     scrollContent: {
       flexGrow: 1,
@@ -143,8 +143,9 @@ function RegisterScreen() {
     logo: {
       fontSize: 48,
       fontWeight: "bold",
-      color: colors.facebook?.primary || colors.tint,
+      color: colors.primary,
       marginBottom: 8,
+      textAlign: "center",
     },
     title: {
       fontSize: 24,
@@ -155,16 +156,18 @@ function RegisterScreen() {
     },
     subtitle: {
       fontSize: 16,
-      color: colors.facebook?.gray || colors.icon,
+      color: colors.textSecondary,
       textAlign: "center",
       marginBottom: 32,
       lineHeight: 22,
     },
     card: {
-      backgroundColor: colors.facebook?.card || colors.background,
+      backgroundColor: colors.card,
       borderRadius: 12,
       padding: 24,
-      shadowColor: "#000",
+      borderWidth: 1,
+      borderColor: colors.cardBorder,
+      shadowColor: colors.text,
       shadowOffset: {
         width: 0,
         height: 2,
@@ -178,9 +181,9 @@ function RegisterScreen() {
       marginBottom: 16,
     },
     input: {
-      backgroundColor: colors.facebook?.lightGray || colors.surface,
+      backgroundColor: colors.background,
       borderWidth: 1,
-      borderColor: colors.facebook?.divider || colors.border,
+      borderColor: colors.border,
       borderRadius: 8,
       paddingHorizontal: 16,
       paddingVertical: 14,
@@ -189,9 +192,9 @@ function RegisterScreen() {
       minHeight: 52,
     },
     inputFocused: {
-      borderColor: colors.facebook?.primary || colors.tint,
+      borderColor: colors.tint,
       borderWidth: 2,
-      backgroundColor: colors.facebook?.card || colors.background,
+      backgroundColor: colors.card,
     },
     passwordStrength: {
       fontSize: 12,
@@ -199,13 +202,13 @@ function RegisterScreen() {
       marginLeft: 4,
     },
     passwordWeak: {
-      color: colors.facebook?.error || "#F02849",
+      color: colors.error,
     },
     passwordMedium: {
-      color: "#FFA500",
+      color: colors.warning,
     },
     passwordStrong: {
-      color: colors.facebook?.success || colors.facebook?.secondary,
+      color: colors.success,
     },
     checkboxContainer: {
       flexDirection: "row",
@@ -217,37 +220,35 @@ function RegisterScreen() {
       width: 20,
       height: 20,
       borderWidth: 2,
-      borderColor: colors.facebook?.divider || colors.border,
+      borderColor: colors.border,
       borderRadius: 4,
       marginRight: 12,
-      marginTop: 2,
+      marginTop: 1,
       alignItems: "center",
       justifyContent: "center",
     },
     checkboxChecked: {
-      backgroundColor: colors.facebook?.primary || colors.tint,
-      borderColor: colors.facebook?.primary || colors.tint,
+      backgroundColor: colors.primary,
+      borderColor: colors.primary,
     },
     checkboxText: {
       fontSize: 14,
-      color: colors.facebook?.gray || colors.icon,
+      color: colors.textSecondary,
       flex: 1,
       lineHeight: 20,
     },
     termsLink: {
-      color: colors.facebook?.primary || colors.tint,
+      color: colors.link,
       textDecorationLine: "underline",
     },
     button: {
-      backgroundColor:
-        colors.facebook?.secondary || colors.facebook?.primary || colors.tint,
+      backgroundColor: colors.buttonPrimary,
       borderRadius: 8,
       paddingVertical: 16,
       alignItems: "center",
       marginBottom: 16,
       minHeight: 52,
-      shadowColor:
-        colors.facebook?.secondary || colors.facebook?.primary || colors.tint,
+      shadowColor: colors.primary,
       shadowOffset: {
         width: 0,
         height: 2,
@@ -274,20 +275,22 @@ function RegisterScreen() {
     dividerLine: {
       flex: 1,
       height: 1,
-      backgroundColor: colors.facebook?.divider || colors.border,
+      backgroundColor: colors.divider,
     },
     dividerText: {
-      color: colors.facebook?.gray || colors.icon,
+      color: colors.textSecondary,
       fontSize: 14,
       marginHorizontal: 16,
       fontWeight: "500",
     },
     signinContainer: {
       alignItems: "center",
-      backgroundColor: colors.facebook?.card || colors.background,
+      backgroundColor: colors.card,
       borderRadius: 12,
       padding: 20,
-      shadowColor: "#000",
+      borderWidth: 1,
+      borderColor: colors.cardBorder,
+      shadowColor: colors.text,
       shadowOffset: {
         width: 0,
         height: 1,
@@ -297,7 +300,7 @@ function RegisterScreen() {
       elevation: 2,
     },
     signinText: {
-      color: colors.facebook?.gray || colors.icon,
+      color: colors.textSecondary,
       fontSize: 14,
       marginBottom: 16,
       textAlign: "center",
@@ -305,14 +308,14 @@ function RegisterScreen() {
     signinButton: {
       backgroundColor: "transparent",
       borderWidth: 1,
-      borderColor: colors.facebook?.primary || colors.tint,
+      borderColor: colors.primary,
       borderRadius: 8,
       paddingVertical: 12,
       paddingHorizontal: 24,
       minHeight: 44,
     },
     signinButtonText: {
-      color: colors.facebook?.primary || colors.tint,
+      color: colors.primary,
       fontSize: 14,
       fontWeight: "600",
     },
@@ -349,9 +352,7 @@ function RegisterScreen() {
                   value={fullName}
                   onChangeText={setFullName}
                   placeholder="Full name"
-                  placeholderTextColor={
-                    colors.facebook?.placeholder || colors.icon
-                  }
+                  placeholderTextColor={colors.textTertiary}
                   autoCapitalize="words"
                   autoCorrect={false}
                   onFocus={() => setFullNameFocused(true)}
@@ -365,9 +366,7 @@ function RegisterScreen() {
                   value={email}
                   onChangeText={setEmail}
                   placeholder="Email address"
-                  placeholderTextColor={
-                    colors.facebook?.placeholder || colors.icon
-                  }
+                  placeholderTextColor={colors.textTertiary}
                   keyboardType="email-address"
                   autoCapitalize="none"
                   autoCorrect={false}
@@ -382,9 +381,7 @@ function RegisterScreen() {
                   value={password}
                   onChangeText={setPassword}
                   placeholder="Password"
-                  placeholderTextColor={
-                    colors.facebook?.placeholder || colors.icon
-                  }
+                  placeholderTextColor={colors.textTertiary}
                   secureTextEntry
                   autoCapitalize="none"
                   autoCorrect={false}
@@ -409,9 +406,7 @@ function RegisterScreen() {
                   value={confirmPassword}
                   onChangeText={setConfirmPassword}
                   placeholder="Confirm password"
-                  placeholderTextColor={
-                    colors.facebook?.placeholder || colors.icon
-                  }
+                  placeholderTextColor={colors.textTertiary}
                   secureTextEntry
                   autoCapitalize="none"
                   autoCorrect={false}

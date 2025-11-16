@@ -20,10 +20,10 @@ export function VehicleOption({
   const { styles, theme } = useStyles(stylesheet);
   const [imageError, setImageError] = useState(false);
 
-  // Use the 'warning' color as the tint
+  // Use the 'primary' color as the tint
   const selectedStyles = isSelected && {
-    borderColor: theme.colors.warning,
-    backgroundColor: theme.colors.warning + "15",
+    borderColor: theme.colors.primary,
+    backgroundColor: theme.colors.primary + "15",
   };
 
   return (
@@ -40,7 +40,7 @@ export function VehicleOption({
         />
       ) : (
         <View style={[styles.vehicleIcon, styles.vehicleIconPlaceholder]}>
-          <IconSymbol name="car.fill" size={16} color={theme.colors.warning} />
+          <IconSymbol name="car.fill" size={16} color={theme.colors.primary} />
         </View>
       )}
       <Text
@@ -74,7 +74,7 @@ const stylesheet = createStyleSheet((theme) => ({
     borderRadius: theme.borderRadius.full,
   },
   vehicleIconPlaceholder: {
-    backgroundColor: theme.colors.warning + "15",
+    backgroundColor: theme.colors.primary + "15",
     alignItems: "center",
     justifyContent: "center",
   },
@@ -90,6 +90,6 @@ const stylesheet = createStyleSheet((theme) => ({
     textAlign: "center",
   },
   selectedText: {
-    color: theme.colors.warning,
+    color: theme.colors.primary,
   },
 }));

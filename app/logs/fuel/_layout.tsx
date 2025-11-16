@@ -9,16 +9,22 @@ export default function FuelLogsLayout() {
     <Stack
       screenOptions={{
         headerShown: false,
-        headerStyle: {
+        contentStyle: {
           backgroundColor: Colors[colorScheme ?? "light"].background,
-        },
-        headerTintColor: Colors[colorScheme ?? "light"].text,
-        headerTitleStyle: {
-          fontWeight: "600",
         },
       }}
     >
-      <Stack.Screen name="add" options={{ headerShown: false }} />
+      <Stack.Screen
+        name="add"
+        options={{
+          headerShown: false,
+          presentation: "card",
+          animation: "slide_from_right",
+          contentStyle: {
+            backgroundColor: Colors[colorScheme ?? "light"].background,
+          },
+        }}
+      />
     </Stack>
   );
 }

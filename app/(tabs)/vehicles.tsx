@@ -1,24 +1,24 @@
+import BottomSheet from "@gorhom/bottom-sheet";
+import { router } from "expo-router";
 import React, { useCallback, useRef, useState } from "react";
 import { RefreshControl, ScrollView, Text, View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { createStyleSheet, useStyles } from "react-native-unistyles";
-import { router } from "expo-router";
-import BottomSheet from "@gorhom/bottom-sheet";
 
 import { WebLayout } from "@/components/layout/WebLayout";
 import { FloatingActionButton } from "@/components/ui/FloatingActionButton";
-import { VehicleStatsGrid } from "@/components/vehicles/VehicleStatsGrid";
-import { VehicleSearchBar } from "@/components/vehicles/VehicleSearchBar";
+import { SkeletonVehicleList } from "@/components/ui/Skeleton";
+import { VehicleDetailsBottomSheet } from "@/components/vehicles/VehicleDetailsBottomSheet";
 import { VehicleFilters } from "@/components/vehicles/VehicleFilters";
 import { VehicleList } from "@/components/vehicles/VehicleList";
-import { VehicleDetailsBottomSheet } from "@/components/vehicles/VehicleDetailsBottomSheet";
-import { SkeletonCard } from "@/components/vehicles/SkeletonCard";
+import { VehicleSearchBar } from "@/components/vehicles/VehicleSearchBar";
+import { VehicleStatsGrid } from "@/components/vehicles/VehicleStatsGrid";
 
 import { useResponsiveLayout } from "@/hooks/use-responsive-layout";
+import { useVehicleFilters } from "@/hooks/useVehicleFilters";
 import { useVehicles } from "@/hooks/useVehicles";
 import { useVehicleStats } from "@/hooks/useVehicleStats";
-import { useVehicleFilters } from "@/hooks/useVehicleFilters";
 
 import { VehicleWithDetails } from "@/types/database-v2";
 
@@ -74,20 +74,7 @@ export default function VehiclesScreen() {
             <Text style={styles.greeting}>Vehicles</Text>
             <Text style={styles.subtitle}>Loading your fleet...</Text>
           </View>
-          <ScrollView style={styles.content}>
-            <View style={styles.section}>
-              <View style={styles.statsGrid}>
-                {[1, 2, 3, 4].map((i) => (
-                  <View key={i} style={styles.skeletonStat} />
-                ))}
-              </View>
-            </View>
-            <View style={styles.section}>
-              {[1, 2, 3].map((i) => (
-                <SkeletonCard key={i} />
-              ))}
-            </View>
-          </ScrollView>
+          <SkeletonVehicleList itemCount={4} />
         </WebLayout>
       </SafeAreaView>
     );
