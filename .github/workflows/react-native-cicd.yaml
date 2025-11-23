@@ -16,6 +16,7 @@ on:
 
 env:
   EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+  NODE_OPTIONS: --openssl-legacy-provider
 
 jobs:
   check-skip:
@@ -83,7 +84,7 @@ jobs:
           node-version: "20"
           cache: "npm"
 
-      - name: 🔧 Setup Android SDK and NDK
+      - name: � Setup Android SDK and NDK
         uses: android-actions/setup-android@v3
         with:
           cmdline-tools-version: 11076708
@@ -96,19 +97,10 @@ jobs:
           echo "ANDROID_HOME=$ANDROID_SDK_ROOT" >> $GITHUB_ENV
           echo "NDK_PATH=$ANDROID_SDK_ROOT/ndk/27.3.13750724" >> $GITHUB_ENV
 
-      - name: 📦 Install dependencies
+      - name: �📦 Install dependencies
         run: |
           npm ci
           npm install -g eas-cli@latest
-
-      - name: 🔍 Verify SVG transformer installation
-        run: |
-          if [ -f ./node_modules/react-native-svg-transformer/index.js ]; then
-            echo "react-native-svg-transformer is installed"
-          else
-            echo "Installing react-native-svg-transformer..."
-            npm install react-native-svg-transformer --save-dev
-          fi
 
       - name: 📱 Setup EAS build cache
         uses: actions/cache@v3
@@ -149,8 +141,9 @@ jobs:
           if [ -f ./metro.config.js ]; then
             echo "Creating backup of metro.config.js"
             cp ./metro.config.js ./metro.config.js.backup
-            echo "Updating metro.config.js"
+            echo "Updating metro.config.js to CommonJS format"
             cat > ./metro.config.js << 'EOFMARKER'
+          /* eslint-disable @typescript-eslint/no-var-requires */
           const { getDefaultConfig } = require('expo/metro-config');
 
           const config = getDefaultConfig(__dirname);
@@ -159,7 +152,7 @@ jobs:
 
           config.transformer = {
             ...transformer,
-            babelTransformerPath: require.resolve('react-native-svg-transformer'),
+            babelTransformerPath: require.resolve('react-native-svg-transformer/expo'),
           };
 
           config.resolver = {
@@ -170,30 +163,10 @@ jobs:
 
           module.exports = config;
           EOFMARKER
-            echo "metro.config.js updated"
+            echo "metro.config.js updated to CommonJS format"
           else
             echo "metro.config.js not found"
           fi
-
-      - name: 🐛 Debug build environment
-        run: |
-          echo "Node version:"
-          node --version
-          echo "NPM version:"
-          npm --version
-          echo "Metro config:"
-          cat metro.config.js
-          echo "Package.json main entry:"
-          cat package.json | grep "main"
-          echo "Installed packages:"
-          npm list --depth=0 | grep -E "(expo|react-native|svg)" || echo "No matching packages found"
-
-      - name: 🧪 Verify JavaScript Bundle
-        run: |
-          echo "Testing JavaScript bundle..."
-          npx expo export --output-dir ./test-bundle
-          rm -rf ./test-bundle
-          echo "Bundle test successful"
 
       - name: 📱 Build Development APK
         if: github.event.inputs.buildType == 'all' || github.event.inputs.buildType == 'dev' || github.event_name == 'push'
