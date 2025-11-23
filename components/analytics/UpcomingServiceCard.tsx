@@ -28,6 +28,26 @@ export function UpcomingServiceCard({ service }: UpcomingServiceCardProps) {
     return dueDate.toISOString().split("T")[0];
   };
 
+  const formatOtherServices = (otherData: any) => {
+    if (!otherData) return null;
+
+    try {
+      // Handle if it's already parsed or a string
+      const services =
+        typeof otherData === "string" ? JSON.parse(otherData) : otherData;
+      if (!Array.isArray(services) || services.length === 0) return null;
+
+      return services
+        .map((item: any) => `${item.description}, RM${item.price}`)
+        .join("; ");
+    } catch (error) {
+      console.error("Error parsing other services:", error);
+      return null;
+    }
+  };
+
+  const otherServicesText = formatOtherServices((service as any).other);
+
   return (
     <View style={styles.container}>
       <View style={styles.content}>
@@ -43,6 +63,15 @@ export function UpcomingServiceCard({ service }: UpcomingServiceCardProps) {
             {formatServiceType(service.serviceType)}
           </Text>
           <Text style={styles.vehicleName}>{service.vehicleName}</Text>
+          {otherServicesText && (
+            <Text style={styles.otherServices}>{otherServicesText}</Text>
+          )}
+          {(service as any).odometer && (
+            <Text style={styles.odometer}>
+              Odometer:{" "}
+              {Number((service as any).odometer).toLocaleString("en-US")} km
+            </Text>
+          )}
         </View>
       </View>
       <Text style={styles.dueDate}>{formatDate(service.daysUntilDue)}</Text>
@@ -90,6 +119,16 @@ const stylesheet = createStyleSheet((theme) => ({
   vehicleName: {
     fontSize: theme.fontSize.sm,
     color: theme.colors.textSecondary,
+  },
+  otherServices: {
+    fontSize: theme.fontSize.sm,
+    color: theme.colors.textSecondary,
+    marginTop: 2,
+  },
+  odometer: {
+    fontSize: theme.fontSize.sm,
+    color: theme.colors.textSecondary,
+    marginTop: 2,
   },
   dueDate: {
     fontSize: theme.fontSize.sm,

@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/Button";
+import { DatePicker } from "@/components/ui/DatePicker";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { Input } from "@/components/ui/Input";
 import { AlertModal } from "@/components/ui/Modal";
@@ -533,17 +534,14 @@ export default function AddMileageLogScreen() {
               leftIcon="speedometer"
             />
 
-            <Input
+            <DatePicker
               label="Date"
               value={formData.date}
-              onChangeText={(text) =>
-                setFormData((prev) => ({ ...prev, date: text }))
+              onDateChange={(date) =>
+                setFormData((prev) => ({ ...prev, date }))
               }
-              placeholder="2024-01-01"
+              placeholder="Select date"
               required
-              error={formData.date ? validateDate(formData.date) : undefined}
-              helperText="Date format: YYYY-MM-DD"
-              leftIcon="calendar"
             />
 
             <Input

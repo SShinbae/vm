@@ -12,7 +12,8 @@ export const formatServiceItems = (description: string): string => {
     if (Array.isArray(items)) {
       return items
         .map(
-          (item, index) => `${index + 1}) ${item.description} RM${item.price}`,
+          (item, index) =>
+            `   ${index + 1}. ${item.description} RM${item.price}`,
         )
         .join("\n");
     }
@@ -20,6 +21,24 @@ export const formatServiceItems = (description: string): string => {
     // If parsing fails, return the original description
   }
   return description;
+};
+
+/**
+ * Formats service type to proper display format
+ * @param serviceType - The service type string (e.g., "general_maintenance", "other")
+ * @returns Formatted service type string
+ */
+export const formatServiceType = (serviceType: string): string => {
+  // Special case for "other" - make it uppercase
+  if (serviceType === "other") {
+    return "OTHER";
+  }
+
+  // Convert snake_case to Title Case
+  return serviceType
+    .split("_")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
 };
 
 /**

@@ -131,9 +131,13 @@ export const VehicleCard = React.memo(
           {/* Vehicle Info */}
           <View style={styles.vehicleCardContent}>
             <Text style={styles.vehicleName} numberOfLines={1}>
-              {vehicle.year} {vehicle.make} {vehicle.model}
+              {[vehicle.year, vehicle.make, vehicle.model]
+                .filter(Boolean)
+                .join(" ")}
             </Text>
-            <Text style={styles.vehiclePlate}>{vehicle.license_plate}</Text>
+            <Text style={styles.vehiclePlate}>
+              {vehicle.license_plate || "N/A"}
+            </Text>
 
             {/* Mileage and Color */}
             <View style={styles.vehicleMetaRow}>

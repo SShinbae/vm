@@ -1,12 +1,22 @@
+import { ActionMenu, ActionMenuItem } from "@/components/ui/ActionMenu";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { AlertModal, ConfirmModal } from "@/components/ui/Modal";
 import { ServiceReceiptIndicator } from "@/components/ui/ReceiptViewer";
 import { SkeletonVehicleDetail } from "@/components/ui/Skeleton";
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
+import {
+  FuelLogService,
+  MileageLogService,
+  ServiceLogService,
+} from "@/lib/services/loggingService";
 import { VehicleService } from "@/lib/services/vehicleService";
 import { formatDate, formatDateWithPrefix } from "@/lib/utils/dateUtils";
-import { formatServiceItems } from "@/lib/utils/serviceUtils";
+import {
+  canUserAccessVehicle,
+  formatServiceItems,
+} from "@/lib/utils/serviceUtils";
+import { supabase } from "@/services/supabaseClient";
 import { VehicleWithDetails } from "@/types/database-v2";
 import { Image } from "expo-image";
 import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
@@ -57,6 +67,16 @@ export default function VehicleDetailScreen() {
     "info" | "success" | "warning" | "error"
   >("info");
 
+  // Log deletion states
+  const [deleteLogModalVisible, setDeleteLogModalVisible] = useState(false);
+  const [deleteLogLoading, setDeleteLogLoading] = useState(false);
+  const [selectedLog, setSelectedLog] = useState<{
+    type: LogTab;
+    id: string;
+    description: string;
+  } | null>(null);
+  const [canModify, setCanModify] = useState(true);
+
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? "light"];
 
@@ -73,6 +93,15 @@ export default function VehicleDetailScreen() {
         router.back();
       } else if (vehicleResult.data) {
         setVehicle(vehicleResult.data);
+
+        // Check if user can modify this vehicle's logs
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+        if (user) {
+          const canAccess = await canUserAccessVehicle(id, user.id);
+          setCanModify(canAccess);
+        }
       } else {
         showAlert("Error", "Vehicle not found", "error");
         router.back();
@@ -121,6 +150,60 @@ export default function VehicleDetailScreen() {
     setAlertMessage(message);
     setAlertVariant(variant);
     setAlertModalVisible(true);
+  };
+
+  const handleDeleteLog = (type: LogTab, id: string, description: string) => {
+    setSelectedLog({ type, id, description });
+    setDeleteLogModalVisible(true);
+  };
+
+  const handleEditLog = (type: LogTab, id: string) => {
+    switch (type) {
+      case "mileage":
+        router.push(`/logs/mileage/${id}/edit` as any);
+        break;
+      case "fuel":
+        router.push(`/logs/fuel/${id}/edit` as any);
+        break;
+      case "service":
+        router.push(`/logs/service/${id}` as any);
+        break;
+    }
+  };
+
+  const handleConfirmLogDelete = async () => {
+    if (!selectedLog) return;
+
+    setDeleteLogLoading(true);
+
+    let result;
+    switch (selectedLog.type) {
+      case "mileage":
+        result = await MileageLogService.deleteMileageLog(selectedLog.id);
+        break;
+      case "fuel":
+        result = await FuelLogService.deleteFuelLog(selectedLog.id);
+        break;
+      case "service":
+        result = await ServiceLogService.deleteServiceLog(selectedLog.id);
+        break;
+    }
+
+    setDeleteLogLoading(false);
+    setDeleteLogModalVisible(false);
+
+    if (result?.error) {
+      showAlert("Error", result.error, "error");
+    } else {
+      showAlert(
+        "Success",
+        `${selectedLog.type} log deleted successfully`,
+        "success",
+      );
+      await fetchVehicleData(); // Refresh the vehicle data
+    }
+
+    setSelectedLog(null);
   };
 
   const handleToggleSharing = async (shared: boolean) => {
@@ -440,6 +523,8 @@ export default function VehicleDetailScreen() {
     log,
     icon,
     isServiceLog = false,
+    isFuelLog = false,
+    isMileageLog = false,
     showDate = true,
   }: any) => {
     const getLogText = () => {
@@ -462,6 +547,28 @@ export default function VehicleDetailScreen() {
         router.push(`/logs/service/${log.id}` as any);
       }
     };
+
+    const logType: LogTab = isServiceLog
+      ? "service"
+      : isFuelLog
+        ? "fuel"
+        : "mileage";
+
+    const actionMenuItems: ActionMenuItem[] = [
+      {
+        label: "Edit",
+        icon: "pencil",
+        onPress: () => handleEditLog(logType, log.id),
+        disabled: !canModify,
+      },
+      {
+        label: "Delete",
+        icon: "trash",
+        onPress: () => handleDeleteLog(logType, log.id, getLogText()),
+        variant: "danger",
+        disabled: !canModify,
+      },
+    ];
 
     return (
       <TouchableOpacity
@@ -504,6 +611,9 @@ export default function VehicleDetailScreen() {
               {formatDate(log.date || log.created_at)}
             </Text>
           )}
+        </View>
+        <View style={{ marginLeft: 8 }}>
+          <ActionMenu items={actionMenuItems} />
         </View>
       </TouchableOpacity>
     );
@@ -1543,6 +1653,8 @@ export default function VehicleDetailScreen() {
                           log={log}
                           icon="speedometer"
                           isServiceLog={false}
+                          isMileageLog={true}
+                          isFuelLog={false}
                         />
                       ))}
                       <PaginationControls
@@ -1577,6 +1689,8 @@ export default function VehicleDetailScreen() {
                           log={log}
                           icon="fuelpump.fill"
                           isServiceLog={false}
+                          isMileageLog={false}
+                          isFuelLog={true}
                         />
                       ))}
                       <PaginationControls
@@ -1611,6 +1725,8 @@ export default function VehicleDetailScreen() {
                           log={log}
                           icon="wrench.and.screwdriver.fill"
                           isServiceLog={true}
+                          isMileageLog={false}
+                          isFuelLog={false}
                         />
                       ))}
                       <PaginationControls
@@ -1656,6 +1772,18 @@ export default function VehicleDetailScreen() {
           title={alertTitle}
           message={alertMessage}
           variant={alertVariant}
+        />
+
+        <ConfirmModal
+          visible={deleteLogModalVisible}
+          title={`Delete ${selectedLog?.type} Log`}
+          message={`Are you sure you want to delete this ${selectedLog?.type} log?\n\n${selectedLog?.description}\n\nThis action cannot be undone.`}
+          confirmText="Delete"
+          cancelText="Cancel"
+          onConfirm={handleConfirmLogDelete}
+          onClose={() => setDeleteLogModalVisible(false)}
+          loading={deleteLogLoading}
+          variant="danger"
         />
       </SafeAreaView>
     </React.Fragment>

@@ -1,4 +1,4 @@
-import { ServiceType, FuelLog, ServiceLog, MileageLog, Vehicle } from "./index";
+import { FuelLog, MileageLog, ServiceLog, ServiceType, Vehicle } from "./index";
 
 // Analytics-specific types
 export interface AnalyticsPeriod {
@@ -53,6 +53,8 @@ export interface UpcomingService {
   serviceDueAt: number;
   daysUntilDue?: number;
   kmUntilDue: number;
+  other?: string;
+  odometer?: number;
   status: "overdue" | "due_soon" | "upcoming";
 }
 
