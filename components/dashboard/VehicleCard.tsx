@@ -14,11 +14,24 @@ export function VehicleCard({ vehicle }: VehicleCardProps) {
   const { styles, theme } = useStyles(stylesheet);
   const [imageError, setImageError] = useState(false);
 
+  // Debug log to check vehicle data
+  console.log("VehicleCard data:", {
+    year: vehicle.year,
+    make: vehicle.make,
+    model: vehicle.model,
+    license_plate: vehicle.license_plate,
+  });
+
+  const parts = [vehicle.year, vehicle.make, vehicle.model]
+    .filter((val) => val != null && val !== "")
+    .map(String);
+  const vehicleName = parts.length > 0 ? parts.join(" ") : "Unknown Vehicle";
+
   return (
     <TouchableOpacity
       style={styles.vehicleCard}
       onPress={() => router.push(`/vehicles/${vehicle.id}` as any)}
-      accessibilityLabel={`View details for ${vehicle.year} ${vehicle.make} ${vehicle.model}`}
+      accessibilityLabel={`View details for ${vehicleName}`}
     >
       {vehicle.main_image_url && !imageError ? (
         <Image
@@ -36,12 +49,14 @@ export function VehicleCard({ vehicle }: VehicleCardProps) {
       )}
       <View style={styles.vehicleInfo}>
         <Text style={styles.vehicleName} numberOfLines={1}>
-          {vehicle.year} {vehicle.make} {vehicle.model}
+          {String(vehicleName)}
         </Text>
-        <Text style={styles.vehicleDetail}>{vehicle.license_plate}</Text>
-        {vehicle.current_mileage && (
+        <Text style={styles.vehicleDetail}>
+          {vehicle.license_plate ? String(vehicle.license_plate) : "N/A"}
+        </Text>
+        {vehicle.current_mileage != null && (
           <Text style={styles.vehicleDetail}>
-            {vehicle.current_mileage.toLocaleString()} km
+            {Number(vehicle.current_mileage).toLocaleString()} km
           </Text>
         )}
       </View>

@@ -3,6 +3,7 @@ import { IconSymbol } from "@/components/ui/icon-symbol";
 import { AlertModal, ConfirmModal } from "@/components/ui/Modal";
 import { ServiceReceiptIndicator } from "@/components/ui/ReceiptViewer";
 import { SkeletonLogList } from "@/components/ui/Skeleton";
+import { LogDetailsBottomSheet } from "@/components/logs/LogDetailsBottomSheet";
 import {
   FuelLogService,
   MileageLogService,
@@ -10,17 +11,15 @@ import {
 } from "@/lib/services/loggingService";
 import { formatDate } from "@/lib/utils/dateUtils";
 import { isFulfilled, safePromiseAll } from "@/lib/utils/networkUtils";
-import {
-  canUserAccessVehicle,
-  formatServiceItems,
-} from "@/lib/utils/serviceUtils";
+import { canUserAccessVehicle } from "@/lib/utils/serviceUtils";
 import { supabase } from "@/services/supabaseClient";
-import { FuelLog, MileageLog, ServiceLog } from "@/types";
+import { FuelLog, MileageLog, ServiceLog, ServiceType } from "@/types";
+import BottomSheet from "@gorhom/bottom-sheet";
 import { useFocusEffect } from "@react-navigation/native";
 import * as Haptics from "expo-haptics";
 import { Image } from "expo-image";
 import { router } from "expo-router";
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useRef, useState } from "react";
 import {
   RefreshControl,
   ScrollView,
@@ -32,6 +31,16 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useStyles } from "react-native-unistyles";
 
 type LogType = "mileage" | "fuel" | "service";
+
+const SERVICE_TYPE_LABELS: Record<ServiceType, string> = {
+  oil_change: "Oil Change",
+  tire_rotation: "Tire Rotation",
+  brake_service: "Brake Service",
+  general_maintenance: "General Maintenance",
+  repair: "Repair",
+  inspection: "Inspection",
+  other: "Other",
+};
 
 export default function LogsScreen() {
   const { theme } = useStyles();
@@ -63,6 +72,15 @@ export default function LogsScreen() {
   const [alertVariant, setAlertVariant] = useState<
     "info" | "success" | "warning" | "error"
   >("info");
+
+  // Bottom sheet states
+  const bottomSheetRef = useRef<BottomSheet>(null);
+  const [selectedBottomSheetLog, setSelectedBottomSheetLog] = useState<
+    FuelLog | MileageLog | ServiceLog | null
+  >(null);
+  const [selectedBottomSheetLogType, setSelectedBottomSheetLogType] =
+    useState<LogType | null>(null);
+  const [bottomSheetCanModify, setBottomSheetCanModify] = useState(true);
 
   const canUserModifyLog = async (log: any): Promise<boolean> => {
     try {
@@ -229,6 +247,36 @@ export default function LogsScreen() {
         router.push(`/logs/service/${id}/edit` as any);
         break;
     }
+  };
+
+  const handleOpenLogDetails = async (
+    log: FuelLog | MileageLog | ServiceLog,
+    logType: LogType,
+  ) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    const canModify = await canUserModifyLog(log);
+    setSelectedBottomSheetLog(log);
+    setSelectedBottomSheetLogType(logType);
+    setBottomSheetCanModify(canModify);
+    bottomSheetRef.current?.expand();
+  };
+
+  const handleCloseBottomSheet = () => {
+    bottomSheetRef.current?.close();
+  };
+
+  const handleBottomSheetEdit = (type: LogType, id: string) => {
+    handleCloseBottomSheet();
+    handleEditLog(type, id);
+  };
+
+  const handleBottomSheetDelete = (
+    type: LogType,
+    id: string,
+    description: string,
+  ) => {
+    handleCloseBottomSheet();
+    handleDeleteLog(type, id, description);
   };
 
   const toggleVehicle = (vehicleId: string) => {
@@ -493,6 +541,18 @@ export default function LogsScreen() {
     );
   };
 
+  const parseServiceDescription = (description: string) => {
+    try {
+      const parsed = JSON.parse(description);
+      if (Array.isArray(parsed)) {
+        return parsed;
+      }
+    } catch (e) {
+      return null;
+    }
+    return null;
+  };
+
   // Log card component
   const LogCard = ({ log, type }: { log: any; type: LogType }) => {
     const [canModify, setCanModify] = useState(true);
@@ -524,18 +584,27 @@ export default function LogsScreen() {
               : null,
           };
         case "service":
-          const serviceItems = formatServiceItems(log.service_items);
+          // Legacy check for simple description or JSON description
+          const parsedItems = parseServiceDescription(
+            log.description || log.service_items,
+          );
+          const simpleDescription =
+            log.description || log.notes || "No description";
+
           return {
             icon: "wrench",
             color: theme.colors.success,
-            title: log.service_type || "Service",
-            subtitle:
-              serviceItems || log.notes || log.description || "No description",
+            title:
+              SERVICE_TYPE_LABELS[log.service_type as ServiceType] || "Service",
+            subtitle: simpleDescription,
+            parsedItems: parsedItems,
             odometer: log.odometer_reading
-              ? `Odometer: ${log.odometer_reading.toLocaleString()} km`
-              : null,
+              ? `Odometer : ${log.odometer_reading.toLocaleString()} km`
+              : "Odometer : -",
             hasReceipt: log.receipt_image_url ? true : false,
             receiptUrl: log.receipt_image_url,
+            cost: log.cost || 0,
+            date: log.date,
           };
       }
     };
@@ -558,6 +627,134 @@ export default function LogsScreen() {
       },
     ];
 
+    if (type === "service") {
+      // Special layout for Service Logs
+      const serviceDetails = details;
+      return (
+        <TouchableOpacity
+          style={{
+            backgroundColor: theme.colors.background,
+            borderRadius: theme.borderRadius.lg,
+            padding: theme.spacing.lg,
+            marginBottom: theme.spacing.md,
+            borderWidth: 1,
+            borderColor: theme.colors.border,
+            ...(log.is_shared_vehicle && {
+              borderColor: theme.colors.primary + "40",
+              backgroundColor: theme.colors.surface,
+            }),
+          }}
+          onPress={() => handleOpenLogDetails(log, type)}
+          activeOpacity={0.7}
+        >
+          <View style={{ flexDirection: "row", alignItems: "flex-start" }}>
+            <View
+              style={{
+                width: 48,
+                height: 48,
+                borderRadius: 24,
+                backgroundColor: serviceDetails.color + "15",
+                alignItems: "center",
+                justifyContent: "center",
+                marginRight: theme.spacing.lg,
+              }}
+            >
+              <IconSymbol
+                name={serviceDetails.icon as any}
+                size={24}
+                color={serviceDetails.color}
+              />
+            </View>
+            <View style={{ flex: 1 }}>
+              <View
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  marginBottom: theme.spacing.xs,
+                }}
+              >
+                <Text
+                  style={{
+                    fontSize: theme.fontSize.lg,
+                    fontWeight: theme.fontWeight.bold,
+                    color: theme.colors.text,
+                    letterSpacing: -0.3,
+                  }}
+                >
+                  {serviceDetails.title}
+                </Text>
+                {serviceDetails.hasReceipt && (
+                  <ServiceReceiptIndicator
+                    hasReceipt={serviceDetails.hasReceipt}
+                    receiptUrl={serviceDetails.receiptUrl}
+                    onPress={() => handleViewServiceDetail(log.id)}
+                    size={18}
+                  />
+                )}
+              </View>
+
+              {/* Odometer | Date Line */}
+              <Text
+                style={{
+                  fontSize: theme.fontSize.sm,
+                  color: theme.colors.textSecondary,
+                  fontWeight: theme.fontWeight.medium,
+                  marginBottom: theme.spacing.md,
+                }}
+              >
+                {serviceDetails.odometer} | {formatDate(serviceDetails.date!)}
+              </Text>
+
+              {/* Service Items List */}
+              <View style={{ marginBottom: theme.spacing.md }}>
+                {serviceDetails.parsedItems &&
+                serviceDetails.parsedItems.length > 0 ? (
+                  serviceDetails.parsedItems.map((item: any, index: number) => (
+                    <Text
+                      key={index}
+                      style={{
+                        fontSize: theme.fontSize.base,
+                        color: theme.colors.text,
+                        lineHeight: 22,
+                      }}
+                    >
+                      {index + 1}. {item.description} RM{item.price}
+                    </Text>
+                  ))
+                ) : (
+                  <Text
+                    style={{
+                      fontSize: theme.fontSize.base,
+                      color: theme.colors.text,
+                      lineHeight: 22,
+                    }}
+                  >
+                    {serviceDetails.subtitle}
+                  </Text>
+                )}
+              </View>
+
+              {/* Total Cost */}
+              <Text
+                style={{
+                  fontSize: theme.fontSize.base,
+                  fontWeight: theme.fontWeight.bold,
+                  color: theme.colors.text,
+                }}
+              >
+                Total : RM {serviceDetails.cost}
+              </Text>
+            </View>
+            <View style={{ marginLeft: theme.spacing.sm }}>
+              <ActionMenu items={actionMenuItems} />
+            </View>
+          </View>
+        </TouchableOpacity>
+      );
+    }
+
+    // Default layout for Mileage and Fuel
     return (
       <TouchableOpacity
         style={{
@@ -572,7 +769,7 @@ export default function LogsScreen() {
             backgroundColor: theme.colors.surface,
           }),
         }}
-        onPress={() => type === "service" && handleViewServiceDetail(log.id)}
+        onPress={() => handleOpenLogDetails(log, type)}
         activeOpacity={0.7}
       >
         <View style={{ flexDirection: "row", alignItems: "flex-start" }}>
@@ -612,14 +809,6 @@ export default function LogsScreen() {
               >
                 {details.title}
               </Text>
-              {type === "service" && details.hasReceipt && (
-                <ServiceReceiptIndicator
-                  hasReceipt={details.hasReceipt}
-                  receiptUrl={details.receiptUrl}
-                  onPress={() => handleViewServiceDetail(log.id)}
-                  size={18}
-                />
-              )}
             </View>
             <Text
               style={{
@@ -1038,6 +1227,16 @@ export default function LogsScreen() {
         message={alertMessage}
         variant={alertVariant}
         onClose={() => setAlertModalVisible(false)}
+      />
+
+      <LogDetailsBottomSheet
+        ref={bottomSheetRef}
+        log={selectedBottomSheetLog}
+        logType={selectedBottomSheetLogType}
+        canModify={bottomSheetCanModify}
+        onClose={handleCloseBottomSheet}
+        onEdit={handleBottomSheetEdit}
+        onDelete={handleBottomSheetDelete}
       />
     </SafeAreaView>
   );

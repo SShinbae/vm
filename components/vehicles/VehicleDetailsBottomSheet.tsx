@@ -39,8 +39,6 @@ export const VehicleDetailsBottomSheet = forwardRef<
     [],
   );
 
-  if (!vehicle) return null;
-
   return (
     <BottomSheet
       ref={ref}
@@ -59,10 +57,12 @@ export const VehicleDetailsBottomSheet = forwardRef<
         <View style={styles.bottomSheetHeader}>
           <View style={styles.bottomSheetTitleContainer}>
             <Text style={styles.bottomSheetTitle}>
-              {vehicle.year} {vehicle.make} {vehicle.model}
+              {vehicle
+                ? `${vehicle.year} ${vehicle.make} ${vehicle.model}`
+                : "Vehicle Details"}
             </Text>
             <Text style={styles.bottomSheetSubtitle}>
-              {vehicle.license_plate}
+              {vehicle?.license_plate || "No vehicle selected"}
             </Text>
           </View>
           <TouchableOpacity
@@ -74,7 +74,7 @@ export const VehicleDetailsBottomSheet = forwardRef<
         </View>
 
         {/* Vehicle Image */}
-        {vehicle.main_image_url && (
+        {vehicle?.main_image_url && (
           <View style={styles.bottomSheetImageContainer}>
             <Image
               source={{ uri: vehicle.main_image_url }}
@@ -86,137 +86,142 @@ export const VehicleDetailsBottomSheet = forwardRef<
         )}
 
         {/* Details Section */}
-        <View style={styles.bottomSheetSection}>
-          <Text style={styles.bottomSheetSectionTitle}>Details</Text>
-          <View style={styles.detailsGrid}>
-            {vehicle.vin && (
-              <View style={styles.detailItem}>
-                <Text style={styles.detailLabel}>VIN</Text>
-                <Text style={styles.detailValue}>{vehicle.vin}</Text>
-              </View>
-            )}
-            {vehicle.color && (
-              <View style={styles.detailItem}>
-                <Text style={styles.detailLabel}>Color</Text>
-                <View style={styles.detailValueWithColor}>
-                  <View
-                    style={[
-                      styles.colorDot,
-                      { backgroundColor: vehicle.color },
-                    ]}
-                  />
-                  <Text style={styles.detailValue}>{vehicle.color}</Text>
-                </View>
-              </View>
-            )}
-            {vehicle.current_mileage && (
-              <View style={styles.detailItem}>
-                <Text style={styles.detailLabel}>Mileage</Text>
-                <Text style={styles.detailValue}>
-                  {vehicle.current_mileage.toLocaleString()} km
-                </Text>
-              </View>
-            )}
-          </View>
-        </View>
-
-        {/* Recent Activity Timeline */}
-        {(vehicle.logs?.latest_fuel ||
-          vehicle.logs?.latest_service ||
-          vehicle.logs?.latest_mileage) && (
+        {vehicle && (
           <View style={styles.bottomSheetSection}>
-            <Text style={styles.bottomSheetSectionTitle}>Recent Activity</Text>
-            <View style={styles.timelineContainer}>
-              {vehicle.logs.latest_fuel && (
-                <View style={styles.timelineItem}>
-                  <View
-                    style={[
-                      styles.timelineIcon,
-                      { backgroundColor: theme.colors.warning + "15" },
-                    ]}
-                  >
-                    <IconSymbol
-                      name="fuelpump.fill"
-                      size={16}
-                      color={theme.colors.warning}
+            <Text style={styles.bottomSheetSectionTitle}>Details</Text>
+            <View style={styles.detailsGrid}>
+              {vehicle.vin && (
+                <View style={styles.detailItem}>
+                  <Text style={styles.detailLabel}>VIN</Text>
+                  <Text style={styles.detailValue}>{vehicle.vin}</Text>
+                </View>
+              )}
+              {vehicle.color && (
+                <View style={styles.detailItem}>
+                  <Text style={styles.detailLabel}>Color</Text>
+                  <View style={styles.detailValueWithColor}>
+                    <View
+                      style={[
+                        styles.colorDot,
+                        { backgroundColor: vehicle.color },
+                      ]}
                     />
-                  </View>
-                  <View style={styles.timelineContent}>
-                    <Text style={styles.timelineTitle}>Fuel Log</Text>
-                    <Text style={styles.timelineDescription}>
-                      {vehicle.logs.latest_fuel.liters_filled}L • RM
-                      {vehicle.logs.latest_fuel.cost?.toFixed(2)}
-                    </Text>
-                    <Text style={styles.timelineDate}>
-                      {new Date(
-                        vehicle.logs.latest_fuel.date,
-                      ).toLocaleDateString()}
-                    </Text>
+                    <Text style={styles.detailValue}>{vehicle.color}</Text>
                   </View>
                 </View>
               )}
-              {vehicle.logs.latest_service && (
-                <View style={styles.timelineItem}>
-                  <View
-                    style={[
-                      styles.timelineIcon,
-                      { backgroundColor: theme.colors.error + "15" },
-                    ]}
-                  >
-                    <IconSymbol
-                      name="wrench.fill"
-                      size={16}
-                      color={theme.colors.error}
-                    />
-                  </View>
-                  <View style={styles.timelineContent}>
-                    <Text style={styles.timelineTitle}>Service Log</Text>
-                    <Text style={styles.timelineDescription}>
-                      {vehicle.logs.latest_service.service_type} • RM
-                      {vehicle.logs.latest_service.cost?.toFixed(2)}
-                    </Text>
-                    <Text style={styles.timelineDate}>
-                      {new Date(
-                        vehicle.logs.latest_service.date,
-                      ).toLocaleDateString()}
-                    </Text>
-                  </View>
-                </View>
-              )}
-              {vehicle.logs.latest_mileage && (
-                <View style={styles.timelineItem}>
-                  <View
-                    style={[
-                      styles.timelineIcon,
-                      { backgroundColor: theme.colors.primary + "15" },
-                    ]}
-                  >
-                    <IconSymbol
-                      name="speedometer"
-                      size={16}
-                      color={theme.colors.primary}
-                    />
-                  </View>
-                  <View style={styles.timelineContent}>
-                    <Text style={styles.timelineTitle}>Mileage Log</Text>
-                    <Text style={styles.timelineDescription}>
-                      {vehicle.logs.latest_mileage.odometer_reading.toLocaleString()}{" "}
-                      km
-                    </Text>
-                    <Text style={styles.timelineDate}>
-                      {new Date(
-                        vehicle.logs.latest_mileage.date,
-                      ).toLocaleDateString()}
-                    </Text>
-                  </View>
+              {vehicle.current_mileage && (
+                <View style={styles.detailItem}>
+                  <Text style={styles.detailLabel}>Mileage</Text>
+                  <Text style={styles.detailValue}>
+                    {vehicle.current_mileage.toLocaleString()} km
+                  </Text>
                 </View>
               )}
             </View>
           </View>
         )}
 
+        {/* Recent Activity Timeline */}
+        {vehicle &&
+          (vehicle.logs?.latest_fuel ||
+            vehicle.logs?.latest_service ||
+            vehicle.logs?.latest_mileage) && (
+            <View style={styles.bottomSheetSection}>
+              <Text style={styles.bottomSheetSectionTitle}>
+                Recent Activity
+              </Text>
+              <View style={styles.timelineContainer}>
+                {vehicle.logs.latest_fuel && (
+                  <View style={styles.timelineItem}>
+                    <View
+                      style={[
+                        styles.timelineIcon,
+                        { backgroundColor: theme.colors.warning + "15" },
+                      ]}
+                    >
+                      <IconSymbol
+                        name="fuelpump.fill"
+                        size={16}
+                        color={theme.colors.warning}
+                      />
+                    </View>
+                    <View style={styles.timelineContent}>
+                      <Text style={styles.timelineTitle}>Fuel Log</Text>
+                      <Text style={styles.timelineDescription}>
+                        {vehicle.logs.latest_fuel.liters_filled}L • RM
+                        {vehicle.logs.latest_fuel.cost?.toFixed(2)}
+                      </Text>
+                      <Text style={styles.timelineDate}>
+                        {new Date(
+                          vehicle.logs.latest_fuel.date,
+                        ).toLocaleDateString()}
+                      </Text>
+                    </View>
+                  </View>
+                )}
+                {vehicle.logs.latest_service && (
+                  <View style={styles.timelineItem}>
+                    <View
+                      style={[
+                        styles.timelineIcon,
+                        { backgroundColor: theme.colors.error + "15" },
+                      ]}
+                    >
+                      <IconSymbol
+                        name="wrench.fill"
+                        size={16}
+                        color={theme.colors.error}
+                      />
+                    </View>
+                    <View style={styles.timelineContent}>
+                      <Text style={styles.timelineTitle}>Service Log</Text>
+                      <Text style={styles.timelineDescription}>
+                        {vehicle.logs.latest_service.service_type} • RM
+                        {vehicle.logs.latest_service.cost?.toFixed(2)}
+                      </Text>
+                      <Text style={styles.timelineDate}>
+                        {new Date(
+                          vehicle.logs.latest_service.date,
+                        ).toLocaleDateString()}
+                      </Text>
+                    </View>
+                  </View>
+                )}
+                {vehicle.logs.latest_mileage && (
+                  <View style={styles.timelineItem}>
+                    <View
+                      style={[
+                        styles.timelineIcon,
+                        { backgroundColor: theme.colors.primary + "15" },
+                      ]}
+                    >
+                      <IconSymbol
+                        name="speedometer"
+                        size={16}
+                        color={theme.colors.primary}
+                      />
+                    </View>
+                    <View style={styles.timelineContent}>
+                      <Text style={styles.timelineTitle}>Mileage Log</Text>
+                      <Text style={styles.timelineDescription}>
+                        {vehicle.logs.latest_mileage.odometer_reading.toLocaleString()}{" "}
+                        km
+                      </Text>
+                      <Text style={styles.timelineDate}>
+                        {new Date(
+                          vehicle.logs.latest_mileage.date,
+                        ).toLocaleDateString()}
+                      </Text>
+                    </View>
+                  </View>
+                )}
+              </View>
+            </View>
+          )}
+
         {/* Owner Info for Shared Vehicles */}
-        {!vehicle.is_own_vehicle && vehicle.owner_profile && (
+        {vehicle && !vehicle.is_own_vehicle && vehicle.owner_profile && (
           <View style={styles.bottomSheetSection}>
             <Text style={styles.bottomSheetSectionTitle}>
               Owner Information
@@ -243,32 +248,34 @@ export const VehicleDetailsBottomSheet = forwardRef<
         )}
 
         {/* Action Buttons */}
-        <View style={styles.bottomSheetActions}>
-          <TouchableOpacity
-            style={[styles.actionButton, styles.actionButtonPrimary]}
-            onPress={() => {
-              onClose();
-              router.push(`/vehicles/${vehicle.id}` as any);
-            }}
-          >
-            <IconSymbol name="pencil" size={18} color={theme.colors.white} />
-            <Text style={styles.actionButtonTextPrimary}>Edit</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.actionButton, styles.actionButtonSecondary]}
-            onPress={() => {
-              onClose();
-              // Add share functionality
-            }}
-          >
-            <IconSymbol
-              name="square.and.arrow.up"
-              size={18}
-              color={theme.colors.primary}
-            />
-            <Text style={styles.actionButtonTextSecondary}>Share</Text>
-          </TouchableOpacity>
-        </View>
+        {vehicle && (
+          <View style={styles.bottomSheetActions}>
+            <TouchableOpacity
+              style={[styles.actionButton, styles.actionButtonPrimary]}
+              onPress={() => {
+                onClose();
+                router.push(`/vehicles/${vehicle.id}` as any);
+              }}
+            >
+              <IconSymbol name="pencil" size={18} color={theme.colors.white} />
+              <Text style={styles.actionButtonTextPrimary}>Edit</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.actionButton, styles.actionButtonSecondary]}
+              onPress={() => {
+                onClose();
+                // Add share functionality
+              }}
+            >
+              <IconSymbol
+                name="square.and.arrow.up"
+                size={18}
+                color={theme.colors.primary}
+              />
+              <Text style={styles.actionButtonTextSecondary}>Share</Text>
+            </TouchableOpacity>
+          </View>
+        )}
       </BottomSheetScrollView>
     </BottomSheet>
   );

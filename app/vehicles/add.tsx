@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/Button";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { ImageUpload } from "@/components/ui/ImageUpload";
 import { Input } from "@/components/ui/Input";
+import { YearPicker } from "@/components/ui/YearPicker";
 import { AlertModal } from "@/components/ui/Modal";
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
@@ -338,23 +339,14 @@ export default function AddVehicleScreen() {
                 </View>
               </View>
 
-              <Input
+              <YearPicker
                 label="Year"
                 value={formData.year.toString()}
-                onChangeText={(text) => {
-                  const year = parseInt(text) || new Date().getFullYear();
-                  setFormData((prev) => ({ ...prev, year }));
+                onYearChange={(year) => {
+                  setFormData((prev) => ({ ...prev, year: parseInt(year) }));
                 }}
-                placeholder="2024"
-                keyboardType="numeric"
-                maxLength={4}
+                placeholder="Select year"
                 required
-                error={
-                  formData.year
-                    ? validateYear(formData.year.toString())
-                    : undefined
-                }
-                leftIcon="calendar"
               />
 
               <Input

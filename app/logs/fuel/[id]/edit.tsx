@@ -1,9 +1,12 @@
+import { ActionMenu, ActionMenuItem } from "@/components/ui/ActionMenu";
 import { Button } from "@/components/ui/Button";
 import { DatePicker } from "@/components/ui/DatePicker";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { Input } from "@/components/ui/Input";
-import { AlertModal } from "@/components/ui/Modal";
+import { AlertModal, ConfirmModal } from "@/components/ui/Modal";
 import { FuelLogService } from "@/lib/services/loggingService";
+import { canUserAccessVehicle } from "@/lib/utils/serviceUtils";
+import { supabase } from "@/services/supabaseClient";
 import { FuelLog, FuelLogFormData, Vehicle } from "@/types";
 import { router, useLocalSearchParams } from "expo-router";
 import React, { useEffect, useState } from "react";
@@ -41,6 +44,9 @@ export default function EditFuelLogScreen() {
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [showErrorModal, setShowErrorModal] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  const [canModify, setCanModify] = useState(true);
+  const [deleteModalVisible, setDeleteModalVisible] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
   const isWeb = Platform.OS === "web";
 
   // Auto-calculate liters based on cost and fuel price (only this direction)
@@ -97,6 +103,18 @@ export default function EditFuelLogScreen() {
           odometer_reading: log.odometer_reading,
           location: log.location || "",
         });
+
+        // Check if user can modify this log
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+        if (user) {
+          const canAccess = await canUserAccessVehicle(
+            log.vehicle_id!,
+            user.id,
+          );
+          setCanModify(canAccess);
+        }
       } catch (error) {
         console.error("Error fetching fuel log:", error);
         setErrorMessage("Failed to load fuel log");
@@ -183,6 +201,32 @@ export default function EditFuelLogScreen() {
     router.push("/(tabs)/logs");
   };
 
+  const handleDelete = () => {
+    setDeleteModalVisible(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    setDeleteLoading(true);
+    try {
+      const { error } = await FuelLogService.deleteFuelLog(id!);
+      setDeleteLoading(false);
+      setDeleteModalVisible(false);
+
+      if (error) {
+        setErrorMessage(error);
+        setShowErrorModal(true);
+      } else {
+        router.push("/(tabs)/logs");
+      }
+    } catch (error) {
+      console.error("Error deleting fuel log:", error);
+      setDeleteLoading(false);
+      setDeleteModalVisible(false);
+      setErrorMessage("Failed to delete fuel log");
+      setShowErrorModal(true);
+    }
+  };
+
   const validateCost = (value: string) => {
     const cost = parseFloat(value);
     if (isNaN(cost) || cost <= 0) {
@@ -210,6 +254,16 @@ export default function EditFuelLogScreen() {
     );
   };
 
+  const actionMenuItems: ActionMenuItem[] = [
+    {
+      label: "Delete",
+      icon: "trash",
+      onPress: handleDelete,
+      variant: "danger",
+      disabled: !canModify,
+    },
+  ];
+
   // Custom Header Component
   const CustomHeader = () => (
     <View style={styles.customHeader}>
@@ -222,6 +276,7 @@ export default function EditFuelLogScreen() {
       <View style={styles.titleContainer}>
         <Text style={styles.headerTitle}>Edit Fuel Log</Text>
       </View>
+      <ActionMenu items={actionMenuItems} />
     </View>
   );
 
@@ -460,6 +515,18 @@ export default function EditFuelLogScreen() {
         title="Error"
         message={errorMessage}
         variant="error"
+      />
+
+      <ConfirmModal
+        visible={deleteModalVisible}
+        title="Delete Fuel Log"
+        message="Are you sure you want to delete this fuel log? This action cannot be undone."
+        confirmText="Delete"
+        cancelText="Cancel"
+        onConfirm={handleConfirmDelete}
+        onClose={() => setDeleteModalVisible(false)}
+        loading={deleteLoading}
+        variant="danger"
       />
     </SafeAreaView>
   );

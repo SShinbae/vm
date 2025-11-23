@@ -87,7 +87,7 @@ export const ResponsiveTabBar: React.FC<BottomTabBarProps> = ({
     const targetPillWidth = Math.max(0, cell.width * 0.85); // 85% of button width for tighter fit
 
     // Center the pill on the tab's center
-    const center = cell.x + cell.width / 2.5;
+    const center = cell.x + cell.width / 2;
     const targetX = PixelRatio.roundToNearestPixel(
       center - targetPillWidth / 2,
     );

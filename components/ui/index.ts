@@ -4,6 +4,7 @@
 export { Button } from "./Button";
 export { Card, CardContent, CardFooter, CardHeader } from "./Card";
 export { DatePicker } from "./DatePicker";
+export { YearPicker } from "./YearPicker";
 export { IconSymbol } from "./icon-symbol";
 export { Input } from "./Input";
 export { AlertModal, ConfirmModal, Modal } from "./Modal";
