@@ -31,7 +31,7 @@ export function NotificationToast({
 }: NotificationToastProps) {
   const translateY = useRef(new Animated.Value(-100)).current;
   const opacity = useRef(new Animated.Value(0)).current;
-  const timeoutRef = useRef<ReturnType<typeof setTimeout>>();
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const backgroundColor = String(useThemeColor({}, "card"));
   const textColor = String(useThemeColor({}, "text"));

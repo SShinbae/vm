@@ -119,8 +119,8 @@ export default function ServiceLogDetailScreen() {
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString("en-MY", {
       year: "numeric",
-      month: "long",
-      day: "numeric",
+      month: "2-digit",
+      day: "2-digit",
     });
   };
 
@@ -131,22 +131,16 @@ export default function ServiceLogDetailScreen() {
     }).format(amount);
   };
 
-  const formatServiceDescription = (description: string) => {
+  const parseServiceDescription = (description: string) => {
     try {
-      // Try to parse as JSON first
       const parsed = JSON.parse(description);
       if (Array.isArray(parsed)) {
-        return parsed
-          .map(
-            (item, index) =>
-              `${index + 1}) ${item.description} | RM${item.price}`,
-          )
-          .join("\n");
+        return parsed;
       }
     } catch {
       // If it's not valid JSON, return as is
     }
-    return description;
+    return null;
   };
 
   const styles = StyleSheet.create({
@@ -228,6 +222,7 @@ export default function ServiceLogDetailScreen() {
       fontSize: 24,
       fontWeight: "bold",
       color: colors.text,
+      // textTransform removed
     },
     serviceTypeSubtitle: {
       fontSize: 16,
@@ -319,6 +314,42 @@ export default function ServiceLogDetailScreen() {
       color: "#4CAF50",
       fontWeight: "500",
     },
+    subHeader: {
+      fontSize: 14,
+      color: colors.icon,
+      marginBottom: 16,
+      marginTop: -8,
+    },
+    itemRow: {
+      flexDirection: "row",
+      marginBottom: 8,
+      alignItems: "flex-start",
+    },
+    itemText: {
+      fontSize: 16,
+      color: colors.text,
+      flex: 1,
+      lineHeight: 22,
+    },
+    totalRow: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      marginTop: 16,
+      paddingTop: 16,
+      borderTopWidth: 1,
+      borderTopColor: colors.icon + "20",
+    },
+    totalLabel: {
+      fontSize: 18,
+      fontWeight: "bold",
+      color: colors.text,
+    },
+    totalAmount: {
+      fontSize: 18,
+      fontWeight: "bold",
+      color: colors.text,
+    },
   });
 
   if (loading) {
@@ -365,6 +396,8 @@ export default function ServiceLogDetailScreen() {
     );
   }
 
+  const parsedItems = parseServiceDescription(serviceLog.description);
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
@@ -410,11 +443,14 @@ export default function ServiceLogDetailScreen() {
               <Text style={styles.serviceTypeTitle}>
                 {SERVICE_TYPE_LABELS[serviceLog.service_type as ServiceType]}
               </Text>
-              <Text style={styles.serviceTypeSubtitle}>
-                {formatDate(serviceLog.date)}
-              </Text>
             </View>
           </View>
+
+          {/* Odometer | Date */}
+          <Text style={styles.subHeader}>
+            Odometer : {serviceLog.odometer_reading?.toLocaleString()} km |{" "}
+            {formatDate(serviceLog.date)}
+          </Text>
 
           {(serviceLog as any).vehicles && (
             <View style={styles.vehicleInfo}>
@@ -446,6 +482,50 @@ export default function ServiceLogDetailScreen() {
               </Text>
             </View>
           )}
+
+          {/* Service Items List */}
+          <View style={styles.detailSection}>
+            <Text style={styles.sectionTitle}>Service Items</Text>
+
+            {parsedItems ? (
+              parsedItems.map((item: any, index: number) => (
+                <View key={index} style={styles.itemRow}>
+                  <Text style={styles.itemText}>
+                    {index + 1}. {item.description} RM{item.price}
+                  </Text>
+                </View>
+              ))
+            ) : (
+              <Text style={styles.description}>{serviceLog.description}</Text>
+            )}
+
+            {/* Total */}
+            <View style={styles.totalRow}>
+              <Text style={styles.totalLabel}>Total :</Text>
+              <Text style={styles.totalAmount}>
+                {formatCurrency(serviceLog.cost || 0)}
+              </Text>
+            </View>
+          </View>
+
+          {/* Extra details at the bottom if needed, e.g. next service due */}
+          {serviceLog.next_service_due && (
+            <View
+              style={{
+                marginTop: 8,
+                paddingTop: 16,
+                borderTopWidth: 1,
+                borderTopColor: colors.icon + "20",
+              }}
+            >
+              <View style={styles.detailRow}>
+                <Text style={styles.detailLabel}>Next Service Due</Text>
+                <Text style={styles.detailValue}>
+                  {formatDate(serviceLog.next_service_due)}
+                </Text>
+              </View>
+            </View>
+          )}
         </View>
 
         {serviceLog.receipt_image_url && (
@@ -457,55 +537,6 @@ export default function ServiceLogDetailScreen() {
             />
           </View>
         )}
-
-        <View style={styles.card}>
-          <View style={styles.detailSection}>
-            <Text style={styles.sectionTitle}>Service Details</Text>
-
-            <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>Description</Text>
-            </View>
-            <Text style={styles.description}>
-              {formatServiceDescription(serviceLog.description)}
-            </Text>
-          </View>
-
-          <View style={styles.detailSection}>
-            <Text style={styles.sectionTitle}>Service Information</Text>
-
-            {serviceLog.cost && (
-              <View style={styles.detailRow}>
-                <Text style={styles.detailLabel}>Cost</Text>
-                <Text style={styles.detailValue}>
-                  {formatCurrency(serviceLog.cost)}
-                </Text>
-              </View>
-            )}
-
-            <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>Odometer Reading</Text>
-              <Text style={styles.detailValue}>
-                {serviceLog.odometer_reading.toLocaleString()} km
-              </Text>
-            </View>
-
-            <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>Date</Text>
-              <Text style={styles.detailValue}>
-                {formatDate(serviceLog.date)}
-              </Text>
-            </View>
-
-            {serviceLog.next_service_due && (
-              <View style={styles.detailRow}>
-                <Text style={styles.detailLabel}>Next Service Due</Text>
-                <Text style={styles.detailValue}>
-                  {formatDate(serviceLog.next_service_due)}
-                </Text>
-              </View>
-            )}
-          </View>
-        </View>
       </ScrollView>
     </SafeAreaView>
   );

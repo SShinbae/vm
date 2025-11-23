@@ -1,11 +1,14 @@
+import { ActionMenu, ActionMenuItem } from "@/components/ui/ActionMenu";
 import { Button } from "@/components/ui/Button";
 import { DatePicker } from "@/components/ui/DatePicker";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { Input } from "@/components/ui/Input";
-import { AlertModal } from "@/components/ui/Modal";
+import { AlertModal, ConfirmModal } from "@/components/ui/Modal";
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
+import { canUserAccessVehicle } from "@/lib/utils/serviceUtils";
 import { MileageLogService } from "@/lib/services/loggingService";
+import { supabase } from "@/services/supabaseClient";
 import { MileageLog, MileageLogFormData } from "@/types";
 import { router, useLocalSearchParams } from "expo-router";
 import React, { useEffect, useState } from "react";
@@ -35,6 +38,9 @@ export default function EditMileageLogScreen() {
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [showErrorModal, setShowErrorModal] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  const [canModify, setCanModify] = useState(true);
+  const [deleteModalVisible, setDeleteModalVisible] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? "light"];
   const isWeb = Platform.OS === "web";
@@ -83,6 +89,15 @@ export default function EditMileageLogScreen() {
           date: log.date,
           notes: log.notes || "",
         });
+
+        // Check if user can modify this log
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+        if (user) {
+          const canAccess = await canUserAccessVehicle(log.vehicle_id, user.id);
+          setCanModify(canAccess);
+        }
       } catch (error) {
         console.error("Error fetching mileage log:", error);
         setErrorMessage("Failed to load mileage log");
@@ -154,6 +169,32 @@ export default function EditMileageLogScreen() {
     router.push("/(tabs)/logs");
   };
 
+  const handleDelete = () => {
+    setDeleteModalVisible(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    setDeleteLoading(true);
+    try {
+      const { error } = await MileageLogService.deleteMileageLog(id!);
+      setDeleteLoading(false);
+      setDeleteModalVisible(false);
+
+      if (error) {
+        setErrorMessage(error);
+        setShowErrorModal(true);
+      } else {
+        router.push("/(tabs)/logs");
+      }
+    } catch (error) {
+      console.error("Error deleting mileage log:", error);
+      setDeleteLoading(false);
+      setDeleteModalVisible(false);
+      setErrorMessage("Failed to delete mileage log");
+      setShowErrorModal(true);
+    }
+  };
+
   const validateOdometer = (value: string) => {
     const num = parseInt(value.replace(/,/g, ""));
     if (isNaN(num) || num <= 0) return "Please enter a valid odometer reading";
@@ -168,6 +209,16 @@ export default function EditMileageLogScreen() {
   const isFormValid = () => {
     return formData.odometer_reading > 0 && formData.date;
   };
+
+  const actionMenuItems: ActionMenuItem[] = [
+    {
+      label: "Delete",
+      icon: "trash",
+      onPress: handleDelete,
+      variant: "danger",
+      disabled: !canModify,
+    },
+  ];
 
   const styles = StyleSheet.create({
     container: {
@@ -298,6 +349,7 @@ export default function EditMileageLogScreen() {
               <IconSymbol name="chevron.left" size={24} color={colors.text} />
             </TouchableOpacity>
             <Text style={styles.headerTitle}>Edit Mileage Log</Text>
+            <ActionMenu items={actionMenuItems} />
           </View>
         )}
         <View style={styles.loadingContainer}>
@@ -318,6 +370,7 @@ export default function EditMileageLogScreen() {
             <IconSymbol name="chevron.left" size={24} color={colors.text} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Edit Mileage Log</Text>
+          <ActionMenu items={actionMenuItems} />
         </View>
       )}
 
@@ -439,6 +492,18 @@ export default function EditMileageLogScreen() {
         title="Error"
         message={errorMessage}
         variant="error"
+      />
+
+      <ConfirmModal
+        visible={deleteModalVisible}
+        title="Delete Mileage Log"
+        message="Are you sure you want to delete this mileage log? This action cannot be undone."
+        confirmText="Delete"
+        cancelText="Cancel"
+        onConfirm={handleConfirmDelete}
+        onClose={() => setDeleteModalVisible(false)}
+        loading={deleteLoading}
+        variant="danger"
       />
     </SafeAreaView>
   );

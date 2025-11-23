@@ -1,78 +1,50 @@
-import React, { useState } from "react";
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-  Modal,
-  Platform,
-} from "react-native";
-import DateTimePicker from "react-native-ui-datepicker";
-import dayjs from "dayjs";
-import { IconSymbol } from "./icon-symbol";
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
+import dayjs from "dayjs";
+import React, { useState } from "react";
+import {
+  Modal,
+  Platform,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import DateTimePicker from "react-native-ui-datepicker";
+import { IconSymbol } from "./icon-symbol";
 
-interface DatePickerProps {
+interface YearPickerProps {
   label: string;
   value: string;
-  onDateChange: (date: string) => void;
+  onYearChange: (year: string) => void;
   placeholder?: string;
   required?: boolean;
   style?: any;
 }
 
-export function DatePicker({
+export function YearPicker({
   label,
   value,
-  onDateChange,
-  placeholder = "Select date",
+  onYearChange,
+  placeholder = "Select year",
   required = false,
   style,
-}: DatePickerProps) {
+}: YearPickerProps) {
   const [showPicker, setShowPicker] = useState(false);
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? "light"];
 
-  const parseDate = (dateString: string): dayjs.Dayjs => {
-    if (!dateString) return dayjs();
-
-    // Handle different date formats
-    if (dateString.includes("/")) {
-      // DD/MM/YYYY format
-      const [day, month, year] = dateString.split("/");
-      return dayjs(`${year}-${month}-${day}`);
-    } else if (dateString.includes("-")) {
-      // YYYY-MM-DD format (database format)
-      return dayjs(dateString);
-    }
-
-    return dayjs();
-  };
-
-  const formatDate = (date: dayjs.Dayjs): string => {
-    // Return YYYY-MM-DD format for compatibility with existing system
-    return date.format("YYYY-MM-DD");
-  };
-
-  const formatDisplayDate = (date: dayjs.Dayjs): string => {
-    // Display format DD/MM/YYYY for better UX
-    return date.format("DD/MM/YYYY");
-  };
-
   const handleDateChange = (params: any) => {
     const selectedDate = params.date;
     if (selectedDate) {
-      const formattedDate = formatDate(dayjs(selectedDate));
-      onDateChange(formattedDate);
+      const year = dayjs(selectedDate).format("YYYY");
+      onYearChange(year);
       setShowPicker(false);
     }
   };
 
-  const currentDate = value ? parseDate(value) : dayjs();
-  const displayValue = value
-    ? formatDisplayDate(parseDate(value))
-    : placeholder;
+  const currentDate = value ? dayjs(`${value}-01-01`) : dayjs();
+  const displayValue = value || placeholder;
 
   const styles = StyleSheet.create({
     container: {
@@ -87,7 +59,7 @@ export function DatePicker({
     requiredLabel: {
       color: "#ff4444",
     },
-    dateButton: {
+    yearButton: {
       backgroundColor: colors.background,
       borderWidth: 1,
       borderColor: colors.icon,
@@ -98,7 +70,7 @@ export function DatePicker({
       alignItems: "center",
       justifyContent: "space-between",
     },
-    dateText: {
+    yearText: {
       fontSize: 16,
       color: value ? colors.text : colors.icon,
     },
@@ -156,11 +128,11 @@ export function DatePicker({
       </Text>
 
       <TouchableOpacity
-        style={styles.dateButton}
+        style={styles.yearButton}
         onPress={() => setShowPicker(true)}
         activeOpacity={0.7}
       >
-        <Text style={styles.dateText}>{displayValue}</Text>
+        <Text style={styles.yearText}>{displayValue}</Text>
         <View style={styles.iconContainer}>
           <IconSymbol name="calendar" size={20} color={colors.icon} />
         </View>
@@ -179,11 +151,11 @@ export function DatePicker({
         >
           <TouchableOpacity
             activeOpacity={1}
-            onPress={(e: any) => e.stopPropagation()}
+            onPress={(e) => e.stopPropagation()}
           >
             <View style={styles.modalContent}>
               <View style={styles.modalHeader}>
-                <Text style={styles.modalTitle}>Select Date</Text>
+                <Text style={styles.modalTitle}>Select Year</Text>
                 <TouchableOpacity
                   style={styles.closeButton}
                   onPress={() => setShowPicker(false)}
@@ -196,6 +168,7 @@ export function DatePicker({
                 mode="single"
                 date={currentDate.toDate()}
                 onChange={handleDateChange}
+                timePicker={false}
               />
             </View>
           </TouchableOpacity>

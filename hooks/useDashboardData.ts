@@ -172,18 +172,41 @@ export const useDashboardData = () => {
   const fetchVehicles = useCallback(async () => {
     if (!user) return;
     try {
+      // Query vehicles along with the latest mileage log info
+      // We fetch odometer_reading from mileage_logs to ensure we have the latest value
       const { data: vehiclesData, error: vehiclesError } = await supabase
         .from("vehicles")
-        .select("*, vehicle_group_shares(count)")
+        .select(
+          "*, vehicle_group_shares(count), mileage_logs(odometer_reading)",
+        )
         .eq("user_id", user.id)
         .order("created_at", { ascending: false });
+
       if (vehiclesError) throw vehiclesError;
 
       const vehiclesWithShares: VehicleWithShares[] =
-        vehiclesData?.map((v: any) => ({
-          ...v,
-          shareCount: v.vehicle_group_shares?.[0]?.count || 0,
-        })) || [];
+        vehiclesData?.map((v: any) => {
+          // Find maximum mileage from logs if available
+          const maxLogMileage =
+            v.mileage_logs?.reduce(
+              (max: number, log: any) =>
+                log.odometer_reading > max ? log.odometer_reading : max,
+              0,
+            ) || 0;
+
+          // Use the greater of current_mileage or maxLogMileage
+          // This fixes the "0 km" display issue if the vehicle table isn't updated
+          const effectiveMileage = Math.max(
+            v.current_mileage || 0,
+            maxLogMileage,
+          );
+
+          return {
+            ...v,
+            current_mileage: effectiveMileage,
+            shareCount: v.vehicle_group_shares?.[0]?.count || 0,
+          };
+        }) || [];
 
       setVehicles(vehiclesWithShares);
     } catch (err: any) {
