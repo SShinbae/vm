@@ -136,36 +136,29 @@ jobs:
             exit 1
           fi
 
-      - name: 📋 Update metro.config.js for SVG support
+      - name: 📋 Update app.config.js to CommonJS format
+        run: |
+          if [ -f ./app.config.js ]; then
+            echo "Converting app.config.js to CommonJS format"
+            # Replace import with require
+            sed -i 's/^import "dotenv\/config";$/require("dotenv").config();/' app.config.js
+            # Replace export default with module.exports
+            sed -i 's/^export default {$/module.exports = {/' app.config.js
+            echo "app.config.js updated to CommonJS format"
+            head -5 app.config.js
+          else
+            echo "app.config.js not found"
+            exit 1
+          fi
+
+      - name: 📋 Verify metro.config.js
         run: |
           if [ -f ./metro.config.js ]; then
-            echo "Creating backup of metro.config.js"
-            cp ./metro.config.js ./metro.config.js.backup
-            echo "Updating metro.config.js to CommonJS format"
-            cat > ./metro.config.js << 'EOFMARKER'
-          /* eslint-disable @typescript-eslint/no-var-requires */
-          const { getDefaultConfig } = require('expo/metro-config');
-
-          const config = getDefaultConfig(__dirname);
-
-          const { transformer, resolver } = config;
-
-          config.transformer = {
-            ...transformer,
-            babelTransformerPath: require.resolve('react-native-svg-transformer/expo'),
-          };
-
-          config.resolver = {
-            ...resolver,
-            assetExts: resolver.assetExts.filter(ext => ext !== 'svg'),
-            sourceExts: [...resolver.sourceExts, 'svg'],
-          };
-
-          module.exports = config;
-          EOFMARKER
-            echo "metro.config.js updated to CommonJS format"
+            echo "metro.config.js exists"
+            cat ./metro.config.js
           else
             echo "metro.config.js not found"
+            exit 1
           fi
 
       - name: 📱 Build Development APK
