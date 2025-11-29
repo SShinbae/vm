@@ -21,6 +21,7 @@
 ## Overview
 
 This document describes the primary user workflows and system processes in the Vehicles Management Application. Each workflow includes:
+
 - **User Actions:** What the user does
 - **System Response:** How the application responds
 - **Data Flow:** Backend operations and database changes

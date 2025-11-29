@@ -172,6 +172,7 @@ CREATE TABLE profiles (
 ```
 
 **Columns:**
+
 - `id` - UUID, matches auth.users.id (1:1 relationship)
 - `email` - User's email (duplicated for convenience)
 - `full_name` - Display name
@@ -181,11 +182,13 @@ CREATE TABLE profiles (
 - `bio` - User biography/description
 
 **Indexes:**
+
 - Primary key on `id`
 - Unique index on `email`
 - Unique index on `username`
 
 **RLS Policies:**
+
 - Users can view all profiles (public data)
 - Users can update only their own profile
 
@@ -213,6 +216,7 @@ CREATE TABLE vehicles (
 ```
 
 **Columns:**
+
 - `id` - UUID primary key
 - `owner_id` - Owner's profile ID
 - `make` - Vehicle manufacturer (e.g., "Toyota")
@@ -225,10 +229,12 @@ CREATE TABLE vehicles (
 - `main_image_url` - Primary vehicle image
 
 **Constraints:**
+
 - Year must be between 1900 and 2100
 - Owner must exist in profiles table
 
 **Indexes:**
+
 - Primary key on `id`
 - Index on `owner_id` (frequently queried)
 - Index on `created_at` (sorting)
@@ -256,6 +262,7 @@ CREATE TYPE image_type AS ENUM ('profile_avatar', 'vehicle_main', 'vehicle_galle
 ```
 
 **Columns:**
+
 - `id` - UUID primary key
 - `vehicle_id` - Associated vehicle
 - `image_url` - Supabase Storage URL
@@ -265,6 +272,7 @@ CREATE TYPE image_type AS ENUM ('profile_avatar', 'vehicle_main', 'vehicle_galle
 - `uploaded_by` - User who uploaded
 
 **Indexes:**
+
 - Composite index on `(vehicle_id, display_order)` for gallery sorting
 - Index on `image_type`
 
@@ -286,6 +294,7 @@ CREATE TABLE vehicle_group_shares (
 ```
 
 **Columns:**
+
 - `id` - UUID primary key
 - `vehicle_id` - Shared vehicle
 - `group_id` - Group with access
@@ -293,9 +302,11 @@ CREATE TABLE vehicle_group_shares (
 - `shared_at` - Timestamp of sharing
 
 **Constraints:**
+
 - Unique constraint on `(vehicle_id, group_id)` - prevent duplicate shares
 
 **Indexes:**
+
 - Composite index on `(vehicle_id, group_id)` for fast lookups
 - Index on `vehicle_id`
 - Index on `group_id`
@@ -318,12 +329,14 @@ CREATE TABLE groups (
 ```
 
 **Columns:**
+
 - `id` - UUID primary key
 - `owner_id` - Group creator/owner
 - `name` - Group name (e.g., "Family Cars")
 - `description` - Optional description
 
 **Indexes:**
+
 - Primary key on `id`
 - Index on `owner_id`
 
@@ -344,15 +357,18 @@ CREATE TABLE group_members (
 ```
 
 **Columns:**
+
 - `id` - UUID primary key
 - `group_id` - Associated group
 - `user_id` - Member's profile ID
 - `joined_at` - Membership timestamp
 
 **Constraints:**
+
 - Unique constraint on `(group_id, user_id)` - one membership per user per group
 
 **Indexes:**
+
 - Composite index on `(group_id, user_id)`
 - Index on `user_id` (find user's groups)
 
@@ -379,6 +395,7 @@ CREATE TYPE invitation_status AS ENUM ('pending', 'accepted', 'declined', 'expir
 ```
 
 **Columns:**
+
 - `id` - UUID primary key
 - `group_id` - Target group
 - `invited_email` - Email of invitee
@@ -388,9 +405,11 @@ CREATE TYPE invitation_status AS ENUM ('pending', 'accepted', 'declined', 'expir
 - `expires_at` - Expiration timestamp (typically 7 days)
 
 **Constraints:**
+
 - Unique token for security
 
 **Indexes:**
+
 - Index on `token` (for quick lookup)
 - Index on `invited_email`
 - Index on `status`
@@ -415,6 +434,7 @@ CREATE TABLE mileage_logs (
 ```
 
 **Columns:**
+
 - `id` - UUID primary key
 - `vehicle_id` - Associated vehicle
 - `user_id` - User who recorded the log
@@ -423,13 +443,16 @@ CREATE TABLE mileage_logs (
 - `notes` - Optional notes
 
 **Constraints:**
+
 - Odometer reading must be >= 0
 
 **Indexes:**
+
 - Index on `vehicle_id, date DESC` (recent logs first)
 - Index on `user_id`
 
 **Triggers:**
+
 - Auto-update `vehicles.current_mileage` on INSERT
 
 ---
@@ -455,6 +478,7 @@ CREATE TABLE fuel_logs (
 ```
 
 **Columns:**
+
 - `id` - UUID primary key
 - `vehicle_id` - Associated vehicle
 - `user_id` - User who recorded the log
@@ -466,9 +490,11 @@ CREATE TABLE fuel_logs (
 - `date` - Purchase date
 
 **Constraints:**
+
 - All amounts must be positive
 
 **Indexes:**
+
 - Index on `vehicle_id, date DESC`
 - Index on `user_id`
 
@@ -509,6 +535,7 @@ CREATE TYPE service_type AS ENUM (
 ```
 
 **Columns:**
+
 - `id` - UUID primary key
 - `vehicle_id` - Associated vehicle
 - `user_id` - User who recorded the log
@@ -524,6 +551,7 @@ CREATE TYPE service_type AS ENUM (
 - `date` - Service date
 
 **Indexes:**
+
 - Index on `vehicle_id, date DESC`
 - Index on `service_type`
 - Index on `user_id`
@@ -548,6 +576,7 @@ CREATE TABLE notifications (
 ```
 
 **Columns:**
+
 - `id` - UUID primary key
 - `user_id` - Recipient
 - `title` - Notification title
@@ -557,6 +586,7 @@ CREATE TABLE notifications (
 - `data` - Additional data (JSONB)
 
 **Indexes:**
+
 - Index on `user_id, read, created_at DESC` (unread notifications)
 
 ---
@@ -578,6 +608,7 @@ CREATE TABLE push_tokens (
 ```
 
 **Columns:**
+
 - `id` - UUID primary key
 - `user_id` - Token owner
 - `token` - Expo push token (unique)
@@ -585,6 +616,7 @@ CREATE TABLE push_tokens (
 - `platform` - Device platform
 
 **Indexes:**
+
 - Unique index on `token`
 - Index on `user_id`
 
@@ -593,9 +625,11 @@ CREATE TABLE push_tokens (
 ## Relationships
 
 ### One-to-One (1:1)
+
 - `auth.users` ↔ `profiles`
 
 ### One-to-Many (1:N)
+
 - `profiles` → `vehicles` (one user owns many vehicles)
 - `vehicles` → `vehicle_images` (one vehicle has many images)
 - `profiles` → `groups` (one user owns many groups)
@@ -607,6 +641,7 @@ CREATE TABLE push_tokens (
 - `profiles` → `notifications` (one user has many notifications)
 
 ### Many-to-Many (N:N)
+
 - `vehicles` ↔ `groups` (via `vehicle_group_shares`)
   - One vehicle can be shared with multiple groups
   - One group can have access to multiple vehicles
@@ -619,6 +654,7 @@ CREATE TABLE push_tokens (
 ## Indexes and Performance
 
 ### Primary Indexes (Automatically Created)
+
 - Primary keys on all tables
 - Unique constraints (email, username, tokens)
 
@@ -677,6 +713,7 @@ ALTER TABLE vehicles ENABLE ROW LEVEL SECURITY;
 ### Example Policies
 
 **Profiles:**
+
 ```sql
 -- All users can view profiles (public data)
 CREATE POLICY "Profiles are viewable by everyone"
@@ -690,6 +727,7 @@ USING (auth.uid() = id);
 ```
 
 **Vehicles:**
+
 ```sql
 -- Users can view their own vehicles
 CREATE POLICY "Users can view own vehicles"
@@ -725,6 +763,7 @@ USING (auth.uid() = owner_id);
 ```
 
 **Logs (similar for all log types):**
+
 ```sql
 -- Users can view logs for accessible vehicles
 CREATE POLICY "Users can view logs for accessible vehicles"
@@ -828,6 +867,7 @@ $$;
 ```
 
 **Benefits:**
+
 - Single query instead of multiple round trips
 - Includes all necessary data
 - Security definer prevents RLS recursion
@@ -864,6 +904,7 @@ $$;
 ```
 
 **Usage:**
+
 - RLS policies
 - Application-level permission checks
 - Returns true if user is owner or group member
@@ -888,6 +929,7 @@ $$;
 ```
 
 **Usage:**
+
 - RLS policies to avoid recursive queries
 - Efficient group membership checks
 
@@ -922,6 +964,7 @@ EXECUTE FUNCTION update_vehicle_mileage();
 ```
 
 **Logic:**
+
 - Triggers after INSERT on mileage_logs
 - Updates vehicles.current_mileage if new reading is higher
 - Ensures current_mileage is always the latest/highest
@@ -954,6 +997,7 @@ EXECUTE FUNCTION handle_new_user();
 ```
 
 **Logic:**
+
 - Triggers after INSERT on auth.users (Supabase Auth table)
 - Creates corresponding profile record
 - Extracts full_name from user metadata
@@ -1032,6 +1076,7 @@ VALUES
 ### Current Schema Version
 
 **Schema V2** (Enhanced with selective sharing)
+
 - File: `database/new-schema-v2.sql`
 - Major changes:
   - Replaced boolean `shared_with_groups` with `vehicle_group_shares` table

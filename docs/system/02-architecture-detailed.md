@@ -122,6 +122,7 @@ The Vehicles Management Application follows a **Client-Server Architecture** wit
 #### 1. Screen Components (`app/`)
 
 **File-based Routing Structure:**
+
 ```
 app/
 ├── (tabs)/              # Main tab navigation
@@ -149,6 +150,7 @@ app/
 ```
 
 **Screen Responsibilities:**
+
 - Coordinate data fetching via hooks
 - Handle user interactions
 - Manage local state
@@ -160,33 +162,39 @@ app/
 **Component Categories:**
 
 a) **UI Components** (`components/ui/`)
-   - Button, Input, Card, Modal
-   - LoadingSpinner, Skeleton
-   - NotificationBell, ImagePicker
-   - Platform-agnostic design
+
+- Button, Input, Card, Modal
+- LoadingSpinner, Skeleton
+- NotificationBell, ImagePicker
+- Platform-agnostic design
 
 b) **Analytics Components** (`components/analytics/`)
-   - MetricCard, StatCard, TrendCard
-   - PeriodSelector, VehicleFilter
-   - AnalyticsHeader, AnalyticsTabBar
-   - Domain-specific, reusable
+
+- MetricCard, StatCard, TrendCard
+- PeriodSelector, VehicleFilter
+- AnalyticsHeader, AnalyticsTabBar
+- Domain-specific, reusable
 
 c) **Chart Components** (`components/charts/`)
-   - LineChart, BarChart, PieChart
-   - Platform-specific implementations (.web.tsx)
-   - Victory Native for mobile, Recharts for web
+
+- LineChart, BarChart, PieChart
+- Platform-specific implementations (.web.tsx)
+- Victory Native for mobile, Recharts for web
 
 d) **Layout Components** (`components/layout/`)
-   - ResponsiveGrid, WebLayout
-   - WebNavbar, WebSidebar
-   - Responsive design utilities
+
+- ResponsiveGrid, WebLayout
+- WebNavbar, WebSidebar
+- Responsive design utilities
 
 e) **Form Components** (`components/forms/`)
-   - VehicleSelector, VehicleOption
-   - FuelPriceChip, ServiceItemsInput
-   - Form-specific inputs
+
+- VehicleSelector, VehicleOption
+- FuelPriceChip, ServiceItemsInput
+- Form-specific inputs
 
 **Component Design Principles:**
+
 - **Composability:** Components can be nested
 - **Props-driven:** Configuration via props
 - **Type-safe:** Full TypeScript props interfaces
@@ -198,23 +206,27 @@ e) **Form Components** (`components/forms/`)
 **Hook Categories:**
 
 a) **Data Hooks**
-   - `useVehicles()` - Fetch and manage vehicle data
-   - `useAnalytics()` - Analytics data with filtering
-   - `useDashboardData()` - Dashboard aggregated data
-   - `useProfileStats()` - User profile statistics
+
+- `useVehicles()` - Fetch and manage vehicle data
+- `useAnalytics()` - Analytics data with filtering
+- `useDashboardData()` - Dashboard aggregated data
+- `useProfileStats()` - User profile statistics
 
 b) **UI Hooks**
-   - `useColorScheme()` - Theme detection
-   - `useResponsiveLayout()` - Responsive breakpoints
-   - `useWebAlert()` - Platform-specific alerts
-   - `useWebTitle()` - Document title management
+
+- `useColorScheme()` - Theme detection
+- `useResponsiveLayout()` - Responsive breakpoints
+- `useWebAlert()` - Platform-specific alerts
+- `useWebTitle()` - Document title management
 
 c) **Business Logic Hooks**
-   - `useAddFuelLog()` - Fuel log creation logic
-   - `useVehicleFilters()` - Vehicle filtering state
-   - `useVehicleStats()` - Vehicle-specific stats
+
+- `useAddFuelLog()` - Fuel log creation logic
+- `useVehicleFilters()` - Vehicle filtering state
+- `useVehicleStats()` - Vehicle-specific stats
 
 **Hook Benefits:**
+
 - Encapsulate reusable logic
 - Separate concerns from UI
 - Enable composition
@@ -228,11 +240,16 @@ Each service is a **static class** with methods for specific operations:
 
 ```typescript
 export class VehicleService {
-  static async getVehicles(): Promise<ApiResponse<Vehicle[]>>
-  static async getVehicleById(id: string): Promise<ApiResponse<Vehicle>>
-  static async createVehicle(data: VehicleInsert): Promise<ApiResponse<Vehicle>>
-  static async updateVehicle(id: string, data: VehicleUpdate): Promise<ApiResponse<Vehicle>>
-  static async deleteVehicle(id: string): Promise<ApiResponse<void>>
+  static async getVehicles(): Promise<ApiResponse<Vehicle[]>>;
+  static async getVehicleById(id: string): Promise<ApiResponse<Vehicle>>;
+  static async createVehicle(
+    data: VehicleInsert,
+  ): Promise<ApiResponse<Vehicle>>;
+  static async updateVehicle(
+    id: string,
+    data: VehicleUpdate,
+  ): Promise<ApiResponse<Vehicle>>;
+  static async deleteVehicle(id: string): Promise<ApiResponse<void>>;
   // ... specialized methods
 }
 ```
@@ -483,11 +500,13 @@ Supabase provides a complete backend infrastructure:
 ### Data Synchronization
 
 **Current Implementation:**
+
 - **Pull-based:** Manual refresh and automatic on screen focus
 - **Optimistic Updates:** Immediate UI updates before server confirmation
 - **Cache Invalidation:** Refresh data after mutations
 
 **Future Enhancement:**
+
 - **Real-time Subscriptions:** Live updates via Supabase Real-time
 - **Offline Support:** Local cache with sync when online
 - **Conflict Resolution:** Handle concurrent edits
@@ -578,6 +597,7 @@ USING (auth.uid() = owner_id);
 ```
 
 **RLS Benefits:**
+
 - Database-level enforcement (cannot be bypassed)
 - Automatic filtering of queries
 - Performance optimized
@@ -635,26 +655,26 @@ const stylesheet = createStyleSheet((theme) => ({
     padding: {
       xs: theme.spacing.md,
       md: theme.spacing.lg,
-      xl: theme.spacing.xl
+      xl: theme.spacing.xl,
     },
     flexDirection: {
-      xs: 'column',
-      lg: 'row'
-    }
-  }
+      xs: "column",
+      lg: "row",
+    },
+  },
 }));
 ```
 
 ### Platform-Specific Features
 
-| Feature | iOS | Android | Web |
-|---------|-----|---------|-----|
-| Haptic Feedback | ✅ | ✅ | ❌ |
-| Push Notifications | ✅ | ✅ | 🔄 (Future) |
-| File System Access | ✅ | ✅ | Limited |
-| Image Picker | ✅ | ✅ | ✅ |
-| Sharing | ✅ | ✅ | ✅ (Web Share API) |
-| PWA Support | ❌ | ❌ | ✅ |
+| Feature            | iOS | Android | Web                |
+| ------------------ | --- | ------- | ------------------ |
+| Haptic Feedback    | ✅  | ✅      | ❌                 |
+| Push Notifications | ✅  | ✅      | 🔄 (Future)        |
+| File System Access | ✅  | ✅      | Limited            |
+| Image Picker       | ✅  | ✅      | ✅                 |
+| Sharing            | ✅  | ✅      | ✅ (Web Share API) |
+| PWA Support        | ❌  | ❌      | ✅                 |
 
 ---
 
@@ -663,6 +683,7 @@ const stylesheet = createStyleSheet((theme) => ({
 ### Frontend Optimizations
 
 1. **Component Memoization**
+
    ```typescript
    const MemoizedComponent = React.memo(Component);
    ```
@@ -730,6 +751,7 @@ const stylesheet = createStyleSheet((theme) => ({
 ## Technology Decision Rationale
 
 ### Why React Native + Expo?
+
 - ✅ Single codebase for iOS, Android, Web
 - ✅ Rich ecosystem and community
 - ✅ Fast development iteration
@@ -737,6 +759,7 @@ const stylesheet = createStyleSheet((theme) => ({
 - ✅ Built-in tooling and services
 
 ### Why Supabase?
+
 - ✅ Full backend in minutes
 - ✅ PostgreSQL (powerful, standards-compliant)
 - ✅ Built-in authentication
@@ -746,6 +769,7 @@ const stylesheet = createStyleSheet((theme) => ({
 - ✅ Scales to production
 
 ### Why TypeScript?
+
 - ✅ Catch errors at compile time
 - ✅ Better IDE support
 - ✅ Self-documenting code
@@ -753,6 +777,7 @@ const stylesheet = createStyleSheet((theme) => ({
 - ✅ Industry standard
 
 ### Why Unistyles over NativeWind?
+
 - ✅ Better performance (zero-runtime CSS)
 - ✅ Type-safe theming
 - ✅ Responsive breakpoints

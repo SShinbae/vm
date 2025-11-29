@@ -10,12 +10,14 @@
 ## 1. Overview
 
 This document outlines a complete free-tier notification system for the Vehicle Management app using:
+
 - **Expo Notifications** - Free push notification delivery
 - **Supabase Edge Functions** - Serverless backend logic (500K invocations/month free)
 - **pg_cron** - Scheduled job execution within Supabase
 - **Supabase Realtime** - Real-time in-app notifications (already implemented)
 
 ### Key Features to Implement
+
 1. **Scheduled Service Reminders** - Time-based and mileage-based vehicle service alerts
 2. **Batched Group Notifications** - Aggregate multiple group activities into single notifications
 
@@ -24,21 +26,24 @@ This document outlines a complete free-tier notification system for the Vehicle 
 ## 2. Service Comparison Summary
 
 ### Services Analyzed
-| Service | Best For | Free Tier | Expo Support | Notes |
-|---------|----------|-----------|--------------|-------|
-| **Expo Notifications** | Current MVP | Unlimited | Perfect | Already integrated, free |
-| **Supabase Edge Functions** | Scheduling | 500K/month | Perfect | Already using Supabase |
-| **OneSignal** | Growth stage | 10K/month | Excellent | Upgrade option later |
-| **Novu** | Complex workflows | Open-source | Medium | Self-hosting option |
-| **Courier** | Multi-channel | 10K/month | Good | Email + SMS future expansion |
-| **Knock** | Scale/batching | Unknown | Good | Batching focused |
-| **Firebase FCM** | Budget | Unlimited | Medium | More complex Expo setup |
-| **Service Workers** | Web PWA | N/A | Not applicable | Web-only technology |
+
+| Service                     | Best For          | Free Tier   | Expo Support   | Notes                        |
+| --------------------------- | ----------------- | ----------- | -------------- | ---------------------------- |
+| **Expo Notifications**      | Current MVP       | Unlimited   | Perfect        | Already integrated, free     |
+| **Supabase Edge Functions** | Scheduling        | 500K/month  | Perfect        | Already using Supabase       |
+| **OneSignal**               | Growth stage      | 10K/month   | Excellent      | Upgrade option later         |
+| **Novu**                    | Complex workflows | Open-source | Medium         | Self-hosting option          |
+| **Courier**                 | Multi-channel     | 10K/month   | Good           | Email + SMS future expansion |
+| **Knock**                   | Scale/batching    | Unknown     | Good           | Batching focused             |
+| **Firebase FCM**            | Budget            | Unlimited   | Medium         | More complex Expo setup      |
+| **Service Workers**         | Web PWA           | N/A         | Not applicable | Web-only technology          |
 
 ### Why NOT Service Workers?
+
 Service Workers are **browser-only technology** used for Progressive Web Apps (PWAs). They do NOT work with React Native mobile applications. Only use Service Workers if building a separate PWA version of your app.
 
 ### Recommended Path
+
 **Current (Free):** Expo + Supabase Edge Functions
 **Future (3-6 months):** Add OneSignal for campaigns
 **Later (6+ months):** Add email/SMS via Courier if needed
@@ -48,6 +53,7 @@ Service Workers are **browser-only technology** used for Progressive Web Apps (P
 ## 3. Recommended Architecture
 
 ### System Design
+
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │                    React Native App                          │
@@ -76,6 +82,7 @@ Service Workers are **browser-only technology** used for Progressive Web Apps (P
 ### Data Flow
 
 **Service Reminders:**
+
 1. pg_cron triggers `check-service-reminders` Edge Function daily at 8 AM
 2. Function queries vehicles with upcoming service dates
 3. Function checks mileage-based reminder conditions
@@ -83,6 +90,7 @@ Service Workers are **browser-only technology** used for Progressive Web Apps (P
 5. Notifications appear on user's device
 
 **Group Activity Batching:**
+
 1. User actions trigger real-time notifications in Supabase
 2. pg_cron triggers `batch-group-notifications` every 15 minutes
 3. Function queries recent group activity (15-60 min window)
@@ -232,7 +240,7 @@ async function sendExpoNotification(
   tokens: string[],
   title: string,
   body: string,
-  data?: Record<string, string>
+  data?: Record<string, string>,
 ) {
   const messages = tokens.map((token) => ({
     to: token,
@@ -271,7 +279,7 @@ async function checkServiceReminders() {
       custom_message,
       vehicles!inner(name),
       push_tokens!inner(token)
-    `
+    `,
     )
     .eq("enabled", true)
     .lte("next_notification_at", new Date().toISOString())
@@ -320,7 +328,7 @@ async function checkServiceReminders() {
     } catch (error) {
       console.error(
         `Failed to send notification for schedule ${schedule.id}:`,
-        error
+        error,
       );
     }
   }
@@ -338,11 +346,13 @@ Deno.serve(async (req) => {
   } catch (error) {
     console.error("Error in check-service-reminders:", error);
     return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : String(error) }),
+      JSON.stringify({
+        error: error instanceof Error ? error.message : String(error),
+      }),
       {
         headers: { "Content-Type": "application/json" },
         status: 500,
-      }
+      },
     );
   }
 });
@@ -373,7 +383,7 @@ async function sendExpoNotification(
   tokens: string[],
   title: string,
   body: string,
-  data?: Record<string, string>
+  data?: Record<string, string>,
 ) {
   const messages = tokens.map((token) => ({
     to: token,
@@ -418,7 +428,7 @@ async function batchGroupNotifications() {
   for (const pref of preferences) {
     const batchWindowMinutes = pref.batch_window_minutes || 15;
     const cutoffTime = new Date(
-      Date.now() - batchWindowMinutes * 60 * 1000
+      Date.now() - batchWindowMinutes * 60 * 1000,
     ).toISOString();
 
     // Get recent group notifications
@@ -440,8 +450,8 @@ async function batchGroupNotifications() {
       const tokens = [
         ...new Set(
           recentNotifications.flatMap((n: any) =>
-            n.push_tokens.map((pt: any) => pt.token)
-          )
+            n.push_tokens.map((pt: any) => pt.token),
+          ),
         ),
       ];
 
@@ -470,7 +480,10 @@ async function batchGroupNotifications() {
 
       batched++;
     } catch (error) {
-      console.error(`Failed to batch notifications for user ${pref.user_id}:`, error);
+      console.error(
+        `Failed to batch notifications for user ${pref.user_id}:`,
+        error,
+      );
     }
   }
 
@@ -487,11 +500,13 @@ Deno.serve(async (req) => {
   } catch (error) {
     console.error("Error in batch-group-notifications:", error);
     return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : String(error) }),
+      JSON.stringify({
+        error: error instanceof Error ? error.message : String(error),
+      }),
       {
         headers: { "Content-Type": "application/json" },
         status: 500,
-      }
+      },
     );
   }
 });
@@ -545,6 +560,7 @@ SELECT * FROM cron.job_run_details ORDER BY start_time DESC LIMIT 10;
 Enhance the existing notification service to support batching and scheduling:
 
 **Key additions:**
+
 1. Add batch aggregation logic
 2. Support for scheduled reminders
 3. Timezone-aware notifications
@@ -561,18 +577,18 @@ export interface NotificationBatch {
 
 export async function aggregateGroupNotifications(
   userId: string,
-  windowMinutes: number = 15
+  windowMinutes: number = 15,
 ): Promise<NotificationBatch | null> {
   const cutoffTime = new Date(Date.now() - windowMinutes * 60 * 1000);
 
   // Query recent group notifications
   const { data, error } = await supabase
-    .from('notifications')
-    .select('*')
-    .eq('user_id', userId)
-    .eq('type', 'group_member')
-    .gte('created_at', cutoffTime.toISOString())
-    .eq('read', false);
+    .from("notifications")
+    .select("*")
+    .eq("user_id", userId)
+    .eq("type", "group_member")
+    .gte("created_at", cutoffTime.toISOString())
+    .eq("read", false);
 
   if (error || !data || data.length === 0) {
     return null;
@@ -589,16 +605,16 @@ export async function aggregateGroupNotifications(
 export async function createServiceReminder(
   userId: string,
   vehicleId: string,
-  reminderType: 'service_due' | 'mileage_based',
+  reminderType: "service_due" | "mileage_based",
   config: {
     daysBeforeDue?: number;
     mileageBeforeDue?: number;
     customTitle?: string;
     customMessage?: string;
-  }
+  },
 ) {
   const { data, error } = await supabase
-    .from('notification_schedules')
+    .from("notification_schedules")
     .insert({
       user_id: userId,
       vehicle_id: vehicleId,
@@ -619,15 +635,13 @@ export async function createServiceReminder(
 
 export async function updateNotificationPreferences(
   userId: string,
-  preferences: Partial<NotificationPreferences>
+  preferences: Partial<NotificationPreferences>,
 ) {
-  const { error } = await supabase
-    .from('notification_preferences')
-    .upsert({
-      user_id: userId,
-      ...preferences,
-      updated_at: new Date().toISOString(),
-    });
+  const { error } = await supabase.from("notification_preferences").upsert({
+    user_id: userId,
+    ...preferences,
+    updated_at: new Date().toISOString(),
+  });
 
   if (error) {
     throw new Error(`Failed to update preferences: ${error.message}`);
@@ -815,13 +829,13 @@ LIMIT 100;
 
 ### Monthly Free Tier Usage
 
-| Service | Free Tier | Expected Usage | Cost |
-|---------|-----------|-----------------|------|
-| **Expo Notifications** | Unlimited | ~1K-10K/month | $0 |
-| **Supabase Edge Functions** | 500K invocations/month | ~1.4K invocations/month | $0 |
-| **Supabase Database** | 500MB storage | ~50-100MB | $0 |
-| **Supabase Realtime** | Unlimited | ~100-1K events/day | $0 |
-| **Total** | | | **$0/month** |
+| Service                     | Free Tier              | Expected Usage          | Cost         |
+| --------------------------- | ---------------------- | ----------------------- | ------------ |
+| **Expo Notifications**      | Unlimited              | ~1K-10K/month           | $0           |
+| **Supabase Edge Functions** | 500K invocations/month | ~1.4K invocations/month | $0           |
+| **Supabase Database**       | 500MB storage          | ~50-100MB               | $0           |
+| **Supabase Realtime**       | Unlimited              | ~100-1K events/day      | $0           |
+| **Total**                   |                        |                         | **$0/month** |
 
 ### Edge Function Invocation Estimate
 
@@ -832,6 +846,7 @@ LIMIT 100;
 ### When to Upgrade
 
 Consider upgrading when:
+
 - Supabase usage exceeds 1GB database storage → $25/month Pro
 - More than 1M Edge Function invocations → Usage-based pricing
 - Need backup features → $10/month add-on
@@ -842,17 +857,20 @@ Consider upgrading when:
 ## 10. Implementation Timeline
 
 ### Day 1 (4-5 hours)
+
 - [ ] Create database schema (Tables + migrations)
 - [ ] Set up RLS policies
 - [ ] Test database connectivity
 
 ### Day 2 (4-5 hours)
+
 - [ ] Deploy Edge Functions
 - [ ] Configure Expo API credentials
 - [ ] Set up pg_cron jobs
 - [ ] Test manual Edge Function invocations
 
 ### Day 3 (3-4 hours)
+
 - [ ] Update notification service
 - [ ] Create settings UI screen
 - [ ] Integration testing
@@ -882,17 +900,20 @@ SUPABASE_SERVICE_ROLE_KEY=eyJhbGc...
 ## 12. Migration Path from Current System
 
 ### Current State
+
 - Expo Notifications for push delivery ✓
 - Supabase Realtime for in-app updates ✓
 - AsyncStorage for local persistence ✓
 
 ### With This Implementation
+
 - Add scheduled reminders (pg_cron + Edge Functions)
 - Add batch aggregation for group notifications
 - Add preference management
 - Maintain backward compatibility
 
 ### Future Enhancements
+
 1. **3-6 months:** Add OneSignal for campaigns
 2. **6+ months:** Add email/SMS via Courier
 3. **9+ months:** Analytics and user behavior insights
@@ -905,6 +926,7 @@ SUPABASE_SERVICE_ROLE_KEY=eyJhbGc...
 ### Issue: Edge Functions not being triggered
 
 **Solution:**
+
 - Verify pg_cron is enabled: `CREATE EXTENSION IF NOT EXISTS pg_cron;`
 - Check `cron.job_run_details` for errors
 - Verify Edge Function URL is correct
@@ -913,6 +935,7 @@ SUPABASE_SERVICE_ROLE_KEY=eyJhbGc...
 ### Issue: Notifications not appearing
 
 **Solution:**
+
 - Verify push tokens exist for user
 - Check Expo API credentials are valid
 - Review Edge Function logs for errors
@@ -921,6 +944,7 @@ SUPABASE_SERVICE_ROLE_KEY=eyJhbGc...
 ### Issue: Batching not working
 
 **Solution:**
+
 - Verify batch window setting is saved
 - Check notification timestamps are recent
 - Ensure `is_batched` flag is updating correctly

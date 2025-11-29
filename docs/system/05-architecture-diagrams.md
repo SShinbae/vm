@@ -702,8 +702,8 @@ User Requests Vehicle Access
 ---
 
 **Related Documentation:**
+
 - [System Overview](./01-system-overview.md)
 - [Detailed Architecture](./02-architecture-detailed.md)
 - [Database Schema](./03-database-schema.md)
 - [Workflows](./04-workflows.md)
-
