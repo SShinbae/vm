@@ -17,6 +17,17 @@ export async function fetchAnalyticsData(
     const { startDate, endDate } = filters.period;
     const { vehicleIds, groupId } = filters;
 
+    // Format dates as YYYY-MM-DD to match the database format
+    const formatDateForDB = (date: Date): string => {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, "0");
+      const day = String(date.getDate()).padStart(2, "0");
+      return `${year}-${month}-${day}`;
+    };
+
+    const startDateStr = formatDateForDB(startDate);
+    const endDateStr = formatDateForDB(endDate);
+
     // Determine which vehicles to query
     let targetVehicleIds: string[] = [];
 
@@ -63,24 +74,24 @@ export async function fetchAnalyticsData(
         .from("fuel_logs")
         .select("*")
         .in("vehicle_id", targetVehicleIds)
-        .gte("date", startDate.toISOString())
-        .lte("date", endDate.toISOString())
+        .gte("date", startDateStr)
+        .lte("date", endDateStr)
         .order("date", { ascending: true }),
 
       supabase
         .from("service_logs")
         .select("*")
         .in("vehicle_id", targetVehicleIds)
-        .gte("date", startDate.toISOString())
-        .lte("date", endDate.toISOString())
+        .gte("date", startDateStr)
+        .lte("date", endDateStr)
         .order("date", { ascending: true }),
 
       supabase
         .from("mileage_logs")
         .select("*")
         .in("vehicle_id", targetVehicleIds)
-        .gte("date", startDate.toISOString())
-        .lte("date", endDate.toISOString())
+        .gte("date", startDateStr)
+        .lte("date", endDateStr)
         .order("date", { ascending: true }),
 
       supabase.from("vehicles").select("*").in("id", targetVehicleIds),
@@ -91,6 +102,17 @@ export async function fetchAnalyticsData(
     if (serviceLogsResult.error) throw serviceLogsResult.error;
     if (mileageLogsResult.error) throw mileageLogsResult.error;
     if (vehiclesResult.error) throw vehiclesResult.error;
+
+    // Debug logging
+    console.log("Analytics Query Debug:", {
+      startDate: startDateStr,
+      endDate: endDateStr,
+      targetVehicleIds,
+      fuelLogsCount: fuelLogsResult.data?.length || 0,
+      serviceLogsCount: serviceLogsResult.data?.length || 0,
+      mileageLogsCount: mileageLogsResult.data?.length || 0,
+      vehiclesCount: vehiclesResult.data?.length || 0,
+    });
 
     return {
       fuelLogs: (fuelLogsResult.data as FuelLog[]) || [],
@@ -113,6 +135,17 @@ export async function fetchVehicleWithLogs(
   endDate: Date,
 ): Promise<VehicleWithLogs | null> {
   try {
+    // Format dates as YYYY-MM-DD to match the database format
+    const formatDateForDB = (date: Date): string => {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, "0");
+      const day = String(date.getDate()).padStart(2, "0");
+      return `${year}-${month}-${day}`;
+    };
+
+    const startDateStr = formatDateForDB(startDate);
+    const endDateStr = formatDateForDB(endDate);
+
     const [
       vehicleResult,
       fuelLogsResult,
@@ -125,24 +158,24 @@ export async function fetchVehicleWithLogs(
         .from("fuel_logs")
         .select("*")
         .eq("vehicle_id", vehicleId)
-        .gte("date", startDate.toISOString())
-        .lte("date", endDate.toISOString())
+        .gte("date", startDateStr)
+        .lte("date", endDateStr)
         .order("date", { ascending: true }),
 
       supabase
         .from("service_logs")
         .select("*")
         .eq("vehicle_id", vehicleId)
-        .gte("date", startDate.toISOString())
-        .lte("date", endDate.toISOString())
+        .gte("date", startDateStr)
+        .lte("date", endDateStr)
         .order("date", { ascending: true }),
 
       supabase
         .from("mileage_logs")
         .select("*")
         .eq("vehicle_id", vehicleId)
-        .gte("date", startDate.toISOString())
-        .lte("date", endDate.toISOString())
+        .gte("date", startDateStr)
+        .lte("date", endDateStr)
         .order("date", { ascending: true }),
     ])) as any;
 
@@ -305,26 +338,37 @@ export async function fetchLogsByDateRange(
   mileageLogs: MileageLog[];
 }> {
   try {
+    // Format dates as YYYY-MM-DD to match the database format
+    const formatDateForDB = (date: Date): string => {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, "0");
+      const day = String(date.getDate()).padStart(2, "0");
+      return `${year}-${month}-${day}`;
+    };
+
+    const startDateStr = formatDateForDB(startDate);
+    const endDateStr = formatDateForDB(endDate);
+
     let fuelQuery = supabase
       .from("fuel_logs")
       .select("*")
       .eq("user_id", userId)
-      .gte("date", startDate.toISOString())
-      .lte("date", endDate.toISOString());
+      .gte("date", startDateStr)
+      .lte("date", endDateStr);
 
     let serviceQuery = supabase
       .from("service_logs")
       .select("*")
       .eq("user_id", userId)
-      .gte("date", startDate.toISOString())
-      .lte("date", endDate.toISOString());
+      .gte("date", startDateStr)
+      .lte("date", endDateStr);
 
     let mileageQuery = supabase
       .from("mileage_logs")
       .select("*")
       .eq("user_id", userId)
-      .gte("date", startDate.toISOString())
-      .lte("date", endDate.toISOString());
+      .gte("date", startDateStr)
+      .lte("date", endDateStr);
 
     if (vehicleId) {
       fuelQuery = fuelQuery.eq("vehicle_id", vehicleId);

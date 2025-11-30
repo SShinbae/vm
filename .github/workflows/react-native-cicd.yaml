@@ -155,6 +155,10 @@ jobs:
           eas build --platform android --profile development --local --non-interactive --output=./app-dev.apk
         env:
           NODE_ENV: development
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+          GOOGLE_VISION_API_KEY: ${{ secrets.GOOGLE_VISION_API_KEY }}
+          SITE_URL: ${{ secrets.SITE_URL }}
 
       - name: 🧹 Clean up after dev build
         if: github.event.inputs.buildType == 'all' || github.event_name == 'push'
@@ -172,6 +176,10 @@ jobs:
           eas build --platform android --profile production-apk --local --non-interactive --output=./app-prod.apk
         env:
           NODE_ENV: production
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+          GOOGLE_VISION_API_KEY: ${{ secrets.GOOGLE_VISION_API_KEY }}
+          SITE_URL: ${{ secrets.SITE_URL }}
 
       - name: 🧹 Clean up after prod APK build
         if: github.event.inputs.buildType == 'all' || github.event_name == 'push'
@@ -189,6 +197,10 @@ jobs:
           eas build --platform android --profile production --local --non-interactive --output=./app-prod.aab
         env:
           NODE_ENV: production
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+          GOOGLE_VISION_API_KEY: ${{ secrets.GOOGLE_VISION_API_KEY }}
+          SITE_URL: ${{ secrets.SITE_URL }}
 
       - name: 📦 Upload build artifacts to GitHub
         uses: actions/upload-artifact@v4
