@@ -1,5 +1,5 @@
-import { createClient } from "@supabase/supabase-js";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { createClient } from "@supabase/supabase-js";
 import Constants from "expo-constants";
 import { Platform } from "react-native";
 import { Database } from "../types/database";
@@ -7,10 +7,20 @@ import { Database } from "../types/database";
 const supabaseUrl = Constants.expoConfig?.extra?.supabaseUrl || "";
 const supabaseKey = Constants.expoConfig?.extra?.supabaseKey || "";
 
+// Warn instead of throwing to prevent production crashes
 if (!supabaseUrl || !supabaseKey) {
-  throw new Error(
-    "Missing Supabase environment variables. Please check your app.config.js and .env file.",
-  );
+  if (__DEV__) {
+    console.error(
+      "Missing Supabase environment variables. Please check your app.config.js and .env file.",
+    );
+    console.error("Current values:", {
+      supabaseUrl: supabaseUrl ? "Set" : "Missing",
+      supabaseKey: supabaseKey ? "Set" : "Missing",
+    });
+  } else {
+    // In production, log a warning but don't crash
+    console.warn("Supabase configuration missing. Some features may not work.");
+  }
 }
 
 // Use AsyncStorage for mobile, localStorage for web
