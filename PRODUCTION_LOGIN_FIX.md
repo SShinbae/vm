@@ -83,6 +83,7 @@ SELECT * FROM profiles LIMIT 1;
 **Cause**: Database queries timing out or failing
 
 **Solution**:
+
 1. Check your internet connection
 2. Verify Supabase project is active
 3. Check if RLS policies are blocking queries
@@ -93,6 +94,7 @@ SELECT * FROM profiles LIMIT 1;
 **Cause**: JavaScript errors not caught by error boundary
 
 **Solution**:
+
 1. Enable USB debugging on Android
 2. Connect to computer via USB
 3. Run: `adb logcat | grep -i "crash\|error\|exception"`
@@ -103,6 +105,7 @@ SELECT * FROM profiles LIMIT 1;
 **Cause**: Network timeout or infinite loop
 
 **Solution**:
+
 1. Check network connection
 2. Force close and restart app
 3. Clear app data
@@ -113,6 +116,7 @@ SELECT * FROM profiles LIMIT 1;
 **Cause**: Database queries returning errors
 
 **Solution**:
+
 1. Check Supabase RLS policies
 2. Verify database functions exist
 3. Check if user has proper permissions
@@ -148,15 +152,20 @@ Add temporary test button in your app:
 ```tsx
 const testConnection = async () => {
   try {
-    const { data, error } = await supabase.from('vehicles').select('*').limit(1);
-    alert(error ? `Error: ${error.message}` : `Success: ${data?.length} vehicles`);
+    const { data, error } = await supabase
+      .from("vehicles")
+      .select("*")
+      .limit(1);
+    alert(
+      error ? `Error: ${error.message}` : `Success: ${data?.length} vehicles`,
+    );
   } catch (err) {
     alert(`Crash: ${err}`);
   }
 };
 
 // Add button in your UI
-<Button title="Test DB" onPress={testConnection} />
+<Button title="Test DB" onPress={testConnection} />;
 ```
 
 ---
@@ -181,8 +190,8 @@ Run this in Supabase SQL Editor:
 
 ```sql
 -- Check RLS is enabled
-SELECT tablename, rowsecurity 
-FROM pg_tables 
+SELECT tablename, rowsecurity
+FROM pg_tables
 WHERE schemaname = 'public';
 
 -- Check policies for vehicles table
@@ -220,11 +229,13 @@ SELECT * FROM pg_policies WHERE tablename = 'profiles';
 ### Recommended Setup:
 
 1. **Error Tracking**: Add Sentry or similar
+
    ```bash
    npm install @sentry/react-native
    ```
 
 2. **Analytics**: Add Firebase Analytics
+
    ```bash
    npm install @react-native-firebase/app @react-native-firebase/analytics
    ```
@@ -260,6 +271,7 @@ If you've tried all the above and still have issues, gather this info:
 Create this file to test your production build:
 
 **test-production.sh**:
+
 ```bash
 #!/bin/bash
 
@@ -287,6 +299,7 @@ echo "   - If crashes, run: adb logcat | grep -i crash"
 ```
 
 Run it:
+
 ```bash
 chmod +x test-production.sh
 ./test-production.sh

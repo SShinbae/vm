@@ -50,13 +50,17 @@ const storage =
       }
     : AsyncStorage;
 
-export const supabase = createClient<Database>(safeSupabaseUrl, safeSupabaseKey, {
-  auth: {
-    storage: storage,
-    autoRefreshToken: true,
-    persistSession: true,
-    detectSessionInUrl: Platform.OS === "web",
+export const supabase = createClient<Database>(
+  safeSupabaseUrl,
+  safeSupabaseKey,
+  {
+    auth: {
+      storage: storage,
+      autoRefreshToken: true,
+      persistSession: true,
+      detectSessionInUrl: Platform.OS === "web",
+    },
   },
-});
+);
 
 export default supabase;

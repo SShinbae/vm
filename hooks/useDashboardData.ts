@@ -107,11 +107,14 @@ export const useDashboardData = () => {
       const { data: allVehiclesData, error: vehiclesError } = await (
         supabase as any
       ).rpc("get_user_vehicles_with_sharing", { user_uuid: user.id });
-      
+
       if (vehiclesError) {
         // If the RPC function doesn't exist, fall back to basic query
         if (__DEV__) {
-          console.warn("Database function not found, using fallback query:", vehiclesError);
+          console.warn(
+            "Database function not found, using fallback query:",
+            vehiclesError,
+          );
         }
         throw vehiclesError;
       }
@@ -287,7 +290,11 @@ export const useDashboardData = () => {
     setError(null);
     try {
       // Use Promise.allSettled to ensure all promises complete even if some fail
-      await Promise.allSettled([fetchStats(), fetchVehicles(), fetchRecentActivity()]);
+      await Promise.allSettled([
+        fetchStats(),
+        fetchVehicles(),
+        fetchRecentActivity(),
+      ]);
     } catch (err) {
       // Error is already set by the individual functions
       if (__DEV__) {
