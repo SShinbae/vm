@@ -66,11 +66,31 @@ export function AuthProvider({ children }: AuthProviderProps) {
   };
 
   const setUser = async (session: Session | null) => {
-    if (session?.user) {
-      const authUser = await fetchUserProfile(session.user);
-      setState((prev) => ({ ...prev, user: authUser, loading: false }));
-    } else {
-      setState((prev) => ({ ...prev, user: null, loading: false }));
+    try {
+      if (session?.user) {
+        const authUser = await fetchUserProfile(session.user);
+        setState((prev) => ({ ...prev, user: authUser, loading: false }));
+      } else {
+        setState((prev) => ({ ...prev, user: null, loading: false }));
+      }
+    } catch (error) {
+      if (__DEV__) {
+        console.error("Error setting user:", error);
+      }
+      // Fallback to basic user info if profile fetch fails
+      if (session?.user) {
+        setState((prev) => ({
+          ...prev,
+          user: {
+            id: session.user.id,
+            email: session.user.email || "",
+            username: null,
+          },
+          loading: false,
+        }));
+      } else {
+        setState((prev) => ({ ...prev, user: null, loading: false }));
+      }
     }
   };
 
@@ -163,12 +183,19 @@ export function AuthProvider({ children }: AuthProviderProps) {
       });
 
       if (error) {
+        if (__DEV__) {
+          console.error("Sign in error:", error);
+        }
         setState((prev) => ({ ...prev, loading: false }));
         return { error: error.message };
       }
 
+      // Success - state will be updated by onAuthStateChange
       return { error: null };
     } catch (error) {
+      if (__DEV__) {
+        console.error("Unexpected sign in error:", error);
+      }
       setState((prev) => ({ ...prev, loading: false }));
       return { error: "An unexpected error occurred during sign in" };
     }
