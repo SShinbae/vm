@@ -15,6 +15,7 @@ import "react-native-reanimated";
 import "../unistyles";
 
 import { AuthGuard } from "@/components/AuthGuard";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { AuthProvider } from "@/lib/contexts/AuthContext";
 import { DialogProvider } from "@/lib/contexts/DialogContext";
@@ -28,15 +29,17 @@ SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
   return (
-    <ThemeProvider>
-      <AuthProvider>
-        <NotificationProvider>
-          <DialogProvider>
-            <RootLayoutContent />
-          </DialogProvider>
-        </NotificationProvider>
-      </AuthProvider>
-    </ThemeProvider>
+    <ErrorBoundary>
+      <ThemeProvider>
+        <AuthProvider>
+          <NotificationProvider>
+            <DialogProvider>
+              <RootLayoutContent />
+            </DialogProvider>
+          </NotificationProvider>
+        </AuthProvider>
+      </ThemeProvider>
+    </ErrorBoundary>
   );
 }
 
