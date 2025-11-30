@@ -19,7 +19,7 @@ module.exports = {
         backgroundColor: "#E6F4FE",
         foregroundImage: "./assets/images/android-icon-foreground.png",
         backgroundImage: "./assets/images/android-icon-background.png",
-        monochromeImage: "./assets/images/android-icon-monochrome.png",
+        // monochromeImage: "./assets/images/android-icon-monochrome.png", // Commented out to prevent desaturated icon on themed launchers
       },
       edgeToEdgeEnabled: true,
       predictiveBackGestureEnabled: false,

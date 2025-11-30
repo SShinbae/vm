@@ -3,20 +3,37 @@ import { View, Text, TouchableOpacity, Modal, FlatList } from "react-native";
 import { createStyleSheet, useStyles } from "react-native-unistyles";
 import { Ionicons } from "@expo/vector-icons";
 import { AnalyticsPeriod } from "../../types/analytics";
+import { DateRangePicker } from "./DateRangePicker";
 
 interface PeriodSelectorProps {
   selectedPeriod: AnalyticsPeriod;
   onPeriodChange: (period: AnalyticsPeriod) => void;
   periods: AnalyticsPeriod[];
+  allowCustomRange?: boolean;
+  onCustomRangeSelect?: (startDate: Date, endDate: Date) => void;
 }
 
 export function PeriodSelector({
   selectedPeriod,
   onPeriodChange,
   periods,
+  allowCustomRange = true,
+  onCustomRangeSelect,
 }: PeriodSelectorProps) {
   const { styles, theme } = useStyles(stylesheet);
   const [modalVisible, setModalVisible] = useState(false);
+  const [dateRangePickerVisible, setDateRangePickerVisible] = useState(false);
+
+  const handleCustomRangeClick = () => {
+    setModalVisible(false);
+    setDateRangePickerVisible(true);
+  };
+
+  const handleCustomRangeConfirm = (startDate: Date, endDate: Date) => {
+    if (onCustomRangeSelect) {
+      onCustomRangeSelect(startDate, endDate);
+    }
+  };
 
   return (
     <>
@@ -80,10 +97,40 @@ export function PeriodSelector({
                   </TouchableOpacity>
                 );
               }}
+              ListFooterComponent={
+                allowCustomRange ? (
+                  <TouchableOpacity
+                    style={[styles.periodItem, styles.customRangeItem]}
+                    onPress={handleCustomRangeClick}
+                  >
+                    <View style={styles.customRangeContent}>
+                      <Ionicons
+                        name="calendar-outline"
+                        size={20}
+                        color={theme.colors.primary}
+                      />
+                      <Text style={styles.customRangeText}>Custom Range</Text>
+                    </View>
+                    <Ionicons
+                      name="chevron-forward"
+                      size={20}
+                      color={theme.colors.textSecondary}
+                    />
+                  </TouchableOpacity>
+                ) : null
+              }
             />
           </View>
         </View>
       </Modal>
+
+      <DateRangePicker
+        visible={dateRangePickerVisible}
+        onClose={() => setDateRangePickerVisible(false)}
+        onConfirm={handleCustomRangeConfirm}
+        initialStartDate={selectedPeriod.startDate}
+        initialEndDate={selectedPeriod.endDate}
+      />
     </>
   );
 }
@@ -148,5 +195,18 @@ const stylesheet = createStyleSheet((theme) => ({
     fontSize: theme.fontSize.base,
     color: theme.colors.text,
     fontWeight: theme.fontWeight.medium,
+  },
+  customRangeItem: {
+    backgroundColor: theme.colors.surface,
+  },
+  customRangeContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: theme.spacing.md,
+  },
+  customRangeText: {
+    fontSize: theme.fontSize.base,
+    color: theme.colors.primary,
+    fontWeight: theme.fontWeight.semibold,
   },
 }));

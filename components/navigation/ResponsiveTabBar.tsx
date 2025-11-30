@@ -258,7 +258,7 @@ const stylesheet = createStyleSheet((theme, runtime) => ({
   tabBar: {
     flexDirection: "row",
     position: "relative",
-    backgroundColor: theme.colors.surface + "F0",
+    backgroundColor: theme.colors.gray[100] + "F0",
     borderTopLeftRadius: 40,
     borderTopRightRadius: 40,
     paddingHorizontal: theme.spacing.sm,

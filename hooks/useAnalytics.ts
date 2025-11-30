@@ -8,6 +8,7 @@ import {
   generateTrendData,
   getPeriodOptions,
 } from "../lib/analytics/calculations";
+import { generateCostChartData } from "../lib/analytics/chart-helpers";
 import { useAuth } from "../lib/contexts/AuthContext";
 import {
   fetchAccessibleVehicles,
@@ -19,6 +20,7 @@ import {
   AnalyticsFilters,
   AnalyticsPeriod,
   AnalyticsResponse,
+  ChartDataset,
   CostMetrics,
   FuelEfficiencyMetrics,
   ServiceMetrics,
@@ -412,6 +414,53 @@ export function useCompleteAnalytics(filters: AnalyticsFilters) {
     loading,
     error,
     analytics,
+    refetch: fetchData,
+  };
+}
+
+/**
+ * Hook for cost chart data
+ * Fetches and transforms data specifically for cost visualization charts
+ */
+export function useCostChartData(filters: AnalyticsFilters) {
+  const { user } = useAuth();
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
+  const [chartDataset, setChartDataset] = useState<ChartDataset | null>(null);
+
+  const fetchData = useCallback(async () => {
+    if (!user?.id) return;
+
+    try {
+      setLoading(true);
+      setError(null);
+
+      const data = await fetchAnalyticsData(user.id, filters);
+
+      // Generate chart dataset with auto-grouping
+      const dataset = generateCostChartData(
+        data.fuelLogs,
+        data.serviceLogs,
+        filters.period,
+      );
+
+      setChartDataset(dataset);
+    } catch (err) {
+      console.error("Error fetching cost chart data:", err);
+      setError(err as Error);
+    } finally {
+      setLoading(false);
+    }
+  }, [user?.id, filters]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  return {
+    loading,
+    error,
+    chartDataset,
     refetch: fetchData,
   };
 }
