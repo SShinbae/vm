@@ -15,7 +15,6 @@ import {
 } from "@/hooks/useAnalytics";
 import React, { useMemo } from "react";
 import { RefreshControl, ScrollView, Text, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 import { useStyles } from "react-native-unistyles";
 
 export default function OverviewTab() {
@@ -50,20 +49,16 @@ export default function OverviewTab() {
   // Loading state
   if (loading || vehiclesLoading) {
     return (
-      <SafeAreaView
-        style={{ flex: 1, backgroundColor: theme.colors.background }}
-      >
+      <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
         <SkeletonAnalytics />
-      </SafeAreaView>
+      </View>
     );
   }
 
   // Error state
   if (error) {
     return (
-      <SafeAreaView
-        style={{ flex: 1, backgroundColor: theme.colors.background }}
-      >
+      <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
         <ScrollView style={{ flex: 1 }}>
           <View
             style={{
@@ -98,16 +93,14 @@ export default function OverviewTab() {
             />
           </View>
         </ScrollView>
-      </SafeAreaView>
+      </View>
     );
   }
 
   // Empty state
   if (!hasData) {
     return (
-      <SafeAreaView
-        style={{ flex: 1, backgroundColor: theme.colors.background }}
-      >
+      <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
         <ScrollView style={{ flex: 1 }}>
           <View
             style={{
@@ -150,7 +143,7 @@ export default function OverviewTab() {
           </View>
           <EmptyAnalytics />
         </ScrollView>
-      </SafeAreaView>
+      </View>
     );
   }
 
@@ -163,7 +156,7 @@ export default function OverviewTab() {
     : selectedVehicleIds.length;
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.background }}>
+    <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
       <ScrollView
         style={{ flex: 1 }}
         refreshControl={
@@ -344,6 +337,6 @@ export default function OverviewTab() {
           <View style={{ height: theme.spacing.xl }} />
         </View>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }

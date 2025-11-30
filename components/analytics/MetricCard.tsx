@@ -1,7 +1,7 @@
-import React from "react";
-import { View, Text } from "react-native";
-import { createStyleSheet, useStyles } from "react-native-unistyles";
 import { Ionicons } from "@expo/vector-icons";
+import React from "react";
+import { Text, View } from "react-native";
+import { createStyleSheet, useStyles } from "react-native-unistyles";
 
 interface MetricCardProps {
   title: string;
@@ -94,11 +94,14 @@ const stylesheet = createStyleSheet((theme) => ({
     shadowOpacity: 0.1,
     shadowRadius: 2,
     elevation: 2,
+    minHeight: 120,
+    flex: 1,
   },
   content: {
     flexDirection: "row",
     alignItems: "flex-start",
     gap: theme.spacing.md,
+    flex: 1,
   },
   iconContainer: {
     padding: theme.spacing.md,
