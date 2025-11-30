@@ -10,7 +10,6 @@ import {
 } from "@/hooks/useAnalytics";
 import React, { useMemo } from "react";
 import { RefreshControl, ScrollView, Text, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 import { useStyles } from "react-native-unistyles";
 
 export default function PerformanceTab() {
@@ -41,9 +40,7 @@ export default function PerformanceTab() {
   // Loading state
   if (loading || vehiclesLoading) {
     return (
-      <SafeAreaView
-        style={{ flex: 1, backgroundColor: theme.colors.background }}
-      >
+      <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
         <View
           style={{ flex: 1, alignItems: "center", justifyContent: "center" }}
         >
@@ -53,19 +50,17 @@ export default function PerformanceTab() {
               color: theme.colors.textSecondary,
             }}
           >
-            Loading vehicle performance...
+            Loading performance data...
           </Text>
         </View>
-      </SafeAreaView>
+      </View>
     );
   }
 
   // Error state
   if (error) {
     return (
-      <SafeAreaView
-        style={{ flex: 1, backgroundColor: theme.colors.background }}
-      >
+      <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
         <ScrollView style={{ flex: 1 }}>
           <View
             style={{
@@ -100,16 +95,14 @@ export default function PerformanceTab() {
             />
           </View>
         </ScrollView>
-      </SafeAreaView>
+      </View>
     );
   }
 
   // Empty state
   if (!hasData) {
     return (
-      <SafeAreaView
-        style={{ flex: 1, backgroundColor: theme.colors.background }}
-      >
+      <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
         <ScrollView style={{ flex: 1 }}>
           <View
             style={{
@@ -158,7 +151,7 @@ export default function PerformanceTab() {
             message="Start logging data for your vehicles to see performance comparisons."
           />
         </ScrollView>
-      </SafeAreaView>
+      </View>
     );
   }
 
@@ -176,7 +169,7 @@ export default function PerformanceTab() {
   )[0];
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.background }}>
+    <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
       <ScrollView
         style={{ flex: 1 }}
         refreshControl={
@@ -588,6 +581,6 @@ export default function PerformanceTab() {
           <View style={{ height: theme.spacing.xl }} />
         </View>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }

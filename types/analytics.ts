@@ -120,3 +120,44 @@ export interface AnalyticsResponse {
   };
   locationData?: LocationCostData[];
 }
+
+// Chart-specific types for cost visualization
+export type ChartGrouping = "day" | "week" | "month";
+
+export interface CustomDateRange {
+  startDate: Date;
+  endDate: Date;
+  isCustom: boolean;
+}
+
+export interface CostChartDataPoint {
+  date: string; // ISO string
+  timestamp: number; // For sorting
+  fuelCost: number;
+  serviceCost: number;
+  totalCost: number;
+  label: string; // Formatted display label (e.g., "Jan 15", "Week 3")
+  grouping: ChartGrouping;
+}
+
+export interface ChartDataset {
+  data: CostChartDataPoint[];
+  grouping: ChartGrouping;
+  dateRange: {
+    start: Date;
+    end: Date;
+  };
+  summary: {
+    totalFuelCost: number;
+    totalServiceCost: number;
+    totalCost: number;
+    averageDailyCost: number;
+  };
+}
+
+export interface PieChartDataPoint {
+  label: string;
+  value: number;
+  percentage: number;
+  color: string;
+}

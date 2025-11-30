@@ -14,7 +14,6 @@ import {
 } from "@/hooks/useAnalytics";
 import React, { useMemo } from "react";
 import { RefreshControl, ScrollView, Text, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 import { useStyles } from "react-native-unistyles";
 
 export default function ServiceTab() {
@@ -41,14 +40,24 @@ export default function ServiceTab() {
     useAnalyticsData(filters);
   const { trendData } = useAnalyticsTrends(filters, "service");
 
+  // Debug logging
+  React.useEffect(() => {
+    console.log("Service Analytics Debug:", {
+      loading,
+      error: error?.message,
+      hasServiceMetrics: !!serviceMetrics,
+      totalServices: serviceMetrics?.totalServices,
+      servicesByType: serviceMetrics?.servicesByType,
+      filters,
+    });
+  }, [loading, error, serviceMetrics, filters]);
+
   const hasData = serviceMetrics && serviceMetrics.totalServices > 0;
 
   // Loading state
   if (loading || vehiclesLoading) {
     return (
-      <SafeAreaView
-        style={{ flex: 1, backgroundColor: theme.colors.background }}
-      >
+      <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
         <View
           style={{ flex: 1, alignItems: "center", justifyContent: "center" }}
         >
@@ -61,16 +70,14 @@ export default function ServiceTab() {
             Loading service analytics...
           </Text>
         </View>
-      </SafeAreaView>
+      </View>
     );
   }
 
   // Error state
   if (error) {
     return (
-      <SafeAreaView
-        style={{ flex: 1, backgroundColor: theme.colors.background }}
-      >
+      <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
         <ScrollView style={{ flex: 1 }}>
           <View
             style={{
@@ -105,16 +112,14 @@ export default function ServiceTab() {
             />
           </View>
         </ScrollView>
-      </SafeAreaView>
+      </View>
     );
   }
 
   // Empty state
   if (!hasData) {
     return (
-      <SafeAreaView
-        style={{ flex: 1, backgroundColor: theme.colors.background }}
-      >
+      <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
         <ScrollView style={{ flex: 1 }}>
           <View
             style={{
@@ -163,7 +168,7 @@ export default function ServiceTab() {
             message="Start logging your vehicle services to see analytics here."
           />
         </ScrollView>
-      </SafeAreaView>
+      </View>
     );
   }
 
@@ -181,7 +186,7 @@ export default function ServiceTab() {
     .slice(0, 3);
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.background }}>
+    <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
       <ScrollView
         style={{ flex: 1 }}
         refreshControl={
@@ -421,6 +426,6 @@ export default function ServiceTab() {
           <View style={{ height: theme.spacing.xl }} />
         </View>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }

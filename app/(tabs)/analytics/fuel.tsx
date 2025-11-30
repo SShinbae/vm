@@ -13,7 +13,6 @@ import {
 } from "@/hooks/useAnalytics";
 import React, { useMemo } from "react";
 import { RefreshControl, ScrollView, Text, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 import { useStyles } from "react-native-unistyles";
 
 export default function FuelTab() {
@@ -45,7 +44,7 @@ export default function FuelTab() {
   // Loading state
   if (loading || vehiclesLoading) {
     return (
-      <SafeAreaView
+      <View
         style={{
           flex: 1,
           backgroundColor: theme.colors.background,
@@ -67,16 +66,14 @@ export default function FuelTab() {
             Loading fuel analytics...
           </Text>
         </View>
-      </SafeAreaView>
+      </View>
     );
   }
 
   // Error state
   if (error) {
     return (
-      <SafeAreaView
-        style={{ flex: 1, backgroundColor: theme.colors.background }}
-      >
+      <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
         <ScrollView style={{ flex: 1 }}>
           <View
             style={{
@@ -111,16 +108,14 @@ export default function FuelTab() {
             />
           </View>
         </ScrollView>
-      </SafeAreaView>
+      </View>
     );
   }
 
   // Empty state
   if (!hasData) {
     return (
-      <SafeAreaView
-        style={{ flex: 1, backgroundColor: theme.colors.background }}
-      >
+      <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
         <ScrollView style={{ flex: 1 }}>
           <View
             style={{
@@ -169,12 +164,12 @@ export default function FuelTab() {
             message="Start logging your fuel fill-ups to see analytics here."
           />
         </ScrollView>
-      </SafeAreaView>
+      </View>
     );
   }
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.background }}>
+    <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
       <ScrollView
         style={{ flex: 1 }}
         refreshControl={
@@ -480,6 +475,6 @@ export default function FuelTab() {
           <View style={{ height: theme.spacing.xl }} />
         </View>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
