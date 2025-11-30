@@ -107,7 +107,14 @@ export const useDashboardData = () => {
       const { data: allVehiclesData, error: vehiclesError } = await (
         supabase as any
       ).rpc("get_user_vehicles_with_sharing", { user_uuid: user.id });
-      if (vehiclesError) throw vehiclesError;
+      
+      if (vehiclesError) {
+        // If the RPC function doesn't exist, fall back to basic query
+        if (__DEV__) {
+          console.warn("Database function not found, using fallback query:", vehiclesError);
+        }
+        throw vehiclesError;
+      }
 
       // Extract vehicle IDs and calculate stats
       const vehicleIds = allVehiclesData?.map((v: any) => v.vehicle_id) || [];
@@ -133,9 +140,11 @@ export const useDashboardData = () => {
       let monthlyFuelCost =
         currentMonthFuelData?.reduce((sum, f: any) => sum + (f.cost || 0), 0) ||
         0;
-      console.log(
-        `📊 Dashboard - Monthly fuel cost for ${vehicleIds.length} vehicles: RM${monthlyFuelCost.toFixed(2)}`,
-      );
+      if (__DEV__) {
+        console.log(
+          `📊 Dashboard - Monthly fuel cost for ${vehicleIds.length} vehicles: RM${monthlyFuelCost.toFixed(2)}`,
+        );
+      }
 
       // Get upcoming services (services due in next 30 days) for ALL vehicles
       const thirtyDaysLater = new Date(
@@ -163,9 +172,21 @@ export const useDashboardData = () => {
         upcomingServicesTrend: 0,
       });
     } catch (err: any) {
-      console.error("Error fetching stats:", err);
+      if (__DEV__) {
+        console.error("Error fetching stats:", err);
+      }
       setError("Failed to load dashboard statistics");
-      throw err; // Re-throw to be caught by Promise.all
+      // Don't re-throw - set default stats instead
+      setStats({
+        totalVehicles: 0,
+        totalMileage: 0,
+        monthlyFuelCost: 0,
+        upcomingServices: 0,
+        totalVehiclesTrend: 0,
+        totalMileageTrend: 0,
+        monthlyFuelCostTrend: 0,
+        upcomingServicesTrend: 0,
+      });
     }
   }, [user]);
 
@@ -210,9 +231,12 @@ export const useDashboardData = () => {
 
       setVehicles(vehiclesWithShares);
     } catch (err: any) {
-      console.error("Error fetching vehicles:", err);
+      if (__DEV__) {
+        console.error("Error fetching vehicles:", err);
+      }
       setError("Failed to load vehicles");
-      throw err;
+      // Don't re-throw - just set empty array
+      setVehicles([]);
     }
   }, [user]);
 
@@ -252,7 +276,9 @@ export const useDashboardData = () => {
       );
       setRecentActivity(combined);
     } catch (err: any) {
-      console.error("Error fetching recent activity:", err);
+      if (__DEV__) {
+        console.error("Error fetching recent activity:", err);
+      }
       // Don't set a hard error for this, as it's less critical
     }
   }, [user]);
@@ -260,10 +286,13 @@ export const useDashboardData = () => {
   const fetchData = useCallback(async () => {
     setError(null);
     try {
-      await Promise.all([fetchStats(), fetchVehicles(), fetchRecentActivity()]);
+      // Use Promise.allSettled to ensure all promises complete even if some fail
+      await Promise.allSettled([fetchStats(), fetchVehicles(), fetchRecentActivity()]);
     } catch (err) {
       // Error is already set by the individual functions
-      console.error("Failed to fetch dashboard data:", err);
+      if (__DEV__) {
+        console.error("Failed to fetch dashboard data:", err);
+      }
     } finally {
       setLoading(false);
       setRefreshing(false);

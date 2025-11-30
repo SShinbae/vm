@@ -23,6 +23,10 @@ if (!supabaseUrl || !supabaseKey) {
   }
 }
 
+// Provide fallback values to prevent crashes (client will fail gracefully on API calls)
+const safeSupabaseUrl = supabaseUrl || "https://placeholder.supabase.co";
+const safeSupabaseKey = supabaseKey || "placeholder-key";
+
 // Use AsyncStorage for mobile, localStorage for web
 const storage =
   Platform.OS === "web"
@@ -46,7 +50,7 @@ const storage =
       }
     : AsyncStorage;
 
-export const supabase = createClient<Database>(supabaseUrl, supabaseKey, {
+export const supabase = createClient<Database>(safeSupabaseUrl, safeSupabaseKey, {
   auth: {
     storage: storage,
     autoRefreshToken: true,
