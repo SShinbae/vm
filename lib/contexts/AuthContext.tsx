@@ -2,7 +2,7 @@ import { Session, User } from "@supabase/supabase-js";
 import Constants from "expo-constants";
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { supabase } from "../../services/supabaseClient";
-import { AuthState, AuthUser, Profile, ProfileUpdate } from "../../types";
+import { AuthState, AuthUser, Profile } from "../../types";
 
 interface AuthContextType extends AuthState {
   signUp: (
@@ -207,7 +207,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
     try {
       await supabase.auth.signOut();
     } catch (error) {
-      console.error("Error signing out:", error);
+      if (__DEV__) {
+        console.error("Error signing out:", error);
+      }
     } finally {
       setState((prev) => ({ ...prev, loading: false }));
     }
@@ -219,11 +221,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
       const resetPasswordUrl = `${siteUrl}/reset-password`;
 
       // Debug logging to ensure correct URL is being used
-      console.log("Reset password URL:", resetPasswordUrl);
-      console.log(
-        "Site URL from config:",
-        Constants.expoConfig?.extra?.siteUrl,
-      );
+      if (__DEV__) {
+        console.log("Reset password URL:", resetPasswordUrl);
+        console.log(
+          "Site URL from config:",
+          Constants.expoConfig?.extra?.siteUrl,
+        );
+      }
 
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: resetPasswordUrl,

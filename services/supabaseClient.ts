@@ -17,10 +17,8 @@ if (!supabaseUrl || !supabaseKey) {
       supabaseUrl: supabaseUrl ? "Set" : "Missing",
       supabaseKey: supabaseKey ? "Set" : "Missing",
     });
-  } else {
-    // In production, log a warning but don't crash
-    console.warn("Supabase configuration missing. Some features may not work.");
   }
+  // In production, fail silently to prevent crashes
 }
 
 // Provide fallback values to prevent crashes (client will fail gracefully on API calls)
