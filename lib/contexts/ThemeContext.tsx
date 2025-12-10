@@ -71,7 +71,11 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
           setThemeModeState(savedMode as ThemeMode);
         }
       } catch (error) {
-        console.error("Error loading theme mode:", error);
+        if (__DEV__) {
+          console.error("Error loading theme mode:", error);
+        }
+        // Set default theme instead of crashing
+        setThemeModeState("system");
       } finally {
         setIsLoading(false);
       }
@@ -113,18 +117,29 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
       document.body.style.color = isDark ? "#f3f8f8" : "#1e292e";
 
       // Debug log for web
-      console.log("Theme applied to web:", { themeMode, colorScheme, isDark });
+      if (__DEV__) {
+        console.log("Theme applied to web:", {
+          themeMode,
+          colorScheme,
+          isDark,
+        });
+      }
     }
   }, [colorScheme, themeMode, hasHydrated]);
 
   // Function to update theme mode and persist it
   const setThemeMode = async (mode: ThemeMode) => {
     try {
-      console.log("Setting theme mode:", mode);
+      if (__DEV__) {
+        console.log("Setting theme mode:", mode);
+      }
       setThemeModeState(mode);
       await AsyncStorage.setItem(THEME_STORAGE_KEY, mode);
     } catch (error) {
-      console.error("Error saving theme mode:", error);
+      if (__DEV__) {
+        console.error("Error saving theme mode:", error);
+      }
+      // Continue with theme change even if save fails
     }
   };
 
