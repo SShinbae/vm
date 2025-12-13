@@ -17,11 +17,13 @@ if (!supabaseUrl || !supabaseKey) {
       supabaseUrl: supabaseUrl ? "Set" : "Missing",
       supabaseKey: supabaseKey ? "Set" : "Missing",
     });
-  } else {
-    // In production, log a warning but don't crash
-    console.warn("Supabase configuration missing. Some features may not work.");
   }
+  // In production, fail silently to prevent crashes
 }
+
+// Provide fallback values to prevent crashes (client will fail gracefully on API calls)
+const safeSupabaseUrl = supabaseUrl || "https://placeholder.supabase.co";
+const safeSupabaseKey = supabaseKey || "placeholder-key";
 
 // Use AsyncStorage for mobile, localStorage for web
 const storage =
@@ -46,13 +48,17 @@ const storage =
       }
     : AsyncStorage;
 
-export const supabase = createClient<Database>(supabaseUrl, supabaseKey, {
-  auth: {
-    storage: storage,
-    autoRefreshToken: true,
-    persistSession: true,
-    detectSessionInUrl: Platform.OS === "web",
+export const supabase = createClient<Database>(
+  safeSupabaseUrl,
+  safeSupabaseKey,
+  {
+    auth: {
+      storage: storage,
+      autoRefreshToken: true,
+      persistSession: true,
+      detectSessionInUrl: Platform.OS === "web",
+    },
   },
-});
+);
 
 export default supabase;

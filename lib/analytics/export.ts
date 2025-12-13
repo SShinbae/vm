@@ -73,7 +73,9 @@ export async function exportAnalyticsToCSV(
       throw new Error("Sharing is not available on this device");
     }
   } catch (error) {
-    console.error("Error exporting to CSV:", error);
+    if (__DEV__) {
+      console.error("Error exporting to CSV:", error);
+    }
     throw error;
   }
 }
@@ -229,7 +231,9 @@ export async function exportAnalyticsReport(
       throw new Error("Sharing is not available on this device");
     }
   } catch (error) {
-    console.error("Error exporting report:", error);
+    if (__DEV__) {
+      console.error("Error exporting report:", error);
+    }
     throw error;
   }
 }
