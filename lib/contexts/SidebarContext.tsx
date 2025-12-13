@@ -32,7 +32,9 @@ export function SidebarProvider({ children }: SidebarProviderProps) {
         }
       } catch (error) {
         // Silently fail if localStorage is not available
-        console.warn("localStorage not available:", error);
+        if (__DEV__) {
+          console.warn("localStorage not available:", error);
+        }
       }
     }
   }, []);

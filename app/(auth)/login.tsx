@@ -39,13 +39,24 @@ function LoginScreen() {
     }
 
     setLoading(true);
-    const { error } = await signIn(email.trim().toLowerCase(), password);
-    setLoading(false);
+    try {
+      const { error } = await signIn(email.trim().toLowerCase(), password);
 
-    if (error) {
-      showError("Sign In Failed", error);
-    } else {
-      router.replace("/(tabs)");
+      if (error) {
+        setLoading(false);
+        showError("Sign In Failed", error);
+      } else {
+        // Small delay to ensure session is established
+        await new Promise((resolve) => setTimeout(resolve, 500));
+        setLoading(false);
+        router.replace("/(tabs)");
+      }
+    } catch (err) {
+      setLoading(false);
+      showError(
+        "Sign In Failed",
+        "An unexpected error occurred. Please try again.",
+      );
     }
   };
 

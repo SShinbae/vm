@@ -50,7 +50,10 @@ export function NotificationProvider({ children }: NotificationProviderProps) {
         setNotifications(parsedNotifications);
       }
     } catch (error) {
-      console.error("Error loading notifications from storage:", error);
+      if (__DEV__) {
+        console.error("Error loading notifications from storage:", error);
+      }
+      // Continue with empty notifications instead of crashing
     }
   }, []);
 
@@ -63,7 +66,10 @@ export function NotificationProvider({ children }: NotificationProviderProps) {
           JSON.stringify(notificationsToSave),
         );
       } catch (error) {
-        console.error("Error saving notifications to storage:", error);
+        if (__DEV__) {
+          console.error("Error saving notifications to storage:", error);
+        }
+        // Continue even if save fails
       }
     },
     [],
@@ -92,7 +98,12 @@ export function NotificationProvider({ children }: NotificationProviderProps) {
       const {
         data: { user },
       } = await supabase.auth.getUser();
-      if (!user) return;
+
+      if (!user) {
+        // Mark as initialized even without user to prevent blocking
+        setIsInitialized(true);
+        return;
+      }
 
       // Load existing notifications
       await loadNotifications();
@@ -106,7 +117,11 @@ export function NotificationProvider({ children }: NotificationProviderProps) {
 
       setIsInitialized(true);
     } catch (error) {
-      console.error("Error initializing notifications:", error);
+      if (__DEV__) {
+        console.error("Error initializing notifications:", error);
+      }
+      // Mark as initialized anyway to prevent blocking app
+      setIsInitialized(true);
     }
   }, [loadNotifications, addNotification]);
 
