@@ -34,7 +34,6 @@ const NAV_ITEMS: NavItem[] = [
     label: "Analytics",
   },
   { name: "logs", icon: "doc.text.fill", path: "/logs", label: "Logs" },
-  { name: "groups", icon: "person.3.fill", path: "/groups", label: "Groups" },
   { name: "profile", icon: "person.fill", path: "/profile", label: "Profile" },
 ];
 

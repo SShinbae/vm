@@ -1,16 +1,12 @@
 /**
- * Cost Pie Chart using Victory Native
+ * Cost Pie Chart using react-native-chart-kit
  * Shows fuel vs service cost breakdown
  */
 
 import React from "react";
 import { Dimensions, Text, View } from "react-native";
+import { PieChart } from "react-native-chart-kit";
 import { createStyleSheet, useStyles } from "react-native-unistyles";
-import { VictoryPie, VictoryLabel } from "victory-native";
-import {
-  generatePieChartData,
-  transformToPieData,
-} from "../../../lib/analytics/chart-helpers";
 import { ChartLegend, LegendItem } from "./ChartLegend";
 
 interface CostPieChartProps {
@@ -25,12 +21,11 @@ export function CostPieChart({
   totalFuelCost,
   totalServiceCost,
   title,
-  height = 300,
+  height = 220,
   showLegend = true,
 }: CostPieChartProps) {
   const { styles, theme } = useStyles(stylesheet);
   const screenWidth = Dimensions.get("window").width;
-  const chartWidth = screenWidth - 32;
 
   const totalCost = totalFuelCost + totalServiceCost;
 
@@ -45,65 +40,62 @@ export function CostPieChart({
     );
   }
 
-  const pieChartData = generatePieChartData(totalFuelCost, totalServiceCost, {
-    fuel: theme.colors.analytics.fuel,
-    service: theme.colors.analytics.service,
-  });
+  const fuelPercentage = (totalFuelCost / totalCost) * 100;
+  const servicePercentage = (totalServiceCost / totalCost) * 100;
 
-  const victoryData = transformToPieData(pieChartData);
+  const pieData = [
+    {
+      name: "Fuel",
+      cost: totalFuelCost,
+      color: theme.colors.analytics.fuel,
+      legendFontColor: theme.colors.text,
+      legendFontSize: 12,
+    },
+    {
+      name: "Service",
+      cost: totalServiceCost,
+      color: theme.colors.analytics.service,
+      legendFontColor: theme.colors.text,
+      legendFontSize: 12,
+    },
+  ];
 
-  const isDark = theme.colors.background === "#1e292e";
-  const labelColor = isDark ? "#FFFFFF" : "#000000";
+  const chartConfig = {
+    color: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
+  };
 
-  const legendItems: LegendItem[] = pieChartData.map((item) => ({
-    name: item.label,
-    color: item.color,
-    value: `RM${item.value.toFixed(2)} (${item.percentage.toFixed(1)}%)`,
-  }));
+  const legendItems: LegendItem[] = [
+    {
+      name: "Fuel",
+      color: theme.colors.analytics.fuel,
+      value: `RM${totalFuelCost.toFixed(2)} (${fuelPercentage.toFixed(1)}%)`,
+    },
+    {
+      name: "Service",
+      color: theme.colors.analytics.service,
+      value: `RM${totalServiceCost.toFixed(2)} (${servicePercentage.toFixed(1)}%)`,
+    },
+  ];
 
   return (
     <View style={styles.container}>
       <Text style={styles.title}>{title}</Text>
       <View style={styles.chartContainer}>
-        <VictoryPie
-          data={victoryData}
-          width={chartWidth}
+        <PieChart
+          data={pieData}
+          width={screenWidth - 32}
           height={height}
-          colorScale={[
-            theme.colors.analytics.fuel,
-            theme.colors.analytics.service,
-          ]}
-          innerRadius={height * 0.25}
-          labelRadius={height * 0.35}
-          style={{
-            labels: {
-              fill: labelColor,
-              fontSize: 14,
-              fontWeight: "bold",
-            },
-            data: {
-              stroke: theme.colors.surface,
-              strokeWidth: 2,
-            },
-          }}
-          labelComponent={
-            <VictoryLabel
-              style={{
-                fill: labelColor,
-                fontSize: 12,
-                fontWeight: "600",
-              }}
-            />
-          }
+          chartConfig={chartConfig}
+          accessor="cost"
+          backgroundColor="transparent"
+          paddingLeft="15"
+          absolute
         />
-
-        {/* Center Total */}
         <View style={styles.centerLabel}>
           <Text style={styles.centerLabelTitle}>Total</Text>
           <Text style={styles.centerLabelValue}>RM{totalCost.toFixed(2)}</Text>
         </View>
       </View>
-
       {showLegend && <ChartLegend items={legendItems} orientation="vertical" />}
     </View>
   );
@@ -128,6 +120,7 @@ const stylesheet = createStyleSheet((theme) => ({
   },
   centerLabel: {
     position: "absolute",
+    left: "25%",
     alignItems: "center",
     justifyContent: "center",
   },
@@ -137,7 +130,7 @@ const stylesheet = createStyleSheet((theme) => ({
     marginBottom: 4,
   },
   centerLabelValue: {
-    fontSize: theme.fontSize.xl,
+    fontSize: theme.fontSize.lg,
     fontWeight: theme.fontWeight.bold,
     color: theme.colors.text,
   },

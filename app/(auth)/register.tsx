@@ -2,6 +2,7 @@ import { withWebAlert } from "@/components/ui";
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useAuth } from "@/lib/contexts/AuthContext";
+import { Ionicons } from "@expo/vector-icons";
 import { Link, router } from "expo-router";
 import React, { useState } from "react";
 import {
@@ -32,6 +33,8 @@ function RegisterScreen() {
   const [passwordFocused, setPasswordFocused] = useState(false);
   const [confirmPasswordFocused, setConfirmPasswordFocused] = useState(false);
   const [agreeToTerms, setAgreeToTerms] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const { signUp } = useAuth();
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? "light"];
@@ -104,23 +107,6 @@ function RegisterScreen() {
     );
   };
 
-  const getPasswordStrength = () => {
-    if (password.length === 0) return null;
-    if (password.length < 6)
-      return { text: "Too short", style: styles.passwordWeak };
-    if (password.length < 8)
-      return { text: "Weak", style: styles.passwordWeak };
-    if (
-      password.length < 12 &&
-      /(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(password)
-    ) {
-      return { text: "Strong", style: styles.passwordStrong };
-    }
-    if (password.length >= 8)
-      return { text: "Good", style: styles.passwordMedium };
-    return { text: "Weak", style: styles.passwordWeak };
-  };
-
   const styles = StyleSheet.create({
     container: {
       flex: 1,
@@ -128,93 +114,102 @@ function RegisterScreen() {
     },
     scrollContent: {
       flexGrow: 1,
-      paddingVertical: 20,
     },
     content: {
-      paddingHorizontal: 20,
-      maxWidth: screenWidth > 600 ? 400 : "100%",
+      flex: 1,
+      paddingHorizontal: 24,
+      justifyContent: "center",
+      maxWidth: screenWidth > 768 ? 450 : "100%",
       alignSelf: "center",
       width: "100%",
+      paddingVertical: 40,
     },
-    logoContainer: {
+    iconContainer: {
+      width: 80,
+      height: 80,
+      borderRadius: 40,
+      backgroundColor: colors.primary + "15",
       alignItems: "center",
-      marginBottom: 32,
-    },
-    logo: {
-      fontSize: 48,
-      fontWeight: "bold",
-      color: colors.primary,
-      marginBottom: 8,
-      textAlign: "center",
+      justifyContent: "center",
+      alignSelf: "center",
+      marginBottom: 24,
     },
     title: {
-      fontSize: 24,
-      fontWeight: "bold",
+      fontSize: 28,
+      fontWeight: "700",
       color: colors.text,
       textAlign: "center",
-      marginBottom: 8,
+      marginBottom: 12,
+      letterSpacing: -0.5,
     },
     subtitle: {
       fontSize: 16,
       color: colors.textSecondary,
       textAlign: "center",
-      marginBottom: 32,
-      lineHeight: 22,
+      marginBottom: 40,
+      lineHeight: 24,
+      paddingHorizontal: 8,
     },
-    card: {
-      backgroundColor: colors.card,
-      borderRadius: 12,
-      padding: 24,
-      borderWidth: 1,
-      borderColor: colors.cardBorder,
-      shadowColor: colors.text,
-      shadowOffset: {
-        width: 0,
-        height: 2,
-      },
-      shadowOpacity: 0.1,
-      shadowRadius: 8,
-      elevation: 4,
-      marginBottom: 24,
+    label: {
+      fontSize: 14,
+      fontWeight: "600",
+      color: colors.text,
+      marginBottom: 8,
     },
     inputContainer: {
-      marginBottom: 16,
+      marginBottom: 20,
+    },
+    inputWrapper: {
+      position: "relative",
+      flexDirection: "row",
+      alignItems: "center",
+    },
+    inputIcon: {
+      position: "absolute",
+      left: 16,
+      zIndex: 1,
     },
     input: {
+      flex: 1,
       backgroundColor: colors.background,
       borderWidth: 1,
       borderColor: colors.border,
       borderRadius: 8,
-      paddingHorizontal: 16,
+      paddingHorizontal: 48,
       paddingVertical: 14,
       fontSize: 16,
       color: colors.text,
       minHeight: 52,
     },
     inputFocused: {
-      borderColor: colors.tint,
+      borderColor: colors.primary,
       borderWidth: 2,
       backgroundColor: colors.card,
     },
-    passwordStrength: {
+    eyeIcon: {
+      position: "absolute",
+      right: 16,
+      zIndex: 1,
+    },
+    passwordHelper: {
       fontSize: 12,
-      marginTop: 4,
+      color: colors.textSecondary,
+      marginTop: 6,
       marginLeft: 4,
     },
     passwordWeak: {
-      color: colors.error,
+      color: colors.error || "#EF4444",
     },
     passwordMedium: {
-      color: colors.warning,
+      color: colors.warning || "#F59E0B",
     },
     passwordStrong: {
-      color: colors.success,
+      color: colors.success || "#10B981",
     },
     checkboxContainer: {
       flexDirection: "row",
       alignItems: "flex-start",
-      marginBottom: 20,
-      paddingHorizontal: 4,
+      marginBottom: 24,
     },
     checkbox: {
       width: 20,
@@ -222,10 +217,11 @@ function RegisterScreen() {
       borderWidth: 2,
       borderColor: colors.border,
       borderRadius: 4,
-      marginRight: 12,
-      marginTop: 1,
+      marginRight: 10,
+      marginTop: 2,
       alignItems: "center",
       justifyContent: "center",
+      backgroundColor: colors.background,
     },
     checkboxChecked: {
       backgroundColor: colors.primary,
@@ -233,29 +229,29 @@ function RegisterScreen() {
     },
     checkboxText: {
       fontSize: 14,
-      color: colors.textSecondary,
+      color: colors.text,
       flex: 1,
       lineHeight: 20,
     },
     termsLink: {
-      color: colors.link,
-      textDecorationLine: "underline",
+      color: colors.primary,
+      fontWeight: "500",
     },
     button: {
-      backgroundColor: colors.buttonPrimary,
+      backgroundColor: colors.primary,
       borderRadius: 8,
       paddingVertical: 16,
       alignItems: "center",
-      marginBottom: 16,
+      marginBottom: 24,
       minHeight: 52,
       shadowColor: colors.primary,
       shadowOffset: {
         width: 0,
-        height: 2,
+        height: 4,
       },
       shadowOpacity: 0.2,
-      shadowRadius: 4,
-      elevation: 3,
+      shadowRadius: 8,
+      elevation: 4,
     },
     buttonDisabled: {
       opacity: 0.6,
@@ -266,6 +262,7 @@ function RegisterScreen() {
       color: "#FFFFFF",
       fontSize: 16,
       fontWeight: "600",
+      letterSpacing: 0.5,
     },
     dividerContainer: {
       flexDirection: "row",
@@ -281,47 +278,24 @@ function RegisterScreen() {
       color: colors.textSecondary,
       fontSize: 14,
       marginHorizontal: 16,
-      fontWeight: "500",
+      fontWeight: "400",
     },
-    signinContainer: {
+    loginContainer: {
+      flexDirection: "row",
       alignItems: "center",
-      backgroundColor: colors.card,
-      borderRadius: 12,
-      padding: 20,
-      borderWidth: 1,
-      borderColor: colors.cardBorder,
-      shadowColor: colors.text,
-      shadowOffset: {
-        width: 0,
-        height: 1,
-      },
-      shadowOpacity: 0.05,
-      shadowRadius: 4,
-      elevation: 2,
+      justifyContent: "center",
+      gap: 8,
     },
-    signinText: {
+    loginText: {
       color: colors.textSecondary,
       fontSize: 14,
-      marginBottom: 16,
-      textAlign: "center",
     },
-    signinButton: {
-      backgroundColor: "transparent",
-      borderWidth: 1,
-      borderColor: colors.primary,
-      borderRadius: 8,
-      paddingVertical: 12,
-      paddingHorizontal: 24,
-      minHeight: 44,
-    },
-    signinButtonText: {
+    loginLink: {
       color: colors.primary,
       fontSize: 14,
       fontWeight: "600",
     },
   });
-
-  const passwordStrength = getPasswordStrength();
 
   return (
     <SafeAreaView style={styles.container}>
@@ -332,26 +306,38 @@ function RegisterScreen() {
         <ScrollView
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
         >
           <View style={styles.content}>
-            {/* Logo Section */}
-            <View style={styles.logoContainer}>
-              <Text style={styles.logo}>Vehicle Management</Text>
-              <Text style={styles.title}>Create a new account</Text>
-              <Text style={styles.subtitle}>
-                Join Vehicle Management and start managing your vehicles with
-                ease. Connect with other vehicle enthusiasts.
-              </Text>
+            {/* User Plus Icon */}
+            <View style={styles.iconContainer}>
+              <Ionicons name="person-add" size={40} color={colors.primary} />
             </View>
 
-            {/* Registration Card */}
-            <View style={styles.card}>
-              <View style={styles.inputContainer}>
+            {/* Title */}
+            <Text style={styles.title}>Create Account</Text>
+            <Text style={styles.subtitle}>
+              Join us today! It takes less than a minute.
+            </Text>
+
+            {/* Full Name Input */}
+            <View style={styles.inputContainer}>
+              <Text style={styles.label}>Full Name</Text>
+              <View style={styles.inputWrapper}>
+                <View style={styles.inputIcon}>
+                  <Ionicons
+                    name="person-outline"
+                    size={20}
+                    color={
+                      fullNameFocused ? colors.primary : colors.textSecondary
+                    }
+                  />
+                </View>
                 <TextInput
                   style={[styles.input, fullNameFocused && styles.inputFocused]}
                   value={fullName}
                   onChangeText={setFullName}
-                  placeholder="Full name"
+                  placeholder="John Doe"
                   placeholderTextColor={colors.textTertiary}
                   autoCapitalize="words"
                   autoCorrect={false}
@@ -359,13 +345,24 @@ function RegisterScreen() {
                   onBlur={() => setFullNameFocused(false)}
                 />
               </View>
+            </View>
 
-              <View style={styles.inputContainer}>
+            {/* Email Input */}
+            <View style={styles.inputContainer}>
+              <Text style={styles.label}>Email Address</Text>
+              <View style={styles.inputWrapper}>
+                <View style={styles.inputIcon}>
+                  <Ionicons
+                    name="mail-outline"
+                    size={20}
+                    color={emailFocused ? colors.primary : colors.textSecondary}
+                  />
+                </View>
                 <TextInput
                   style={[styles.input, emailFocused && styles.inputFocused]}
                   value={email}
                   onChangeText={setEmail}
-                  placeholder="Email address"
+                  placeholder="you@example.com"
                   placeholderTextColor={colors.textTertiary}
                   keyboardType="email-address"
                   autoCapitalize="none"
@@ -374,30 +371,64 @@ function RegisterScreen() {
                   onBlur={() => setEmailFocused(false)}
                 />
               </View>
+            </View>
 
-              <View style={styles.inputContainer}>
+            {/* Password Input */}
+            <View style={styles.inputContainer}>
+              <Text style={styles.label}>Password</Text>
+              <View style={styles.inputWrapper}>
+                <View style={styles.inputIcon}>
+                  <Ionicons
+                    name="lock-closed-outline"
+                    size={20}
+                    color={
+                      passwordFocused ? colors.primary : colors.textSecondary
+                    }
+                  />
+                </View>
                 <TextInput
                   style={[styles.input, passwordFocused && styles.inputFocused]}
                   value={password}
                   onChangeText={setPassword}
-                  placeholder="Password"
+                  placeholder="Create a password"
                   placeholderTextColor={colors.textTertiary}
-                  secureTextEntry
+                  secureTextEntry={!showPassword}
                   autoCapitalize="none"
                   autoCorrect={false}
                   onFocus={() => setPasswordFocused(true)}
                   onBlur={() => setPasswordFocused(false)}
                 />
-                {passwordStrength && (
-                  <Text
-                    style={[styles.passwordStrength, passwordStrength.style]}
-                  >
-                    {passwordStrength.text}
-                  </Text>
-                )}
+                <TouchableOpacity
+                  style={styles.eyeIcon}
+                  onPress={() => setShowPassword(!showPassword)}
+                >
+                  <Ionicons
+                    name={showPassword ? "eye-outline" : "eye-off-outline"}
+                    size={20}
+                    color={colors.textSecondary}
+                  />
+                </TouchableOpacity>
               </View>
+              <Text style={styles.passwordHelper}>
+                Must be at least 8 characters
+              </Text>
+            </View>
 
-              <View style={styles.inputContainer}>
+            {/* Confirm Password Input */}
+            <View style={styles.inputContainer}>
+              <Text style={styles.label}>Confirm Password</Text>
+              <View style={styles.inputWrapper}>
+                <View style={styles.inputIcon}>
+                  <Ionicons
+                    name="lock-closed-outline"
+                    size={20}
+                    color={
+                      confirmPasswordFocused
+                        ? colors.primary
+                        : colors.textSecondary
+                    }
+                  />
+                </View>
                 <TextInput
                   style={[
                     styles.input,
@@ -405,76 +436,85 @@ function RegisterScreen() {
                   ]}
                   value={confirmPassword}
                   onChangeText={setConfirmPassword}
-                  placeholder="Confirm password"
+                  placeholder="Re-enter your password"
                   placeholderTextColor={colors.textTertiary}
-                  secureTextEntry
+                  secureTextEntry={!showConfirmPassword}
                   autoCapitalize="none"
                   autoCorrect={false}
                   onFocus={() => setConfirmPasswordFocused(true)}
                   onBlur={() => setConfirmPasswordFocused(false)}
                 />
-              </View>
-
-              {/* Terms of Service Checkbox */}
-              <TouchableOpacity
-                style={styles.checkboxContainer}
-                onPress={() => setAgreeToTerms(!agreeToTerms)}
-              >
-                <View
-                  style={[
-                    styles.checkbox,
-                    agreeToTerms && styles.checkboxChecked,
-                  ]}
+                <TouchableOpacity
+                  style={styles.eyeIcon}
+                  onPress={() => setShowConfirmPassword(!showConfirmPassword)}
                 >
-                  {agreeToTerms && (
-                    <Text
-                      style={{
-                        color: "#FFFFFF",
-                        fontSize: 12,
-                        fontWeight: "bold",
-                      }}
-                    >
-                      ✓
-                    </Text>
-                  )}
-                </View>
-                <Text style={styles.checkboxText}>
-                  By clicking Sign Up, you agree to our{" "}
-                  <Text style={styles.termsLink}>Terms</Text>,{" "}
-                  <Text style={styles.termsLink}>Privacy Policy</Text> and{" "}
-                  <Text style={styles.termsLink}>Cookies Policy</Text>.
+                  <Ionicons
+                    name={
+                      showConfirmPassword ? "eye-outline" : "eye-off-outline"
+                    }
+                    size={20}
+                    color={colors.textSecondary}
+                  />
+                </TouchableOpacity>
+              </View>
+              {confirmPassword.length > 0 && password !== confirmPassword && (
+                <Text style={[styles.passwordHelper, { color: colors.error }]}>
+                  Passwords do not match
                 </Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[
-                  styles.button,
-                  (!isFormValid() || loading) && styles.buttonDisabled,
-                ]}
-                onPress={handleSignUp}
-                disabled={!isFormValid() || loading}
-              >
-                {loading ? (
-                  <ActivityIndicator color="white" size="small" />
-                ) : (
-                  <Text style={styles.buttonText}>Sign Up</Text>
-                )}
-              </TouchableOpacity>
+              )}
             </View>
+
+            {/* Terms Checkbox */}
+            <TouchableOpacity
+              style={styles.checkboxContainer}
+              onPress={() => setAgreeToTerms(!agreeToTerms)}
+            >
+              <View
+                style={[
+                  styles.checkbox,
+                  agreeToTerms && styles.checkboxChecked,
+                ]}
+              >
+                {agreeToTerms && (
+                  <Ionicons name="checkmark" size={14} color="#FFFFFF" />
+                )}
+              </View>
+              <Text style={styles.checkboxText}>
+                I agree to the{" "}
+                <Text style={styles.termsLink}>Terms of Service</Text> and{" "}
+                <Text style={styles.termsLink}>Privacy Policy</Text>
+              </Text>
+            </TouchableOpacity>
+
+            {/* Create Account Button */}
+            <TouchableOpacity
+              style={[
+                styles.button,
+                (!isFormValid() || loading) && styles.buttonDisabled,
+              ]}
+              onPress={handleSignUp}
+              disabled={!isFormValid() || loading}
+            >
+              {loading ? (
+                <ActivityIndicator color="white" size="small" />
+              ) : (
+                <Text style={styles.buttonText}>Create Account</Text>
+              )}
+            </TouchableOpacity>
 
             {/* Divider */}
-            <View style={styles.dividerContainer}>
+            {/* <View style={styles.dividerContainer}>
               <View style={styles.dividerLine} />
-              <Text style={styles.dividerText}>or</Text>
+              <Text style={styles.dividerText}>Or register with</Text>
               <View style={styles.dividerLine} />
-            </View>
+            </View> */}
 
-            {/* Sign In Section */}
-            <View style={styles.signinContainer}>
-              <Text style={styles.signinText}>Already have an account?</Text>
+            {/* Login Section */}
+            <View style={styles.loginContainer}>
+              <Text style={styles.loginText}>Already have an account?</Text>
               <Link href="/(auth)/login" asChild>
-                <TouchableOpacity style={styles.signinButton}>
-                  <Text style={styles.signinButtonText}>Log In</Text>
+                <TouchableOpacity>
+                  <Text style={styles.loginLink}>Log in</Text>
                 </TouchableOpacity>
               </Link>
             </View>
