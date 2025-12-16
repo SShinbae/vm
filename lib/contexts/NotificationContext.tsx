@@ -1,19 +1,18 @@
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import React, {
   createContext,
+  ReactNode,
+  useCallback,
   useContext,
   useEffect,
   useState,
-  useCallback,
-  ReactNode,
 } from "react";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import { supabase } from "../../services/supabaseClient";
 import {
-  notificationService,
   NotificationData,
-  NotificationCallback,
+  notificationService,
 } from "../services/notificationService";
 import { pushNotificationService } from "../services/pushNotificationService";
-import { supabase } from "../../services/supabaseClient";
 
 interface NotificationContextType {
   notifications: NotificationData[];

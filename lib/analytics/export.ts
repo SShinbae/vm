@@ -1,12 +1,12 @@
+import { format } from "date-fns";
 import * as FileSystem from "expo-file-system/build/legacy/FileSystem";
 import * as Sharing from "expo-sharing";
-import { format } from "date-fns";
+import { FuelLog, MileageLog, ServiceLog } from "../../types";
 import {
-  AnalyticsResponse,
   AnalyticsPeriod,
+  AnalyticsResponse,
   VehiclePerformance,
 } from "../../types/analytics";
-import { FuelLog, ServiceLog, MileageLog } from "../../types";
 
 /**
  * Export analytics data to CSV format
