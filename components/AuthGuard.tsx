@@ -1,9 +1,9 @@
-import React, { useEffect } from "react";
-import { View, ActivityIndicator, StyleSheet } from "react-native";
-import { router, useSegments } from "expo-router";
-import { useAuth } from "@/lib/contexts/AuthContext";
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
+import { useAuth } from "@/lib/contexts/AuthContext";
+import { router, useSegments } from "expo-router";
+import React, { useEffect } from "react";
+import { ActivityIndicator, StyleSheet, View } from "react-native";
 
 interface AuthGuardProps {
   children: React.ReactNode;
@@ -19,10 +19,11 @@ export function AuthGuard({ children }: AuthGuardProps) {
     if (!initialized || loading) return;
 
     const inAuthGroup = segments[0] === "(auth)";
+    const inRootIndex = segments.length === 0 || (segments.length === 1 && segments[0] === "index");
 
-    if (!user && !inAuthGroup) {
-      // Redirect to login if user is not authenticated and not in auth group
-      router.replace("/(auth)/login");
+    if (!user && !inAuthGroup && !inRootIndex) {
+      // Redirect to root/landing if user is not authenticated and not in auth group or root
+      router.replace("/");
     } else if (user && inAuthGroup) {
       // Redirect to main app if user is authenticated and in auth group
       router.replace("/(tabs)");

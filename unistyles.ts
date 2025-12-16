@@ -8,6 +8,7 @@ export const lightTheme = {
     success: "#10B981",
     warning: "#F59E0B",
     error: "#EF4444",
+    info: "#3B82F6", // Blue
     background: "#FFFFFF",
     surface: "#f3f8f8", // Blue Bayoux 50
     text: "#1e292e", // Blue Bayoux 950
@@ -82,6 +83,7 @@ export const darkTheme = {
     success: "#10B981",
     warning: "#F59E0B",
     error: "#EF4444",
+    info: "#60A5FA", // Blue (lighter for dark mode)
     background: "#1e292e", // Blue Bayoux 950
     surface: "#283a41", // Blue Bayoux 900
     text: "#f3f8f8", // Blue Bayoux 50
