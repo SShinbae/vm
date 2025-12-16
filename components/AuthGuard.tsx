@@ -18,8 +18,10 @@ export function AuthGuard({ children }: AuthGuardProps) {
   useEffect(() => {
     if (!initialized || loading) return;
 
+    const segmentPath = segments.join("/");
     const inAuthGroup = segments[0] === "(auth)";
-    const inRootIndex = segments.length === 0 || (segments.length === 1 && segments[0] === "index");
+    const inRootIndex =
+      !segmentPath || segmentPath === "" || segmentPath === "index";
 
     if (!user && !inAuthGroup && !inRootIndex) {
       // Redirect to root/landing if user is not authenticated and not in auth group or root

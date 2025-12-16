@@ -138,10 +138,7 @@ export default function CostsTab() {
   }
 
   return (
-    <View
-      style={{ flex: 1, backgroundColor: theme.colors.background }}
-      edges={["left", "right"]}
-    >
+    <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
       <ScrollView
         style={{ flex: 1 }}
         refreshControl={

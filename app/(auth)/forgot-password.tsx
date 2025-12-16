@@ -5,17 +5,17 @@ import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import React, { useState } from "react";
 import {
-    ActivityIndicator,
-    Alert,
-    Dimensions,
-    KeyboardAvoidingView,
-    Platform,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Alert,
+  Dimensions,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -199,7 +199,7 @@ export default function ForgotPasswordScreen() {
             {/* Title */}
             <Text style={styles.title}>Forgot Password?</Text>
             <Text style={styles.subtitle}>
-              No worries, we'll send you reset instructions.
+              No worries, we&apos;ll send you reset instructions.
             </Text>
 
             {/* Email Input */}

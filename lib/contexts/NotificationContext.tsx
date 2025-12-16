@@ -1,16 +1,16 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import React, {
-    createContext,
-    ReactNode,
-    useCallback,
-    useContext,
-    useEffect,
-    useState,
+  createContext,
+  ReactNode,
+  useCallback,
+  useContext,
+  useEffect,
+  useState,
 } from "react";
 import { supabase } from "../../services/supabaseClient";
 import {
-    NotificationData,
-    notificationService
+  NotificationData,
+  notificationService,
 } from "../services/notificationService";
 import { pushNotificationService } from "../services/pushNotificationService";
 
