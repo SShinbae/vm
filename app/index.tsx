@@ -80,8 +80,8 @@ const StatCard: React.FC<StatCardProps & { reduceMotion?: boolean }> = ({
     ]).start();
   }, [reduceMotion, delay, fadeAnim, slideAnim]);
 
-  // Use white background for all cards
-  const cardBackgrounds = ["#FFFFFF", "#FFFFFF", "#FFFFFF", "#FFFFFF"];
+  // Use theme card color for dark mode support
+  const cardBackground = (theme.colors as any).card || theme.colors.background;
 
   const accentColors = [
     theme.colors.primary,
@@ -105,11 +105,11 @@ const StatCard: React.FC<StatCardProps & { reduceMotion?: boolean }> = ({
     >
       <View
         style={{
-          backgroundColor: cardBackgrounds[index % 4],
+          backgroundColor: cardBackground,
           borderRadius: isMobile ? 16 : 20,
           padding: isMobile ? 24 : isTablet ? 28 : 32,
           borderWidth: 1,
-          borderColor: "#FFFFFF",
+          borderColor: (theme.colors as any).border || theme.colors.background,
           shadowColor: "#000",
           shadowOffset: { width: 0, height: 4 },
           shadowOpacity: 0.08,
@@ -219,7 +219,7 @@ const FeatureCard: React.FC<FeatureCardProps & { reduceMotion?: boolean }> = ({
           borderRadius: isMobile ? 16 : 20,
           padding: isMobile ? 24 : isTablet ? 28 : 32,
           borderWidth: 1,
-          borderColor: "#FFFFFF",
+          borderColor: (theme.colors as any).border || theme.colors.background,
           shadowColor: "#000",
           shadowOffset: { width: 0, height: 2 },
           shadowOpacity: 0.05,
@@ -693,8 +693,8 @@ export default function Index() {
               backgroundColor: theme.colors.primary,
               padding: isMobile ? 32 : isTablet ? 50 : 70,
               borderRadius: isMobile ? 20 : 24,
-              borderWidth: 1,
-              borderColor: "#FFFFFF",
+              borderWidth: 0,
+              borderColor: "transparent",
               shadowColor: "#000",
               shadowOffset: { width: 0, height: 8 },
               shadowOpacity: 0.1,
@@ -777,7 +777,8 @@ export default function Index() {
             paddingHorizontal: 24,
             paddingVertical: 40,
             borderTopWidth: 1,
-            borderTopColor: "#FFFFFF",
+            borderTopColor:
+              (theme.colors as any).border || theme.colors.textSecondary + "20",
             alignItems: "center",
           }}
         >
