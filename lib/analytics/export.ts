@@ -3,9 +3,9 @@ import * as FileSystem from "expo-file-system/build/legacy/FileSystem";
 import * as Sharing from "expo-sharing";
 import { FuelLog, MileageLog, ServiceLog } from "../../types";
 import {
-    AnalyticsPeriod,
-    AnalyticsResponse,
-    VehiclePerformance,
+  AnalyticsPeriod,
+  AnalyticsResponse,
+  VehiclePerformance,
 } from "../../types/analytics";
 
 /**

@@ -53,7 +53,7 @@ function LoginScreen() {
         setLoading(false);
         router.replace("/(tabs)");
       }
-    } catch (err) {
+    } catch {
       setLoading(false);
       showError(
         "Sign In Failed",
@@ -253,11 +253,7 @@ function LoginScreen() {
           <View style={styles.content}>
             {/* Lock Icon */}
             <View style={styles.iconContainer}>
-              <Ionicons
-                name="lock-closed"
-                size={40}
-                color={colors.primary}
-              />
+              <Ionicons name="lock-closed" size={40} color={colors.primary} />
             </View>
 
             {/* Title */}
@@ -387,7 +383,7 @@ function LoginScreen() {
 
             {/* Sign Up Section */}
             <View style={styles.signupContainer}>
-              <Text style={styles.signupText}>Don't have an account?</Text>
+              <Text style={styles.signupText}>Don&apos;t have an account?</Text>
               <Link href="/(auth)/register" asChild>
                 <TouchableOpacity>
                   <Text style={styles.signupLink}>Sign up</Text>

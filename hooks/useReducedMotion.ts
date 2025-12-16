@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { AccessibilityInfo } from 'react-native';
+import { useEffect, useState } from "react";
+import { AccessibilityInfo } from "react-native";
 
 /**
  * Hook to detect if the user has enabled reduced motion preferences
@@ -16,10 +16,10 @@ export function useReducedMotion(): boolean {
 
     // Listen for changes
     const subscription = AccessibilityInfo.addEventListener(
-      'reduceMotionChanged',
+      "reduceMotionChanged",
       (isEnabled) => {
         setReduceMotion(isEnabled);
-      }
+      },
     );
 
     return () => {

@@ -11,7 +11,7 @@ import {
   Platform,
   Text,
   TouchableOpacity,
-  View
+  View,
 } from "react-native";
 import { useStyles } from "react-native-unistyles";
 
@@ -40,48 +40,6 @@ const useResponsiveDimensions = () => {
   };
 };
 
-// Simplified floating animation
-const FloatingElement: React.FC<{ delay?: number; children: React.ReactNode; reduceMotion?: boolean }> = ({ 
-  delay = 0, 
-  children,
-  reduceMotion = false,
-}) => {
-  const floatAnim = useRef(new Animated.Value(0)).current;
-
-  useEffect(() => {
-    if (reduceMotion) {
-      return;
-    }
-
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(floatAnim, {
-          toValue: 1,
-          duration: 4000,
-          delay,
-          useNativeDriver: true,
-        }),
-        Animated.timing(floatAnim, {
-          toValue: 0,
-          duration: 4000,
-          useNativeDriver: true,
-        }),
-      ])
-    ).start();
-  }, [reduceMotion]);
-
-  const translateY = floatAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [0, -15],
-  });
-
-  return (
-    <Animated.View style={{ transform: reduceMotion ? [] : [{ translateY }] }}>
-      {children}
-    </Animated.View>
-  );
-};
-
 interface StatCardProps {
   value: string;
   label: string;
@@ -89,12 +47,12 @@ interface StatCardProps {
   index: number;
 }
 
-const StatCard: React.FC<StatCardProps & { reduceMotion?: boolean }> = ({ 
-  value, 
-  label, 
-  delay = 0, 
-  index, 
-  reduceMotion = false 
+const StatCard: React.FC<StatCardProps & { reduceMotion?: boolean }> = ({
+  value,
+  label,
+  delay = 0,
+  index,
+  reduceMotion = false,
 }) => {
   const { theme } = useStyles();
   const { isMobile, isTablet } = useResponsiveDimensions();
@@ -120,15 +78,10 @@ const StatCard: React.FC<StatCardProps & { reduceMotion?: boolean }> = ({
         useNativeDriver: true,
       }),
     ]).start();
-  }, [reduceMotion]);
+  }, [reduceMotion, delay, fadeAnim, slideAnim]);
 
   // Use white background for all cards
-  const cardBackgrounds = [
-    "#FFFFFF",
-    "#FFFFFF",
-    "#FFFFFF",
-    "#FFFFFF",
-  ];
+  const cardBackgrounds = ["#FFFFFF", "#FFFFFF", "#FFFFFF", "#FFFFFF"];
 
   const accentColors = [
     theme.colors.primary,
@@ -177,7 +130,7 @@ const StatCard: React.FC<StatCardProps & { reduceMotion?: boolean }> = ({
             borderTopRightRadius: isMobile ? 16 : 20,
           }}
         />
-        
+
         <Text
           accessible={true}
           accessibilityRole="header"
@@ -246,7 +199,7 @@ const FeatureCard: React.FC<FeatureCardProps & { reduceMotion?: boolean }> = ({
         useNativeDriver: true,
       }),
     ]).start();
-  }, [reduceMotion]);
+  }, [reduceMotion, delay, fadeAnim, slideAnim]);
 
   return (
     <Animated.View
@@ -261,7 +214,8 @@ const FeatureCard: React.FC<FeatureCardProps & { reduceMotion?: boolean }> = ({
     >
       <View
         style={{
-          backgroundColor: theme.colors.card,
+          backgroundColor:
+            (theme.colors as any).card || theme.colors.background,
           borderRadius: isMobile ? 16 : 20,
           padding: isMobile ? 24 : isTablet ? 28 : 32,
           borderWidth: 1,
@@ -285,7 +239,11 @@ const FeatureCard: React.FC<FeatureCardProps & { reduceMotion?: boolean }> = ({
             marginBottom: isMobile ? 20 : 24,
           }}
         >
-          <Ionicons name={icon} size={isMobile ? 28 : 32} color={theme.colors.primary} />
+          <Ionicons
+            name={icon}
+            size={isMobile ? 28 : 32}
+            color={theme.colors.primary}
+          />
         </View>
 
         <Text
@@ -326,7 +284,9 @@ export default function Index() {
   const reduceMotion = useReducedMotion();
 
   const heroFadeAnim = useRef(new Animated.Value(reduceMotion ? 1 : 0)).current;
-  const heroSlideAnim = useRef(new Animated.Value(reduceMotion ? 0 : 50)).current;
+  const heroSlideAnim = useRef(
+    new Animated.Value(reduceMotion ? 0 : 50),
+  ).current;
 
   useEffect(() => {
     if (!loading && !user && !reduceMotion) {
@@ -343,7 +303,7 @@ export default function Index() {
         }),
       ]).start();
     }
-  }, [loading, user, reduceMotion]);
+  }, [loading, user, reduceMotion, heroFadeAnim, heroSlideAnim]);
 
   if (!initialized || loading) {
     return (
@@ -434,7 +394,7 @@ export default function Index() {
         contentContainerStyle={{ paddingBottom: 40 }}
         onScroll={Animated.event(
           [{ nativeEvent: { contentOffset: { y: scrollY } } }],
-          { useNativeDriver: true }
+          { useNativeDriver: true },
         )}
         scrollEventThrottle={16}
       >
@@ -471,7 +431,10 @@ export default function Index() {
               >
                 <Image
                   source={require("@/assets/images/vm_logo.png")}
-                  style={{ width: isMobile ? 60 : isTablet ? 70 : 80, height: isMobile ? 60 : isTablet ? 70 : 80 }}
+                  style={{
+                    width: isMobile ? 60 : isTablet ? 70 : 80,
+                    height: isMobile ? 60 : isTablet ? 70 : 80,
+                  }}
                   contentFit="contain"
                 />
               </View>
@@ -592,7 +555,11 @@ export default function Index() {
                 flexDirection: "row",
                 flexWrap: "wrap",
                 marginHorizontal: isMobile ? -8 : -6,
-                justifyContent: isMobile ? "center" : isTablet ? "space-between" : "flex-start",
+                justifyContent: isMobile
+                  ? "center"
+                  : isTablet
+                    ? "space-between"
+                    : "flex-start",
               }}
             >
               <StatCard
@@ -636,7 +603,12 @@ export default function Index() {
           }}
         >
           {/* Section header */}
-          <View style={{ marginBottom: isMobile ? 40 : isTablet ? 50 : 60, alignItems: "center" }}>
+          <View
+            style={{
+              marginBottom: isMobile ? 40 : isTablet ? 50 : 60,
+              alignItems: "center",
+            }}
+          >
             <View
               style={{
                 backgroundColor: theme.colors.primary + "15",
@@ -758,8 +730,8 @@ export default function Index() {
                   alignSelf: "center",
                 }}
               >
-                Join thousands of businesses and individuals who trust our platform
-                to manage their vehicles efficiently.
+                Join thousands of businesses and individuals who trust our
+                platform to manage their vehicles efficiently.
               </Text>
 
               <TouchableOpacity

@@ -107,23 +107,6 @@ function RegisterScreen() {
     );
   };
 
-  const getPasswordStrength = () => {
-    if (password.length === 0) return null;
-    if (password.length < 6)
-      return { text: "Too short", style: styles.passwordWeak };
-    if (password.length < 8)
-      return { text: "Weak", style: styles.passwordWeak };
-    if (
-      password.length < 12 &&
-      /(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(password)
-    ) {
-      return { text: "Strong", style: styles.passwordStrong };
-    }
-    if (password.length >= 8)
-      return { text: "Good", style: styles.passwordMedium };
-    return { text: "Weak", style: styles.passwordWeak };
-  };
-
   const styles = StyleSheet.create({
     container: {
       flex: 1,
@@ -314,8 +297,6 @@ function RegisterScreen() {
     },
   });
 
-  const passwordStrength = getPasswordStrength();
-
   return (
     <SafeAreaView style={styles.container}>
       <KeyboardAvoidingView
@@ -330,11 +311,7 @@ function RegisterScreen() {
           <View style={styles.content}>
             {/* User Plus Icon */}
             <View style={styles.iconContainer}>
-              <Ionicons
-                name="person-add"
-                size={40}
-                color={colors.primary}
-              />
+              <Ionicons name="person-add" size={40} color={colors.primary} />
             </View>
 
             {/* Title */}
@@ -357,10 +334,7 @@ function RegisterScreen() {
                   />
                 </View>
                 <TextInput
-                  style={[
-                    styles.input,
-                    fullNameFocused && styles.inputFocused,
-                  ]}
+                  style={[styles.input, fullNameFocused && styles.inputFocused]}
                   value={fullName}
                   onChangeText={setFullName}
                   placeholder="John Doe"
@@ -449,12 +423,17 @@ function RegisterScreen() {
                     name="lock-closed-outline"
                     size={20}
                     color={
-                      confirmPasswordFocused ? colors.primary : colors.textSecondary
+                      confirmPasswordFocused
+                        ? colors.primary
+                        : colors.textSecondary
                     }
                   />
                 </View>
                 <TextInput
-                  style={[styles.input, confirmPasswordFocused && styles.inputFocused]}
+                  style={[
+                    styles.input,
+                    confirmPasswordFocused && styles.inputFocused,
+                  ]}
                   value={confirmPassword}
                   onChangeText={setConfirmPassword}
                   placeholder="Re-enter your password"
@@ -470,7 +449,9 @@ function RegisterScreen() {
                   onPress={() => setShowConfirmPassword(!showConfirmPassword)}
                 >
                   <Ionicons
-                    name={showConfirmPassword ? "eye-outline" : "eye-off-outline"}
+                    name={
+                      showConfirmPassword ? "eye-outline" : "eye-off-outline"
+                    }
                     size={20}
                     color={colors.textSecondary}
                   />
@@ -489,7 +470,10 @@ function RegisterScreen() {
               onPress={() => setAgreeToTerms(!agreeToTerms)}
             >
               <View
-                style={[styles.checkbox, agreeToTerms && styles.checkboxChecked]}
+                style={[
+                  styles.checkbox,
+                  agreeToTerms && styles.checkboxChecked,
+                ]}
               >
                 {agreeToTerms && (
                   <Ionicons name="checkmark" size={14} color="#FFFFFF" />
