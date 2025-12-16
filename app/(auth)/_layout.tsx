@@ -1,6 +1,6 @@
-import { Stack } from "expo-router";
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
+import { Stack } from "expo-router";
 
 export default function AuthLayout() {
   const colorScheme = useColorScheme();
@@ -36,6 +36,7 @@ export default function AuthLayout() {
         options={{
           title: "Reset Password",
           presentation: "modal",
+          headerShown: false,
         }}
       />
       <Stack.Screen

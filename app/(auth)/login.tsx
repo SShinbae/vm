@@ -2,6 +2,7 @@ import { useAlert, withWebAlert } from "@/components/ui";
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useAuth } from "@/lib/contexts/AuthContext";
+import { Ionicons } from "@expo/vector-icons";
 import { Link, router } from "expo-router";
 import React, { useState } from "react";
 import {
@@ -27,6 +28,7 @@ function LoginScreen() {
   const [emailFocused, setEmailFocused] = useState(false);
   const [passwordFocused, setPasswordFocused] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const { signIn } = useAuth();
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? "light"];
@@ -70,28 +72,30 @@ function LoginScreen() {
     },
     content: {
       flex: 1,
-      paddingHorizontal: 20,
+      paddingHorizontal: 24,
       justifyContent: "center",
-      maxWidth: screenWidth > 600 ? 400 : "100%",
+      maxWidth: screenWidth > 768 ? 450 : "100%",
       alignSelf: "center",
       width: "100%",
+      paddingVertical: 40,
     },
-    logoContainer: {
+    iconContainer: {
+      width: 80,
+      height: 80,
+      borderRadius: 40,
+      backgroundColor: colors.primary + "15",
       alignItems: "center",
-      marginBottom: 32,
+      justifyContent: "center",
+      alignSelf: "center",
+      marginBottom: 24,
     },
-    logo: {
-      fontSize: 48,
-      fontWeight: "bold",
-      color: colors.primary,
-      marginBottom: 8,
-      textAlign: "center",
-    },
-    tagline: {
-      fontSize: 20,
+    title: {
+      fontSize: 28,
+      fontWeight: "700",
       color: colors.text,
       textAlign: "center",
-      marginBottom: 8,
+      marginBottom: 12,
+      letterSpacing: -0.5,
     },
     subtitle: {
       fontSize: 16,
@@ -99,45 +103,61 @@ function LoginScreen() {
       textAlign: "center",
       marginBottom: 40,
     },
-    card: {
-      backgroundColor: colors.card,
-      borderRadius: 12,
-      padding: 24,
-      borderWidth: 1,
-      borderColor: colors.cardBorder,
-      shadowColor: colors.text,
-      shadowOffset: {
-        width: 0,
-        height: 2,
-      },
-      shadowOpacity: 0.1,
-      shadowRadius: 8,
-      elevation: 4,
-      marginBottom: 24,
+    label: {
+      fontSize: 14,
+      fontWeight: "600",
+      color: colors.text,
+      marginBottom: 8,
     },
     inputContainer: {
       marginBottom: 20,
     },
+    inputWrapper: {
+      position: "relative",
+      flexDirection: "row",
+      alignItems: "center",
+    },
+    inputIcon: {
+      position: "absolute",
+      left: 16,
+      zIndex: 1,
+    },
     input: {
+      flex: 1,
       backgroundColor: colors.background,
       borderWidth: 1,
       borderColor: colors.border,
       borderRadius: 8,
-      paddingHorizontal: 16,
+      paddingHorizontal: 48,
       paddingVertical: 14,
       fontSize: 16,
       color: colors.text,
       minHeight: 52,
     },
     inputFocused: {
-      borderColor: colors.tint,
+      borderColor: colors.primary,
       borderWidth: 2,
       backgroundColor: colors.card,
+    },
+    eyeIcon: {
+      position: "absolute",
+      right: 16,
+      zIndex: 1,
+    },
+    forgotPasswordRow: {
+      flexDirection: "row",
+      justifyContent: "flex-end",
+      marginBottom: 8,
+    },
+    forgotPasswordText: {
+      color: colors.primary,
+      fontSize: 14,
+      fontWeight: "500",
     },
     checkboxContainer: {
       flexDirection: "row",
       alignItems: "center",
-      marginBottom: 20,
+      marginBottom: 24,
     },
     checkbox: {
       width: 20,
@@ -145,9 +165,10 @@ function LoginScreen() {
       borderWidth: 2,
       borderColor: colors.border,
       borderRadius: 4,
-      marginRight: 12,
+      marginRight: 10,
       alignItems: "center",
       justifyContent: "center",
+      backgroundColor: colors.background,
     },
     checkboxChecked: {
       backgroundColor: colors.primary,
@@ -155,24 +176,24 @@ function LoginScreen() {
     },
     checkboxText: {
       fontSize: 14,
-      color: colors.textSecondary,
+      color: colors.text,
       flex: 1,
     },
     button: {
-      backgroundColor: colors.buttonPrimary,
+      backgroundColor: colors.primary,
       borderRadius: 8,
       paddingVertical: 16,
       alignItems: "center",
-      marginBottom: 16,
+      marginBottom: 24,
       minHeight: 52,
       shadowColor: colors.primary,
       shadowOffset: {
         width: 0,
-        height: 2,
+        height: 4,
       },
       shadowOpacity: 0.2,
-      shadowRadius: 4,
-      elevation: 3,
+      shadowRadius: 8,
+      elevation: 4,
     },
     buttonDisabled: {
       opacity: 0.6,
@@ -183,15 +204,7 @@ function LoginScreen() {
       color: "#FFFFFF",
       fontSize: 16,
       fontWeight: "600",
-    },
-    forgotPasswordContainer: {
-      alignItems: "center",
-      marginBottom: 24,
-    },
-    forgotPasswordText: {
-      color: colors.link,
-      fontSize: 14,
-      fontWeight: "500",
+      letterSpacing: 0.5,
     },
     dividerContainer: {
       flexDirection: "row",
@@ -207,39 +220,20 @@ function LoginScreen() {
       color: colors.textSecondary,
       fontSize: 14,
       marginHorizontal: 16,
-      fontWeight: "500",
+      fontWeight: "400",
     },
     signupContainer: {
+      flexDirection: "row",
       alignItems: "center",
-      backgroundColor: colors.card,
-      borderRadius: 12,
-      padding: 20,
-      borderWidth: 1,
-      borderColor: colors.cardBorder,
-      shadowColor: colors.text,
-      shadowOffset: {
-        width: 0,
-        height: 1,
-      },
-      shadowOpacity: 0.05,
-      shadowRadius: 4,
-      elevation: 2,
+      justifyContent: "center",
+      gap: 8,
     },
     signupText: {
       color: colors.textSecondary,
       fontSize: 14,
-      marginBottom: 16,
-      textAlign: "center",
     },
-    signupButton: {
-      backgroundColor: colors.buttonSecondary,
-      borderRadius: 8,
-      paddingVertical: 12,
-      paddingHorizontal: 24,
-      minHeight: 44,
-    },
-    signupButtonText: {
-      color: colors.text,
+    signupLink: {
+      color: colors.primary,
       fontSize: 14,
       fontWeight: "600",
     },
@@ -254,22 +248,40 @@ function LoginScreen() {
         <ScrollView
           contentContainerStyle={styles.scrollContainer}
           showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
         >
           <View style={styles.content}>
-            {/* Logo Section */}
-            <View style={styles.logoContainer}>
-              <Text style={styles.logo}>Vehicle Management</Text>
-              <Text style={styles.tagline}>Connect with your vehicles</Text>
+            {/* Lock Icon */}
+            <View style={styles.iconContainer}>
+              <Ionicons
+                name="lock-closed"
+                size={40}
+                color={colors.primary}
+              />
             </View>
 
-            {/* Login Card */}
-            <View style={styles.card}>
-              <View style={styles.inputContainer}>
+            {/* Title */}
+            <Text style={styles.title}>Welcome Back</Text>
+            <Text style={styles.subtitle}>
+              Please enter your details to sign in.
+            </Text>
+
+            {/* Email Input */}
+            <View style={styles.inputContainer}>
+              <Text style={styles.label}>Email Address</Text>
+              <View style={styles.inputWrapper}>
+                <View style={styles.inputIcon}>
+                  <Ionicons
+                    name="mail-outline"
+                    size={20}
+                    color={emailFocused ? colors.primary : colors.textSecondary}
+                  />
+                </View>
                 <TextInput
                   style={[styles.input, emailFocused && styles.inputFocused]}
                   value={email}
                   onChangeText={setEmail}
-                  placeholder="Email address"
+                  placeholder="you@example.com"
                   placeholderTextColor={colors.textTertiary}
                   keyboardType="email-address"
                   autoCapitalize="none"
@@ -278,91 +290,107 @@ function LoginScreen() {
                   onBlur={() => setEmailFocused(false)}
                 />
               </View>
+            </View>
 
-              <View style={styles.inputContainer}>
+            {/* Password Input */}
+            <View style={styles.inputContainer}>
+              <View
+                style={{
+                  flexDirection: "row",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  marginBottom: 8,
+                }}
+              >
+                <Text style={styles.label}>Password</Text>
+                <Link href="/(auth)/forgot-password" asChild>
+                  <TouchableOpacity>
+                    <Text style={styles.forgotPasswordText}>
+                      Forgot password?
+                    </Text>
+                  </TouchableOpacity>
+                </Link>
+              </View>
+              <View style={styles.inputWrapper}>
+                <View style={styles.inputIcon}>
+                  <Ionicons
+                    name="lock-closed-outline"
+                    size={20}
+                    color={
+                      passwordFocused ? colors.primary : colors.textSecondary
+                    }
+                  />
+                </View>
                 <TextInput
                   style={[styles.input, passwordFocused && styles.inputFocused]}
                   value={password}
                   onChangeText={setPassword}
-                  placeholder="Password"
+                  placeholder="••••••••"
                   placeholderTextColor={colors.textTertiary}
-                  secureTextEntry
+                  secureTextEntry={!showPassword}
                   autoCapitalize="none"
                   autoCorrect={false}
                   onFocus={() => setPasswordFocused(true)}
                   onBlur={() => setPasswordFocused(false)}
                 />
-              </View>
-
-              {/* Remember Me Checkbox */}
-              <TouchableOpacity
-                style={styles.checkboxContainer}
-                onPress={() => setRememberMe(!rememberMe)}
-              >
-                <View
-                  style={[
-                    styles.checkbox,
-                    rememberMe && styles.checkboxChecked,
-                  ]}
+                <TouchableOpacity
+                  style={styles.eyeIcon}
+                  onPress={() => setShowPassword(!showPassword)}
                 >
-                  {rememberMe && (
-                    <Text
-                      style={{
-                        color: "#FFFFFF",
-                        fontSize: 12,
-                        fontWeight: "bold",
-                      }}
-                    >
-                      ✓
-                    </Text>
-                  )}
-                </View>
-                <Text style={styles.checkboxText}>Keep me signed in</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[
-                  styles.button,
-                  (loading || !email.trim() || !password.trim()) &&
-                    styles.buttonDisabled,
-                ]}
-                onPress={handleSignIn}
-                disabled={loading || !email.trim() || !password.trim()}
-              >
-                {loading ? (
-                  <ActivityIndicator color="white" size="small" />
-                ) : (
-                  <Text style={styles.buttonText}>Log In</Text>
-                )}
-              </TouchableOpacity>
-
-              {/* Forgot Password */}
-              <View style={styles.forgotPasswordContainer}>
-                <Link href="/(auth)/forgot-password" asChild>
-                  <TouchableOpacity>
-                    <Text style={styles.forgotPasswordText}>
-                      Forgotten password?
-                    </Text>
-                  </TouchableOpacity>
-                </Link>
+                  <Ionicons
+                    name={showPassword ? "eye-outline" : "eye-off-outline"}
+                    size={20}
+                    color={colors.textSecondary}
+                  />
+                </TouchableOpacity>
               </View>
             </View>
+
+            {/* Remember Me Checkbox */}
+            <TouchableOpacity
+              style={styles.checkboxContainer}
+              onPress={() => setRememberMe(!rememberMe)}
+            >
+              <View
+                style={[styles.checkbox, rememberMe && styles.checkboxChecked]}
+              >
+                {rememberMe && (
+                  <Ionicons name="checkmark" size={14} color="#FFFFFF" />
+                )}
+              </View>
+              <Text style={styles.checkboxText}>Remember me for 30 days</Text>
+            </TouchableOpacity>
+
+            {/* Sign In Button */}
+            <TouchableOpacity
+              style={[
+                styles.button,
+                (loading || !email.trim() || !password.trim()) &&
+                  styles.buttonDisabled,
+              ]}
+              onPress={handleSignIn}
+              disabled={loading || !email.trim() || !password.trim()}
+            >
+              {loading ? (
+                <ActivityIndicator color="white" size="small" />
+              ) : (
+                <Text style={styles.buttonText}>Sign in</Text>
+              )}
+            </TouchableOpacity>
 
             {/* Divider */}
-            <View style={styles.dividerContainer}>
+            {/* <View style={styles.dividerContainer}>
               <View style={styles.dividerLine} />
-              <Text style={styles.dividerText}>or</Text>
+              <Text style={styles.dividerText}>Or continue with</Text>
               <View style={styles.dividerLine} />
-            </View>
+            </View> */}
 
             {/* Sign Up Section */}
             <View style={styles.signupContainer}>
-              <Text style={styles.signupText}>Don&apos;t have an account?</Text>
+              <Text style={styles.signupText}>Don't have an account?</Text>
               <Link href="/(auth)/register" asChild>
-                <TouchableOpacity style={styles.signupButton}>
-                  <Text style={styles.signupButtonText}>
-                    Create new account
-                  </Text>
+                <TouchableOpacity>
+                  <Text style={styles.signupLink}>Sign up</Text>
                 </TouchableOpacity>
               </Link>
             </View>
