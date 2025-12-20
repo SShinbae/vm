@@ -21,9 +21,15 @@ import { AuthProvider } from "@/lib/contexts/AuthContext";
 import { DialogProvider } from "@/lib/contexts/DialogContext";
 import { NotificationProvider } from "@/lib/contexts/NotificationContext";
 import { ThemeProvider } from "@/lib/contexts/ThemeContext";
+import { oneSignalService } from "@/lib/services/oneSignalService";
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
+
+// Initialize OneSignal for push notifications (mobile only)
+if (Platform.OS !== "web") {
+  oneSignalService.initialize();
+}
 
 // Removed unstable_settings to allow index.tsx to control default route
 

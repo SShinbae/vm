@@ -34,7 +34,8 @@
       "Bash(do sed -i 's/\\$\\${\\([^}]*\\)}/RM${\\1}/g' \"$file\")",
       "Bash(taskkill /PID 16348 /F)",
       "Bash(taskkill //PID 16348 //F)",
-      "Bash(nul)"
+      "Bash(nul)",
+      "Bash(find:*)"
     ],
     "deny": [],
     "ask": []

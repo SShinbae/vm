@@ -1,19 +1,9 @@
+import { AuthButton, AuthLayout } from "@/components/auth";
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { router } from "expo-router";
 import React, { useEffect, useState } from "react";
-import {
-  ActivityIndicator,
-  Dimensions,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-
-const { width: screenWidth } = Dimensions.get("window");
+import { StyleSheet, Text, View } from "react-native";
 
 export default function ConfirmationSuccessScreen() {
   const [redirecting, setRedirecting] = useState(false);
@@ -44,22 +34,6 @@ export default function ConfirmationSuccessScreen() {
   };
 
   const styles = StyleSheet.create({
-    container: {
-      flex: 1,
-      backgroundColor: colors.facebook?.background || colors.surface,
-    },
-    scrollContent: {
-      flexGrow: 1,
-      paddingVertical: 20,
-    },
-    content: {
-      flex: 1,
-      paddingHorizontal: 20,
-      justifyContent: "center",
-      maxWidth: screenWidth > 600 ? 400 : "100%",
-      alignSelf: "center",
-      width: "100%",
-    },
     iconContainer: {
       alignItems: "center",
       marginBottom: 32,
@@ -68,15 +42,12 @@ export default function ConfirmationSuccessScreen() {
       width: 120,
       height: 120,
       borderRadius: 60,
-      backgroundColor: colors.success,
+      backgroundColor: colors.success || "#10B981",
       justifyContent: "center",
       alignItems: "center",
       marginBottom: 24,
-      shadowColor: colors.success,
-      shadowOffset: {
-        width: 0,
-        height: 6,
-      },
+      shadowColor: colors.success || "#10B981",
+      shadowOffset: { width: 0, height: 6 },
       shadowOpacity: 0.3,
       shadowRadius: 12,
       elevation: 8,
@@ -88,34 +59,25 @@ export default function ConfirmationSuccessScreen() {
     },
     title: {
       fontSize: 32,
-      fontWeight: "bold",
+      fontWeight: "700",
       color: colors.text,
       textAlign: "center",
       marginBottom: 12,
+      letterSpacing: -0.5,
     },
     subtitle: {
       fontSize: 18,
-      color: colors.facebook?.gray || colors.icon,
+      color: colors.textSecondary,
       textAlign: "center",
       lineHeight: 26,
       marginBottom: 8,
     },
-    emailText: {
-      fontSize: 16,
-      color: colors.facebook?.primary || colors.tint,
-      textAlign: "center",
-      fontWeight: "600",
-      marginBottom: 40,
-    },
     card: {
-      backgroundColor: colors.facebook?.card || colors.background,
+      backgroundColor: colors.card || colors.background,
       borderRadius: 16,
       padding: 32,
       shadowColor: colors.text,
-      shadowOffset: {
-        width: 0,
-        height: 4,
-      },
+      shadowOffset: { width: 0, height: 4 },
       shadowOpacity: 0.15,
       shadowRadius: 12,
       elevation: 6,
@@ -130,48 +92,23 @@ export default function ConfirmationSuccessScreen() {
     },
     descriptionText: {
       fontSize: 16,
-      color: colors.facebook?.gray || colors.icon,
+      color: colors.textSecondary,
       textAlign: "center",
       lineHeight: 24,
       marginBottom: 32,
     },
-    primaryButton: {
-      backgroundColor: colors.facebook?.primary || colors.primary,
-      borderRadius: 12,
-      paddingVertical: 18,
-      alignItems: "center",
-      minHeight: 56,
-      shadowColor: colors.facebook?.primary || colors.primary,
-      shadowOffset: {
-        width: 0,
-        height: 3,
-      },
-      shadowOpacity: 0.25,
-      shadowRadius: 6,
-      elevation: 4,
-      marginBottom: 16,
-    },
-    primaryButtonDisabled: {
-      opacity: 0.6,
-      shadowOpacity: 0,
-      elevation: 0,
-    },
-    primaryButtonText: {
-      color: "#FFFFFF",
-      fontSize: 18,
-      fontWeight: "600",
-    },
     countdownText: {
       fontSize: 14,
-      color: colors.facebook?.gray || colors.icon,
+      color: colors.textSecondary,
       textAlign: "center",
       fontStyle: "italic",
+      marginTop: -16,
     },
     featuresList: {
       marginTop: 24,
       paddingTop: 24,
       borderTopWidth: 1,
-      borderTopColor: colors.facebook?.divider || colors.border,
+      borderTopColor: colors.border,
     },
     featureItem: {
       flexDirection: "row",
@@ -180,98 +117,78 @@ export default function ConfirmationSuccessScreen() {
     },
     featureIcon: {
       fontSize: 18,
-      color: colors.success,
+      color: colors.success || "#10B981",
       marginRight: 12,
       width: 20,
     },
     featureText: {
       fontSize: 14,
-      color: colors.facebook?.gray || colors.icon,
+      color: colors.textSecondary,
       flex: 1,
     },
   });
 
   return (
-    <SafeAreaView style={styles.container}>
-      <ScrollView
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
-        <View style={styles.content}>
-          {/* Success Icon */}
-          <View style={styles.iconContainer}>
-            <View style={styles.successIcon}>
-              <Text style={styles.checkIcon}>✓</Text>
-            </View>
-            <Text style={styles.title}>Welcome aboard!</Text>
-            <Text style={styles.subtitle}>
-              Your email has been successfully verified
+    <AuthLayout>
+      {/* Success Icon */}
+      <View style={styles.iconContainer}>
+        <View style={styles.successIcon}>
+          <Text style={styles.checkIcon}>✓</Text>
+        </View>
+        <Text style={styles.title}>Welcome aboard!</Text>
+        <Text style={styles.subtitle}>
+          Your email has been successfully verified
+        </Text>
+      </View>
+
+      {/* Success Card */}
+      <View style={styles.card}>
+        <Text style={styles.celebrationText}>🎉 Account Confirmed!</Text>
+        <Text style={styles.descriptionText}>
+          Your email has been successfully verified! You can now sign in to your
+          account and start managing your vehicles, tracking maintenance, and
+          accessing all features.
+        </Text>
+
+        <AuthButton
+          title="Continue to Sign In"
+          onPress={handleGoToLogin}
+          loading={redirecting}
+        />
+
+        {!redirecting && countdown > 0 && (
+          <Text style={styles.countdownText}>
+            Redirecting automatically in {countdown} second
+            {countdown !== 1 ? "s" : ""}...
+          </Text>
+        )}
+
+        {/* Features Preview */}
+        <View style={styles.featuresList}>
+          <View style={styles.featureItem}>
+            <Text style={styles.featureIcon}>🚗</Text>
+            <Text style={styles.featureText}>
+              Add and manage multiple vehicles
             </Text>
           </View>
-
-          {/* Success Card */}
-          <View style={styles.card}>
-            <Text style={styles.celebrationText}>🎉 Account Confirmed!</Text>
-            <Text style={styles.descriptionText}>
-              Your email has been successfully verified! You can now sign in to
-              your account and start managing your vehicles, tracking
-              maintenance, and accessing all features.
+          <View style={styles.featureItem}>
+            <Text style={styles.featureIcon}>🔧</Text>
+            <Text style={styles.featureText}>
+              Track maintenance and service records
             </Text>
-
-            <TouchableOpacity
-              style={[
-                styles.primaryButton,
-                redirecting && styles.primaryButtonDisabled,
-              ]}
-              onPress={handleGoToLogin}
-              disabled={redirecting}
-            >
-              {redirecting ? (
-                <ActivityIndicator color="white" size="small" />
-              ) : (
-                <Text style={styles.primaryButtonText}>
-                  Continue to Sign In
-                </Text>
-              )}
-            </TouchableOpacity>
-
-            {!redirecting && countdown > 0 && (
-              <Text style={styles.countdownText}>
-                Redirecting automatically in {countdown} second
-                {countdown !== 1 ? "s" : ""}...
-              </Text>
-            )}
-
-            {/* Features Preview */}
-            <View style={styles.featuresList}>
-              <View style={styles.featureItem}>
-                <Text style={styles.featureIcon}>🚗</Text>
-                <Text style={styles.featureText}>
-                  Add and manage multiple vehicles
-                </Text>
-              </View>
-              <View style={styles.featureItem}>
-                <Text style={styles.featureIcon}>🔧</Text>
-                <Text style={styles.featureText}>
-                  Track maintenance and service records
-                </Text>
-              </View>
-              <View style={styles.featureItem}>
-                <Text style={styles.featureIcon}>⛽</Text>
-                <Text style={styles.featureText}>
-                  Monitor fuel consumption and costs
-                </Text>
-              </View>
-              <View style={styles.featureItem}>
-                <Text style={styles.featureIcon}>📊</Text>
-                <Text style={styles.featureText}>
-                  View analytics and reports
-                </Text>
-              </View>
-            </View>
+          </View>
+          <View style={styles.featureItem}>
+            <Text style={styles.featureIcon}>⛽</Text>
+            <Text style={styles.featureText}>
+              Monitor fuel consumption and costs
+            </Text>
+          </View>
+          <View style={styles.featureItem}>
+            <Text style={styles.featureIcon}>📊</Text>
+            <Text style={styles.featureText}>View analytics and reports</Text>
           </View>
         </View>
-      </ScrollView>
-    </SafeAreaView>
+      </View>
+    </AuthLayout>
   );
 }

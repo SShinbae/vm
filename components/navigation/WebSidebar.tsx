@@ -83,6 +83,7 @@ export function WebSidebar() {
         <TouchableOpacity
           style={[
             styles.navButton,
+            showAsBottomBar && isActive && styles.navButtonActiveBottom,
             !showAsBottomBar && {
               backgroundColor: isActive ? colors.tint : "transparent",
               justifyContent: isOpen ? "flex-start" : "center",
@@ -95,17 +96,20 @@ export function WebSidebar() {
           ]}
           onPress={() => router.push(item.path as any)}
         >
+          {/* Top accent line for active state on bottom bar */}
+          {showAsBottomBar && isActive && <View style={styles.activeTopLine} />}
           <IconSymbol
             name={item.icon as any}
-            size={showAsBottomBar ? 24 : 20}
+            size={showAsBottomBar ? 22 : 20}
             color={
               isActive
                 ? showAsBottomBar
                   ? colors.tint
                   : "#ffffff"
-                : colors.text
+                : colors.textSecondary
             }
           />
+          {/* Always show labels on bottom bar for corporate clarity */}
           {(showAsBottomBar || isOpen) && (
             <Text
               style={[
@@ -115,7 +119,8 @@ export function WebSidebar() {
                     ? showAsBottomBar
                       ? colors.tint
                       : "#ffffff"
-                    : colors.text,
+                    : colors.textSecondary,
+                  fontWeight: isActive ? "600" : "500",
                 },
                 Platform.OS === "web" && {
                   // @ts-ignore - web-specific class
@@ -135,12 +140,12 @@ export function WebSidebar() {
     sidebar: showAsBottomBar
       ? {
           width: "100%",
-          height: 60,
+          height: 64,
           backgroundColor: colors.background,
           borderTopWidth: 1,
-          borderTopColor: colors.icon + "20",
+          borderTopColor: colors.border,
           paddingVertical: 8,
-          paddingHorizontal: 8,
+          paddingHorizontal: 16,
           ...Platform.select({
             web: {
               position: "fixed" as any,
@@ -148,7 +153,6 @@ export function WebSidebar() {
               right: 0,
               bottom: 0,
               zIndex: 100,
-              boxShadow: "0 -2px 10px rgba(0,0,0,0.1)",
             },
           }),
         }
@@ -227,12 +231,14 @@ export function WebSidebar() {
       ? {
           flexDirection: "column",
           alignItems: "center",
-          paddingVertical: 4,
-          paddingHorizontal: 4,
+          justifyContent: "center",
+          paddingVertical: 8,
+          paddingHorizontal: 8,
           borderRadius: 8,
-          gap: 2,
+          gap: 4,
           flex: 1,
           minWidth: 0,
+          position: "relative",
         }
       : {
           flexDirection: "row",
@@ -241,9 +247,21 @@ export function WebSidebar() {
           borderRadius: 8,
           gap: 12,
         },
+    navButtonActiveBottom: {
+      backgroundColor: colors.tint + "14", // 8% opacity for subtle highlight
+    },
+    activeTopLine: {
+      position: "absolute",
+      top: -8,
+      left: "25%",
+      width: "50%",
+      height: 2,
+      backgroundColor: colors.tint,
+      borderRadius: 1,
+    },
     navButtonText: showAsBottomBar
       ? {
-          fontSize: 9,
+          fontSize: 11,
           fontWeight: "500",
           textAlign: "center",
           ...Platform.select({
