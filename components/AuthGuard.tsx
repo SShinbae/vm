@@ -10,7 +10,7 @@ interface AuthGuardProps {
 }
 
 export function AuthGuard({ children }: AuthGuardProps) {
-  const { user, loading, initialized } = useAuth();
+  const { user, loading, initialized, isPasswordRecovery } = useAuth();
   const segments = useSegments();
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? "light"];
@@ -22,15 +22,22 @@ export function AuthGuard({ children }: AuthGuardProps) {
     const inAuthGroup = segments[0] === "(auth)";
     const inRootIndex =
       !segmentPath || segmentPath === "" || segmentPath === "index";
+    const inResetPassword = segmentPath === "(auth)/reset-password";
+
+    // If in password recovery mode, redirect to reset-password page
+    if (isPasswordRecovery && user && !inResetPassword) {
+      router.replace("/(auth)/reset-password");
+      return;
+    }
 
     if (!user && !inAuthGroup && !inRootIndex) {
       // Redirect to root/landing if user is not authenticated and not in auth group or root
       router.replace("/");
-    } else if (user && inAuthGroup) {
-      // Redirect to main app if user is authenticated and in auth group
+    } else if (user && inAuthGroup && !isPasswordRecovery) {
+      // Redirect to main app if user is authenticated and in auth group (but not during password recovery)
       router.replace("/(tabs)");
     }
-  }, [user, segments, initialized, loading]);
+  }, [user, segments, initialized, loading, isPasswordRecovery]);
 
   // Show loading screen while initializing
   if (!initialized || loading) {

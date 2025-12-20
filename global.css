@@ -46,11 +46,15 @@ body {
 
 /* Navigation item transitions */
 .nav-item-transition {
-  transition: all 0.2s ease;
+  transition: all 0.15s ease;
 }
 
 .nav-item-transition:hover {
-  transform: translateX(4px);
+  background-color: rgba(81, 124, 137, 0.05);
+}
+
+:root.dark .nav-item-transition:hover {
+  background-color: rgba(156, 188, 196, 0.08);
 }
 
 /* Sign out button hover effect */
@@ -150,7 +154,7 @@ body.modal-open {
   overflow: hidden;
 }
 
-/* Mobile Web Bottom Navigation */
+/* Mobile Web Bottom Navigation - Corporate Modern Design */
 @media screen and (max-width: 767px) {
   /* Ensure bottom tab bar stays at bottom on mobile web */
   [data-testid="tab-bar"],
@@ -162,12 +166,11 @@ body.modal-open {
     right: 0 !important;
     z-index: 1000 !important;
     border-top: 1px solid var(--border-color) !important;
-    /* Removed static background-color to let React Native handle it */
-    height: 70px !important;
-    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1) !important;
+    height: 64px !important;
+    /* No shadow for clean corporate look */
   }
 
-  /* Force tab labels to be visible */
+  /* Force tab labels to be visible - corporate clarity */
   [data-testid="tab-bar"] span,
   [data-testid="tab-bar"] text,
   .expo-tab-bar span,
@@ -179,8 +182,8 @@ body.modal-open {
     opacity: 1 !important;
     font-size: 11px !important;
     font-weight: 500 !important;
-    line-height: 12px !important;
-    margin-top: 2px !important;
+    line-height: 14px !important;
+    margin-top: 4px !important;
   }
 
   /* Tab button styling for mobile web */
@@ -193,10 +196,31 @@ body.modal-open {
     flex-direction: column !important;
     justify-content: center !important;
     align-items: center !important;
-    gap: 2px !important;
-    padding: 6px 4px 8px 4px !important;
+    gap: 4px !important;
+    padding: 8px !important;
     height: 100% !important;
-    min-height: 70px !important;
+    min-height: 64px !important;
+    border-radius: 8px !important;
+    transition: background-color 0.15s ease !important;
+  }
+
+  /* Hover state for corporate feel */
+  [data-testid="tab-bar"] button:hover,
+  [data-testid="tab-bar"] a:hover,
+  .expo-tab-bar button:hover,
+  .expo-tab-bar a:hover,
+  [role="tablist"] button:hover,
+  [role="tablist"] a:hover {
+    background-color: rgba(81, 124, 137, 0.05) !important;
+  }
+
+  :root.dark [data-testid="tab-bar"] button:hover,
+  :root.dark [data-testid="tab-bar"] a:hover,
+  :root.dark .expo-tab-bar button:hover,
+  :root.dark .expo-tab-bar a:hover,
+  :root.dark [role="tablist"] button:hover,
+  :root.dark [role="tablist"] a:hover {
+    background-color: rgba(156, 188, 196, 0.08) !important;
   }
 
   /* Ensure icons have proper spacing */
@@ -208,7 +232,7 @@ body.modal-open {
 
   /* Add padding to body content to account for fixed bottom bar */
   .main-content-mobile {
-    padding-bottom: 80px !important;
+    padding-bottom: 72px !important;
   }
 }
 
@@ -219,7 +243,7 @@ body.modal-open {
   }
 }
 
-/* Additional web-specific tab label fixes */
+/* Additional web-specific tab label fixes - Corporate Modern */
 @media screen and (max-width: 767px) {
   /* Override any hidden label styles */
   .expo-tab-bar .expo-tab-bar__tab-label,
@@ -235,19 +259,13 @@ body.modal-open {
     text-align: center !important;
   }
 
-  /* Force all text elements to be visible */
-  [data-testid="tab-bar"] *:has-text,
-  [data-testid="tab-bar"] *[title] {
-    font-size: 11px !important;
-  }
-
   /* Specific targeting for Expo Router generated elements */
   div[role="tablist"] button span,
   div[role="tablist"] a span {
     display: block !important;
     font-size: 11px !important;
-    margin-top: 2px !important;
-    line-height: 1.1 !important;
+    margin-top: 4px !important;
+    line-height: 1.2 !important;
   }
 
   /* Try to override any React Native Web specific hiding */
@@ -256,14 +274,13 @@ body.modal-open {
     overflow: visible !important;
   }
 
-  /* Nuclear option - force all possible text elements to be visible */
+  /* Force all possible text elements to be visible */
   [data-testid="tab-bar"] span,
   [data-testid="tab-bar"] text,
   [data-testid="tab-bar"] p,
   [data-testid="tab-bar"] div[role="text"],
   [data-testid="tab-bar"] [class*="label"],
-  [data-testid="tab-bar"] [class*="text"],
-  [data-testid="tab-bar"] [aria-label] {
+  [data-testid="tab-bar"] [class*="text"] {
     display: block !important;
     visibility: visible !important;
     opacity: 1 !important;

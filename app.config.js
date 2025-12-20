@@ -12,6 +12,7 @@ module.exports = {
     newArchEnabled: true,
     ios: {
       supportsTablet: true,
+      bundleIdentifier: "com.vehiclesmanagement.app",
     },
     android: {
       package: "com.vehiclesmanagement.app",
@@ -51,6 +52,12 @@ module.exports = {
           },
         },
       ],
+      [
+        "onesignal-expo-plugin",
+        {
+          mode: "development",
+        },
+      ],
     ],
     experiments: {
       typedRoutes: true,
@@ -64,6 +71,7 @@ module.exports = {
       supabaseKey: process.env.SUPABASE_KEY,
       googleVisionApiKey: process.env.GOOGLE_VISION_API_KEY,
       siteUrl: process.env.SITE_URL,
+      oneSignalAppId: process.env.ONESIGNAL_APP_ID,
     },
   },
 };
