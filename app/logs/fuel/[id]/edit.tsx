@@ -3,7 +3,8 @@ import { Button } from "@/components/ui/Button";
 import { DatePicker } from "@/components/ui/DatePicker";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { Input } from "@/components/ui/Input";
-import { AlertModal, ConfirmModal } from "@/components/ui/Modal";
+import { ConfirmModal } from "@/components/ui/Modal";
+import { useToast } from "@/hooks/useToast";
 import { FuelLogService } from "@/lib/services/loggingService";
 import { canUserAccessVehicle } from "@/lib/utils/serviceUtils";
 import { supabase } from "@/services/supabaseClient";
@@ -41,9 +42,7 @@ export default function EditFuelLogScreen() {
   });
   const [loading, setLoading] = useState(false);
   const [dataLoading, setDataLoading] = useState(true);
-  const [showSuccessModal, setShowSuccessModal] = useState(false);
-  const [showErrorModal, setShowErrorModal] = useState(false);
-  const [errorMessage, setErrorMessage] = useState("");
+  const { showSuccess, showError } = useToast();
   const [canModify, setCanModify] = useState(true);
   const [deleteModalVisible, setDeleteModalVisible] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
@@ -60,8 +59,7 @@ export default function EditFuelLogScreen() {
   useEffect(() => {
     const fetchFuelLog = async () => {
       if (!id) {
-        setErrorMessage("Invalid fuel log ID");
-        setShowErrorModal(true);
+        showError("Invalid fuel log ID");
         router.back();
         return;
       }
@@ -77,18 +75,16 @@ export default function EditFuelLogScreen() {
             errorMsg =
               "Unable to load fuel log. Please check your internet connection.";
           }
-          setErrorMessage(errorMsg);
-          setShowErrorModal(true);
+          showError(errorMsg);
           router.back();
           return;
         }
 
         if (!log) {
           console.error("No fuel log found with ID:", id);
-          setErrorMessage(
+          showError(
             "This fuel log no longer exists. It may have been deleted.",
           );
-          setShowErrorModal(true);
           router.back();
           return;
         }
@@ -117,8 +113,7 @@ export default function EditFuelLogScreen() {
         }
       } catch (error) {
         console.error("Error fetching fuel log:", error);
-        setErrorMessage("Failed to load fuel log");
-        setShowErrorModal(true);
+        showError("Failed to load fuel log");
         router.back();
       }
 
@@ -131,23 +126,19 @@ export default function EditFuelLogScreen() {
   const handleSave = async () => {
     // Validation
     if (!formData.cost || formData.cost <= 0) {
-      setErrorMessage("Please enter a valid cost amount");
-      setShowErrorModal(true);
+      showError("Please enter a valid cost amount");
       return;
     }
     if (!formData.fuel_price || formData.fuel_price <= 0) {
-      setErrorMessage("Please select a fuel price");
-      setShowErrorModal(true);
+      showError("Please select a fuel price");
       return;
     }
     if (formData.odometer_reading <= 0) {
-      setErrorMessage("Please enter a valid odometer reading");
-      setShowErrorModal(true);
+      showError("Please enter a valid odometer reading");
       return;
     }
     if (!formData.date) {
-      setErrorMessage("Please select a date");
-      setShowErrorModal(true);
+      showError("Please select a date");
       return;
     }
 
@@ -189,16 +180,11 @@ export default function EditFuelLogScreen() {
           "The fuel log could not be updated. It may have been deleted or you may not have sufficient permissions.";
       }
 
-      setErrorMessage(errorMsg);
-      setShowErrorModal(true);
+      showError(errorMsg);
     } else {
-      setShowSuccessModal(true);
+      showSuccess("Fuel log updated successfully!");
+      router.push("/(tabs)/logs");
     }
-  };
-
-  const handleSuccessModalClose = () => {
-    setShowSuccessModal(false);
-    router.push("/(tabs)/logs");
   };
 
   const handleDelete = () => {
@@ -213,17 +199,16 @@ export default function EditFuelLogScreen() {
       setDeleteModalVisible(false);
 
       if (error) {
-        setErrorMessage(error);
-        setShowErrorModal(true);
+        showError(error);
       } else {
+        showSuccess("Fuel log deleted successfully!");
         router.push("/(tabs)/logs");
       }
     } catch (error) {
       console.error("Error deleting fuel log:", error);
       setDeleteLoading(false);
       setDeleteModalVisible(false);
-      setErrorMessage("Failed to delete fuel log");
-      setShowErrorModal(true);
+      showError("Failed to delete fuel log");
     }
   };
 
@@ -499,23 +484,6 @@ export default function EditFuelLogScreen() {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
-
-      <AlertModal
-        visible={showSuccessModal}
-        onClose={handleSuccessModalClose}
-        title="Success"
-        message="Fuel log updated successfully!"
-        variant="success"
-        buttonText="Done"
-      />
-
-      <AlertModal
-        visible={showErrorModal}
-        onClose={() => setShowErrorModal(false)}
-        title="Error"
-        message={errorMessage}
-        variant="error"
-      />
 
       <ConfirmModal
         visible={deleteModalVisible}

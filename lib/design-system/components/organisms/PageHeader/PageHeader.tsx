@@ -12,6 +12,7 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
   showBack = false,
   onBack,
   actions = [],
+  rightContent,
   bottom,
   backgroundColor,
   noBorder = false,
@@ -60,26 +61,28 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
           </View>
         </View>
 
-        {actions.length > 0 && (
-          <View style={styles.actionsContainer}>
-            {actions.map((action, index) => (
-              <Pressable
-                key={index}
-                onPress={action.onPress}
-                disabled={action.disabled}
-                style={[
-                  styles.actionButton,
-                  action.disabled && styles.actionButtonDisabled,
-                ]}
-                accessibilityRole="button"
-                accessibilityLabel={action.label || `Action ${index + 1}`}
-                accessibilityState={{ disabled: action.disabled }}
-              >
-                <Icon name={action.icon} size={24} color="primary" />
-              </Pressable>
-            ))}
-          </View>
-        )}
+        {rightContent
+          ? rightContent
+          : actions.length > 0 && (
+              <View style={styles.actionsContainer}>
+                {actions.map((action, index) => (
+                  <Pressable
+                    key={index}
+                    onPress={action.onPress}
+                    disabled={action.disabled}
+                    style={[
+                      styles.actionButton,
+                      action.disabled && styles.actionButtonDisabled,
+                    ]}
+                    accessibilityRole="button"
+                    accessibilityLabel={action.label || `Action ${index + 1}`}
+                    accessibilityState={{ disabled: action.disabled }}
+                  >
+                    <Icon name={action.icon} size={24} color="primary" />
+                  </Pressable>
+                ))}
+              </View>
+            )}
       </View>
 
       {bottom && <View style={styles.bottomContainer}>{bottom}</View>}

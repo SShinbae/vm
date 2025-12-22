@@ -1,24 +1,24 @@
 import { supabase } from "../../services/supabaseClient";
 import { RealtimeChannel } from "@supabase/supabase-js";
-import { Database } from "../../types/database";
+import type { Database } from "../../types/database";
 
 export interface NotificationData {
   id: string;
-  type:
+  user_id: string;
+  notification_type:
     | "mileage_log"
     | "fuel_log"
     | "service_log"
     | "group_member"
     | "group_invite";
-  action: "INSERT" | "UPDATE" | "DELETE";
   title: string;
-  message: string;
-  vehicleId?: string;
-  groupId?: string;
-  userId: string;
-  userName?: string;
-  timestamp: string;
+  body: string;
+  data: any | null;
   read: boolean;
+  related_vehicle_id?: string | null;
+  related_group_id?: string | null;
+  action_url?: string | null;
+  created_at: string;
 }
 
 export type NotificationCallback = (notification: NotificationData) => void;
@@ -236,15 +236,20 @@ class NotificationService {
 
     const notification: NotificationData = {
       id: `${logType}-${eventType}-${Date.now()}`,
-      type: logType,
-      action: eventType,
+      user_id: this.userId!,
+      notification_type: logType,
       title,
-      message,
-      vehicleId,
-      userId: newRecord?.user_id || oldRecord?.user_id,
-      userName,
-      timestamp: new Date().toISOString(),
+      body: message,
+      data: {
+        action: eventType,
+        userName,
+        performedBy: newRecord?.user_id || oldRecord?.user_id,
+      },
       read: false,
+      related_vehicle_id: vehicleId,
+      related_group_id: null,
+      action_url: null,
+      created_at: new Date().toISOString(),
     };
 
     this.notifyCallbacks(notification);
@@ -301,15 +306,20 @@ class NotificationService {
 
     const notification: NotificationData = {
       id: `group-member-${eventType}-${Date.now()}`,
-      type: "group_member",
-      action: eventType,
+      user_id: this.userId!,
+      notification_type: "group_member",
       title,
-      message,
-      groupId,
-      userId: newRecord?.user_id || oldRecord?.user_id,
-      userName,
-      timestamp: new Date().toISOString(),
+      body: message,
+      data: {
+        action: eventType,
+        userName,
+        performedBy: newRecord?.user_id || oldRecord?.user_id,
+      },
       read: false,
+      related_vehicle_id: null,
+      related_group_id: groupId,
+      action_url: null,
+      created_at: new Date().toISOString(),
     };
 
     this.notifyCallbacks(notification);
@@ -361,15 +371,21 @@ class NotificationService {
 
     const notification: NotificationData = {
       id: `invite-${newRecord.id}`,
-      type: "group_invite",
-      action: "INSERT",
+      user_id: this.userId!,
+      notification_type: "group_invite",
       title: "Group invitation",
-      message: `${inviterName} invited you to join ${groupName}`,
-      groupId: newRecord.group_id,
-      userId: newRecord.invited_by,
-      userName: inviterName,
-      timestamp: new Date().toISOString(),
+      body: `${inviterName} invited you to join ${groupName}`,
+      data: {
+        action: "INSERT",
+        userName: inviterName,
+        performedBy: newRecord.invited_by,
+        invitationId: newRecord.id,
+      },
       read: false,
+      related_vehicle_id: null,
+      related_group_id: newRecord.group_id,
+      action_url: null,
+      created_at: new Date().toISOString(),
     };
 
     this.notifyCallbacks(notification);

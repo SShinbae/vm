@@ -1,10 +1,12 @@
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { ImageUpload } from "@/components/ui/ImageUpload";
 import { Modal } from "@/components/ui/Modal";
+import { NotificationList } from "@/components/ui/NotificationList";
 import { useResponsiveLayout } from "@/hooks/use-responsive-layout";
 import { useProfileStats } from "@/hooks/useProfileStats";
 import { useAuth } from "@/lib/contexts/AuthContext";
 import { useDialog } from "@/lib/contexts/DialogContext";
+import { useNotifications } from "@/lib/contexts/NotificationContext";
 import { useTheme } from "@/lib/contexts/ThemeContext";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router } from "expo-router";
@@ -12,7 +14,6 @@ import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
-  Platform,
   ScrollView,
   Switch,
   Text,
@@ -29,8 +30,9 @@ export default function ProfileScreen() {
   const { user, updateProfile, signOut } = useAuth();
   const { themeMode, setThemeMode } = useTheme();
   const { showConfirm, hideConfirm } = useDialog();
+  const { unreadCount } = useNotifications();
   const { theme } = useStyles();
-  const { isMobile } = useResponsiveLayout();
+  const { isMobile, isWeb, isDesktop } = useResponsiveLayout();
   const { stats, loading: statsLoading } = useProfileStats();
 
   const [fullName, setFullName] = useState(user?.profile?.full_name || "");
@@ -47,8 +49,6 @@ export default function ProfileScreen() {
     inAppToasts: true,
     pushNotifications: true,
   });
-
-  const isWeb = Platform.OS === "web";
 
   useEffect(() => {
     setAvatarUrl(user?.profile?.avatar_url || null);
@@ -792,6 +792,19 @@ export default function ProfileScreen() {
 
     return (
       <>
+        {/* Embedded Notification History for all platforms */}
+        <View
+          style={{
+            marginTop: theme.spacing.md,
+            marginHorizontal: theme.spacing.lg,
+            backgroundColor: theme.colors.surface,
+            borderRadius: theme.borderRadius.xl,
+            overflow: "hidden",
+          }}
+        >
+          <NotificationList />
+        </View>
+
         <View
           style={{
             padding: theme.spacing.xl,

@@ -13,6 +13,12 @@ module.exports = {
     ios: {
       supportsTablet: true,
       bundleIdentifier: "com.vehiclesmanagement.app",
+      infoPlist: {
+        NSPhotoLibraryUsageDescription:
+          "This app needs access to your photo library to let you select and crop images for your profile and vehicles.",
+        NSCameraUsageDescription:
+          "This app needs access to your camera to let you take and crop photos for your profile and vehicles.",
+      },
     },
     android: {
       package: "com.vehiclesmanagement.app",
@@ -23,6 +29,12 @@ module.exports = {
       },
       edgeToEdgeEnabled: true,
       predictiveBackGestureEnabled: false,
+      permissions: [
+        "CAMERA",
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE",
+        "READ_MEDIA_IMAGES",
+      ],
     },
     web: {
       output: "static",

@@ -1,8 +1,8 @@
 import { Input } from "@/components/ui/Input";
-import { AlertModal } from "@/components/ui/Modal";
 import { FormLayout } from "@/lib/design-system/components/templates/FormLayout";
 import { Spacer } from "@/lib/design-system/components/atoms/Spacer";
 import { GroupService } from "@/lib/services/groupService";
+import { useToast } from "@/hooks/useToast";
 import { GroupFormData } from "@/types";
 import { router } from "expo-router";
 import React, { useState } from "react";
@@ -13,14 +13,11 @@ export default function CreateGroupScreen() {
     description: "",
   });
   const [loading, setLoading] = useState(false);
-  const [showSuccessModal, setShowSuccessModal] = useState(false);
-  const [showErrorModal, setShowErrorModal] = useState(false);
-  const [errorMessage, setErrorMessage] = useState("");
+  const { showSuccess, showError } = useToast();
 
   const handleSave = async () => {
     if (!formData.name.trim()) {
-      setErrorMessage("Please enter a group name");
-      setShowErrorModal(true);
+      showError("Please enter a group name");
       return;
     }
 
@@ -35,16 +32,11 @@ export default function CreateGroupScreen() {
     setLoading(false);
 
     if (error) {
-      setErrorMessage(error);
-      setShowErrorModal(true);
+      showError(error);
     } else {
-      setShowSuccessModal(true);
+      showSuccess("Group created successfully!");
+      router.back();
     }
-  };
-
-  const handleSuccessModalClose = () => {
-    setShowSuccessModal(false);
-    router.back();
   };
 
   const validateName = (value: string) => {
@@ -96,23 +88,6 @@ export default function CreateGroupScreen() {
           helperText="Help members understand what this group is for"
         />
       </FormLayout>
-
-      <AlertModal
-        visible={showSuccessModal}
-        onClose={handleSuccessModalClose}
-        title="Success"
-        message="Group created successfully!"
-        variant="success"
-        buttonText="Done"
-      />
-
-      <AlertModal
-        visible={showErrorModal}
-        onClose={() => setShowErrorModal(false)}
-        title="Error"
-        message={errorMessage}
-        variant="error"
-      />
     </>
   );
 }

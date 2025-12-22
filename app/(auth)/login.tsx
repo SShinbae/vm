@@ -6,13 +6,14 @@ import {
   AuthLayout,
   AuthLink,
 } from "@/components/auth";
-import { useAlert, withWebAlert } from "@/components/ui";
+import { withWebAlert } from "@/components/ui";
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useAuth } from "@/lib/contexts/AuthContext";
+import { useToast } from "@/hooks/useToast";
 import { isValidEmail } from "@/utils/validation";
 import { Link, router } from "expo-router";
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 function LoginScreen() {
@@ -20,41 +21,72 @@ function LoginScreen() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
-  const { signIn } = useAuth();
+  const loginAttempted = useRef(false);
+  const { signIn, user, initialized } = useAuth();
+  const { showSuccess, showError } = useToast();
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? "light"];
-  const { showError } = useAlert();
+
+  // If user is already logged in before any login attempt, redirect to dashboard
+  // This handles the case where user navigates to login while already authenticated
+  React.useEffect(() => {
+    // Don't do anything until auth is initialized
+    if (!initialized) return;
+
+    // Never redirect if a login was attempted - this component handles its own navigation
+    if (loginAttempted.current) {
+      console.log("Login - not redirecting, login was attempted");
+      return;
+    }
+
+    // Only redirect if user was already logged in before they came to this page
+    if (user) {
+      console.log("Login - redirecting to tabs, user already logged in");
+      router.replace("/(tabs)");
+    }
+  }, [user, initialized]);
+
+  const handleEmailChange = (text: string) => {
+    setEmail(text);
+  };
+
+  const handlePasswordChange = (text: string) => {
+    setPassword(text);
+  };
 
   const handleSignIn = async () => {
     if (!email.trim() || !password.trim()) {
-      showError("Error", "Please fill in all fields");
+      showError("Please fill in all fields");
       return;
     }
 
     if (!isValidEmail(email)) {
-      showError("Error", "Please enter a valid email address");
+      showError("Please enter a valid email address");
       return;
     }
 
+    // Mark that we're attempting login to prevent auto-redirect from stale sessions
+    loginAttempted.current = true;
     setLoading(true);
+
     try {
       const { error } = await signIn(email.trim().toLowerCase(), password);
 
       if (error) {
+        console.log("Login error received:", error);
+        showError(error);
         setLoading(false);
-        showError("Sign In Failed", error);
-      } else {
-        // Small delay to ensure session is established
-        await new Promise((resolve) => setTimeout(resolve, 500));
-        setLoading(false);
-        router.replace("/(tabs)");
+        return;
       }
-    } catch {
+
+      // Success - navigate to dashboard
+      console.log("Login successful, navigating to dashboard");
+      showSuccess("Welcome back!");
+      router.replace("/(tabs)");
+    } catch (err) {
+      console.log("Login catch block:", err);
+      showError("An unexpected error occurred. Please try again.");
       setLoading(false);
-      showError(
-        "Sign In Failed",
-        "An unexpected error occurred. Please try again.",
-      );
     }
   };
 
@@ -90,7 +122,7 @@ function LoginScreen() {
         label="Email Address"
         placeholder="you@example.com"
         value={email}
-        onChangeText={setEmail}
+        onChangeText={handleEmailChange}
         leftIcon="mail-outline"
         type="email"
       />
@@ -109,7 +141,7 @@ function LoginScreen() {
           label=""
           placeholder="••••••••"
           value={password}
-          onChangeText={setPassword}
+          onChangeText={handlePasswordChange}
           leftIcon="lock-closed-outline"
           type="password"
         />

@@ -10,10 +10,11 @@ import { PasswordStrengthIndicator, withWebAlert } from "@/components/ui";
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useAuth } from "@/lib/contexts/AuthContext";
+import { useToast } from "@/hooks/useToast";
 import { isValidEmail, validatePassword } from "@/utils/validation";
 import { router } from "expo-router";
 import React, { useState } from "react";
-import { Alert, StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
 
 function RegisterScreen() {
   const [fullName, setFullName] = useState("");
@@ -23,36 +24,36 @@ function RegisterScreen() {
   const [loading, setLoading] = useState(false);
   const [agreeToTerms, setAgreeToTerms] = useState(false);
   const { signUp } = useAuth();
+  const { showError, showSuccess, showWarning } = useToast();
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? "light"];
 
   const validateForm = () => {
     if (!fullName.trim()) {
-      Alert.alert("Error", "Please enter your full name");
+      showError("Please enter your full name");
       return false;
     }
     if (!email.trim()) {
-      Alert.alert("Error", "Please enter your email");
+      showError("Please enter your email");
       return false;
     }
     if (!isValidEmail(email)) {
-      Alert.alert("Error", "Please enter a valid email address");
+      showError("Please enter a valid email address");
       return false;
     }
     const passwordValidation = validatePassword(password);
     if (!passwordValidation.isValid) {
-      Alert.alert(
-        "Password Requirements",
-        `Your password needs:\n• ${passwordValidation.errors.join("\n• ")}`,
-      );
+      showWarning("Password Requirements", {
+        message: passwordValidation.errors.join(", "),
+      });
       return false;
     }
     if (password !== confirmPassword) {
-      Alert.alert("Error", "Passwords do not match");
+      showError("Passwords do not match");
       return false;
     }
     if (!agreeToTerms) {
-      Alert.alert("Error", "Please agree to the Terms of Service");
+      showError("Please agree to the Terms of Service");
       return false;
     }
     return true;
@@ -80,13 +81,14 @@ function RegisterScreen() {
       if (__DEV__) {
         console.error("Registration failed with error:", error);
       }
-      Alert.alert("Registration Failed", error);
+      showError("Registration Failed", { message: error });
     } else {
       if (__DEV__) {
         console.log(
           "Registration successful, redirecting to email confirmation page...",
         );
       }
+      showSuccess("Account created!");
       router.replace({
         pathname: "/(auth)/email-confirmation",
         params: { email: email.trim().toLowerCase() },

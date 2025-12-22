@@ -37,7 +37,7 @@ export function NotificationManager() {
 
   const shouldShowNotification = useCallback(
     (notification: NotificationData): boolean => {
-      switch (notification.type) {
+      switch (notification.notification_type) {
         case "mileage_log":
         case "fuel_log":
         case "service_log":
@@ -92,19 +92,19 @@ export function NotificationManager() {
 
   const handleToastPress = useCallback((notification: NotificationData) => {
     // Navigate based on notification type
-    switch (notification.type) {
+    switch (notification.notification_type) {
       case "mileage_log":
       case "fuel_log":
       case "service_log":
-        if (notification.vehicleId) {
-          router.push(`/vehicles/${notification.vehicleId}`);
+        if (notification.related_vehicle_id) {
+          router.push(`/vehicles/${notification.related_vehicle_id}`);
         }
         break;
       case "group_member":
       case "group_invite":
-        if (notification.groupId) {
-          router.push(`/groups/${notification.groupId}`);
-        } else if (notification.type === "group_invite") {
+        if (notification.related_group_id) {
+          router.push(`/groups/${notification.related_group_id}`);
+        } else if (notification.notification_type === "group_invite") {
           // For group invitations, go to the groups screen where invitations are shown
           router.push("/groups");
         }

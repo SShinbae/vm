@@ -100,7 +100,7 @@ export function NotificationToast({
   const getIcon = () => {
     if (!notification) return "notifications-outline";
 
-    switch (notification.type) {
+    switch (notification.notification_type) {
       case "mileage_log":
         return "speedometer-outline";
       case "fuel_log":
@@ -159,7 +159,7 @@ export function NotificationToast({
                 style={{ color: textColor, opacity: 0.8 }}
                 numberOfLines={2}
               >
-                {notification.message}
+                {notification.body}
               </Text>
             </View>
 

@@ -296,14 +296,33 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
         return;
       }
 
-      console.log("✅ Validation passed, starting upload...");
+      console.log("✅ Validation passed, compressing image...");
+
+      // Compress image if it's larger than 500KB
+      let finalFile = file;
+      if (file.size > 500 * 1024) {
+        try {
+          console.log("🗜️ Compressing image from", file.size, "bytes");
+          finalFile = await ImageUploadService.compressImage(
+            file,
+            type === "avatar" ? 800 : 1200, // max width
+            0.8, // quality
+          );
+          console.log("✅ Image compressed to", finalFile.size, "bytes");
+        } catch (compressError) {
+          console.warn("⚠️ Compression failed, using original:", compressError);
+          // Continue with original file if compression fails
+        }
+      }
+
+      console.log("✅ Starting upload...");
       setUploading(true);
-      setLocalImageUri(URL.createObjectURL(file));
+      setLocalImageUri(URL.createObjectURL(finalFile));
 
       let result;
       if (type === "avatar") {
         console.log("📸 Uploading avatar...");
-        result = await ImageUploadService.uploadProfileAvatar(file);
+        result = await ImageUploadService.uploadProfileAvatar(finalFile);
       } else {
         if (!vehicleId) {
           throw new Error("Vehicle ID is required for vehicle images");
@@ -311,7 +330,7 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
         console.log("🚗 Uploading vehicle image...");
         result = await ImageUploadService.uploadVehicleImage(
           vehicleId,
-          file,
+          finalFile,
           type === "vehicle_main" ? "vehicle_main" : "vehicle_gallery",
         );
       }

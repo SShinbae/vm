@@ -1,5 +1,7 @@
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { ConfirmModal } from "@/components/ui/Modal";
+import { NotificationBell } from "@/components/ui/NotificationBell";
+import { NotificationPopup } from "@/components/ui/NotificationPopup";
 import { Tooltip } from "@/components/ui/Tooltip";
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
@@ -45,6 +47,7 @@ export function WebSidebar() {
   const { user, signOut } = useAuth();
   const { isOpen, toggle } = useSidebar();
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [showNotificationPopup, setShowNotificationPopup] = useState(false);
 
   // Hide sidebar on auth pages (login, register)
   const isAuthPage =
@@ -67,7 +70,7 @@ export function WebSidebar() {
   const handleConfirmSignOut = async () => {
     setShowLogoutModal(false);
     await signOut();
-    router.replace("/login");
+    router.replace("/(auth)/login");
   };
 
   const NavButton = ({ item }: { item: NavItem }) => {
@@ -309,8 +312,15 @@ export function WebSidebar() {
       fontSize: 14,
       fontWeight: "500",
     },
-    userInfo: {
+    userInfoRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: isOpen ? "space-between" : "center",
       paddingHorizontal: isOpen ? 8 : 0,
+      gap: isOpen ? 8 : 12,
+    },
+    userInfo: {
+      flex: isOpen ? 1 : undefined,
       flexDirection: "column",
       alignItems: "center",
       gap: 8,
@@ -472,52 +482,68 @@ export function WebSidebar() {
           </Tooltip>
         </View>
 
-        {/* User Info */}
-        <Tooltip content="Profile" position="right" disabled={isOpen}>
-          <TouchableOpacity
-            style={styles.userInfo}
-            onPress={() => router.push("/profile" as any)}
-            activeOpacity={0.7}
-          >
-            <View style={styles.userAvatarRow}>
-              {/* Avatar */}
-              <View style={styles.avatar}>
-                {user?.profile?.avatar_url ? (
-                  <Image
-                    source={{ uri: user.profile.avatar_url }}
-                    style={styles.avatarImage}
-                    contentFit="cover"
-                    cachePolicy="memory-disk"
-                  />
-                ) : (
-                  <IconSymbol
-                    name="person.fill"
-                    size={16}
-                    color={colors.tint}
-                  />
+        {/* User Info with Notification Bell */}
+        <View style={styles.userInfoRow}>
+          <Tooltip content="Profile" position="right" disabled={isOpen}>
+            <TouchableOpacity
+              style={styles.userInfo}
+              onPress={() => router.push("/profile" as any)}
+              activeOpacity={0.7}
+            >
+              <View style={styles.userAvatarRow}>
+                {/* Avatar */}
+                <View style={styles.avatar}>
+                  {user?.profile?.avatar_url ? (
+                    <Image
+                      source={{ uri: user.profile.avatar_url }}
+                      style={styles.avatarImage}
+                      contentFit="cover"
+                      cachePolicy="memory-disk"
+                    />
+                  ) : (
+                    <IconSymbol
+                      name="person.fill"
+                      size={16}
+                      color={colors.tint}
+                    />
+                  )}
+                </View>
+
+                {/* User Details - only show when expanded */}
+                {isOpen && (
+                  <View
+                    style={[
+                      styles.userDetails,
+                      Platform.OS === "web" && {
+                        // @ts-ignore - web-specific class
+                        className: "text-fade-transition",
+                      },
+                    ]}
+                  >
+                    <Text style={styles.userName}>
+                      {user?.profile?.username || user?.email?.split("@")[0]}
+                    </Text>
+                    <Text style={styles.userEmail}>{user?.email}</Text>
+                  </View>
                 )}
               </View>
+            </TouchableOpacity>
+          </Tooltip>
 
-              {/* User Details - only show when expanded */}
-              {isOpen && (
-                <View
-                  style={[
-                    styles.userDetails,
-                    Platform.OS === "web" && {
-                      // @ts-ignore - web-specific class
-                      className: "text-fade-transition",
-                    },
-                  ]}
-                >
-                  <Text style={styles.userName}>
-                    {user?.profile?.username || user?.email?.split("@")[0]}
-                  </Text>
-                  <Text style={styles.userEmail}>{user?.email}</Text>
-                </View>
-              )}
-            </View>
-          </TouchableOpacity>
-        </Tooltip>
+          {/* Notification Bell */}
+          <Tooltip content="Notifications" position="right" disabled={isOpen}>
+            <NotificationBell
+              onPress={() => setShowNotificationPopup(true)}
+              size={isOpen ? 20 : 18}
+            />
+          </Tooltip>
+
+          {/* Notification Popup */}
+          <NotificationPopup
+            visible={showNotificationPopup}
+            onClose={() => setShowNotificationPopup(false)}
+          />
+        </View>
       </View>
 
       <ConfirmModal

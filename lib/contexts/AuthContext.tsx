@@ -298,7 +298,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
           console.error("Sign in error:", error);
         }
         setState((prev) => ({ ...prev, loading: false }));
-        return { error: error.message };
+        // Make error message more user-friendly
+        let errorMessage = error.message;
+        if (error.message === "Invalid login credentials") {
+          errorMessage =
+            "Invalid email or password. Please check your credentials and try again.";
+        }
+        return { error: errorMessage };
       }
 
       // Sync user with OneSignal for push notifications (mobile only)
