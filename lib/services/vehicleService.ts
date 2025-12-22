@@ -230,6 +230,133 @@ export class VehicleService {
   }
 
   /**
+   * Get vehicles shared with a specific group
+   */
+  static async getVehiclesForGroup(
+    groupId: string,
+  ): Promise<ApiResponse<VehicleWithDetails[]>> {
+    try {
+      const {
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser();
+
+      if (userError || !user) {
+        return { data: null, error: "User not authenticated", loading: false };
+      }
+
+      console.log("🔍 Fetching vehicles for group:", groupId);
+
+      // Get vehicles shared with this specific group
+      const { data: shares, error: sharesError } = await supabase
+        .from("vehicle_group_shares")
+        .select(
+          `
+          vehicle_id,
+          vehicles!inner(
+            id,
+            user_id,
+            make,
+            model,
+            year,
+            license_plate,
+            vin,
+            main_image_url,
+            color,
+            current_mileage,
+            created_at,
+            updated_at
+          )
+        `,
+        )
+        .eq("group_id", groupId);
+
+      if (sharesError) {
+        console.error("❌ Error fetching group vehicles:", sharesError);
+        return { data: null, error: sharesError.message, loading: false };
+      }
+
+      if (!shares || shares.length === 0) {
+        console.log("📭 No vehicles shared with this group");
+        return { data: [], error: null, loading: false };
+      }
+
+      // Enhance vehicle data with owner profile and images
+      const enhancedVehicles: VehicleWithDetails[] = await Promise.all(
+        shares.map(async (share: any) => {
+          const vehicle = share.vehicles;
+
+          // Get vehicle images
+          const { data: images } = await supabase
+            .from("vehicle_images")
+            .select("*")
+            .eq("vehicle_id", vehicle.id)
+            .order("image_type", { ascending: true })
+            .order("display_order", { ascending: true });
+
+          // Get owner profile
+          const ownerProfileResult = await supabase
+            .from("profiles")
+            .select("id, email, full_name, avatar_url")
+            .eq("id", vehicle.user_id)
+            .single();
+
+          const ownerProfile = ownerProfileResult.data as {
+            id: string;
+            email: string;
+            full_name: string | null;
+            avatar_url: string | null;
+          } | null;
+
+          const isOwnVehicle = vehicle.user_id === user.id;
+
+          return {
+            id: vehicle.id,
+            user_id: vehicle.user_id,
+            make: vehicle.make,
+            model: vehicle.model,
+            year: vehicle.year,
+            license_plate: vehicle.license_plate,
+            vin: vehicle.vin,
+            main_image_url: vehicle.main_image_url,
+            color: vehicle.color,
+            current_mileage: vehicle.current_mileage || 0,
+            created_at: vehicle.created_at,
+            updated_at: vehicle.updated_at,
+            is_own_vehicle: isOwnVehicle,
+            owner_profile: isOwnVehicle
+              ? null
+              : {
+                  id: ownerProfile?.id || vehicle.user_id,
+                  email: ownerProfile?.email || "",
+                  full_name: ownerProfile?.full_name || null,
+                  avatar_url: ownerProfile?.avatar_url || null,
+                  phone: null,
+                  bio: null,
+                  created_at: "",
+                  updated_at: "",
+                },
+            images: images || [],
+            shared_groups: [],
+            sharing_info: undefined,
+            logs: undefined,
+          };
+        }),
+      );
+
+      console.log("✅ Vehicles fetched for group:", enhancedVehicles.length);
+      return { data: enhancedVehicles, error: null, loading: false };
+    } catch (error) {
+      console.error("💥 Error fetching vehicles for group:", error);
+      return {
+        data: null,
+        error: "Failed to fetch vehicles for group",
+        loading: false,
+      };
+    }
+  }
+
+  /**
    * Share vehicle with specific groups
    */
   static async shareVehicleWithGroups(

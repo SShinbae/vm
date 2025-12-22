@@ -12,6 +12,13 @@ module.exports = {
     newArchEnabled: true,
     ios: {
       supportsTablet: true,
+      bundleIdentifier: "com.vehiclesmanagement.app",
+      infoPlist: {
+        NSPhotoLibraryUsageDescription:
+          "This app needs access to your photo library to let you select and crop images for your profile and vehicles.",
+        NSCameraUsageDescription:
+          "This app needs access to your camera to let you take and crop photos for your profile and vehicles.",
+      },
     },
     android: {
       package: "com.vehiclesmanagement.app",
@@ -22,6 +29,12 @@ module.exports = {
       },
       edgeToEdgeEnabled: true,
       predictiveBackGestureEnabled: false,
+      permissions: [
+        "CAMERA",
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE",
+        "READ_MEDIA_IMAGES",
+      ],
     },
     web: {
       output: "static",
@@ -51,6 +64,12 @@ module.exports = {
           },
         },
       ],
+      [
+        "onesignal-expo-plugin",
+        {
+          mode: "development",
+        },
+      ],
     ],
     experiments: {
       typedRoutes: true,
@@ -64,6 +83,7 @@ module.exports = {
       supabaseKey: process.env.SUPABASE_KEY,
       googleVisionApiKey: process.env.GOOGLE_VISION_API_KEY,
       siteUrl: process.env.SITE_URL,
+      oneSignalAppId: process.env.ONESIGNAL_APP_ID,
     },
   },
 };

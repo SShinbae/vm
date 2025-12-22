@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/Button";
 import { DatePicker } from "@/components/ui/DatePicker";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { Input } from "@/components/ui/Input";
-import { AlertModal } from "@/components/ui/Modal";
+import { useToast } from "@/hooks/useToast";
 import {
   OCRResultDisplay,
   ReceiptCapture,
@@ -116,9 +116,7 @@ export default function AddServiceLogScreen() {
   });
   const [loading, setLoading] = useState(false);
   const [vehiclesLoading, setVehiclesLoading] = useState(true);
-  const [showSuccessModal, setShowSuccessModal] = useState(false);
-  const [showErrorModal, setShowErrorModal] = useState(false);
-  const [errorMessage, setErrorMessage] = useState("");
+  const { showSuccess, showError, showInfo } = useToast();
   const [ocrResult, setOcrResult] = useState<ReceiptProcessingResult | null>(
     null,
   );
@@ -146,26 +144,22 @@ export default function AddServiceLogScreen() {
 
   const handleSave = async () => {
     if (!formData.vehicle_id) {
-      setErrorMessage("Please select a vehicle");
-      setShowErrorModal(true);
+      showError("Please select a vehicle");
       return;
     }
 
     const itemsError = validateServiceItems(formData.items || []);
     if (itemsError) {
-      setErrorMessage(itemsError);
-      setShowErrorModal(true);
+      showError(itemsError);
       return;
     }
 
     if (formData.odometer_reading <= 0) {
-      setErrorMessage("Please enter a valid odometer reading");
-      setShowErrorModal(true);
+      showError("Please enter a valid odometer reading");
       return;
     }
     if (!formData.date) {
-      setErrorMessage("Please select a date");
-      setShowErrorModal(true);
+      showError("Please select a date");
       return;
     }
 
@@ -191,16 +185,11 @@ export default function AddServiceLogScreen() {
     setLoading(false);
 
     if (error) {
-      setErrorMessage(error);
-      setShowErrorModal(true);
+      showError(error);
     } else {
-      setShowSuccessModal(true);
+      showSuccess("Service log added successfully!");
+      router.push("/(tabs)/logs");
     }
-  };
-
-  const handleSuccessModalClose = () => {
-    setShowSuccessModal(false);
-    router.push("/(tabs)/logs");
   };
 
   const isFormValid = () => {
@@ -225,8 +214,7 @@ export default function AddServiceLogScreen() {
         setCapturedImageUri(result.imageUri);
       }
     } else {
-      setErrorMessage(result.error || "Failed to process receipt");
-      setShowErrorModal(true);
+      showError(result.error || "Failed to process receipt");
     }
   };
 
@@ -242,18 +230,15 @@ export default function AddServiceLogScreen() {
         setCapturedImageUri(result.imageUri);
       }
 
-      setErrorMessage("Picture saved successfully! You can review it below.");
-      setShowErrorModal(true);
+      showSuccess("Picture saved successfully!");
     } else {
-      setErrorMessage(result.error || "Failed to save picture");
-      setShowErrorModal(true);
+      showError(result.error || "Failed to save picture");
     }
   };
 
   const handleAcceptOcrData = async () => {
     if (!ocrResult?.data) {
-      setErrorMessage("No OCR data available to apply");
-      setShowErrorModal(true);
+      showError("No OCR data available to apply");
       return;
     }
 
@@ -271,10 +256,9 @@ export default function AddServiceLogScreen() {
 
           if (uploadResult.error) {
             setLoading(false);
-            setErrorMessage(
-              "The receipt image could not be saved, but the extracted data will still be applied. Continue?",
+            showError(
+              "The receipt image could not be saved, but the extracted data will still be applied.",
             );
-            setShowErrorModal(true);
             return;
           }
 
@@ -316,16 +300,14 @@ export default function AddServiceLogScreen() {
       }));
 
       setShowOcrResult(false);
-      setErrorMessage(
-        "Service details have been automatically filled from your receipt. Please review and adjust if needed.",
+      showInfo(
+        "Service details auto-filled from receipt. Please review and adjust if needed.",
       );
-      setShowErrorModal(true);
     } catch (error) {
       console.error("Error applying OCR data:", error);
-      setErrorMessage(
+      showError(
         "Failed to apply the extracted data. You can still enter the information manually.",
       );
-      setShowErrorModal(true);
     } finally {
       setLoading(false);
     }
@@ -926,23 +908,6 @@ export default function AddServiceLogScreen() {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
-
-      <AlertModal
-        visible={showSuccessModal}
-        onClose={handleSuccessModalClose}
-        title="Success"
-        message="Service log added successfully!"
-        variant="success"
-        buttonText="Done"
-      />
-
-      <AlertModal
-        visible={showErrorModal}
-        onClose={() => setShowErrorModal(false)}
-        title={errorMessage.includes("successfully") ? "Info" : "Error"}
-        message={errorMessage}
-        variant={errorMessage.includes("successfully") ? "success" : "error"}
-      />
     </SafeAreaView>
   );
 }

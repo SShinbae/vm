@@ -2,7 +2,6 @@ import { Button } from "@/components/ui/Button";
 import { DatePicker } from "@/components/ui/DatePicker";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { Input } from "@/components/ui/Input";
-import { AlertModal } from "@/components/ui/Modal";
 import { router } from "expo-router";
 import React from "react";
 import {
@@ -30,12 +29,8 @@ export default function AddFuelLogScreen() {
     vehiclesLoading,
     loading,
     isWeb,
-    isLocked, // Re-adding as it's used by VehicleSelector
-    // selectedVehicle, // No longer used for header title
+    isLocked,
     fuelPrices,
-    showSuccessModal,
-    showErrorModal,
-    errorMessage,
     handleCostChange,
     handlePriceChange,
     handleOdometerChange,
@@ -43,8 +38,6 @@ export default function AddFuelLogScreen() {
     handleLocationChange,
     handleVehicleChange,
     handleSave,
-    handleSuccessModalClose,
-    handleErrorModalClose,
     validateCost,
     validateOdometer,
     isFormValid,
@@ -227,23 +220,6 @@ export default function AddFuelLogScreen() {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
-
-      <AlertModal
-        visible={showSuccessModal}
-        onClose={handleSuccessModalClose}
-        title="Success"
-        message="Fuel log added successfully!"
-        variant="success"
-        buttonText="Done"
-      />
-
-      <AlertModal
-        visible={showErrorModal}
-        onClose={handleErrorModalClose}
-        title="Error"
-        message={errorMessage}
-        variant="error"
-      />
     </SafeAreaView>
   );
 }

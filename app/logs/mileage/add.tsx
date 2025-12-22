@@ -2,9 +2,9 @@ import { Button } from "@/components/ui/Button";
 import { DatePicker } from "@/components/ui/DatePicker";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { Input } from "@/components/ui/Input";
-import { AlertModal } from "@/components/ui/Modal";
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
+import { useToast } from "@/hooks/useToast";
 import { MileageLogService } from "@/lib/services/loggingService";
 import { VehicleService } from "@/lib/services/vehicleService";
 import { MileageLogFormData } from "@/types";
@@ -83,9 +83,7 @@ export default function AddMileageLogScreen() {
   });
   const [loading, setLoading] = useState(false);
   const [vehiclesLoading, setVehiclesLoading] = useState(true);
-  const [showSuccessModal, setShowSuccessModal] = useState(false);
-  const [showErrorModal, setShowErrorModal] = useState(false);
-  const [errorMessage, setErrorMessage] = useState("");
+  const { showSuccess, showError } = useToast();
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? "light"];
   const isWeb = Platform.OS === "web";
@@ -108,18 +106,15 @@ export default function AddMileageLogScreen() {
 
   const handleSave = async () => {
     if (!formData.vehicle_id) {
-      setErrorMessage("Please select a vehicle");
-      setShowErrorModal(true);
+      showError("Please select a vehicle");
       return;
     }
     if (formData.odometer_reading <= 0) {
-      setErrorMessage("Please enter a valid odometer reading");
-      setShowErrorModal(true);
+      showError("Please enter a valid odometer reading");
       return;
     }
     if (!formData.date) {
-      setErrorMessage("Please select a date");
-      setShowErrorModal(true);
+      showError("Please select a date");
       return;
     }
 
@@ -136,16 +131,11 @@ export default function AddMileageLogScreen() {
     setLoading(false);
 
     if (error) {
-      setErrorMessage(error);
-      setShowErrorModal(true);
+      showError(error);
     } else {
-      setShowSuccessModal(true);
+      showSuccess("Mileage log added successfully!");
+      router.push("/(tabs)/logs");
     }
-  };
-
-  const handleSuccessModalClose = () => {
-    setShowSuccessModal(false);
-    router.push("/(tabs)/logs");
   };
 
   const validateOdometer = (value: string) => {
@@ -575,23 +565,6 @@ export default function AddMileageLogScreen() {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
-
-      <AlertModal
-        visible={showSuccessModal}
-        onClose={handleSuccessModalClose}
-        title="Success"
-        message="Mileage log added successfully!"
-        variant="success"
-        buttonText="Done"
-      />
-
-      <AlertModal
-        visible={showErrorModal}
-        onClose={() => setShowErrorModal(false)}
-        title="Error"
-        message={errorMessage}
-        variant="error"
-      />
     </SafeAreaView>
   );
 }

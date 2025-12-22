@@ -1,6 +1,7 @@
 [build]
   command = "rm -f package-lock.json && npm install --force lightningcss && npm install && npm run build"
   publish = "dist"
+  functions = "netlify/functions"
 
 [build.environment]
   NODE_VERSION = "20"
@@ -9,6 +10,16 @@
   EXPO_USE_FAST_RESOLVER = "1"
   USE_SIMPLE_CSS_MINIFIER = "1"
 
+[functions]
+  node_bundler = "esbuild"
+
+# API routes for Netlify Functions
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/:splat"
+  status = 200
+
+# SPA fallback (must be last)
 [[redirects]]
   from = "/*"
   to = "/index.html"

@@ -5,11 +5,11 @@ import {
   Dimensions,
   Platform,
   Modal as RNModal,
+  Pressable,
   StyleSheet,
   Text,
   TextStyle,
   TouchableOpacity,
-  TouchableWithoutFeedback,
   View,
   ViewStyle,
 } from "react-native";
@@ -197,20 +197,19 @@ function WebModal({
       ]}
     >
       {/* Backdrop */}
-      <TouchableWithoutFeedback onPress={handleBackdropPress}>
-        <View
-          // @ts-ignore - Web-specific className
-          className="web-modal-backdrop"
-          style={{
-            position: "absolute" as any,
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: "rgba(0, 0, 0, 0.5)",
-          }}
-        />
-      </TouchableWithoutFeedback>
+      <Pressable
+        onPress={handleBackdropPress}
+        // @ts-ignore - Web-specific className
+        className="web-modal-backdrop"
+        style={{
+          position: "absolute" as any,
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: "rgba(0, 0, 0, 0.5)",
+        }}
+      />
 
       {/* Modal Content */}
       <View
@@ -350,9 +349,7 @@ export function Modal(props: ModalProps) {
 
   const ModalContent = () => (
     <View style={getContainerStyle()}>
-      <TouchableWithoutFeedback onPress={handleBackdropPress}>
-        <View style={styles.backdrop} />
-      </TouchableWithoutFeedback>
+      <Pressable onPress={handleBackdropPress} style={styles.backdrop} />
 
       <View style={getContentStyle()}>
         {(title || showCloseButton) && (

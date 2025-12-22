@@ -19,7 +19,7 @@ import { useFocusEffect } from "@react-navigation/native";
 import * as Haptics from "expo-haptics";
 import { Image } from "expo-image";
 import { router } from "expo-router";
-import React, { useCallback, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   RefreshControl,
   ScrollView,
@@ -863,7 +863,7 @@ export default function LogsScreen() {
     }
   };
 
-  const getGroupedLogsByVehicle = () => {
+  const getGroupedLogsByVehicle = useCallback(() => {
     const logs = getCurrentLogs();
     const grouped: { [vehicleId: string]: { vehicle: any; logs: any[] } } = {};
 
@@ -887,13 +887,19 @@ export default function LogsScreen() {
       );
     });
 
-    if (expandedVehicles.size === 0) {
-      const allVehicleIds = Object.keys(grouped);
-      setExpandedVehicles(new Set(allVehicleIds));
-    }
-
     return grouped;
-  };
+  }, [activeTab, mileageLogs, fuelLogs, serviceLogs]);
+
+  // Auto-expand all vehicles when logs are first loaded
+  useEffect(() => {
+    if (!loading && expandedVehicles.size === 0) {
+      const grouped = getGroupedLogsByVehicle();
+      const allVehicleIds = Object.keys(grouped);
+      if (allVehicleIds.length > 0) {
+        setExpandedVehicles(new Set(allVehicleIds));
+      }
+    }
+  }, [loading, getGroupedLogsByVehicle]);
 
   const getAddRoute = () => {
     switch (activeTab) {
