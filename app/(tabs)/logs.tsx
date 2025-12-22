@@ -547,7 +547,7 @@ export default function LogsScreen() {
       if (Array.isArray(parsed)) {
         return parsed;
       }
-    } catch (e) {
+    } catch {
       return null;
     }
     return null;
@@ -888,7 +888,7 @@ export default function LogsScreen() {
     });
 
     return grouped;
-  }, [activeTab, mileageLogs, fuelLogs, serviceLogs]);
+  }, [getCurrentLogs]);
 
   // Auto-expand all vehicles when logs are first loaded
   useEffect(() => {
@@ -899,7 +899,7 @@ export default function LogsScreen() {
         setExpandedVehicles(new Set(allVehicleIds));
       }
     }
-  }, [loading, getGroupedLogsByVehicle]);
+  }, [loading, expandedVehicles.size, getGroupedLogsByVehicle]);
 
   const getAddRoute = () => {
     switch (activeTab) {

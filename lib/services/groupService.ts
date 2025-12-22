@@ -917,7 +917,7 @@ export class GroupInvitationService {
       }
 
       // Check if user is actually a member of the group
-      const { data: membership, error: membershipError } = await supabase
+      const { error: membershipError } = await supabase
         .from("group_members")
         .select("*")
         .eq("group_id", groupId)
@@ -1000,13 +1000,12 @@ export class GroupInvitationService {
       }
 
       // Verify new owner is a member of the group
-      const { data: newOwnerMembership, error: membershipError } =
-        await supabase
-          .from("group_members")
-          .select("*")
-          .eq("group_id", groupId)
-          .eq("user_id", newOwnerId)
-          .single();
+      const { error: membershipError } = await supabase
+        .from("group_members")
+        .select("*")
+        .eq("group_id", groupId)
+        .eq("user_id", newOwnerId)
+        .single();
 
       if (membershipError) {
         console.error("Error checking new owner membership:", membershipError);

@@ -102,9 +102,7 @@ export interface Database {
           group_id: string;
           user_id: string;
         };
-        Update: {
-          // No updates needed for group membership
-        };
+        Update: Record<string, never>; // No updates needed for group membership
         Relationships: [
           {
             foreignKeyName: "group_members_group_id_fkey";
@@ -323,9 +321,7 @@ export interface Database {
           group_id: string;
           shared_by: string;
         };
-        Update: {
-          // No updates needed
-        };
+        Update: Record<string, never>; // No updates needed
         Relationships: [
           {
             foreignKeyName: "vehicle_group_shares_group_id_fkey";

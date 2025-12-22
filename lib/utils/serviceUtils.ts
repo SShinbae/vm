@@ -17,7 +17,7 @@ export const formatServiceItems = (description: string): string => {
         )
         .join("\n");
     }
-  } catch (error) {
+  } catch {
     // If parsing fails, return the original description
   }
   return description;

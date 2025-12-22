@@ -43,7 +43,7 @@ function ResetPasswordScreen() {
 
       showError("Reset Failed", errorMessage);
     }
-  }, [params.error, params.error_description]);
+  }, [params.error, params.error_description, showError]);
 
   const handleResetPassword = async () => {
     // Prevent double submission

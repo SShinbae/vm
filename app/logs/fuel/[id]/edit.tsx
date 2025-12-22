@@ -121,7 +121,7 @@ export default function EditFuelLogScreen() {
     };
 
     fetchFuelLog();
-  }, [id]);
+  }, [id, showError]);
 
   const handleSave = async () => {
     // Validation
