@@ -127,9 +127,7 @@ export interface Database {
           group_id: string;
           shared_by: string;
         };
-        Update: {
-          // Shares are typically not updated, just added/removed
-        };
+        Update: Record<string, never>; // Shares are typically not updated, just added/removed
       };
 
       // =================== GROUPS ===================
@@ -168,9 +166,7 @@ export interface Database {
           group_id: string;
           user_id: string;
         };
-        Update: {
-          // No updates needed for group membership
-        };
+        Update: Record<string, never>; // No updates needed for group membership
       };
 
       // =================== GROUP INVITATIONS ===================

@@ -2,7 +2,6 @@
 // This file contains test cases for validating OCR functionality
 
 import { OCRService } from "../services/ocrService";
-import { OCRExtractedData } from "../../types";
 
 // Mock receipt texts for testing
 const MOCK_RECEIPTS = {

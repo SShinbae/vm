@@ -20,7 +20,7 @@ export function HelloWave() {
       ),
       1,
     );
-  }, []);
+  }, [rotateAnimation]);
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ rotate: `${rotateAnimation.value}deg` }],

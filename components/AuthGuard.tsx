@@ -310,6 +310,7 @@ export function AuthGuard({ children }: AuthGuardProps) {
     isOnAuthPage,
     isOnInvalidAuthPage,
     wasRecentlyOnAuthPage,
+    redirectState.hasRedirected,
     navigate,
   ]);
 

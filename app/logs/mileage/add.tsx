@@ -144,11 +144,6 @@ export default function AddMileageLogScreen() {
     return undefined;
   };
 
-  const validateDate = (value: string) => {
-    if (!value.trim()) return "Date is required";
-    return undefined;
-  };
-
   const isFormValid = () => {
     return (
       formData.vehicle_id && formData.odometer_reading > 0 && formData.date

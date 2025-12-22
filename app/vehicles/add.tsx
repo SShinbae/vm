@@ -98,14 +98,6 @@ export default function AddVehicleScreen() {
     return undefined;
   };
 
-  const validateYear = (value: string) => {
-    const year = parseInt(value);
-    if (isNaN(year) || year < 1900 || year > new Date().getFullYear() + 2) {
-      return "Please enter a valid year";
-    }
-    return undefined;
-  };
-
   const validateLicensePlate = (value: string) => {
     if (!value.trim()) return "License plate is required";
     return undefined;

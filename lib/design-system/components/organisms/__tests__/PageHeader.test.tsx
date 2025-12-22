@@ -2,14 +2,14 @@ import { fireEvent, render, screen } from "@testing-library/react-native";
 import React from "react";
 import { PageHeader } from "../PageHeader";
 
+import { router } from "expo-router";
+
 // Mock expo-router
 jest.mock("expo-router", () => ({
   router: {
     back: jest.fn(),
   },
 }));
-
-const { router } = require("expo-router");
 
 describe("PageHeader", () => {
   beforeEach(() => {
