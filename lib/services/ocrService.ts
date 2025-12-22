@@ -1,7 +1,7 @@
 import * as ImagePicker from "expo-image-picker";
 import { supabase } from "../../services/supabaseClient";
 import { GoogleVisionService } from "./googleVisionService";
-import { OCRExtractedData, ServiceType, ApiResponse } from "../../types";
+import { OCRExtractedData, ApiResponse } from "../../types";
 
 export interface ReceiptProcessingResult {
   success: boolean;

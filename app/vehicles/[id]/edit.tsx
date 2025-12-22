@@ -73,7 +73,7 @@ export default function EditVehicleScreen() {
     };
 
     fetchVehicle();
-  }, [id]);
+  }, [id, showError]);
 
   const handleSave = async () => {
     if (!vehicle) return;
@@ -138,14 +138,6 @@ export default function EditVehicleScreen() {
 
   const validateModel = (value: string) => {
     if (!value.trim()) return "Model is required";
-    return undefined;
-  };
-
-  const validateYear = (value: string) => {
-    const year = parseInt(value);
-    if (isNaN(year) || year < 1900 || year > new Date().getFullYear() + 2) {
-      return "Please enter a valid year";
-    }
     return undefined;
   };
 

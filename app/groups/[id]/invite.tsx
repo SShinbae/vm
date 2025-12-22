@@ -23,7 +23,6 @@ export default function InviteToGroupScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
-  const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [showErrorModal, setShowErrorModal] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [showSendAnotherConfirm, setShowSendAnotherConfirm] = useState(false);

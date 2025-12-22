@@ -1,6 +1,5 @@
 import { supabase } from "../../services/supabaseClient";
 import { RealtimeChannel } from "@supabase/supabase-js";
-import type { Database } from "../../types/database";
 
 export interface NotificationData {
   id: string;

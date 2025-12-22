@@ -11,7 +11,7 @@ const tabs = [
 ];
 
 export function AnalyticsTabBar() {
-  const { styles, theme } = useStyles(stylesheet);
+  const { styles } = useStyles(stylesheet);
   const router = useRouter();
   const pathname = usePathname();
 
