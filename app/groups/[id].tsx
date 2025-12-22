@@ -45,7 +45,7 @@ export default function GroupDetailScreen() {
     const [groupResult, invitationsResult, vehiclesResult] = await Promise.all([
       GroupService.getGroupById(id),
       GroupInvitationService.getInvitations(id),
-      VehicleService.getVehiclesSeparated(),
+      VehicleService.getVehiclesForGroup(id),
     ]);
 
     if (groupResult.error) {
@@ -60,7 +60,7 @@ export default function GroupDetailScreen() {
     }
 
     if (vehiclesResult.data) {
-      setSharedVehicles(vehiclesResult.data.sharedVehicles || []);
+      setSharedVehicles(vehiclesResult.data);
     }
 
     setLoading(false);
@@ -556,17 +556,26 @@ export default function GroupDetailScreen() {
       <PageHeader
         title={group.name}
         showBack
-        actions={
-          isOwner
-            ? [
-                {
-                  icon: "add",
-                  label: "Invite",
-                  onPress: () =>
-                    router.push(`/groups/${group.id}/invite` as any),
-                },
-              ]
-            : undefined
+        rightContent={
+          isOwner ? (
+            <TouchableOpacity
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                backgroundColor: theme.colors.primary,
+                paddingHorizontal: theme.spacing.md,
+                paddingVertical: theme.spacing.xs,
+                borderRadius: theme.spacing.sm,
+                gap: theme.spacing.xs,
+              }}
+              onPress={() => router.push(`/groups/${group.id}/invite` as any)}
+            >
+              <IconSymbol name="person.badge.plus" size={16} color="white" />
+              <Text size="sm" weight="semibold" style={{ color: "white" }}>
+                Invite Members
+              </Text>
+            </TouchableOpacity>
+          ) : undefined
         }
       />
 

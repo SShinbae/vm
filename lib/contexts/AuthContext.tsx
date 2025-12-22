@@ -1,8 +1,16 @@
 import { Session, User } from "@supabase/supabase-js";
 import Constants from "expo-constants";
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
+import { Platform } from "react-native";
 import { supabase } from "../../services/supabaseClient";
 import { AuthState, AuthUser, Profile } from "../../types";
+import { oneSignalService } from "../services/oneSignalService";
 
 interface AuthContextType extends AuthState {
   signUp: (
@@ -20,6 +28,8 @@ interface AuthContextType extends AuthState {
   updateProfile: (
     updates: Partial<Profile>,
   ) => Promise<{ error: string | null }>;
+  isPasswordRecovery: boolean;
+  clearPasswordRecovery: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -42,6 +52,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
     loading: true,
     initialized: false,
   });
+  const [isPasswordRecovery, setIsPasswordRecovery] = useState(false);
+  const isPasswordRecoveryRef = useRef(false);
+
+  const clearPasswordRecovery = () => {
+    isPasswordRecoveryRef.current = false;
+    setIsPasswordRecovery(false);
+  };
 
   const fetchUserProfile = async (user: User): Promise<AuthUser | null> => {
     try {
@@ -49,7 +66,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
         await supabase.from("profiles").select("*").eq("id", user.id).single();
 
       if (error && error.code !== "PGRST116") {
-        console.error("Error fetching user profile:", error);
+        if (__DEV__) {
+          console.error("Error fetching user profile:", error);
+        }
         return { id: user.id, email: user.email || "", username: null };
       }
 
@@ -60,7 +79,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
         username: profile?.username || null,
       };
     } catch (error) {
-      console.error("Error in fetchUserProfile:", error);
+      if (__DEV__) {
+        console.error("Error in fetchUserProfile:", error);
+      }
       return { id: user.id, email: user.email || "", username: null };
     }
   };
@@ -68,6 +89,19 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const setUser = async (session: Session | null) => {
     try {
       if (session?.user) {
+        // Check if email is confirmed - don't authenticate unconfirmed users
+        const isEmailConfirmed = session.user.email_confirmed_at != null;
+
+        if (!isEmailConfirmed) {
+          if (__DEV__) {
+            console.log(
+              "User email not confirmed, not setting authenticated state",
+            );
+          }
+          setState((prev) => ({ ...prev, user: null, loading: false }));
+          return;
+        }
+
         const authUser = await fetchUserProfile(session.user);
         setState((prev) => ({ ...prev, user: authUser, loading: false }));
       } else {
@@ -79,6 +113,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
       }
       // Fallback to basic user info if profile fetch fails
       if (session?.user) {
+        // Also check email confirmation in fallback
+        const isEmailConfirmed = session.user.email_confirmed_at != null;
+        if (!isEmailConfirmed) {
+          setState((prev) => ({ ...prev, user: null, loading: false }));
+          return;
+        }
+
         setState((prev) => ({
           ...prev,
           user: {
@@ -99,7 +140,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
     // Get initial session
     supabase.auth.getSession().then(({ data: { session }, error }) => {
-      if (error) {
+      if (error && __DEV__) {
         console.error("Error getting session:", error);
       }
       if (mounted) {
@@ -113,9 +154,47 @@ export function AuthProvider({ children }: AuthProviderProps) {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (mounted) {
-        if (event === "SIGNED_OUT") {
+        if (__DEV__) {
+          console.log(
+            "Auth state change:",
+            event,
+            "isPasswordRecovery:",
+            isPasswordRecoveryRef.current,
+          );
+        }
+
+        if (event === "PASSWORD_RECOVERY") {
+          // User clicked password reset link - set recovery mode
+          if (__DEV__) {
+            console.log("Password recovery mode detected");
+          }
+          isPasswordRecoveryRef.current = true;
+          setIsPasswordRecovery(true);
+          // Set minimal user state for password update, but don't fetch profile
+          // This prevents dashboard from loading data
+          if (session?.user) {
+            setState((prev) => ({
+              ...prev,
+              user: {
+                id: session.user.id,
+                email: session.user.email || "",
+                username: null,
+              },
+              loading: false,
+            }));
+          }
+        } else if (event === "SIGNED_OUT") {
           setState((prev) => ({ ...prev, user: null, loading: false }));
-        } else if (session) {
+          isPasswordRecoveryRef.current = false;
+          setIsPasswordRecovery(false);
+        } else if (event === "USER_UPDATED") {
+          // User updated (e.g., password changed) - don't refetch profile during recovery
+          // The updatePassword function will handle clearing recovery state
+          if (__DEV__) {
+            console.log("User updated event, skipping profile refetch");
+          }
+        } else if (session && !isPasswordRecoveryRef.current) {
+          // Only set full user if not in password recovery mode
           await setUser(session);
         }
       }
@@ -134,15 +213,17 @@ export function AuthProvider({ children }: AuthProviderProps) {
       const siteUrl = Constants.expoConfig?.extra?.siteUrl;
       const emailRedirectUrl = `${siteUrl}/auth/confirm`;
 
-      // Enhanced debug logging
-      console.log("=== SIGNUP DEBUG INFO ===");
-      console.log("Email confirmation URL:", emailRedirectUrl);
-      console.log(
-        "Site URL from config:",
-        Constants.expoConfig?.extra?.siteUrl,
-      );
-      console.log("Full signup data:", { email, fullName });
-      console.log("========================");
+      // Enhanced debug logging (only in development)
+      if (__DEV__) {
+        console.log("=== SIGNUP DEBUG INFO ===");
+        console.log("Email confirmation URL:", emailRedirectUrl);
+        console.log(
+          "Site URL from config:",
+          Constants.expoConfig?.extra?.siteUrl,
+        );
+        console.log("Full signup data:", { email, fullName });
+        console.log("========================");
+      }
 
       const { data, error } = await supabase.auth.signUp({
         email,
@@ -155,19 +236,49 @@ export function AuthProvider({ children }: AuthProviderProps) {
         },
       });
 
-      console.log("Signup result:", { data, error });
+      if (__DEV__) {
+        console.log("Signup result:", { data, error });
+        console.log("User email_confirmed_at:", data?.user?.email_confirmed_at);
+        console.log("Session exists:", !!data?.session);
+      }
 
       if (error) {
-        console.error("Signup error:", error);
+        if (__DEV__) {
+          console.error("Signup error:", error);
+        }
         setState((prev) => ({ ...prev, loading: false }));
         return { error: error.message };
       }
 
-      console.log("Signup successful, user should receive email confirmation");
+      // Check if email confirmation is required
+      // If user has no email_confirmed_at and no session, confirmation is needed
+      // If user is auto-confirmed, they'll have email_confirmed_at set immediately
+      const needsEmailConfirmation = !data?.user?.email_confirmed_at;
+
+      if (__DEV__) {
+        console.log("Needs email confirmation:", needsEmailConfirmation);
+      }
+
+      // Sign out immediately to prevent auto-login for unconfirmed users
+      // This ensures the onAuthStateChange listener doesn't pick up the session
+      if (needsEmailConfirmation && data?.session) {
+        if (__DEV__) {
+          console.log("Signing out to prevent auto-login for unconfirmed user");
+        }
+        await supabase.auth.signOut();
+      }
+
+      if (__DEV__) {
+        console.log(
+          "Signup successful, user should receive email confirmation",
+        );
+      }
       setState((prev) => ({ ...prev, loading: false }));
       return { error: null };
     } catch (error) {
-      console.error("Unexpected signup error:", error);
+      if (__DEV__) {
+        console.error("Unexpected signup error:", error);
+      }
       setState((prev) => ({ ...prev, loading: false }));
       return { error: "An unexpected error occurred during sign up" };
     }
@@ -187,7 +298,18 @@ export function AuthProvider({ children }: AuthProviderProps) {
           console.error("Sign in error:", error);
         }
         setState((prev) => ({ ...prev, loading: false }));
-        return { error: error.message };
+        // Make error message more user-friendly
+        let errorMessage = error.message;
+        if (error.message === "Invalid login credentials") {
+          errorMessage =
+            "Invalid email or password. Please check your credentials and try again.";
+        }
+        return { error: errorMessage };
+      }
+
+      // Sync user with OneSignal for push notifications (mobile only)
+      if (Platform.OS !== "web") {
+        oneSignalService.syncUser();
       }
 
       // Success - state will be updated by onAuthStateChange
@@ -205,6 +327,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
     setState((prev) => ({ ...prev, loading: true }));
 
     try {
+      // Clear OneSignal user on logout (mobile only)
+      if (Platform.OS !== "web") {
+        await oneSignalService.onLogout();
+      }
+
       await supabase.auth.signOut();
     } catch (error) {
       if (__DEV__) {
@@ -244,19 +371,21 @@ export function AuthProvider({ children }: AuthProviderProps) {
   };
 
   const updatePassword = async (password: string) => {
-    try {
-      const { error } = await supabase.auth.updateUser({
-        password: password,
-      });
-
-      if (error) {
-        return { error: error.message };
-      }
-
-      return { error: null };
-    } catch (error) {
-      return { error: "An unexpected error occurred during password update" };
+    if (__DEV__) {
+      console.log("updatePassword called");
     }
+
+    const result = await supabase.auth.updateUser({ password });
+
+    if (__DEV__) {
+      console.log("updatePassword result:", result);
+    }
+
+    if (result.error) {
+      return { error: result.error.message };
+    }
+
+    return { error: null };
   };
 
   const updateProfile = async (updates: Partial<Profile>) => {
@@ -301,6 +430,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
     resetPassword,
     updatePassword,
     updateProfile,
+    isPasswordRecovery,
+    clearPasswordRecovery,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

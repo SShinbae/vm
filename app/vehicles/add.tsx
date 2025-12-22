@@ -3,10 +3,10 @@ import { IconSymbol } from "@/components/ui/icon-symbol";
 import { ImageUpload } from "@/components/ui/ImageUpload";
 import { Input } from "@/components/ui/Input";
 import { YearPicker } from "@/components/ui/YearPicker";
-import { AlertModal } from "@/components/ui/Modal";
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { VehicleService } from "@/lib/services/vehicleService";
+import { useToast } from "@/hooks/useToast";
 import { VehicleFormData } from "@/types";
 import { router } from "expo-router";
 import { useState } from "react";
@@ -30,11 +30,8 @@ export default function AddVehicleScreen() {
     vin: "",
   });
   const [imageUri, setImageUri] = useState<string>("");
-  const [vehicleId, setVehicleId] = useState<string>("");
   const [loading, setLoading] = useState(false);
-  const [showSuccessModal, setShowSuccessModal] = useState(false);
-  const [showErrorModal, setShowErrorModal] = useState(false);
-  const [errorMessage, setErrorMessage] = useState("");
+  const { showSuccess, showError } = useToast();
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? "light"];
   const isWeb = Platform.OS === "web";
@@ -42,23 +39,19 @@ export default function AddVehicleScreen() {
   const handleSave = async () => {
     // Validation
     if (!formData.make.trim()) {
-      setErrorMessage("Please enter the vehicle make");
-      setShowErrorModal(true);
+      showError("Please enter the vehicle make");
       return;
     }
     if (!formData.model.trim()) {
-      setErrorMessage("Please enter the vehicle model");
-      setShowErrorModal(true);
+      showError("Please enter the vehicle model");
       return;
     }
     if (!formData.license_plate.trim()) {
-      setErrorMessage("Please enter the license plate");
-      setShowErrorModal(true);
+      showError("Please enter the license plate");
       return;
     }
     if (formData.year < 1900 || formData.year > new Date().getFullYear() + 2) {
-      setErrorMessage("Please enter a valid year");
-      setShowErrorModal(true);
+      showError("Please enter a valid year");
       return;
     }
 
@@ -80,16 +73,11 @@ export default function AddVehicleScreen() {
     setLoading(false);
 
     if (error) {
-      setErrorMessage(error);
-      setShowErrorModal(true);
+      showError(error);
     } else {
-      setShowSuccessModal(true);
+      showSuccess("Vehicle added successfully!");
+      router.push("/(tabs)/vehicles");
     }
-  };
-
-  const handleSuccessModalClose = () => {
-    setShowSuccessModal(false);
-    router.push("/(tabs)/vehicles");
   };
 
   const handleImageUpload = (url: string) => {
@@ -97,8 +85,7 @@ export default function AddVehicleScreen() {
   };
 
   const handleImageError = (error: string) => {
-    setErrorMessage(error);
-    setShowErrorModal(true);
+    showError(error);
   };
 
   const validateMake = (value: string) => {
@@ -409,23 +396,6 @@ export default function AddVehicleScreen() {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
-
-      <AlertModal
-        visible={showSuccessModal}
-        onClose={handleSuccessModalClose}
-        title="Success"
-        message="Vehicle added successfully!"
-        variant="success"
-        buttonText="Done"
-      />
-
-      <AlertModal
-        visible={showErrorModal}
-        onClose={() => setShowErrorModal(false)}
-        title="Error"
-        message={errorMessage}
-        variant="error"
-      />
     </SafeAreaView>
   );
 }

@@ -5,12 +5,14 @@ import { VehicleWithDetails } from "@/types/database-v2";
 import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
 import { Platform } from "react-native";
+import { useToast } from "./useToast";
 
 const MOCK_FUEL_PRICES = [1.99, 2.6, 3.2]; // RON95, RON97, Diesel?
 
 export const useAddFuelLog = () => {
   const { vehicleId } = useLocalSearchParams<{ vehicleId?: string }>();
   const [vehicles, setVehicles] = useState<VehicleWithDetails[]>([]);
+  const { showSuccess, showError } = useToast();
 
   const [formData, setFormData] = useState<FuelLogFormData>({
     vehicle_id: vehicleId || "",
@@ -24,9 +26,6 @@ export const useAddFuelLog = () => {
 
   const [loading, setLoading] = useState(false);
   const [vehiclesLoading, setVehiclesLoading] = useState(true);
-  const [showSuccessModal, setShowSuccessModal] = useState(false);
-  const [showErrorModal, setShowErrorModal] = useState(false);
-  const [errorMessage, setErrorMessage] = useState("");
 
   // --- Data Fetching ---
   useEffect(() => {
@@ -112,8 +111,7 @@ export const useAddFuelLog = () => {
   // --- Submission ---
   const handleSave = async () => {
     if (!isFormValid) {
-      setErrorMessage("Please fill in all required fields");
-      setShowErrorModal(true);
+      showError("Please fill in all required fields");
       return;
     }
 
@@ -126,21 +124,11 @@ export const useAddFuelLog = () => {
     setLoading(false);
 
     if (error) {
-      setErrorMessage(error);
-      setShowErrorModal(true);
+      showError(error);
     } else {
-      setShowSuccessModal(true);
+      showSuccess("Fuel log added successfully!");
+      router.replace("/(tabs)/logs");
     }
-  };
-
-  // --- Modal Handlers ---
-  const handleSuccessModalClose = () => {
-    setShowSuccessModal(false);
-    router.replace("/(tabs)/logs");
-  };
-
-  const handleErrorModalClose = () => {
-    setShowErrorModal(false);
   };
 
   return {
@@ -154,11 +142,6 @@ export const useAddFuelLog = () => {
     selectedVehicle: vehicles.find((v) => v.id === formData.vehicle_id),
     fuelPrices: MOCK_FUEL_PRICES,
 
-    // Modals
-    showSuccessModal,
-    showErrorModal,
-    errorMessage,
-
     // Handlers
     handleCostChange,
     handlePriceChange,
@@ -167,8 +150,6 @@ export const useAddFuelLog = () => {
     handleLocationChange,
     handleVehicleChange,
     handleSave,
-    handleSuccessModalClose,
-    handleErrorModalClose,
 
     // Validation
     validateCost,

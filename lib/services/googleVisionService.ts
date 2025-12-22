@@ -128,14 +128,14 @@ export class GoogleVisionService {
           ],
         };
 
-        const response = await fetch(
-          `${this.config.endpoint}?key=${this.config.apiKey}`,
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(requestPayload),
+        const response = await fetch(this.config.endpoint, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-Goog-Api-Key": this.config.apiKey,
           },
-        );
+          body: JSON.stringify(requestPayload),
+        });
 
         if (!response.ok) continue;
 
@@ -321,16 +321,14 @@ export class GoogleVisionService {
         ],
       };
 
-      const response = await fetch(
-        `${this.config.endpoint}?key=${this.config.apiKey}`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(testPayload),
+      const response = await fetch(this.config.endpoint, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Goog-Api-Key": this.config.apiKey,
         },
-      );
+        body: JSON.stringify(testPayload),
+      });
 
       if (!response.ok) {
         return {

@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/Button";
 import { DatePicker } from "@/components/ui/DatePicker";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { Input } from "@/components/ui/Input";
-import { AlertModal } from "@/components/ui/Modal";
+import { useToast } from "@/hooks/useToast";
 import { ReceiptViewer } from "@/components/ui/ReceiptViewer";
 import {
   ServiceItemsInput,
@@ -89,9 +89,7 @@ export default function EditServiceLogScreen() {
   });
   const [loading, setLoading] = useState(false);
   const [dataLoading, setDataLoading] = useState(true);
-  const [showSuccessModal, setShowSuccessModal] = useState(false);
-  const [showErrorModal, setShowErrorModal] = useState(false);
-  const [errorMessage, setErrorMessage] = useState("");
+  const { showSuccess, showError } = useToast();
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? "light"];
   const isWeb = Platform.OS === "web";
@@ -99,8 +97,7 @@ export default function EditServiceLogScreen() {
   useEffect(() => {
     const fetchServiceLog = async () => {
       if (!id) {
-        setErrorMessage("Invalid service log ID");
-        setShowErrorModal(true);
+        showError("Invalid service log ID");
         router.back();
         return;
       }
@@ -108,16 +105,14 @@ export default function EditServiceLogScreen() {
       try {
         const { data: logs, error } = await ServiceLogService.getServiceLogs();
         if (error) {
-          setErrorMessage("Failed to load service log");
-          setShowErrorModal(true);
+          showError("Failed to load service log");
           router.back();
           return;
         }
 
         const log = logs?.find((l) => l.id === id);
         if (!log) {
-          setErrorMessage("Service log not found");
-          setShowErrorModal(true);
+          showError("Service log not found");
           router.back();
           return;
         }
@@ -142,8 +137,7 @@ export default function EditServiceLogScreen() {
         });
       } catch (error) {
         console.error("Error fetching service log:", error);
-        setErrorMessage("Failed to load service log");
-        setShowErrorModal(true);
+        showError("Failed to load service log");
         router.back();
       }
 
@@ -157,19 +151,16 @@ export default function EditServiceLogScreen() {
     // Validation
     const itemsError = validateServiceItems(formData.items || []);
     if (itemsError) {
-      setErrorMessage(itemsError);
-      setShowErrorModal(true);
+      showError(itemsError);
       return;
     }
 
     if (formData.odometer_reading <= 0) {
-      setErrorMessage("Please enter a valid odometer reading");
-      setShowErrorModal(true);
+      showError("Please enter a valid odometer reading");
       return;
     }
     if (!formData.date) {
-      setErrorMessage("Please select a date");
-      setShowErrorModal(true);
+      showError("Please select a date");
       return;
     }
 
@@ -196,16 +187,11 @@ export default function EditServiceLogScreen() {
     setLoading(false);
 
     if (error) {
-      setErrorMessage(error);
-      setShowErrorModal(true);
+      showError(error);
     } else {
-      setShowSuccessModal(true);
+      showSuccess("Service log updated successfully!");
+      router.push("/(tabs)/logs");
     }
-  };
-
-  const handleSuccessModalClose = () => {
-    setShowSuccessModal(false);
-    router.push("/(tabs)/logs");
   };
 
   const validateOdometer = (value: string) => {
@@ -604,23 +590,6 @@ export default function EditServiceLogScreen() {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
-
-      <AlertModal
-        visible={showSuccessModal}
-        onClose={handleSuccessModalClose}
-        title="Success"
-        message="Service log updated successfully!"
-        variant="success"
-        buttonText="Done"
-      />
-
-      <AlertModal
-        visible={showErrorModal}
-        onClose={() => setShowErrorModal(false)}
-        title="Error"
-        message={errorMessage}
-        variant="error"
-      />
     </SafeAreaView>
   );
 }

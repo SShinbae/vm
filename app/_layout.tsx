@@ -12,6 +12,9 @@ import { useCallback, useEffect } from "react";
 import { Platform, View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import "react-native-reanimated";
+import Toast from "react-native-toast-message";
+
+import { toastConfig } from "@/components/ui/ToastConfig";
 import "../unistyles";
 
 import { AuthGuard } from "@/components/AuthGuard";
@@ -21,9 +24,13 @@ import { AuthProvider } from "@/lib/contexts/AuthContext";
 import { DialogProvider } from "@/lib/contexts/DialogContext";
 import { NotificationProvider } from "@/lib/contexts/NotificationContext";
 import { ThemeProvider } from "@/lib/contexts/ThemeContext";
+import { oneSignalService } from "@/lib/services/oneSignalService";
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
+
+// Initialize OneSignal for push notifications (all platforms)
+oneSignalService.initialize();
 
 // Removed unstable_settings to allow index.tsx to control default route
 
@@ -104,6 +111,7 @@ function RootLayoutContent() {
           </View>
         </AuthGuard>
         <StatusBar style="auto" />
+        <Toast config={toastConfig} position="top" topOffset={0} />
       </NavigationThemeProvider>
     </GestureHandlerRootView>
   );

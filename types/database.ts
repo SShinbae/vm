@@ -368,22 +368,41 @@ export interface Database {
         Row: {
           id: string;
           user_id: string;
+          notification_type:
+            | "mileage_log"
+            | "fuel_log"
+            | "service_log"
+            | "group_member"
+            | "group_invite";
           title: string;
           body: string;
           data: any | null;
           read: boolean;
+          related_vehicle_id: string | null;
+          related_group_id: string | null;
+          action_url: string | null;
           created_at: string;
         };
         Insert: {
           id?: string;
           user_id: string;
+          notification_type:
+            | "mileage_log"
+            | "fuel_log"
+            | "service_log"
+            | "group_member"
+            | "group_invite";
           title: string;
           body: string;
           data?: any | null;
           read?: boolean;
+          related_vehicle_id?: string | null;
+          related_group_id?: string | null;
+          action_url?: string | null;
         };
         Update: {
           read?: boolean;
+          data?: any | null;
         };
       };
       service_templates: {

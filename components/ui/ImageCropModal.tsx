@@ -14,15 +14,14 @@ import {
   View,
 } from "react-native";
 
-// Import expo-crop-image for mobile
-let ImageEditor: any = null;
+// Import react-native-image-crop-picker for mobile
+let ImageCropPicker: any = null;
 if (Platform.OS !== "web") {
   try {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const expoCropImage = require("expo-crop-image");
-    ImageEditor = expoCropImage.ImageEditor;
+    ImageCropPicker = require("react-native-image-crop-picker").default;
   } catch (error) {
-    console.warn("expo-crop-image not available:", error);
+    console.warn("react-native-image-crop-picker not available:", error);
   }
 }
 
@@ -81,52 +80,67 @@ export const ImageCropModal: React.FC<ImageCropModalProps> = ({
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? "light"];
 
-  // For mobile - use expo-crop-image
-  if (Platform.OS !== "web" && ImageEditor) {
-    return (
-      <Modal
-        visible={visible}
-        transparent
-        animationType="slide"
-        onRequestClose={onClose}
-      >
-        <ImageEditor
-          imageUri={imageUri}
-          fixedAspectRatio={aspectRatio} // CRITICAL FIX: Use fixedAspectRatio prop
-          minimumCropDimensions={{
-            width: 100,
-            height: 100,
-          }}
-          onEditingComplete={async (result: { uri: string }) => {
-            try {
-              console.log("📱 Mobile crop result:", result);
+  // For mobile - use react-native-image-crop-picker
+  const isMobile = Platform.OS !== "web" && ImageCropPicker && visible;
 
-              // Convert URI to File object
-              const response = await fetch(result.uri);
-              const blob = await response.blob();
-              const fileName = `cropped_avatar_${Date.now()}.jpg`;
-              const file = new File([blob], fileName, { type: "image/jpeg" });
+  // Open crop picker immediately on mount (for mobile)
+  React.useEffect(() => {
+    if (!isMobile) return;
 
-              console.log("✅ Mobile crop - Created File object:", {
-                name: file.name,
-                size: file.size,
-                type: file.type,
-              });
+    const openCropPicker = async () => {
+      try {
+        console.log("📱 Opening mobile crop picker with image:", imageUri);
 
-              onCropComplete(file);
-              onClose();
-            } catch (error: any) {
-              console.error("❌ Error completing mobile crop:", error);
-              onError(error.message || "Failed to crop image");
-            }
-          }}
-          onCloseEditor={onClose}
-          mode="crop-only"
-          throttleBlur={false}
-          allowedTransformOperations={["crop"]}
-        />
-      </Modal>
-    );
+        const result = await ImageCropPicker.openCropper({
+          path: imageUri,
+          width: aspectRatio >= 1 ? 800 : 600,
+          height: aspectRatio >= 1 ? 800 / aspectRatio : 600,
+          cropping: true,
+          cropperCircleOverlay: aspectRatio === 1,
+          freeStyleCropEnabled: aspectRatio === 0,
+          includeBase64: false,
+          compressImageQuality: 0.9,
+          mediaType: "photo",
+          enableRotationGesture: true,
+          avoidEmptySpaceAroundImage: true,
+          cropperToolbarTitle: "Crop Image",
+          cropperCancelText: "Cancel",
+          cropperChooseText: "Choose",
+        });
+
+        console.log("📱 Mobile crop result:", result);
+
+        // Convert URI to File object
+        const response = await fetch(result.path);
+        const blob = await response.blob();
+        const fileName = `cropped_avatar_${Date.now()}.jpg`;
+        const file = new File([blob], fileName, {
+          type: result.mime || "image/jpeg",
+        });
+
+        console.log("✅ Mobile crop - Created File object:", {
+          name: file.name,
+          size: file.size,
+          type: file.type,
+        });
+
+        onCropComplete(file);
+        onClose();
+      } catch (error: any) {
+        console.error("❌ Error completing mobile crop:", error);
+        if (error.message !== "User cancelled image selection") {
+          onError(error.message || "Failed to crop image");
+        }
+        onClose();
+      }
+    };
+
+    openCropPicker();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  if (isMobile) {
+    return null; // Return null since the native picker handles its own UI
   }
 
   // For web - use enhanced custom cropper
@@ -168,7 +182,7 @@ const WebCropModal: React.FC<{
   onError,
   title,
   description,
-  aspectRatio,
+  aspectRatio: initialAspectRatio,
   colors,
   processing,
   setProcessing,
@@ -186,6 +200,13 @@ const WebCropModal: React.FC<{
     useState<ResizeHandle>(null);
   const pan = React.useRef(new Animated.ValueXY()).current;
   const imageRef = React.useRef<any>(null);
+
+  // New state for advanced controls
+  const [rotation, setRotation] = useState(0);
+  const [aspectRatio, setAspectRatio] = useState(initialAspectRatio);
+  const [flipHorizontal, setFlipHorizontal] = useState(false);
+  const [flipVertical, setFlipVertical] = useState(false);
+  const [originalImageUri] = useState(imageUri);
 
   // NEW HELPER FUNCTION: Extract crop area initialization
   const initializeCropArea = useCallback(
@@ -792,15 +813,30 @@ const WebCropModal: React.FC<{
         throw new Error("Invalid crop coordinates calculated");
       }
 
-      // Use Expo ImageManipulator to crop
-      const result = await ImageManipulator.manipulateAsync(
-        imageUri,
-        [{ crop: originalCropArea }],
-        {
-          compress: 0.9,
-          format: ImageManipulator.SaveFormat.JPEG,
-        },
-      );
+      // Build manipulation actions array
+      const actions: any[] = [];
+
+      // Apply crop first
+      actions.push({ crop: originalCropArea });
+
+      // Then apply rotation if needed
+      if (rotation !== 0) {
+        actions.push({ rotate: rotation });
+      }
+
+      // Apply flip transformations last
+      if (flipHorizontal) {
+        actions.push({ flip: ImageManipulator.FlipType.Horizontal });
+      }
+      if (flipVertical) {
+        actions.push({ flip: ImageManipulator.FlipType.Vertical });
+      }
+
+      // Use Expo ImageManipulator to apply all transformations
+      const result = await ImageManipulator.manipulateAsync(imageUri, actions, {
+        compress: 0.9,
+        format: ImageManipulator.SaveFormat.JPEG,
+      });
 
       console.log("✅ Image cropped successfully:", result.uri);
 
@@ -831,6 +867,78 @@ const WebCropModal: React.FC<{
       onError(error.message || "Failed to crop image");
     } finally {
       setProcessing(false);
+    }
+  };
+
+  // Handle rotation
+  const handleRotate = (degrees: number) => {
+    setRotation((prev) => (prev + degrees) % 360);
+  };
+
+  // Handle flip
+  const handleFlipHorizontal = () => {
+    setFlipHorizontal((prev) => !prev);
+  };
+
+  const handleFlipVertical = () => {
+    setFlipVertical((prev) => !prev);
+  };
+
+  // Handle aspect ratio change
+  const handleAspectRatioChange = (newRatio: number) => {
+    setAspectRatio(newRatio);
+    // Recalculate crop area to match new aspect ratio
+    setCropArea((prev) => {
+      const containerWidth = 300;
+      const containerHeight = 300;
+      const imageAspectRatio = imageSize.width / imageSize.height;
+      const containerAspectRatio = containerWidth / containerHeight;
+
+      let displayWidth, displayHeight, offsetX, offsetY;
+      if (imageAspectRatio > containerAspectRatio) {
+        displayWidth = containerWidth;
+        displayHeight = containerWidth / imageAspectRatio;
+        offsetX = 0;
+        offsetY = (containerHeight - displayHeight) / 2;
+      } else {
+        displayHeight = containerHeight;
+        displayWidth = containerHeight * imageAspectRatio;
+        offsetX = (containerWidth - displayWidth) / 2;
+        offsetY = 0;
+      }
+
+      const cropSize = Math.min(displayWidth, displayHeight) * 0.7;
+      const newWidth =
+        newRatio === 0
+          ? cropSize
+          : newRatio >= 1
+            ? cropSize
+            : cropSize * newRatio;
+      const newHeight =
+        newRatio === 0
+          ? cropSize
+          : newRatio >= 1
+            ? cropSize / newRatio
+            : cropSize;
+
+      return {
+        x: offsetX + (displayWidth - newWidth) / 2,
+        y: offsetY + (displayHeight - newHeight) / 2,
+        width: newWidth,
+        height: newHeight,
+      };
+    });
+  };
+
+  // Reset all transformations
+  const handleReset = () => {
+    setRotation(0);
+    setFlipHorizontal(false);
+    setFlipVertical(false);
+    setAspectRatio(initialAspectRatio);
+    // Reinitialize crop area
+    if (imageSize.width > 0 && imageSize.height > 0) {
+      initializeCropArea(imageSize.width, imageSize.height);
     }
   };
 
@@ -901,6 +1009,19 @@ const WebCropModal: React.FC<{
         <Text style={[styles.description, { color: colors.icon }]}>
           {description}
         </Text>
+
+        {/* Transformation Preview Info */}
+        {(rotation !== 0 || flipHorizontal || flipVertical) && (
+          <View style={styles.transformInfo}>
+            <Text style={[styles.transformInfoText, { color: colors.text }]}>
+              Transformations:
+              {rotation !== 0 && ` Rotate ${rotation}°`}
+              {flipHorizontal && ` Flip-H`}
+              {flipVertical && ` Flip-V`}
+              {" (applied on save)"}
+            </Text>
+          </View>
+        )}
 
         <View style={styles.imageContainer}>
           <Image
@@ -1167,35 +1288,223 @@ const WebCropModal: React.FC<{
             </View>
           )}
 
-          {/* Draggable overlay - invisible but captures drag events */}
-          {cropArea.width > 0 && (
-            <View
-              style={[
-                styles.draggableArea,
-                {
-                  left: cropArea.x,
-                  top: cropArea.y,
-                  width: cropArea.width,
-                  height: cropArea.height,
-                },
-              ]}
-              {...(Platform.OS === "web"
-                ? {
-                    onPointerDown: handleDragStart,
-                    onTouchStart: handleDragStart,
-                    style: {
-                      touchAction: "none",
-                      userSelect: "none",
-                      cursor: "move",
-                      zIndex: 1, // Lower than resize handles
-                    } as any,
-                  }
-                : panResponder.panHandlers)}
+          {/* Draggable overlay - captures drag events on the crop border */}
+          {cropArea.width > 0 && Platform.OS === "web" && (
+            <div
+              style={{
+                position: "absolute",
+                left: cropArea.x,
+                top: cropArea.y,
+                width: cropArea.width,
+                height: cropArea.height,
+                cursor: "move",
+                zIndex: 5,
+                touchAction: "none",
+                userSelect: "none",
+              }}
+              onPointerDown={handleDragStart}
+              onTouchStart={handleDragStart}
             />
           )}
         </View>
 
-        {/* Controls */}
+        {/* Zoom Controls - Removed for alignment, use resize handles and +/- buttons instead */}
+
+        {/* Rotation & Flip Controls */}
+        <View style={styles.controlSection}>
+          <Text style={[styles.sectionLabel, { color: colors.text }]}>
+            Transform
+          </Text>
+          <View style={styles.buttonRow}>
+            <TouchableOpacity
+              onPress={() => handleRotate(-90)}
+              style={[
+                styles.iconButton,
+                { backgroundColor: colors.backgroundSecondary },
+              ]}
+              disabled={processing}
+            >
+              <Text style={[styles.iconButtonText, { color: colors.text }]}>
+                ↺ 90°
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => handleRotate(90)}
+              style={[
+                styles.iconButton,
+                { backgroundColor: colors.backgroundSecondary },
+              ]}
+              disabled={processing}
+            >
+              <Text style={[styles.iconButtonText, { color: colors.text }]}>
+                ↻ 90°
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => handleRotate(180)}
+              style={[
+                styles.iconButton,
+                { backgroundColor: colors.backgroundSecondary },
+              ]}
+              disabled={processing}
+            >
+              <Text style={[styles.iconButtonText, { color: colors.text }]}>
+                ↻ 180°
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={handleFlipHorizontal}
+              style={[
+                styles.iconButton,
+                {
+                  backgroundColor: flipHorizontal
+                    ? colors.tint
+                    : colors.backgroundSecondary,
+                },
+              ]}
+              disabled={processing}
+            >
+              <Text
+                style={[
+                  styles.iconButtonText,
+                  { color: flipHorizontal ? "white" : colors.text },
+                ]}
+              >
+                ⇄
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={handleFlipVertical}
+              style={[
+                styles.iconButton,
+                {
+                  backgroundColor: flipVertical
+                    ? colors.tint
+                    : colors.backgroundSecondary,
+                },
+              ]}
+              disabled={processing}
+            >
+              <Text
+                style={[
+                  styles.iconButtonText,
+                  { color: flipVertical ? "white" : colors.text },
+                ]}
+              >
+                ⇅
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* Aspect Ratio Controls */}
+        <View style={styles.controlSection}>
+          <Text style={[styles.sectionLabel, { color: colors.text }]}>
+            Aspect Ratio
+          </Text>
+          <View style={styles.buttonRow}>
+            <TouchableOpacity
+              onPress={() => handleAspectRatioChange(1)}
+              style={[
+                styles.aspectButton,
+                {
+                  backgroundColor:
+                    aspectRatio === 1
+                      ? colors.tint
+                      : colors.backgroundSecondary,
+                },
+              ]}
+              disabled={processing}
+            >
+              <Text
+                style={[
+                  styles.aspectButtonText,
+                  { color: aspectRatio === 1 ? "white" : colors.text },
+                ]}
+              >
+                1:1
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => handleAspectRatioChange(4 / 3)}
+              style={[
+                styles.aspectButton,
+                {
+                  backgroundColor:
+                    Math.abs(aspectRatio - 4 / 3) < 0.01
+                      ? colors.tint
+                      : colors.backgroundSecondary,
+                },
+              ]}
+              disabled={processing}
+            >
+              <Text
+                style={[
+                  styles.aspectButtonText,
+                  {
+                    color:
+                      Math.abs(aspectRatio - 4 / 3) < 0.01
+                        ? "white"
+                        : colors.text,
+                  },
+                ]}
+              >
+                4:3
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => handleAspectRatioChange(16 / 9)}
+              style={[
+                styles.aspectButton,
+                {
+                  backgroundColor:
+                    Math.abs(aspectRatio - 16 / 9) < 0.01
+                      ? colors.tint
+                      : colors.backgroundSecondary,
+                },
+              ]}
+              disabled={processing}
+            >
+              <Text
+                style={[
+                  styles.aspectButtonText,
+                  {
+                    color:
+                      Math.abs(aspectRatio - 16 / 9) < 0.01
+                        ? "white"
+                        : colors.text,
+                  },
+                ]}
+              >
+                16:9
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => handleAspectRatioChange(0)}
+              style={[
+                styles.aspectButton,
+                {
+                  backgroundColor:
+                    aspectRatio === 0
+                      ? colors.tint
+                      : colors.backgroundSecondary,
+                },
+              ]}
+              disabled={processing}
+            >
+              <Text
+                style={[
+                  styles.aspectButtonText,
+                  { color: aspectRatio === 0 ? "white" : colors.text },
+                ]}
+              >
+                Free
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* Original Controls (Resize) */}
         <View style={styles.controls}>
           <TouchableOpacity
             onPress={() => adjustCropSize(-20)}
@@ -1235,6 +1544,24 @@ const WebCropModal: React.FC<{
           >
             <Text style={[styles.buttonText, { color: colors.text }]}>
               ✕ Cancel
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            onPress={handleReset}
+            disabled={processing}
+            style={[
+              styles.button,
+              styles.resetButton,
+              {
+                borderColor: colors.border,
+                backgroundColor: colors.backgroundSecondary,
+              },
+              processing && styles.disabledButton,
+            ]}
+          >
+            <Text style={[styles.buttonText, { color: colors.text }]}>
+              ↺ Reset
             </Text>
           </TouchableOpacity>
 
@@ -1326,6 +1653,18 @@ const styles = StyleSheet.create({
     fontSize: 14,
     textAlign: "center",
     marginBottom: 16,
+  },
+  transformInfo: {
+    backgroundColor: "rgba(0, 0, 0, 0.7)",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 6,
+    marginBottom: 12,
+    alignSelf: "center",
+  },
+  transformInfoText: {
+    fontSize: 12,
+    fontWeight: "600",
   },
   imageContainer: {
     position: "relative",
@@ -1455,6 +1794,63 @@ const styles = StyleSheet.create({
   },
   disabledButton: {
     opacity: 0.6,
+  },
+  resetButton: {
+    borderWidth: 1,
+  },
+  // New control section styles
+  controlSection: {
+    marginBottom: 16,
+  },
+  sectionLabel: {
+    fontSize: 14,
+    fontWeight: "600",
+    marginBottom: 8,
+  },
+  sliderContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  smallButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  smallButtonText: {
+    fontSize: 20,
+    fontWeight: "bold",
+  },
+  buttonRow: {
+    flexDirection: "row",
+    gap: 8,
+    flexWrap: "wrap",
+  },
+  iconButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+    minWidth: 60,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  iconButtonText: {
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  aspectButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 8,
+    minWidth: 60,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  aspectButtonText: {
+    fontSize: 14,
+    fontWeight: "600",
   },
   // Edge handle styles for resizing
   edgeHandle: {
