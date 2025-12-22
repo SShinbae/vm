@@ -1,11 +1,11 @@
-import { Platform } from "react-native";
 import Constants from "expo-constants";
+import { Platform } from "react-native";
 import { supabase } from "../../services/supabaseClient";
 
 // Dynamically import OneSignal to handle cases where native module isn't available
 let OneSignal: typeof import("react-native-onesignal").OneSignal | null = null;
 let LogLevel: typeof import("react-native-onesignal").LogLevel | null = null;
- 
+
 let OneSignalWeb: any = null;
 
 type NotificationWillDisplayEvent =
@@ -16,6 +16,7 @@ type NotificationClickEvent =
 // Check if OneSignal native module is available
 const isOneSignalAvailable = (): boolean => {
   try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const onesignal = require("react-native-onesignal");
     OneSignal = onesignal.OneSignal;
     LogLevel = onesignal.LogLevel;
