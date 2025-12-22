@@ -2,45 +2,348 @@ import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useAuth } from "@/lib/contexts/AuthContext";
 import { router, useSegments } from "expo-router";
-import React, { useEffect } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { ActivityIndicator, StyleSheet, View } from "react-native";
+
+// ============================================================================
+// Constants
+// ============================================================================
+
+const AUTH_PAGE_TIMEOUT = 2000; // 2 seconds
+const REDIRECT_DELAY = 0;
+
+const AUTH_PAGES = [
+  "login",
+  "register",
+  "forgot-password",
+  "reset-password",
+] as const;
+
+// Pages that should redirect to login when user is not authenticated
+const INVALID_AUTH_PAGES = [
+  "confirmation-success",
+  "email-confirmation",
+] as const;
+
+const AUTH_ROUTES = {
+  LOGIN: "/(auth)/login",
+  REGISTER: "/(auth)/register",
+  FORGOT_PASSWORD: "/(auth)/forgot-password",
+  RESET_PASSWORD: "/(auth)/reset-password",
+  TABS: "/(tabs)",
+} as const;
+
+const __DEV__ = process.env.NODE_ENV === "development";
+
+// ============================================================================
+// Types
+// ============================================================================
+
+type AuthPage = (typeof AUTH_PAGES)[number];
+type InvalidAuthPage = (typeof INVALID_AUTH_PAGES)[number];
+type SegmentPath = string;
+
+interface RedirectState {
+  hasRedirected: boolean;
+  lastAuthPageVisit: number;
+  previousPath: SegmentPath | null;
+}
 
 interface AuthGuardProps {
   children: React.ReactNode;
 }
 
+interface RouteState {
+  segmentPath: string;
+  inAuthGroup: boolean;
+  inRootIndex: boolean;
+  inTabs: boolean;
+  isOnAuthPage: boolean;
+  isOnInvalidAuthPage: boolean;
+}
+
+// ============================================================================
+// Custom Hooks
+// ============================================================================
+
+/**
+ * Hook to detect if user was recently on an auth page
+ * Helps prevent flickering during auth state transitions
+ */
+function useAuthPageTracking(
+  isOnAuthPage: boolean,
+  timeout = AUTH_PAGE_TIMEOUT,
+) {
+  const [lastAuthPageVisit, setLastAuthPageVisit] = useState(0);
+
+  useEffect(() => {
+    if (isOnAuthPage) {
+      setLastAuthPageVisit(Date.now());
+    }
+  }, [isOnAuthPage]);
+
+  const wasRecentlyOnAuthPage = useMemo(() => {
+    const now = Date.now();
+    return now - lastAuthPageVisit < timeout;
+  }, [lastAuthPageVisit, timeout]);
+
+  return wasRecentlyOnAuthPage;
+}
+
+/**
+ * Hook to compute current route state
+ */
+function useRouteState(segments: string[]): RouteState {
+  return useMemo(() => {
+    const segmentPath = segments.join("/");
+    const lastSegment = segments[segments.length - 1];
+
+    const inAuthGroup = segments[0] === "(auth)";
+    const inRootIndex =
+      !segmentPath || segmentPath === "" || segmentPath === "index";
+    const inTabs = segments[0] === "(tabs)";
+
+    // Check if current page is an auth page
+    const isOnAuthPage =
+      AUTH_PAGES.includes(lastSegment as AuthPage) || inAuthGroup;
+
+    // Check for invalid auth pages (confirmation pages without user)
+    const isOnInvalidAuthPage = INVALID_AUTH_PAGES.includes(
+      lastSegment as InvalidAuthPage,
+    );
+
+    return {
+      segmentPath,
+      inAuthGroup,
+      inRootIndex,
+      inTabs,
+      isOnAuthPage,
+      isOnInvalidAuthPage,
+    };
+  }, [segments]);
+}
+
+/**
+ * Hook to handle navigation with error handling
+ */
+function useSecureNavigation() {
+  const navigate = (route: string, options?: { delay?: number }) => {
+    try {
+      const delay = options?.delay ?? REDIRECT_DELAY;
+
+      if (delay > 0) {
+        setTimeout(() => {
+          router.replace(route as any);
+        }, delay);
+      } else {
+        router.replace(route as any);
+      }
+
+      if (__DEV__) {
+        console.log(`[AuthGuard] Navigating to: ${route}`);
+      }
+    } catch (error) {
+      console.error("[AuthGuard] Navigation error:", error);
+    }
+  };
+
+  return { navigate };
+}
+
+// ============================================================================
+// Main Component
+// ============================================================================
+
+/**
+ * AuthGuard component that handles authentication routing
+ * Redirects users based on authentication state and current route
+ *
+ * Features:
+ * - Protects authenticated routes from unauthenticated access
+ * - Redirects authenticated users away from auth pages
+ * - Handles password recovery flow
+ * - Prevents flickering during auth state changes
+ *
+ * @param children - Child components to render when authentication check passes
+ */
 export function AuthGuard({ children }: AuthGuardProps) {
   const { user, loading, initialized, isPasswordRecovery } = useAuth();
   const segments = useSegments();
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? "light"];
 
+  const [redirectState, setRedirectState] = useState<RedirectState>({
+    hasRedirected: false,
+    lastAuthPageVisit: 0,
+    previousPath: null,
+  });
+
+  const routeState = useRouteState(segments);
+  const wasRecentlyOnAuthPage = useAuthPageTracking(routeState.isOnAuthPage);
+  const { navigate } = useSecureNavigation();
+
+  const {
+    segmentPath,
+    inAuthGroup,
+    inRootIndex,
+    inTabs,
+    isOnAuthPage,
+    isOnInvalidAuthPage,
+  } = routeState;
+
+  // ============================================================================
+  // Effect: Track Previous Path
+  // ============================================================================
+
+  useEffect(() => {
+    setRedirectState((prev) => ({
+      ...prev,
+      previousPath: segmentPath,
+    }));
+  }, [segmentPath]);
+
+  // ============================================================================
+  // Effect: Handle Password Recovery Redirect
+  // ============================================================================
+
   useEffect(() => {
     if (!initialized || loading) return;
+    if (!segmentPath) return; // Skip during transitions
 
-    const segmentPath = segments.join("/");
-    const inAuthGroup = segments[0] === "(auth)";
-    const inRootIndex =
-      !segmentPath || segmentPath === "" || segmentPath === "index";
-    const inResetPassword = segmentPath === "(auth)/reset-password";
+    // Password recovery flow - redirect to reset password page
+    if (
+      isPasswordRecovery &&
+      user &&
+      segmentPath !== AUTH_ROUTES.RESET_PASSWORD
+    ) {
+      if (!redirectState.hasRedirected) {
+        setRedirectState((prev) => ({ ...prev, hasRedirected: true }));
+        navigate(AUTH_ROUTES.RESET_PASSWORD);
+      }
+      return;
+    }
+  }, [
+    user,
+    initialized,
+    loading,
+    isPasswordRecovery,
+    segmentPath,
+    redirectState.hasRedirected,
+    navigate,
+  ]);
 
-    // If in password recovery mode, redirect to reset-password page
-    if (isPasswordRecovery && user && !inResetPassword) {
-      router.replace("/(auth)/reset-password");
+  // ============================================================================
+  // Effect: Handle Main Authentication Redirects
+  // ============================================================================
+
+  useEffect(() => {
+    if (!initialized || loading) return;
+    if (!segmentPath) return; // Skip during transitions
+    if (isPasswordRecovery) return; // Skip during password recovery
+
+    // IMPORTANT: Never interfere with auth pages - let them handle their own redirects
+    // This prevents flickering when auth state changes during login/register attempts
+    if (isOnAuthPage || wasRecentlyOnAuthPage) {
+      if (__DEV__) {
+        console.log(
+          "[AuthGuard] On auth page or recently on auth page, not redirecting",
+        );
+      }
+      setRedirectState((prev) => ({ ...prev, hasRedirected: false }));
       return;
     }
 
-    if (!user && !inAuthGroup && !inRootIndex) {
-      // Redirect to root/landing if user is not authenticated and not in auth group or root
-      router.replace("/");
-    } else if (user && inAuthGroup && !isPasswordRecovery) {
-      // Redirect to main app if user is authenticated and in auth group (but not during password recovery)
-      router.replace("/(tabs)");
+    // Case 1: User not authenticated but on invalid auth pages
+    // This can happen after sign out when the URL doesn't update properly
+    if (!user && isOnInvalidAuthPage) {
+      if (!redirectState.hasRedirected) {
+        if (__DEV__) {
+          console.log(
+            "[AuthGuard] Redirecting to login (on invalid auth page without user)",
+          );
+        }
+        setRedirectState((prev) => ({ ...prev, hasRedirected: true }));
+        navigate(AUTH_ROUTES.LOGIN);
+      }
+      return;
     }
-  }, [user, segments, initialized, loading, isPasswordRecovery]);
 
-  // Show loading screen while initializing
-  if (!initialized || loading) {
+    // Case 2: User not authenticated and trying to access protected routes
+    if (!user && !inAuthGroup && !inRootIndex) {
+      if (!redirectState.hasRedirected) {
+        if (__DEV__) {
+          console.log("[AuthGuard] Redirecting to login (no user)");
+        }
+        setRedirectState((prev) => ({ ...prev, hasRedirected: true }));
+        navigate(AUTH_ROUTES.LOGIN);
+      }
+      return;
+    }
+
+    // Case 3: User authenticated but still on auth pages
+    if (user && inAuthGroup) {
+      if (!redirectState.hasRedirected) {
+        if (__DEV__) {
+          console.log("[AuthGuard] Redirecting to tabs (user in auth group)");
+        }
+        setRedirectState((prev) => ({ ...prev, hasRedirected: true }));
+        navigate(AUTH_ROUTES.TABS);
+      }
+      return;
+    }
+
+    // Reset redirect flag when in valid state
+    setRedirectState((prev) => {
+      if (prev.hasRedirected) {
+        return { ...prev, hasRedirected: false };
+      }
+      return prev;
+    });
+  }, [
+    user,
+    initialized,
+    loading,
+    isPasswordRecovery,
+    segmentPath,
+    inAuthGroup,
+    inRootIndex,
+    isOnAuthPage,
+    isOnInvalidAuthPage,
+    wasRecentlyOnAuthPage,
+    navigate,
+  ]);
+
+  // ============================================================================
+  // Render Logic
+  // ============================================================================
+
+  /**
+   * Show loading screen while initializing
+   * But not on auth pages - they handle their own loading
+   * Also skip if we were recently on auth page to prevent toast interruption
+   */
+  const shouldShowLoading = useMemo(() => {
+    return (!initialized || loading) && !isOnAuthPage && !wasRecentlyOnAuthPage;
+  }, [initialized, loading, isOnAuthPage, wasRecentlyOnAuthPage]);
+
+  if (shouldShowLoading) {
+    return (
+      <View
+        style={[
+          styles.loadingContainer,
+          { backgroundColor: colors.background },
+        ]}
+      >
+        <ActivityIndicator size="large" color={colors.tint} />
+      </View>
+    );
+  }
+
+  /**
+   * Don't render (tabs) content if user is not authenticated
+   * But skip this check if we were recently on auth page (prevents flicker during login error)
+   */
+  if (!user && inTabs && !wasRecentlyOnAuthPage) {
     return (
       <View
         style={[
@@ -55,6 +358,10 @@ export function AuthGuard({ children }: AuthGuardProps) {
 
   return <>{children}</>;
 }
+
+// ============================================================================
+// Styles
+// ============================================================================
 
 const styles = StyleSheet.create({
   loadingContainer: {

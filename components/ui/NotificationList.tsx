@@ -1,10 +1,10 @@
-import { Ionicons } from "@expo/vector-icons";
 import React from "react";
-import { Alert, FlatList, Text, TouchableOpacity, View } from "react-native";
-import { useThemeColor } from "../../hooks/use-theme-color";
+import { Alert, Text, TouchableOpacity, View } from "react-native";
+import { createStyleSheet, useStyles } from "react-native-unistyles";
 import { useNotifications } from "../../lib/contexts/NotificationContext";
 import { NotificationData } from "../../lib/services/notificationService";
 import { formatDistanceToNow } from "../../lib/utils/dateUtils";
+import { IconSymbol } from "./icon-symbol";
 
 interface NotificationItemProps {
   notification: NotificationData;
@@ -12,11 +12,8 @@ interface NotificationItemProps {
 }
 
 function NotificationItem({ notification, onPress }: NotificationItemProps) {
+  const { styles, theme } = useStyles(itemStylesheet);
   const { markAsRead, clearNotification } = useNotifications();
-  const textColor = String(useThemeColor({}, "text"));
-  const mutedTextColor = String(useThemeColor({}, "tabIconDefault"));
-  const backgroundColor = String(useThemeColor({}, "background"));
-  const cardBackground = String(useThemeColor({}, "card"));
 
   const handlePress = () => {
     if (!notification.read) {
@@ -40,78 +37,241 @@ function NotificationItem({ notification, onPress }: NotificationItemProps) {
     );
   };
 
-  const getIcon = () => {
-    switch (notification.type) {
+  const getIcon = (): string => {
+    switch (notification.notification_type) {
       case "mileage_log":
-        return "speedometer-outline";
+        return "speedometer";
       case "fuel_log":
-        return "car-outline";
+        return "fuelpump.fill";
       case "service_log":
-        return "construct-outline";
+        return "wrench.fill";
       case "group_member":
-        return "people-outline";
+        return "person.2.fill";
       case "group_invite":
-        return "mail-outline";
+        return "envelope.fill";
       default:
-        return "notifications-outline";
+        return "bell.fill";
+    }
+  };
+
+  const getIconColor = (): string => {
+    switch (notification.notification_type) {
+      case "mileage_log":
+        return theme.colors.primary;
+      case "fuel_log":
+        return theme.colors.warning;
+      case "service_log":
+        return theme.colors.error;
+      case "group_member":
+        return theme.colors.success;
+      case "group_invite":
+        return theme.colors.info;
+      default:
+        return theme.colors.primary;
+    }
+  };
+
+  const action = notification.data?.action as string | undefined;
+
+  const getActionLabel = (): string => {
+    switch (action) {
+      case "INSERT":
+        return "New";
+      case "UPDATE":
+        return "Updated";
+      case "DELETE":
+        return "Deleted";
+      default:
+        return "";
+    }
+  };
+
+  const getActionColor = (): string => {
+    switch (action) {
+      case "INSERT":
+        return theme.colors.success;
+      case "UPDATE":
+        return theme.colors.info;
+      case "DELETE":
+        return theme.colors.error;
+      default:
+        return theme.colors.textSecondary;
     }
   };
 
   return (
     <TouchableOpacity
       onPress={handlePress}
-      className="mx-4 mb-3 rounded-lg overflow-hidden"
-      style={{ backgroundColor: cardBackground }}
+      style={[styles.container, !notification.read && styles.unreadContainer]}
+      activeOpacity={0.7}
     >
-      <View className="p-4">
-        <View className="flex-row items-start">
-          <View className="mr-3 mt-1">
-            <Ionicons name={getIcon() as any} size={24} color={textColor} />
-          </View>
+      {/* Icon */}
+      <View
+        style={[
+          styles.iconContainer,
+          { backgroundColor: getIconColor() + "15" },
+        ]}
+      >
+        <IconSymbol name={getIcon() as any} size={20} color={getIconColor()} />
+      </View>
 
-          <View className="flex-1">
-            <View className="flex-row items-start justify-between mb-1">
-              <Text
-                className={`font-semibold text-base ${notification.read ? "opacity-70" : ""}`}
-                style={{ color: textColor }}
-              >
-                {notification.title}
-              </Text>
-              {!notification.read && (
-                <View className="w-2 h-2 rounded-full bg-blue-500 ml-2 mt-1" />
-              )}
-            </View>
-
+      {/* Content */}
+      <View style={styles.content}>
+        <View style={styles.titleRow}>
+          <View style={styles.titleContainer}>
             <Text
-              className={`text-sm mb-2 ${notification.read ? "opacity-70" : ""}`}
-              style={{ color: textColor }}
+              style={[styles.title, notification.read && styles.readTitle]}
+              numberOfLines={1}
             >
-              {notification.message}
+              {notification.title}
             </Text>
-
-            <View className="flex-row items-center justify-between">
-              <Text className="text-xs" style={{ color: mutedTextColor }}>
-                {formatDistanceToNow(new Date(notification.timestamp))} ago
-              </Text>
-
-              <TouchableOpacity
-                onPress={handleDelete}
-                className="p-1"
-                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-              >
-                <Ionicons
-                  name="close-outline"
-                  size={16}
-                  color={mutedTextColor}
-                />
-              </TouchableOpacity>
-            </View>
+            {!notification.read && <View style={styles.unreadDot} />}
           </View>
+          {action && (
+            <View
+              style={[
+                styles.actionBadge,
+                { backgroundColor: getActionColor() + "15" },
+              ]}
+            >
+              <Text style={[styles.actionText, { color: getActionColor() }]}>
+                {getActionLabel()}
+              </Text>
+            </View>
+          )}
+        </View>
+
+        <Text
+          style={[styles.message, notification.read && styles.readMessage]}
+          numberOfLines={2}
+        >
+          {notification.body}
+        </Text>
+
+        <View style={styles.footer}>
+          <View style={styles.timestampContainer}>
+            <IconSymbol
+              name="clock"
+              size={12}
+              color={theme.colors.textSecondary}
+            />
+            <Text style={styles.timestamp}>
+              {formatDistanceToNow(new Date(notification.created_at))} ago
+            </Text>
+          </View>
+
+          <TouchableOpacity
+            onPress={handleDelete}
+            style={styles.deleteButton}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
+            <IconSymbol
+              name="xmark"
+              size={14}
+              color={theme.colors.textSecondary}
+            />
+          </TouchableOpacity>
         </View>
       </View>
     </TouchableOpacity>
   );
 }
+
+const itemStylesheet = createStyleSheet((theme) => ({
+  container: {
+    flexDirection: "row",
+    padding: theme.spacing.lg,
+    marginHorizontal: theme.spacing.lg,
+    marginVertical: theme.spacing.xs,
+    backgroundColor: theme.colors.surface,
+    borderRadius: theme.borderRadius.xl,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
+  unreadContainer: {
+    backgroundColor: theme.colors.primary + "08",
+    borderColor: theme.colors.primary + "30",
+  },
+  iconContainer: {
+    width: 44,
+    height: 44,
+    borderRadius: theme.borderRadius.lg,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: theme.spacing.md,
+  },
+  content: {
+    flex: 1,
+  },
+  titleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: theme.spacing.xs,
+  },
+  titleContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    flex: 1,
+    marginRight: theme.spacing.sm,
+  },
+  title: {
+    fontSize: theme.fontSize.base,
+    fontWeight: theme.fontWeight.semibold,
+    color: theme.colors.text,
+    flex: 1,
+  },
+  readTitle: {
+    opacity: 0.7,
+  },
+  unreadDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: theme.colors.primary,
+    marginLeft: theme.spacing.sm,
+  },
+  actionBadge: {
+    paddingHorizontal: theme.spacing.sm,
+    paddingVertical: 2,
+    borderRadius: theme.borderRadius.sm,
+  },
+  actionText: {
+    fontSize: theme.fontSize.xs,
+    fontWeight: theme.fontWeight.medium,
+  },
+  message: {
+    fontSize: theme.fontSize.sm,
+    color: theme.colors.textSecondary,
+    lineHeight: 20,
+    marginBottom: theme.spacing.sm,
+  },
+  readMessage: {
+    opacity: 0.7,
+  },
+  footer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  timestampContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: theme.spacing.xs,
+  },
+  timestamp: {
+    fontSize: theme.fontSize.xs,
+    color: theme.colors.textSecondary,
+  },
+  deleteButton: {
+    width: 28,
+    height: 28,
+    borderRadius: theme.borderRadius.md,
+    backgroundColor: theme.colors.background,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+}));
 
 interface NotificationListProps {
   onNotificationPress?: (notification: NotificationData) => void;
@@ -120,12 +280,9 @@ interface NotificationListProps {
 export function NotificationList({
   onNotificationPress,
 }: NotificationListProps) {
+  const { styles, theme } = useStyles(listStylesheet);
   const { notifications, isInitialized, markAllAsRead, clearAllNotifications } =
     useNotifications();
-
-  const textColor = String(useThemeColor({}, "text"));
-  const mutedTextColor = String(useThemeColor({}, "tabIconDefault"));
-  const backgroundColor = String(useThemeColor({}, "background"));
 
   const hasUnreadNotifications = notifications.some((n) => !n.read);
 
@@ -146,27 +303,25 @@ export function NotificationList({
 
   if (!isInitialized) {
     return (
-      <View className="flex-1 items-center justify-center p-8">
-        <Text style={{ color: mutedTextColor }}>Loading notifications...</Text>
+      <View style={styles.loadingContainer}>
+        <View style={styles.loadingSpinner} />
+        <Text style={styles.loadingText}>Loading notifications...</Text>
       </View>
     );
   }
 
   if (notifications.length === 0) {
     return (
-      <View className="flex-1 items-center justify-center p-8">
-        <Ionicons
-          name="notifications-outline"
-          size={64}
-          color={mutedTextColor}
-        />
-        <Text
-          className="text-lg font-medium mt-4 mb-2"
-          style={{ color: textColor }}
-        >
-          No notifications
-        </Text>
-        <Text className="text-center" style={{ color: mutedTextColor }}>
+      <View style={styles.emptyContainer}>
+        <View style={styles.emptyIconContainer}>
+          <IconSymbol
+            name="bell.slash"
+            size={48}
+            color={theme.colors.textSecondary}
+          />
+        </View>
+        <Text style={styles.emptyTitle}>No notifications</Text>
+        <Text style={styles.emptyDescription}>
           You&apos;ll see notifications here when group members update logs or
           when you receive invitations.
         </Text>
@@ -175,43 +330,169 @@ export function NotificationList({
   }
 
   return (
-    <View className="flex-1" style={{ backgroundColor }}>
-      {/* Header */}
-      <View className="flex-row items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-gray-700">
-        <Text className="text-lg font-semibold" style={{ color: textColor }}>
-          Notifications ({notifications.length})
-        </Text>
-        <View className="flex-row items-center space-x-3">
+    <View style={styles.container}>
+      {/* Actions Bar */}
+      <View style={styles.actionsBar}>
+        <View style={styles.countContainer}>
+          <Text style={styles.countText}>
+            {notifications.length} notification
+            {notifications.length !== 1 ? "s" : ""}
+          </Text>
+          {hasUnreadNotifications && (
+            <Text style={styles.unreadCountText}>
+              ({notifications.filter((n) => !n.read).length} unread)
+            </Text>
+          )}
+        </View>
+
+        <View style={styles.actionsContainer}>
           {hasUnreadNotifications && (
             <TouchableOpacity
               onPress={markAllAsRead}
-              className="px-3 py-1 rounded-md bg-blue-500"
+              style={styles.markAllButton}
+              activeOpacity={0.7}
             >
-              <Text className="text-white text-sm font-medium">
-                Mark all read
-              </Text>
+              <IconSymbol
+                name="checkmark.circle"
+                size={16}
+                color={theme.colors.white}
+              />
+              <Text style={styles.markAllButtonText}>Mark all read</Text>
             </TouchableOpacity>
           )}
           <TouchableOpacity
             onPress={handleClearAll}
-            className="p-2"
+            style={styles.clearAllButton}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
-            <Ionicons name="trash-outline" size={20} color={mutedTextColor} />
+            <IconSymbol
+              name="trash"
+              size={18}
+              color={theme.colors.textSecondary}
+            />
           </TouchableOpacity>
         </View>
       </View>
 
       {/* Notifications List */}
-      <FlatList
-        data={notifications}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
-          <NotificationItem notification={item} onPress={onNotificationPress} />
-        )}
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingVertical: 8 }}
-      />
+      <View style={styles.listContainer}>
+        {notifications.map((notification) => (
+          <NotificationItem
+            key={notification.id}
+            notification={notification}
+            onPress={onNotificationPress}
+          />
+        ))}
+      </View>
     </View>
   );
 }
+
+const listStylesheet = createStyleSheet((theme) => ({
+  container: {
+    flex: 1,
+  },
+  actionsBar: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: theme.spacing.xl,
+    paddingVertical: theme.spacing.lg,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.border,
+    backgroundColor: theme.colors.surface,
+  },
+  countContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: theme.spacing.sm,
+  },
+  countText: {
+    fontSize: theme.fontSize.base,
+    fontWeight: theme.fontWeight.semibold,
+    color: theme.colors.text,
+  },
+  unreadCountText: {
+    fontSize: theme.fontSize.sm,
+    color: theme.colors.primary,
+    fontWeight: theme.fontWeight.medium,
+  },
+  actionsContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: theme.spacing.md,
+  },
+  markAllButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: theme.spacing.xs,
+    backgroundColor: theme.colors.primary,
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.sm,
+    borderRadius: theme.borderRadius.md,
+  },
+  markAllButtonText: {
+    fontSize: theme.fontSize.sm,
+    fontWeight: theme.fontWeight.medium,
+    color: theme.colors.white,
+  },
+  clearAllButton: {
+    width: 36,
+    height: 36,
+    borderRadius: theme.borderRadius.md,
+    backgroundColor: theme.colors.background,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  listContainer: {
+    paddingVertical: theme.spacing.md,
+  },
+  loadingContainer: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: theme.spacing.xxxl,
+    gap: theme.spacing.lg,
+  },
+  loadingSpinner: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    borderWidth: 3,
+    borderColor: theme.colors.border,
+    borderTopColor: theme.colors.primary,
+  },
+  loadingText: {
+    fontSize: theme.fontSize.base,
+    color: theme.colors.textSecondary,
+  },
+  emptyContainer: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: theme.spacing.xxxl,
+    paddingHorizontal: theme.spacing.xl,
+    gap: theme.spacing.md,
+  },
+  emptyIconContainer: {
+    width: 96,
+    height: 96,
+    borderRadius: 48,
+    backgroundColor: theme.colors.surface,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: theme.spacing.md,
+  },
+  emptyTitle: {
+    fontSize: theme.fontSize.xl,
+    fontWeight: theme.fontWeight.semibold,
+    color: theme.colors.text,
+  },
+  emptyDescription: {
+    fontSize: theme.fontSize.base,
+    color: theme.colors.textSecondary,
+    textAlign: "center",
+    maxWidth: 300,
+    lineHeight: 24,
+  },
+}));

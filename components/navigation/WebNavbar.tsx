@@ -42,7 +42,7 @@ export function WebNavbar() {
   const handleConfirmSignOut = async () => {
     setShowLogoutModal(false);
     await signOut();
-    router.replace("/login");
+    router.replace("/(auth)/login");
   };
 
   const NavButton = ({ item }: { item: NavItem }) => {
@@ -82,7 +82,7 @@ export function WebNavbar() {
     <View style={[styles.navbar, { paddingHorizontal: layout.contentPadding }]}>
       <View style={styles.brand}>
         <IconSymbol name="car.fill" size={24} color={theme.colors.primary} />
-        <Text style={styles.brandText}>Vehicle Manager</Text>
+        <Text style={styles.brandText}>Vehicles Management</Text>
       </View>
 
       <View style={styles.nav}>

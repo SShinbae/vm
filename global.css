@@ -147,6 +147,7 @@ body {
 /* Ensure modal is above other elements */
 .web-modal-overlay {
   z-index: 999999 !important;
+  pointer-events: auto !important;
 }
 
 /* Prevent body scroll when modal is open */

@@ -35,6 +35,12 @@ export interface PageHeaderProps {
   actions?: PageHeaderAction[];
 
   /**
+   * Custom content to display on the right side of the header (e.g., buttons)
+   * Takes precedence over actions if both are provided
+   */
+  rightContent?: React.ReactNode;
+
+  /**
    * Content to display below the header (e.g., tabs, filters)
    */
   bottom?: React.ReactNode;

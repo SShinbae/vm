@@ -3,7 +3,8 @@ import { Button } from "@/components/ui/Button";
 import { DatePicker } from "@/components/ui/DatePicker";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { Input } from "@/components/ui/Input";
-import { AlertModal, ConfirmModal } from "@/components/ui/Modal";
+import { ConfirmModal } from "@/components/ui/Modal";
+import { useToast } from "@/hooks/useToast";
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { canUserAccessVehicle } from "@/lib/utils/serviceUtils";
@@ -35,9 +36,7 @@ export default function EditMileageLogScreen() {
   });
   const [loading, setLoading] = useState(false);
   const [dataLoading, setDataLoading] = useState(true);
-  const [showSuccessModal, setShowSuccessModal] = useState(false);
-  const [showErrorModal, setShowErrorModal] = useState(false);
-  const [errorMessage, setErrorMessage] = useState("");
+  const { showSuccess, showError } = useToast();
   const [canModify, setCanModify] = useState(true);
   const [deleteModalVisible, setDeleteModalVisible] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
@@ -48,8 +47,7 @@ export default function EditMileageLogScreen() {
   useEffect(() => {
     const fetchMileageLog = async () => {
       if (!id) {
-        setErrorMessage("Invalid mileage log ID");
-        setShowErrorModal(true);
+        showError("Invalid mileage log ID");
         router.back();
         return;
       }
@@ -65,8 +63,7 @@ export default function EditMileageLogScreen() {
             errorMsg =
               "Unable to load mileage log. Please check your internet connection.";
           }
-          setErrorMessage(errorMsg);
-          setShowErrorModal(true);
+          showError(errorMsg);
           router.back();
           return;
         }
@@ -74,10 +71,9 @@ export default function EditMileageLogScreen() {
         const log = logs?.find((l) => l.id === id);
         if (!log) {
           console.error("No mileage log found with ID:", id);
-          setErrorMessage(
+          showError(
             "This mileage log no longer exists. It may have been deleted.",
           );
-          setShowErrorModal(true);
           router.back();
           return;
         }
@@ -100,8 +96,7 @@ export default function EditMileageLogScreen() {
         }
       } catch (error) {
         console.error("Error fetching mileage log:", error);
-        setErrorMessage("Failed to load mileage log");
-        setShowErrorModal(true);
+        showError("Failed to load mileage log");
         router.back();
       }
 
@@ -113,13 +108,11 @@ export default function EditMileageLogScreen() {
 
   const handleSave = async () => {
     if (formData.odometer_reading <= 0) {
-      setErrorMessage("Please enter a valid odometer reading");
-      setShowErrorModal(true);
+      showError("Please enter a valid odometer reading");
       return;
     }
     if (!formData.date) {
-      setErrorMessage("Please select a date");
-      setShowErrorModal(true);
+      showError("Please select a date");
       return;
     }
 
@@ -157,16 +150,11 @@ export default function EditMileageLogScreen() {
           "The mileage log could not be updated. It may have been deleted or you may not have sufficient permissions.";
       }
 
-      setErrorMessage(errorMsg);
-      setShowErrorModal(true);
+      showError(errorMsg);
     } else {
-      setShowSuccessModal(true);
+      showSuccess("Mileage log updated successfully!");
+      router.push("/(tabs)/logs");
     }
-  };
-
-  const handleSuccessModalClose = () => {
-    setShowSuccessModal(false);
-    router.push("/(tabs)/logs");
   };
 
   const handleDelete = () => {
@@ -181,17 +169,16 @@ export default function EditMileageLogScreen() {
       setDeleteModalVisible(false);
 
       if (error) {
-        setErrorMessage(error);
-        setShowErrorModal(true);
+        showError(error);
       } else {
+        showSuccess("Mileage log deleted successfully!");
         router.push("/(tabs)/logs");
       }
     } catch (error) {
       console.error("Error deleting mileage log:", error);
       setDeleteLoading(false);
       setDeleteModalVisible(false);
-      setErrorMessage("Failed to delete mileage log");
-      setShowErrorModal(true);
+      showError("Failed to delete mileage log");
     }
   };
 
@@ -476,23 +463,6 @@ export default function EditMileageLogScreen() {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
-
-      <AlertModal
-        visible={showSuccessModal}
-        onClose={handleSuccessModalClose}
-        title="Success"
-        message="Mileage log updated successfully!"
-        variant="success"
-        buttonText="Done"
-      />
-
-      <AlertModal
-        visible={showErrorModal}
-        onClose={() => setShowErrorModal(false)}
-        title="Error"
-        message={errorMessage}
-        variant="error"
-      />
 
       <ConfirmModal
         visible={deleteModalVisible}

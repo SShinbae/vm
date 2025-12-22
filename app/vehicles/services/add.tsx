@@ -1,13 +1,13 @@
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
+import { useToast } from "@/hooks/useToast";
 import { VehicleService } from "@/lib/services/vehicleService";
 import { ServiceItemFormData, ServiceTemplateFormData } from "@/types";
 import { router } from "expo-router";
 import React, { useState } from "react";
 import {
   ActivityIndicator,
-  Alert,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -31,6 +31,7 @@ export default function AddServiceScreen() {
   const [loading, setLoading] = useState(false);
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? "light"];
+  const { showSuccess, showError } = useToast();
 
   const calculateTotalCost = (items: ServiceItemFormData[]): number => {
     return items.reduce((total, item) => total + (item.price || 0), 0);
@@ -41,7 +42,7 @@ export default function AddServiceScreen() {
   const handleSave = async () => {
     // Validation
     if (!formData.name.trim()) {
-      Alert.alert("Error", "Please enter a service name");
+      showError("Please enter a service name");
       return;
     }
 
@@ -50,7 +51,7 @@ export default function AddServiceScreen() {
     );
 
     if (validItems.length === 0) {
-      Alert.alert("Error", "Please add at least one valid service item");
+      showError("Please add at least one valid service item");
       return;
     }
 
@@ -65,14 +66,10 @@ export default function AddServiceScreen() {
     setLoading(false);
 
     if (result.error) {
-      Alert.alert("Error", result.error);
+      showError(result.error);
     } else {
-      Alert.alert("Success", "Service template created successfully", [
-        {
-          text: "OK",
-          onPress: () => router.back(),
-        },
-      ]);
+      showSuccess("Service template created successfully!");
+      router.back();
     }
   };
 
@@ -98,7 +95,7 @@ export default function AddServiceScreen() {
 
   const removeItem = (index: number) => {
     if (formData.items.length <= 1) {
-      Alert.alert("Error", "At least one service item is required");
+      showError("At least one service item is required");
       return;
     }
 
