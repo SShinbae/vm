@@ -104,7 +104,7 @@ export default function EditMileageLogScreen() {
     };
 
     fetchMileageLog();
-  }, [id]);
+  }, [id, showError]);
 
   const handleSave = async () => {
     if (formData.odometer_reading <= 0) {
@@ -185,11 +185,6 @@ export default function EditMileageLogScreen() {
   const validateOdometer = (value: string) => {
     const num = parseInt(value.replace(/,/g, ""));
     if (isNaN(num) || num <= 0) return "Please enter a valid odometer reading";
-    return undefined;
-  };
-
-  const validateDate = (value: string) => {
-    if (!value.trim()) return "Date is required";
     return undefined;
   };
 

@@ -45,8 +45,8 @@ export const VehicleGroupSelector: React.FC<VehicleGroupSelectorProps> = ({
       } else {
         console.error("Error fetching user groups:", error);
       }
-    } catch (error) {
-      console.error("Error fetching user groups:", error);
+    } catch {
+      console.error("Error fetching user groups");
     }
   };
 
@@ -73,7 +73,7 @@ export const VehicleGroupSelector: React.FC<VehicleGroupSelectorProps> = ({
         Alert.alert("Success", "Vehicle sharing updated successfully");
         onSharingUpdate(true);
       }
-    } catch (error) {
+    } catch {
       Alert.alert("Error", "Failed to update vehicle sharing");
       onSharingUpdate(false);
     }

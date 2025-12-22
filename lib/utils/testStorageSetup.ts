@@ -25,7 +25,7 @@ export class StorageSetupTester {
         data?.some((bucket) => bucket.id === "receipt-images") || false;
 
       return { data: bucketExists, error: null, loading: false };
-    } catch (error) {
+    } catch {
       console.error("Error checking bucket existence:", error);
       return {
         data: false,
@@ -71,7 +71,7 @@ export class StorageSetupTester {
       await supabase.storage.from("receipt-images").remove([testFileName]);
 
       return { data: true, error: null, loading: false };
-    } catch (error) {
+    } catch {
       console.error("Error testing upload permissions:", error);
       return {
         data: false,
@@ -111,7 +111,7 @@ export class StorageSetupTester {
       }
 
       return { data: true, error: null, loading: false };
-    } catch (error) {
+    } catch {
       console.error("Error testing schema update:", error);
       return {
         data: false,
@@ -183,7 +183,7 @@ export class StorageSetupTester {
           result.canRead = true;
           console.log("✅ Read permissions working");
         }
-      } catch (error) {
+      } catch {
         result.errors.push(`Read test failed: ${error}`);
         console.log("❌ Read permissions failed");
       }

@@ -1,9 +1,5 @@
-import {
-  FuelLogService,
-  ServiceLogService,
-  MileageLogService,
-} from "./loggingService";
-import { FuelLog, ServiceLog, MileageLog, Vehicle } from "../../types";
+import { FuelLogService, ServiceLogService } from "./loggingService";
+import { FuelLog, ServiceLog, Vehicle } from "../../types";
 
 // Extended types with vehicle relation
 type FuelLogWithVehicle = FuelLog & { vehicles?: Vehicle };

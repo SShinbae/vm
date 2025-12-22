@@ -6,7 +6,6 @@ import { useResponsiveLayout } from "@/hooks/use-responsive-layout";
 import { useProfileStats } from "@/hooks/useProfileStats";
 import { useAuth } from "@/lib/contexts/AuthContext";
 import { useDialog } from "@/lib/contexts/DialogContext";
-import { useNotifications } from "@/lib/contexts/NotificationContext";
 import { useTheme } from "@/lib/contexts/ThemeContext";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router } from "expo-router";
@@ -30,9 +29,8 @@ export default function ProfileScreen() {
   const { user, updateProfile, signOut } = useAuth();
   const { themeMode, setThemeMode } = useTheme();
   const { showConfirm, hideConfirm } = useDialog();
-  const { unreadCount } = useNotifications();
   const { theme } = useStyles();
-  const { isMobile, isWeb, isDesktop } = useResponsiveLayout();
+  const { isMobile, isWeb } = useResponsiveLayout();
   const { stats, loading: statsLoading } = useProfileStats();
 
   const [fullName, setFullName] = useState(user?.profile?.full_name || "");

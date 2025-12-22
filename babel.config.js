@@ -28,7 +28,7 @@ module.exports = function (api) {
 
   // Remove console.* statements in production builds
   if (process.env.NODE_ENV === "production") {
-    plugins.push("transform-remove-console");
+    plugins.push("babel-plugin-transform-remove-console");
   }
 
   return {

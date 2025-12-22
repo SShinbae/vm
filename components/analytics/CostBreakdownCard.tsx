@@ -13,7 +13,7 @@ export function CostBreakdownCard({
   fuelCost,
   serviceCost,
 }: CostBreakdownCardProps) {
-  const { styles, theme } = useStyles(stylesheet);
+  const { styles } = useStyles(stylesheet);
 
   const safeTotal = totalCost === 0 ? 1 : totalCost;
   const fuelPercentage = (fuelCost / safeTotal) * 100;

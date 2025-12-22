@@ -58,7 +58,7 @@ const parseServiceLogItems = (
     if (Array.isArray(parsed) && parsed.length > 0) {
       return parsed;
     }
-  } catch (e) {
+  } catch {
     // Not JSON, treat as legacy single description
   }
 
@@ -145,7 +145,7 @@ export default function EditServiceLogScreen() {
     };
 
     fetchServiceLog();
-  }, [id]);
+  }, [id, showError]);
 
   const handleSave = async () => {
     // Validation
@@ -180,10 +180,7 @@ export default function EditServiceLogScreen() {
       // Don't update receipt_image_url or ocr_extracted_data in edit
     };
 
-    const { data, error } = await ServiceLogService.updateServiceLog(
-      id!,
-      updateData,
-    );
+    const { error } = await ServiceLogService.updateServiceLog(id!, updateData);
     setLoading(false);
 
     if (error) {

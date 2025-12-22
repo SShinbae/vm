@@ -27,7 +27,6 @@ export function LineChart({
   const screenWidth = Dimensions.get("window").width;
 
   const chartColor = color || colors.chart.fuel;
-  const areaColor = chartColor + "20"; // 20% opacity
 
   const styles = StyleSheet.create({
     container: {

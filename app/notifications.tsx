@@ -18,9 +18,8 @@ import { useNotifications } from "@/lib/contexts/NotificationContext";
 
 export default function NotificationsScreen() {
   const { styles, theme } = useStyles(stylesheet);
-  const { isWeb, isDesktop, isMobile } = useResponsiveLayout();
-  const { notifications, unreadCount, refreshNotifications } =
-    useNotifications();
+  const { isDesktop } = useResponsiveLayout();
+  const { unreadCount, refreshNotifications } = useNotifications();
   const [refreshing, setRefreshing] = React.useState(false);
 
   const handleNotificationPress = (notification: NotificationData) => {
