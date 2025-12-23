@@ -2,7 +2,7 @@ import {
   EmptyAnalytics,
   MetricCard,
   PeriodSelector,
-  TrendLineChart,
+  LazyTrendLineChart,
   VehicleFilter,
 } from "@/components/analytics";
 import {
@@ -462,7 +462,7 @@ export default function FuelTab() {
               >
                 Efficiency Trend
               </Text>
-              <TrendLineChart
+              <LazyTrendLineChart
                 data={trendData}
                 title="Fuel Consumption Over Time"
                 yAxisLabel=""

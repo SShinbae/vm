@@ -2,6 +2,7 @@ import { Session, User } from "@supabase/supabase-js";
 import Constants from "expo-constants";
 import React, {
   createContext,
+  useCallback,
   useContext,
   useEffect,
   useRef,
@@ -10,6 +11,7 @@ import React, {
 import { Platform } from "react-native";
 import { supabase } from "../../services/supabaseClient";
 import { AuthState, AuthUser, Profile } from "../../types";
+import { initializeOneSignalLazy } from "../services/oneSignalLazy";
 import { oneSignalService } from "../services/oneSignalService";
 
 interface AuthContextType extends AuthState {
@@ -60,80 +62,90 @@ export function AuthProvider({ children }: AuthProviderProps) {
     setIsPasswordRecovery(false);
   };
 
-  const fetchUserProfile = async (user: User): Promise<AuthUser | null> => {
-    try {
-      const { data: profile, error }: { data: Profile | null; error: any } =
-        await supabase.from("profiles").select("*").eq("id", user.id).single();
+  const fetchUserProfile = useCallback(
+    async (user: User): Promise<AuthUser | null> => {
+      try {
+        const { data: profile, error }: { data: Profile | null; error: any } =
+          await supabase
+            .from("profiles")
+            .select("*")
+            .eq("id", user.id)
+            .single();
 
-      if (error && error.code !== "PGRST116") {
+        if (error && error.code !== "PGRST116") {
+          if (__DEV__) {
+            console.error("Error fetching user profile:", error);
+          }
+          return { id: user.id, email: user.email || "", username: null };
+        }
+
+        return {
+          id: user.id,
+          email: user.email || "",
+          profile: profile || undefined,
+          username: profile?.username || null,
+        };
+      } catch (error) {
         if (__DEV__) {
-          console.error("Error fetching user profile:", error);
+          console.error("Error in fetchUserProfile:", error);
         }
         return { id: user.id, email: user.email || "", username: null };
       }
+    },
+    [],
+  );
 
-      return {
-        id: user.id,
-        email: user.email || "",
-        profile: profile || undefined,
-        username: profile?.username || null,
-      };
-    } catch (error) {
-      if (__DEV__) {
-        console.error("Error in fetchUserProfile:", error);
-      }
-      return { id: user.id, email: user.email || "", username: null };
-    }
-  };
+  const setUser = useCallback(
+    async (session: Session | null) => {
+      try {
+        if (session?.user) {
+          // Check if email is confirmed - don't authenticate unconfirmed users
+          const isEmailConfirmed = session.user.email_confirmed_at != null;
 
-  const setUser = async (session: Session | null) => {
-    try {
-      if (session?.user) {
-        // Check if email is confirmed - don't authenticate unconfirmed users
-        const isEmailConfirmed = session.user.email_confirmed_at != null;
-
-        if (!isEmailConfirmed) {
-          if (__DEV__) {
-            console.log(
-              "User email not confirmed, not setting authenticated state",
-            );
+          if (!isEmailConfirmed) {
+            if (__DEV__) {
+              console.log(
+                "User email not confirmed, not setting authenticated state",
+              );
+            }
+            setState((prev) => ({ ...prev, user: null, loading: false }));
+            return;
           }
-          setState((prev) => ({ ...prev, user: null, loading: false }));
-          return;
-        }
 
-        const authUser = await fetchUserProfile(session.user);
-        setState((prev) => ({ ...prev, user: authUser, loading: false }));
-      } else {
-        setState((prev) => ({ ...prev, user: null, loading: false }));
-      }
-    } catch (error) {
-      if (__DEV__) {
-        console.error("Error setting user:", error);
-      }
-      // Fallback to basic user info if profile fetch fails
-      if (session?.user) {
-        // Also check email confirmation in fallback
-        const isEmailConfirmed = session.user.email_confirmed_at != null;
-        if (!isEmailConfirmed) {
+          const authUser = await fetchUserProfile(session.user);
+          setState((prev) => ({ ...prev, user: authUser, loading: false }));
+        } else {
           setState((prev) => ({ ...prev, user: null, loading: false }));
-          return;
         }
+      } catch (error) {
+        if (__DEV__) {
+          console.error("Error setting user:", error);
+        }
+        // Fallback to basic user info if profile fetch fails
+        if (session?.user) {
+          // Also check email confirmation in fallback
+          const isEmailConfirmed = session.user.email_confirmed_at != null;
+          if (!isEmailConfirmed) {
+            setState((prev) => ({ ...prev, user: null, loading: false }));
+            return;
+          }
 
-        setState((prev) => ({
-          ...prev,
-          user: {
-            id: session.user.id,
-            email: session.user.email || "",
-            username: null,
-          },
-          loading: false,
-        }));
-      } else {
-        setState((prev) => ({ ...prev, user: null, loading: false }));
+          setState((prev) => ({
+            ...prev,
+            user: {
+              id: session.user.id,
+              email: session.user.email || "",
+              username: null,
+            },
+            loading: false,
+          }));
+        } else {
+          setState((prev) => ({ ...prev, user: null, loading: false }));
+        }
       }
-    }
-  };
+    },
+    [fetchUserProfile],
+  );
 
   useEffect(() => {
     let mounted = true;
@@ -204,7 +216,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       mounted = false;
       subscription.unsubscribe();
     };
-  }, []);
+  }, [setUser, fetchUserProfile]);
 
   const signUp = async (email: string, password: string, fullName?: string) => {
     setState((prev) => ({ ...prev, loading: true }));
@@ -307,9 +319,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
         return { error: errorMessage };
       }
 
-      // Sync user with OneSignal for push notifications (mobile only)
+      // Initialize and sync user with OneSignal for push notifications (mobile only)
+      // Deferred initialization to prevent blocking initial app load
       if (Platform.OS !== "web") {
-        oneSignalService.syncUser();
+        initializeOneSignalLazy().then(() => {
+          oneSignalService.syncUser();
+        });
       }
 
       // Success - state will be updated by onAuthStateChange
@@ -365,7 +380,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       }
 
       return { error: null };
-    } catch (error) {
+    } catch {
       return { error: "An unexpected error occurred during password reset" };
     }
   };
@@ -416,7 +431,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       }
 
       return { error: null };
-    } catch (error) {
+    } catch {
       setState((prev) => ({ ...prev, loading: false }));
       return { error: "An unexpected error occurred during profile update" };
     }
