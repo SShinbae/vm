@@ -112,6 +112,7 @@
     "react-image-crop": "^11.0.10",
     "react-native-web": "^0.21.1",
     "recharts": "^3.2.1",
+    "sharp": "^0.34.5",
     "ts-jest": "^29.4.5",
     "typescript": "~5.9.2",
     "victory": "^37.3.6"

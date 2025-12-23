@@ -35,7 +35,8 @@
       "Bash(taskkill /PID 16348 /F)",
       "Bash(taskkill //PID 16348 //F)",
       "Bash(nul)",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "Bash(wc:*)"
     ],
     "deny": [],
     "ask": []

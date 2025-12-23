@@ -317,8 +317,10 @@ export default function Index() {
       >
         <Image
           source={require("@/assets/images/vm_logo.png")}
+          placeholder={require("@/assets/images/vm_logo_tiny.png")}
           style={{ width: 120, height: 120, marginBottom: 20 }}
           contentFit="contain"
+          priority="high"
         />
         <ActivityIndicator size="large" color={theme.colors.primary} />
       </View>
@@ -431,11 +433,13 @@ export default function Index() {
               >
                 <Image
                   source={require("@/assets/images/vm_logo.png")}
+                  placeholder={require("@/assets/images/vm_logo_tiny.png")}
                   style={{
                     width: isMobile ? 60 : isTablet ? 70 : 80,
                     height: isMobile ? 60 : isTablet ? 70 : 80,
                   }}
                   contentFit="contain"
+                  priority="high"
                 />
               </View>
 
