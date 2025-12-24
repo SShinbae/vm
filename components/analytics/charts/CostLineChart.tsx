@@ -7,6 +7,7 @@ import React from "react";
 import { Dimensions, Text, View } from "react-native";
 import { LineChart } from "react-native-chart-kit";
 import { createStyleSheet, useStyles } from "react-native-unistyles";
+import { useResponsiveLayout } from "@/hooks/use-responsive-layout";
 import { CostChartDataPoint } from "../../../types/analytics";
 import { ChartLegend, LegendItem } from "./ChartLegend";
 
@@ -24,14 +25,25 @@ export function CostLineChart({
   showLegend = true,
 }: CostLineChartProps) {
   const { styles, theme } = useStyles(stylesheet);
+  const { isMobile, isTablet } = useResponsiveLayout();
   const screenWidth = Dimensions.get("window").width;
 
   if (data.length === 0) {
     return (
       <View style={styles.container}>
-        <Text style={styles.title}>{title}</Text>
+        <Text
+          style={[
+            styles.title,
+            isMobile && styles.titleMobile,
+            isTablet && styles.titleTablet,
+          ]}
+        >
+          {title}
+        </Text>
         <View style={[styles.emptyContainer, { height }]}>
-          <Text style={styles.emptyText}>No data available</Text>
+          <Text style={[styles.emptyText, isMobile && styles.emptyTextMobile]}>
+            No data available
+          </Text>
         </View>
       </View>
     );
@@ -91,7 +103,15 @@ export function CostLineChart({
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>{title}</Text>
+      <Text
+        style={[
+          styles.title,
+          isMobile && styles.titleMobile,
+          isTablet && styles.titleTablet,
+        ]}
+      >
+        {title}
+      </Text>
       <LineChart
         data={chartData}
         width={screenWidth - 32}
@@ -115,10 +135,17 @@ const stylesheet = createStyleSheet((theme) => ({
     marginBottom: theme.spacing.lg,
   },
   title: {
-    fontSize: theme.fontSize.lg,
+    fontSize: theme.fontSize.xl,
     fontWeight: theme.fontWeight.bold,
     color: theme.colors.text,
     marginBottom: theme.spacing.md,
+  },
+  titleMobile: {
+    fontSize: theme.fontSize.base,
+    marginBottom: theme.spacing.sm,
+  },
+  titleTablet: {
+    fontSize: theme.fontSize.lg,
   },
   chart: {
     borderRadius: theme.borderRadius.lg,
@@ -132,5 +159,8 @@ const stylesheet = createStyleSheet((theme) => ({
   emptyText: {
     fontSize: theme.fontSize.base,
     color: theme.colors.textSecondary,
+  },
+  emptyTextMobile: {
+    fontSize: theme.fontSize.sm,
   },
 }));

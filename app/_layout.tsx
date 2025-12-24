@@ -24,6 +24,7 @@ import { AuthProvider } from "@/lib/contexts/AuthContext";
 import { DialogProvider } from "@/lib/contexts/DialogContext";
 import { NotificationProvider } from "@/lib/contexts/NotificationContext";
 import { ThemeProvider } from "@/lib/contexts/ThemeContext";
+import { QueryProvider } from "@/lib/providers/QueryProvider";
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
 
@@ -35,21 +36,41 @@ SplashScreen.preventAutoHideAsync();
 export default function RootLayout() {
   return (
     <ErrorBoundary>
-      <ThemeProvider>
-        <AuthProvider>
-          <NotificationProvider>
-            <DialogProvider>
-              <RootLayoutContent />
-            </DialogProvider>
-          </NotificationProvider>
-        </AuthProvider>
-      </ThemeProvider>
+      <QueryProvider>
+        <ThemeProvider>
+          <AuthProvider>
+            <NotificationProvider>
+              <DialogProvider>
+                <RootLayoutContent />
+              </DialogProvider>
+            </NotificationProvider>
+          </AuthProvider>
+        </ThemeProvider>
+      </QueryProvider>
     </ErrorBoundary>
   );
 }
 
 function RootLayoutContent() {
   const colorScheme = useColorScheme();
+
+  // OPTIMIZATION: Register service worker for asset caching (web only)
+  useEffect(() => {
+    if (Platform.OS === "web" && "serviceWorker" in navigator) {
+      navigator.serviceWorker
+        .register("/service-worker.js")
+        .then((registration) => {
+          if (__DEV__) {
+            console.log("✅ Service Worker registered:", registration);
+          }
+        })
+        .catch((error) => {
+          if (__DEV__) {
+            console.error("❌ Service Worker registration failed:", error);
+          }
+        });
+    }
+  }, []);
 
   // Preload fonts (if you add custom fonts, they'll be loaded here)
   const [fontsLoaded, fontError] = useFonts({

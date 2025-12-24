@@ -1,6 +1,5 @@
 import React from "react";
-import { View } from "react-native";
-import { createStyleSheet, useStyles } from "react-native-unistyles";
+import { ResponsiveGrid } from "@/components/layout/ResponsiveGrid";
 import { StatCard } from "./StatCard";
 import { DashboardStats } from "@/hooks/useVehicleStats";
 
@@ -14,10 +13,11 @@ interface VehicleStatsGridProps {
  * Isolated component for easier layout management
  */
 export function VehicleStatsGrid({ stats }: VehicleStatsGridProps) {
-  const { styles } = useStyles(stylesheet);
-
   return (
-    <View style={styles.statsGrid}>
+    <ResponsiveGrid
+      columns={{ mobile: 2, tablet: 2, desktop: 2, largeDesktop: 4 }}
+      spacing={16}
+    >
       <StatCard
         title="Total Vehicles"
         value={stats.totalVehicles}
@@ -38,15 +38,6 @@ export function VehicleStatsGrid({ stats }: VehicleStatsGridProps) {
         value={stats.upcomingServices}
         icon="wrench.fill"
       />
-    </View>
+    </ResponsiveGrid>
   );
 }
-
-const stylesheet = createStyleSheet((theme) => ({
-  statsGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    justifyContent: "space-between",
-    gap: theme.spacing.md,
-  },
-}));

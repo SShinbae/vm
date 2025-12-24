@@ -56,11 +56,14 @@ const StatCard: React.FC<StatCardProps & { reduceMotion?: boolean }> = ({
 }) => {
   const { theme } = useStyles();
   const { isMobile, isTablet } = useResponsiveDimensions();
-  const fadeAnim = useRef(new Animated.Value(reduceMotion ? 1 : 0)).current;
-  const slideAnim = useRef(new Animated.Value(reduceMotion ? 0 : 30)).current;
+
+  // OPTIMIZATION: Skip animations on web for better performance
+  const shouldAnimate = Platform.OS !== "web" && !reduceMotion;
+  const fadeAnim = useRef(new Animated.Value(shouldAnimate ? 0 : 1)).current;
+  const slideAnim = useRef(new Animated.Value(shouldAnimate ? 30 : 0)).current;
 
   useEffect(() => {
-    if (reduceMotion) {
+    if (!shouldAnimate) {
       return;
     }
 
@@ -78,7 +81,7 @@ const StatCard: React.FC<StatCardProps & { reduceMotion?: boolean }> = ({
         useNativeDriver: true,
       }),
     ]).start();
-  }, [reduceMotion, delay, fadeAnim, slideAnim]);
+  }, [shouldAnimate, delay, fadeAnim, slideAnim]);
 
   // Use theme card color for dark mode support
   const cardBackground = (theme.colors as any).card || theme.colors.background;
@@ -177,11 +180,14 @@ const FeatureCard: React.FC<FeatureCardProps & { reduceMotion?: boolean }> = ({
 }) => {
   const { theme } = useStyles();
   const { isMobile, isTablet } = useResponsiveDimensions();
-  const fadeAnim = useRef(new Animated.Value(reduceMotion ? 1 : 0)).current;
-  const slideAnim = useRef(new Animated.Value(reduceMotion ? 0 : 50)).current;
+
+  // OPTIMIZATION: Skip animations on web for better performance
+  const shouldAnimate = Platform.OS !== "web" && !reduceMotion;
+  const fadeAnim = useRef(new Animated.Value(shouldAnimate ? 0 : 1)).current;
+  const slideAnim = useRef(new Animated.Value(shouldAnimate ? 50 : 0)).current;
 
   useEffect(() => {
-    if (reduceMotion) {
+    if (!shouldAnimate) {
       return;
     }
 
@@ -199,7 +205,7 @@ const FeatureCard: React.FC<FeatureCardProps & { reduceMotion?: boolean }> = ({
         useNativeDriver: true,
       }),
     ]).start();
-  }, [reduceMotion, delay, fadeAnim, slideAnim]);
+  }, [shouldAnimate, delay, fadeAnim, slideAnim]);
 
   return (
     <Animated.View
@@ -283,13 +289,17 @@ export default function Index() {
   const [scrollY] = useState(new Animated.Value(0));
   const reduceMotion = useReducedMotion();
 
-  const heroFadeAnim = useRef(new Animated.Value(reduceMotion ? 1 : 0)).current;
+  // OPTIMIZATION: Skip animations on web for better performance
+  const shouldAnimate = Platform.OS !== "web" && !reduceMotion;
+  const heroFadeAnim = useRef(
+    new Animated.Value(shouldAnimate ? 0 : 1),
+  ).current;
   const heroSlideAnim = useRef(
-    new Animated.Value(reduceMotion ? 0 : 50),
+    new Animated.Value(shouldAnimate ? 50 : 0),
   ).current;
 
   useEffect(() => {
-    if (!loading && !user && !reduceMotion) {
+    if (!loading && !user && shouldAnimate) {
       Animated.parallel([
         Animated.timing(heroFadeAnim, {
           toValue: 1,
@@ -303,7 +313,7 @@ export default function Index() {
         }),
       ]).start();
     }
-  }, [loading, user, reduceMotion, heroFadeAnim, heroSlideAnim]);
+  }, [loading, user, shouldAnimate, heroFadeAnim, heroSlideAnim]);
 
   if (!initialized || loading) {
     return (

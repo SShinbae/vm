@@ -3,11 +3,30 @@
  */
 
 /**
- * Formats a date to DD/MM/YY format
+ * Formats a date to DD/MM/YYYY format (4-digit year)
+ * @param date - Date object, ISO string, or timestamp
+ * @returns Formatted date string in DD/MM/YYYY format
+ */
+export function formatDate(date: Date | string | number): string {
+  const dateObj = new Date(date);
+
+  if (isNaN(dateObj.getTime())) {
+    return "Invalid Date";
+  }
+
+  const day = dateObj.getDate().toString().padStart(2, "0");
+  const month = (dateObj.getMonth() + 1).toString().padStart(2, "0");
+  const year = dateObj.getFullYear().toString();
+
+  return `${day}/${month}/${year}`;
+}
+
+/**
+ * Formats a date to DD/MM/YY format (2-digit year)
  * @param date - Date object, ISO string, or timestamp
  * @returns Formatted date string in DD/MM/YY format
  */
-export function formatDate(date: Date | string | number): string {
+export function formatDateShort(date: Date | string | number): string {
   const dateObj = new Date(date);
 
   if (isNaN(dateObj.getTime())) {
@@ -22,9 +41,9 @@ export function formatDate(date: Date | string | number): string {
 }
 
 /**
- * Formats a date to DD/MM/YY HH:MM format
+ * Formats a date to DD/MM/YYYY HH:MM format
  * @param date - Date object, ISO string, or timestamp
- * @returns Formatted date string in DD/MM/YY HH:MM format
+ * @returns Formatted date string in DD/MM/YYYY HH:MM format
  */
 export function formatDateTime(date: Date | string | number): string {
   const dateObj = new Date(date);
@@ -35,7 +54,7 @@ export function formatDateTime(date: Date | string | number): string {
 
   const day = dateObj.getDate().toString().padStart(2, "0");
   const month = (dateObj.getMonth() + 1).toString().padStart(2, "0");
-  const year = dateObj.getFullYear().toString().slice(-2);
+  const year = dateObj.getFullYear().toString();
   const hours = dateObj.getHours().toString().padStart(2, "0");
   const minutes = dateObj.getMinutes().toString().padStart(2, "0");
 

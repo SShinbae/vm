@@ -37,7 +37,7 @@ export function QuickActionButton({
 
 const stylesheet = createStyleSheet((theme) => ({
   quickAction: {
-    width: "47%",
+    flex: 1,
     alignItems: "center",
     gap: theme.spacing.md,
   },

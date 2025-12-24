@@ -4,6 +4,7 @@ import { AlertModal, ConfirmModal } from "@/components/ui/Modal";
 import { ServiceReceiptIndicator } from "@/components/ui/ReceiptViewer";
 import { SkeletonLogList } from "@/components/ui/Skeleton";
 import { LogDetailsBottomSheet } from "@/components/logs/LogDetailsBottomSheet";
+import { MaxWidthContainer } from "@/components/layout/MaxWidthContainer";
 import {
   FuelLogService,
   MileageLogService,
@@ -963,287 +964,291 @@ export default function LogsScreen() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.background }}>
-      {/* <View
-        style={{
-          paddingHorizontal: theme.spacing.xl,
-          paddingVertical: theme.spacing.lg,
-          borderBottomWidth: 1,
-          borderBottomColor: theme.colors.border,
-        }}
-      >
-        <Text
+      <MaxWidthContainer>
+        {/* <View
           style={{
-            fontSize: theme.fontSize["3xl"],
-            fontWeight: theme.fontWeight.bold,
-            color: theme.colors.text,
+            paddingHorizontal: theme.spacing.xl,
+            paddingVertical: theme.spacing.lg,
+            borderBottomWidth: 1,
+            borderBottomColor: theme.colors.border,
           }}
         >
-          Logs
-        </Text>
-      </View> */}
+          <Text
+            style={{
+              fontSize: theme.fontSize["3xl"],
+              fontWeight: theme.fontWeight.bold,
+              color: theme.colors.text,
+            }}
+          >
+            Logs
+          </Text>
+        </View> */}
 
-      <View
-        style={{
-          flexDirection: "row",
-          padding: theme.spacing.lg,
-          gap: theme.spacing.sm,
-          backgroundColor: theme.colors.surface,
-          borderBottomWidth: 1,
-          borderBottomColor: theme.colors.border,
-        }}
-      >
-        <TabButton type="mileage" label="Mileage" icon="speedometer" />
-        <TabButton type="fuel" label="Fuel" icon="fuelpump" />
-        <TabButton type="service" label="Service" icon="wrench" />
-      </View>
-
-      {currentLogs.length === 0 ? (
         <View
           style={{
-            flex: 1,
-            justifyContent: "center",
-            alignItems: "center",
-            paddingVertical: theme.spacing.xxxl,
+            flexDirection: "row",
+            padding: theme.spacing.lg,
+            gap: theme.spacing.sm,
+            backgroundColor: theme.colors.surface,
+            borderBottomWidth: 1,
+            borderBottomColor: theme.colors.border,
           }}
         >
+          <TabButton type="mileage" label="Mileage" icon="speedometer" />
+          <TabButton type="fuel" label="Fuel" icon="fuelpump" />
+          <TabButton type="service" label="Service" icon="wrench" />
+        </View>
+
+        {currentLogs.length === 0 ? (
           <View
             style={{
-              width: 80,
-              height: 80,
-              borderRadius: 40,
-              backgroundColor: theme.colors.disabled,
-              alignItems: "center",
+              flex: 1,
               justifyContent: "center",
-              marginBottom: theme.spacing.lg,
-            }}
-          >
-            <IconSymbol
-              name={
-                activeTab === "mileage"
-                  ? "speedometer"
-                  : activeTab === "fuel"
-                    ? "fuelpump"
-                    : "wrench"
-              }
-              size={32}
-              color={theme.colors.textSecondary}
-            />
-          </View>
-          <Text
-            style={{
-              fontSize: theme.fontSize.xl,
-              fontWeight: theme.fontWeight.semibold,
-              color: theme.colors.text,
-              marginBottom: theme.spacing.sm,
-            }}
-          >
-            No {activeTab} logs yet
-          </Text>
-          <Text
-            style={{
-              fontSize: theme.fontSize.sm,
-              color: theme.colors.textSecondary,
-              textAlign: "center",
-              lineHeight: 20,
-              marginBottom: theme.spacing.xl,
-            }}
-          >
-            Start tracking your vehicle&apos;s {activeTab} to monitor
-            performance and maintenance.
-          </Text>
-          <TouchableOpacity
-            style={{
-              backgroundColor: theme.colors.primary,
-              paddingHorizontal: theme.spacing.xl,
-              paddingVertical: theme.spacing.md,
-              borderRadius: theme.borderRadius.md,
-              flexDirection: "row",
               alignItems: "center",
-              gap: theme.spacing.sm,
-            }}
-            onPress={() => {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-              router.push(getAddRoute() as any);
+              paddingVertical: theme.spacing.xxxl,
             }}
           >
-            <IconSymbol name="plus" size={16} color={theme.colors.white} />
-            <Text
+            <View
               style={{
-                color: theme.colors.white,
-                fontSize: theme.fontSize.sm,
-                fontWeight: theme.fontWeight.semibold,
+                width: 80,
+                height: 80,
+                borderRadius: 40,
+                backgroundColor: theme.colors.disabled,
+                alignItems: "center",
+                justifyContent: "center",
+                marginBottom: theme.spacing.lg,
               }}
             >
-              Add {activeTab} log
+              <IconSymbol
+                name={
+                  activeTab === "mileage"
+                    ? "speedometer"
+                    : activeTab === "fuel"
+                      ? "fuelpump"
+                      : "wrench"
+                }
+                size={32}
+                color={theme.colors.textSecondary}
+              />
+            </View>
+            <Text
+              style={{
+                fontSize: theme.fontSize.xl,
+                fontWeight: theme.fontWeight.semibold,
+                color: theme.colors.text,
+                marginBottom: theme.spacing.sm,
+              }}
+            >
+              No {activeTab} logs yet
             </Text>
-          </TouchableOpacity>
-        </View>
-      ) : (
-        <ScrollView
-          style={{ flex: 1 }}
-          refreshControl={
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={onRefresh}
-              tintColor={theme.colors.primary}
-            />
-          }
-          showsVerticalScrollIndicator={false}
-        >
-          {Object.entries(groupedLogs).map(([vehicleId, { vehicle, logs }]) => {
-            const isSharedVehicle =
-              logs.length > 0 && (logs[0].is_shared_vehicle || false);
-            const isExpanded = expandedVehicles.has(vehicleId);
-            const showAll = showAllLogsForVehicle.has(vehicleId);
-            const displayedLogs = showAll ? logs : logs.slice(0, 3);
-            const hasMoreLogs = logs.length > 3;
+            <Text
+              style={{
+                fontSize: theme.fontSize.sm,
+                color: theme.colors.textSecondary,
+                textAlign: "center",
+                lineHeight: 20,
+                marginBottom: theme.spacing.xl,
+              }}
+            >
+              Start tracking your vehicle&apos;s {activeTab} to monitor
+              performance and maintenance.
+            </Text>
+            <TouchableOpacity
+              style={{
+                backgroundColor: theme.colors.primary,
+                paddingHorizontal: theme.spacing.xl,
+                paddingVertical: theme.spacing.md,
+                borderRadius: theme.borderRadius.md,
+                flexDirection: "row",
+                alignItems: "center",
+                gap: theme.spacing.sm,
+              }}
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                router.push(getAddRoute() as any);
+              }}
+            >
+              <IconSymbol name="plus" size={16} color={theme.colors.white} />
+              <Text
+                style={{
+                  color: theme.colors.white,
+                  fontSize: theme.fontSize.sm,
+                  fontWeight: theme.fontWeight.semibold,
+                }}
+              >
+                Add {activeTab} log
+              </Text>
+            </TouchableOpacity>
+          </View>
+        ) : (
+          <ScrollView
+            style={{ flex: 1 }}
+            refreshControl={
+              <RefreshControl
+                refreshing={refreshing}
+                onRefresh={onRefresh}
+                tintColor={theme.colors.primary}
+              />
+            }
+            showsVerticalScrollIndicator={false}
+          >
+            {Object.entries(groupedLogs).map(
+              ([vehicleId, { vehicle, logs }]) => {
+                const isSharedVehicle =
+                  logs.length > 0 && (logs[0].is_shared_vehicle || false);
+                const isExpanded = expandedVehicles.has(vehicleId);
+                const showAll = showAllLogsForVehicle.has(vehicleId);
+                const displayedLogs = showAll ? logs : logs.slice(0, 3);
+                const hasMoreLogs = logs.length > 3;
 
-            return (
-              <View key={vehicleId}>
-                <VehicleHeader
-                  vehicle={vehicle}
-                  isSharedVehicle={isSharedVehicle}
-                  vehicleId={vehicleId}
-                  logsCount={logs.length}
-                  latestLogDate={logs[0].date}
-                />
-                {isExpanded && (
-                  <View
-                    style={{
-                      paddingHorizontal: theme.spacing.xl,
-                      paddingBottom: theme.spacing.sm,
-                    }}
-                  >
-                    {displayedLogs.map((log) => (
-                      <LogCard key={log.id} log={log} type={activeTab} />
-                    ))}
-                    {hasMoreLogs && !showAll && (
-                      <TouchableOpacity
+                return (
+                  <View key={vehicleId}>
+                    <VehicleHeader
+                      vehicle={vehicle}
+                      isSharedVehicle={isSharedVehicle}
+                      vehicleId={vehicleId}
+                      logsCount={logs.length}
+                      latestLogDate={logs[0].date}
+                    />
+                    {isExpanded && (
+                      <View
                         style={{
-                          backgroundColor: theme.colors.surface,
-                          borderRadius: theme.borderRadius.lg,
-                          padding: theme.spacing.md,
-                          marginBottom: theme.spacing.md,
-                          borderWidth: 1,
-                          borderColor: theme.colors.border,
-                          alignItems: "center",
-                          flexDirection: "row",
-                          justifyContent: "center",
-                          gap: theme.spacing.sm,
+                          paddingHorizontal: theme.spacing.xl,
+                          paddingBottom: theme.spacing.sm,
                         }}
-                        onPress={() => toggleShowAllLogs(vehicleId)}
                       >
-                        <Text
-                          style={{
-                            fontSize: theme.fontSize.base,
-                            fontWeight: theme.fontWeight.semibold,
-                            color: theme.colors.primary,
-                          }}
-                        >
-                          See {logs.length - 3} more{" "}
-                          {logs.length - 3 === 1 ? "log" : "logs"}
-                        </Text>
-                        <IconSymbol
-                          name="chevron.down"
-                          size={16}
-                          color={theme.colors.primary}
-                        />
-                      </TouchableOpacity>
-                    )}
-                    {hasMoreLogs && showAll && (
-                      <TouchableOpacity
-                        style={{
-                          backgroundColor: theme.colors.surface,
-                          borderRadius: theme.borderRadius.lg,
-                          padding: theme.spacing.md,
-                          marginBottom: theme.spacing.md,
-                          borderWidth: 1,
-                          borderColor: theme.colors.border,
-                          alignItems: "center",
-                          flexDirection: "row",
-                          justifyContent: "center",
-                          gap: theme.spacing.sm,
-                        }}
-                        onPress={() => toggleShowAllLogs(vehicleId)}
-                      >
-                        <Text
-                          style={{
-                            fontSize: theme.fontSize.base,
-                            fontWeight: theme.fontWeight.semibold,
-                            color: theme.colors.primary,
-                          }}
-                        >
-                          Show less
-                        </Text>
-                        <IconSymbol
-                          name="chevron.up"
-                          size={16}
-                          color={theme.colors.primary}
-                        />
-                      </TouchableOpacity>
+                        {displayedLogs.map((log) => (
+                          <LogCard key={log.id} log={log} type={activeTab} />
+                        ))}
+                        {hasMoreLogs && !showAll && (
+                          <TouchableOpacity
+                            style={{
+                              backgroundColor: theme.colors.surface,
+                              borderRadius: theme.borderRadius.lg,
+                              padding: theme.spacing.md,
+                              marginBottom: theme.spacing.md,
+                              borderWidth: 1,
+                              borderColor: theme.colors.border,
+                              alignItems: "center",
+                              flexDirection: "row",
+                              justifyContent: "center",
+                              gap: theme.spacing.sm,
+                            }}
+                            onPress={() => toggleShowAllLogs(vehicleId)}
+                          >
+                            <Text
+                              style={{
+                                fontSize: theme.fontSize.base,
+                                fontWeight: theme.fontWeight.semibold,
+                                color: theme.colors.primary,
+                              }}
+                            >
+                              See {logs.length - 3} more{" "}
+                              {logs.length - 3 === 1 ? "log" : "logs"}
+                            </Text>
+                            <IconSymbol
+                              name="chevron.down"
+                              size={16}
+                              color={theme.colors.primary}
+                            />
+                          </TouchableOpacity>
+                        )}
+                        {hasMoreLogs && showAll && (
+                          <TouchableOpacity
+                            style={{
+                              backgroundColor: theme.colors.surface,
+                              borderRadius: theme.borderRadius.lg,
+                              padding: theme.spacing.md,
+                              marginBottom: theme.spacing.md,
+                              borderWidth: 1,
+                              borderColor: theme.colors.border,
+                              alignItems: "center",
+                              flexDirection: "row",
+                              justifyContent: "center",
+                              gap: theme.spacing.sm,
+                            }}
+                            onPress={() => toggleShowAllLogs(vehicleId)}
+                          >
+                            <Text
+                              style={{
+                                fontSize: theme.fontSize.base,
+                                fontWeight: theme.fontWeight.semibold,
+                                color: theme.colors.primary,
+                              }}
+                            >
+                              Show less
+                            </Text>
+                            <IconSymbol
+                              name="chevron.up"
+                              size={16}
+                              color={theme.colors.primary}
+                            />
+                          </TouchableOpacity>
+                        )}
+                      </View>
                     )}
                   </View>
-                )}
-              </View>
-            );
-          })}
-        </ScrollView>
-      )}
+                );
+              },
+            )}
+          </ScrollView>
+        )}
 
-      <TouchableOpacity
-        style={{
-          position: "absolute",
-          right: theme.spacing.xl,
-          bottom: theme.spacing.xl,
-          width: 56,
-          height: 56,
-          borderRadius: 28,
-          backgroundColor: theme.colors.primary,
-          alignItems: "center",
-          justifyContent: "center",
-          shadowColor: theme.colors.black,
-          shadowOffset: { width: 0, height: 4 },
-          shadowOpacity: 0.3,
-          shadowRadius: 8,
-          elevation: 6,
-        }}
-        onPress={() => {
-          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-          router.push(getAddRoute() as any);
-        }}
-      >
-        <IconSymbol name="plus" size={24} color={theme.colors.white} />
-      </TouchableOpacity>
+        <TouchableOpacity
+          style={{
+            position: "absolute",
+            right: theme.spacing.xl,
+            bottom: theme.spacing.xl,
+            width: 56,
+            height: 56,
+            borderRadius: 28,
+            backgroundColor: theme.colors.primary,
+            alignItems: "center",
+            justifyContent: "center",
+            shadowColor: theme.colors.black,
+            shadowOffset: { width: 0, height: 4 },
+            shadowOpacity: 0.3,
+            shadowRadius: 8,
+            elevation: 6,
+          }}
+          onPress={() => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+            router.push(getAddRoute() as any);
+          }}
+        >
+          <IconSymbol name="plus" size={24} color={theme.colors.white} />
+        </TouchableOpacity>
 
-      <ConfirmModal
-        visible={deleteModalVisible}
-        title="Delete Log"
-        message={`Are you sure you want to delete this ${selectedLog?.type} log?\n\n${selectedLog?.description}`}
-        confirmText="Delete"
-        cancelText="Cancel"
-        onConfirm={handleConfirmDelete}
-        onClose={() => setDeleteModalVisible(false)}
-        loading={deleteLoading}
-        variant="danger"
-      />
+        <ConfirmModal
+          visible={deleteModalVisible}
+          title="Delete Log"
+          message={`Are you sure you want to delete this ${selectedLog?.type} log?\n\n${selectedLog?.description}`}
+          confirmText="Delete"
+          cancelText="Cancel"
+          onConfirm={handleConfirmDelete}
+          onClose={() => setDeleteModalVisible(false)}
+          loading={deleteLoading}
+          variant="danger"
+        />
 
-      <AlertModal
-        visible={alertModalVisible}
-        title={alertTitle}
-        message={alertMessage}
-        variant={alertVariant}
-        onClose={() => setAlertModalVisible(false)}
-      />
+        <AlertModal
+          visible={alertModalVisible}
+          title={alertTitle}
+          message={alertMessage}
+          variant={alertVariant}
+          onClose={() => setAlertModalVisible(false)}
+        />
 
-      <LogDetailsBottomSheet
-        ref={bottomSheetRef}
-        log={selectedBottomSheetLog}
-        logType={selectedBottomSheetLogType}
-        canModify={bottomSheetCanModify}
-        onClose={handleCloseBottomSheet}
-        onEdit={handleBottomSheetEdit}
-        onDelete={handleBottomSheetDelete}
-      />
+        <LogDetailsBottomSheet
+          ref={bottomSheetRef}
+          log={selectedBottomSheetLog}
+          logType={selectedBottomSheetLogType}
+          canModify={bottomSheetCanModify}
+          onClose={handleCloseBottomSheet}
+          onEdit={handleBottomSheetEdit}
+          onDelete={handleBottomSheetDelete}
+        />
+      </MaxWidthContainer>
     </SafeAreaView>
   );
 }
