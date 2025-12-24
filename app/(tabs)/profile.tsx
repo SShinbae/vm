@@ -7,6 +7,7 @@ import { useProfileStats } from "@/hooks/useProfileStats";
 import { useAuth } from "@/lib/contexts/AuthContext";
 import { useDialog } from "@/lib/contexts/DialogContext";
 import { useTheme } from "@/lib/contexts/ThemeContext";
+import { MaxWidthContainer } from "@/components/layout/MaxWidthContainer";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router } from "expo-router";
 import React, { useEffect, useState } from "react";
@@ -879,60 +880,62 @@ export default function ProfileScreen() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.background }}>
-      <View
-        style={{
-          flexDirection: "row",
-          padding: theme.spacing.lg,
-          gap: theme.spacing.sm,
-          backgroundColor: theme.colors.surface,
-          borderBottomWidth: 1,
-          borderBottomColor: theme.colors.border,
-        }}
-      >
-        <TabButton tab="Profile" />
-        <TabButton tab="Settings" />
-        <TabButton tab="Notifications" />
-      </View>
+      <MaxWidthContainer>
+        <View
+          style={{
+            flexDirection: "row",
+            padding: theme.spacing.lg,
+            gap: theme.spacing.sm,
+            backgroundColor: theme.colors.surface,
+            borderBottomWidth: 1,
+            borderBottomColor: theme.colors.border,
+          }}
+        >
+          <TabButton tab="Profile" />
+          <TabButton tab="Settings" />
+          <TabButton tab="Notifications" />
+        </View>
 
-      <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false}>
-        {activeTab === "Profile" && renderProfileTab()}
-        {activeTab === "Settings" && renderSettingsTab()}
-        {activeTab === "Notifications" && renderNotificationsTab()}
+        <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false}>
+          {activeTab === "Profile" && renderProfileTab()}
+          {activeTab === "Settings" && renderSettingsTab()}
+          {activeTab === "Notifications" && renderNotificationsTab()}
 
-        {isMobile && (
-          <View
-            style={{
-              padding: theme.spacing.xl,
-              marginTop: theme.spacing.xl,
-            }}
-          >
-            <TouchableOpacity
+          {isMobile && (
+            <View
               style={{
-                flexDirection: "row",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: theme.spacing.sm,
-                paddingVertical: theme.spacing.md,
-                paddingHorizontal: theme.spacing.lg,
-                borderRadius: theme.borderRadius.md,
-                backgroundColor: theme.colors.error,
+                padding: theme.spacing.xl,
+                marginTop: theme.spacing.xl,
               }}
-              onPress={handleSignOut}
             >
-              <IconSymbol name="arrow.right.square" size={16} color="white" />
-              <Text
+              <TouchableOpacity
                 style={{
-                  color: "white",
-                  fontSize: theme.fontSize.sm,
-                  fontWeight: theme.fontWeight.semibold,
+                  flexDirection: "row",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: theme.spacing.sm,
+                  paddingVertical: theme.spacing.md,
+                  paddingHorizontal: theme.spacing.lg,
+                  borderRadius: theme.borderRadius.md,
+                  backgroundColor: theme.colors.error,
                 }}
+                onPress={handleSignOut}
               >
-                Sign Out
-              </Text>
-            </TouchableOpacity>
-          </View>
-        )}
-      </ScrollView>
+                <IconSymbol name="arrow.right.square" size={16} color="white" />
+                <Text
+                  style={{
+                    color: "white",
+                    fontSize: theme.fontSize.sm,
+                    fontWeight: theme.fontWeight.semibold,
+                  }}
+                >
+                  Sign Out
+                </Text>
+              </TouchableOpacity>
+            </View>
+          )}
+        </ScrollView>
+      </MaxWidthContainer>
 
       <Modal visible={showEditModal} onClose={() => setShowEditModal(false)}>
         <View style={{ padding: theme.spacing.xl }}>

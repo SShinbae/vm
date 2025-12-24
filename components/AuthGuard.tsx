@@ -75,16 +75,33 @@ function useAuthPageTracking(
   timeout = AUTH_PAGE_TIMEOUT,
 ) {
   const [lastAuthPageVisit, setLastAuthPageVisit] = useState(0);
+  const [wasRecentlyOnAuthPage, setWasRecentlyOnAuthPage] = useState(false);
 
   useEffect(() => {
     if (isOnAuthPage) {
       setLastAuthPageVisit(Date.now());
+      setWasRecentlyOnAuthPage(true);
     }
   }, [isOnAuthPage]);
 
-  const wasRecentlyOnAuthPage = useMemo(() => {
+  useEffect(() => {
+    if (lastAuthPageVisit === 0) {
+      setWasRecentlyOnAuthPage(false);
+      return;
+    }
+
     const now = Date.now();
-    return now - lastAuthPageVisit < timeout;
+    const timeSinceVisit = now - lastAuthPageVisit;
+
+    if (timeSinceVisit >= timeout) {
+      setWasRecentlyOnAuthPage(false);
+    } else {
+      const timer = setTimeout(() => {
+        setWasRecentlyOnAuthPage(false);
+      }, timeout - timeSinceVisit);
+
+      return () => clearTimeout(timer);
+    }
   }, [lastAuthPageVisit, timeout]);
 
   return wasRecentlyOnAuthPage;

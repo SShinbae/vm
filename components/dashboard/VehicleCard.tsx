@@ -54,11 +54,11 @@ export function VehicleCard({ vehicle }: VehicleCardProps) {
         <Text style={styles.vehicleDetail}>
           {vehicle.license_plate ? String(vehicle.license_plate) : "N/A"}
         </Text>
-        {vehicle.current_mileage != null && (
-          <Text style={styles.vehicleDetail}>
-            {Number(vehicle.current_mileage).toLocaleString()} km
-          </Text>
-        )}
+        <Text style={styles.vehicleDetail}>
+          {vehicle.current_mileage != null
+            ? `${Number(vehicle.current_mileage).toLocaleString()} km`
+            : "0 km"}
+        </Text>
       </View>
       {vehicle.shareCount > 0 && (
         <View style={styles.sharedBadge}>

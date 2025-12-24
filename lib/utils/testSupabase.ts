@@ -39,8 +39,8 @@ export const testSupabaseConnection = async () => {
     console.log("🎉 All Supabase tests passed!");
 
     return true;
-  } catch {
-    console.error("❌ Supabase test failed:", error);
+  } catch (err) {
+    console.error("❌ Supabase test failed:", err);
     return false;
   }
 };

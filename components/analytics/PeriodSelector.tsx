@@ -4,6 +4,7 @@ import { createStyleSheet, useStyles } from "react-native-unistyles";
 import { Ionicons } from "@expo/vector-icons";
 import { AnalyticsPeriod } from "../../types/analytics";
 import { DateRangePicker } from "./DateRangePicker";
+import { useResponsiveLayout } from "@/hooks/use-responsive-layout";
 
 interface PeriodSelectorProps {
   selectedPeriod: AnalyticsPeriod;
@@ -21,8 +22,11 @@ export function PeriodSelector({
   onCustomRangeSelect,
 }: PeriodSelectorProps) {
   const { styles, theme } = useStyles(stylesheet);
+  const { isMobile } = useResponsiveLayout();
   const [modalVisible, setModalVisible] = useState(false);
   const [dateRangePickerVisible, setDateRangePickerVisible] = useState(false);
+
+  const iconSize = isMobile ? 18 : 20;
 
   const handleCustomRangeClick = () => {
     setModalVisible(false);
@@ -38,18 +42,22 @@ export function PeriodSelector({
   return (
     <>
       <TouchableOpacity
-        style={styles.container}
+        style={[styles.container, isMobile && styles.containerMobile]}
         onPress={() => setModalVisible(true)}
       >
         <Ionicons
           name="calendar-outline"
-          size={20}
+          size={iconSize}
           color={theme.colors.textSecondary}
         />
-        <Text style={styles.selectedText}>{selectedPeriod.label}</Text>
+        <Text
+          style={[styles.selectedText, isMobile && styles.selectedTextMobile]}
+        >
+          {selectedPeriod.label}
+        </Text>
         <Ionicons
           name="chevron-down-outline"
-          size={20}
+          size={iconSize}
           color={theme.colors.textSecondary}
         />
       </TouchableOpacity>
@@ -150,11 +158,18 @@ const stylesheet = createStyleSheet((theme) => ({
     shadowRadius: 2,
     elevation: 1,
   },
+  containerMobile: {
+    padding: theme.spacing.sm,
+    gap: theme.spacing.xs,
+  },
   selectedText: {
     flex: 1,
     fontSize: theme.fontSize.sm,
     fontWeight: theme.fontWeight.medium,
     color: theme.colors.text,
+  },
+  selectedTextMobile: {
+    fontSize: theme.fontSize.xs,
   },
   modalOverlay: {
     flex: 1,

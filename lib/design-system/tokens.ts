@@ -34,6 +34,24 @@ export const spacing = {
 } as const;
 
 /**
+ * Desktop Spacing Scale
+ * Compact but organized spacing for desktop screens
+ */
+export const spacingDesktop = {
+  xxxs: 2,
+  xxs: 4,
+  xs: 8,
+  sm: 12,
+  md: 16,
+  lg: 24,
+  xl: 28,
+  xxl: 36,
+  xxxl: 48,
+  xxxxl: 56,
+  xxxxxl: 72,
+} as const;
+
+/**
  * Typography Scale
  * Responsive font sizes following a modular scale
  */
@@ -49,6 +67,24 @@ export const fontSize = {
   xxxl: 30,
   xxxxl: 36,
   xxxxxl: 48,
+} as const;
+
+/**
+ * Desktop Typography Scale
+ * Slightly larger font sizes optimized for desktop screens
+ */
+export const fontSizeDesktop = {
+  xxxs: 11,
+  xxs: 12,
+  xs: 13,
+  sm: 15,
+  base: 17,
+  lg: 20,
+  xl: 22,
+  xxl: 26,
+  xxxl: 32,
+  xxxxl: 40,
+  xxxxxl: 52,
 } as const;
 
 /**
@@ -254,10 +290,24 @@ export const touchTarget = {
  * Layout Constraints
  */
 export const layout = {
-  maxContentWidth: 1200,
+  maxContentWidth: 1600,
+  maxContentWidthTablet: 1024,
   sidebarWidth: 280,
+  sidebarWidthCollapsed: 60,
   navHeight: 60,
   tabBarHeight: 56,
+} as const;
+
+/**
+ * Grid System Configuration
+ * 12-column responsive grid for consistent layouts
+ */
+export const grid = {
+  columns: 12,
+  gutterMobile: 12,
+  gutterTablet: 16,
+  gutterDesktop: 20,
+  gutterLargeDesktop: 24,
 } as const;
 
 /**
@@ -266,7 +316,9 @@ export const layout = {
  */
 export const tokens = {
   spacing,
+  spacingDesktop,
   fontSize,
+  fontSizeDesktop,
   fontWeight,
   lineHeight,
   radius,
@@ -280,6 +332,7 @@ export const tokens = {
   opacity,
   touchTarget,
   layout,
+  grid,
 } as const;
 
 /**

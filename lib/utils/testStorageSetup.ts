@@ -25,12 +25,12 @@ export class StorageSetupTester {
         data?.some((bucket) => bucket.id === "receipt-images") || false;
 
       return { data: bucketExists, error: null, loading: false };
-    } catch {
-      console.error("Error checking bucket existence:", error);
+    } catch (err) {
+      console.error("Error checking bucket existence:", err);
       return {
         data: false,
         error:
-          error instanceof Error ? error.message : "Failed to check bucket",
+          err instanceof Error ? err.message : "Failed to check bucket",
         loading: false,
       };
     }
@@ -71,13 +71,13 @@ export class StorageSetupTester {
       await supabase.storage.from("receipt-images").remove([testFileName]);
 
       return { data: true, error: null, loading: false };
-    } catch {
-      console.error("Error testing upload permissions:", error);
+    } catch (err) {
+      console.error("Error testing upload permissions:", err);
       return {
         data: false,
         error:
-          error instanceof Error
-            ? error.message
+          err instanceof Error
+            ? err.message
             : "Failed to test upload permissions",
         loading: false,
       };
@@ -111,13 +111,13 @@ export class StorageSetupTester {
       }
 
       return { data: true, error: null, loading: false };
-    } catch {
-      console.error("Error testing schema update:", error);
+    } catch (err) {
+      console.error("Error testing schema update:", err);
       return {
         data: false,
         error:
-          error instanceof Error
-            ? error.message
+          err instanceof Error
+            ? err.message
             : "Failed to test schema update",
         loading: false,
       };
@@ -183,8 +183,8 @@ export class StorageSetupTester {
           result.canRead = true;
           console.log("✅ Read permissions working");
         }
-      } catch {
-        result.errors.push(`Read test failed: ${error}`);
+      } catch (err) {
+        result.errors.push(`Read test failed: ${err}`);
         console.log("❌ Read permissions failed");
       }
     }

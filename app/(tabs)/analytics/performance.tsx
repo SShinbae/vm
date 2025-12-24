@@ -8,12 +8,14 @@ import {
   usePeriodSelector,
   useVehicleFilter,
 } from "@/hooks/useAnalytics";
+import { useResponsiveLayout } from "@/hooks/use-responsive-layout";
 import React, { useMemo } from "react";
 import { RefreshControl, ScrollView, Text, View } from "react-native";
 import { useStyles } from "react-native-unistyles";
 
 export default function PerformanceTab() {
   const { theme } = useStyles();
+  const { isMobile, isTablet } = useResponsiveLayout();
   const { period, setPeriod, periods } = usePeriodSelector();
   const {
     vehicles,
@@ -64,13 +66,17 @@ export default function PerformanceTab() {
         <ScrollView style={{ flex: 1 }}>
           <View
             style={{
-              paddingHorizontal: theme.spacing.xl,
-              paddingVertical: theme.spacing.lg,
+              paddingHorizontal: isMobile ? theme.spacing.lg : theme.spacing.xl,
+              paddingVertical: isMobile ? theme.spacing.md : theme.spacing.lg,
             }}
           >
             <Text
               style={{
-                fontSize: theme.fontSize["3xl"],
+                fontSize: isMobile
+                  ? theme.fontSize["2xl"]
+                  : isTablet
+                    ? theme.fontSize["2xl"]
+                    : theme.fontSize["3xl"],
                 fontWeight: theme.fontWeight.bold,
                 color: theme.colors.text,
                 marginBottom: theme.spacing.xs,
@@ -80,14 +86,16 @@ export default function PerformanceTab() {
             </Text>
             <Text
               style={{
-                fontSize: theme.fontSize.base,
+                fontSize: isMobile ? theme.fontSize.sm : theme.fontSize.base,
                 color: theme.colors.textSecondary,
               }}
             >
               Compare vehicle efficiency and costs
             </Text>
           </View>
-          <View style={{ padding: theme.spacing.lg }}>
+          <View
+            style={{ padding: isMobile ? theme.spacing.md : theme.spacing.lg }}
+          >
             <EmptyAnalytics
               icon="alert-circle-outline"
               title="Error Loading Data"
@@ -106,13 +114,17 @@ export default function PerformanceTab() {
         <ScrollView style={{ flex: 1 }}>
           <View
             style={{
-              paddingHorizontal: theme.spacing.xl,
-              paddingVertical: theme.spacing.lg,
+              paddingHorizontal: isMobile ? theme.spacing.lg : theme.spacing.xl,
+              paddingVertical: isMobile ? theme.spacing.md : theme.spacing.lg,
             }}
           >
             <Text
               style={{
-                fontSize: theme.fontSize["3xl"],
+                fontSize: isMobile
+                  ? theme.fontSize["2xl"]
+                  : isTablet
+                    ? theme.fontSize["2xl"]
+                    : theme.fontSize["3xl"],
                 fontWeight: theme.fontWeight.bold,
                 color: theme.colors.text,
                 marginBottom: theme.spacing.xs,
@@ -122,15 +134,21 @@ export default function PerformanceTab() {
             </Text>
             <Text
               style={{
-                fontSize: theme.fontSize.base,
+                fontSize: isMobile ? theme.fontSize.sm : theme.fontSize.base,
                 color: theme.colors.textSecondary,
               }}
             >
               Compare vehicle efficiency and costs
             </Text>
           </View>
-          <View style={{ padding: theme.spacing.lg }}>
-            <View style={{ marginBottom: theme.spacing.lg }}>
+          <View
+            style={{ padding: isMobile ? theme.spacing.md : theme.spacing.lg }}
+          >
+            <View
+              style={{
+                marginBottom: isMobile ? theme.spacing.md : theme.spacing.lg,
+              }}
+            >
               <PeriodSelector
                 selectedPeriod={period}
                 onPeriodChange={setPeriod}
@@ -180,14 +198,18 @@ export default function PerformanceTab() {
         {/* Header */}
         <View
           style={{
-            paddingHorizontal: theme.spacing.xl,
-            paddingVertical: theme.spacing.lg,
+            paddingHorizontal: isMobile ? theme.spacing.lg : theme.spacing.xl,
+            paddingVertical: isMobile ? theme.spacing.md : theme.spacing.lg,
             backgroundColor: theme.colors.background,
           }}
         >
           <Text
             style={{
-              fontSize: theme.fontSize["3xl"],
+              fontSize: isMobile
+                ? theme.fontSize["2xl"]
+                : isTablet
+                  ? theme.fontSize["2xl"]
+                  : theme.fontSize["3xl"],
               fontWeight: theme.fontWeight.bold,
               color: theme.colors.text,
               marginBottom: theme.spacing.xs,
@@ -197,7 +219,7 @@ export default function PerformanceTab() {
           </Text>
           <Text
             style={{
-              fontSize: theme.fontSize.base,
+              fontSize: isMobile ? theme.fontSize.sm : theme.fontSize.base,
               color: theme.colors.textSecondary,
             }}
           >
@@ -205,9 +227,15 @@ export default function PerformanceTab() {
           </Text>
         </View>
 
-        <View style={{ padding: theme.spacing.lg }}>
+        <View
+          style={{ padding: isMobile ? theme.spacing.md : theme.spacing.lg }}
+        >
           {/* Filters */}
-          <View style={{ marginBottom: theme.spacing.lg }}>
+          <View
+            style={{
+              marginBottom: isMobile ? theme.spacing.md : theme.spacing.lg,
+            }}
+          >
             <PeriodSelector
               selectedPeriod={period}
               onPeriodChange={setPeriod}
@@ -227,11 +255,15 @@ export default function PerformanceTab() {
             <>
               <Text
                 style={{
-                  fontSize: theme.fontSize.xl,
+                  fontSize: isMobile
+                    ? theme.fontSize.lg
+                    : isTablet
+                      ? theme.fontSize.lg
+                      : theme.fontSize.xl,
                   fontWeight: theme.fontWeight.bold,
                   color: theme.colors.text,
-                  marginBottom: theme.spacing.md,
-                  marginTop: theme.spacing.lg,
+                  marginBottom: isMobile ? theme.spacing.sm : theme.spacing.md,
+                  marginTop: isMobile ? theme.spacing.md : theme.spacing.lg,
                 }}
               >
                 Highlights
@@ -239,7 +271,7 @@ export default function PerformanceTab() {
               <View
                 style={{
                   flexDirection: "row",
-                  gap: theme.spacing.md,
+                  gap: isMobile ? theme.spacing.sm : theme.spacing.md,
                   marginBottom: theme.spacing.md,
                 }}
               >
@@ -249,13 +281,13 @@ export default function PerformanceTab() {
                     flex: 1,
                     backgroundColor: theme.colors.surface,
                     borderRadius: theme.borderRadius.lg,
-                    padding: theme.spacing.lg,
+                    padding: isMobile ? theme.spacing.md : theme.spacing.lg,
                     alignItems: "center",
                   }}
                 >
                   <Text
                     style={{
-                      fontSize: theme.fontSize.xs,
+                      fontSize: 10,
                       color: theme.colors.textSecondary,
                       fontWeight: theme.fontWeight.medium,
                       marginBottom: theme.spacing.xs,
@@ -265,7 +297,7 @@ export default function PerformanceTab() {
                   </Text>
                   <Text
                     style={{
-                      fontSize: theme.fontSize.sm,
+                      fontSize: isMobile ? 10 : theme.fontSize.sm,
                       color: theme.colors.text,
                       fontWeight: theme.fontWeight.bold,
                       marginBottom: theme.spacing.xs,
@@ -277,7 +309,9 @@ export default function PerformanceTab() {
                   </Text>
                   <Text
                     style={{
-                      fontSize: theme.fontSize.xl,
+                      fontSize: isMobile
+                        ? theme.fontSize.base
+                        : theme.fontSize.xl,
                       color: theme.colors.primary,
                       fontWeight: theme.fontWeight.bold,
                     }}
@@ -292,13 +326,13 @@ export default function PerformanceTab() {
                     flex: 1,
                     backgroundColor: theme.colors.surface,
                     borderRadius: theme.borderRadius.lg,
-                    padding: theme.spacing.lg,
+                    padding: isMobile ? theme.spacing.md : theme.spacing.lg,
                     alignItems: "center",
                   }}
                 >
                   <Text
                     style={{
-                      fontSize: theme.fontSize.xs,
+                      fontSize: 10,
                       color: theme.colors.textSecondary,
                       fontWeight: theme.fontWeight.medium,
                       marginBottom: theme.spacing.xs,
@@ -308,7 +342,7 @@ export default function PerformanceTab() {
                   </Text>
                   <Text
                     style={{
-                      fontSize: theme.fontSize.sm,
+                      fontSize: isMobile ? 10 : theme.fontSize.sm,
                       color: theme.colors.text,
                       fontWeight: theme.fontWeight.bold,
                       marginBottom: theme.spacing.xs,
@@ -320,7 +354,9 @@ export default function PerformanceTab() {
                   </Text>
                   <Text
                     style={{
-                      fontSize: theme.fontSize.xl,
+                      fontSize: isMobile
+                        ? theme.fontSize.base
+                        : theme.fontSize.xl,
                       color: theme.colors.primary,
                       fontWeight: theme.fontWeight.bold,
                     }}
@@ -335,11 +371,15 @@ export default function PerformanceTab() {
           {/* Vehicle Comparison Table */}
           <Text
             style={{
-              fontSize: theme.fontSize.xl,
+              fontSize: isMobile
+                ? theme.fontSize.lg
+                : isTablet
+                  ? theme.fontSize.lg
+                  : theme.fontSize.xl,
               fontWeight: theme.fontWeight.bold,
               color: theme.colors.text,
-              marginBottom: theme.spacing.md,
-              marginTop: theme.spacing.lg,
+              marginBottom: isMobile ? theme.spacing.sm : theme.spacing.md,
+              marginTop: isMobile ? theme.spacing.md : theme.spacing.lg,
             }}
           >
             Vehicle Comparison
@@ -351,7 +391,7 @@ export default function PerformanceTab() {
               style={{
                 backgroundColor: theme.colors.surface,
                 borderRadius: theme.borderRadius.lg,
-                padding: theme.spacing.lg,
+                padding: isMobile ? theme.spacing.md : theme.spacing.lg,
                 marginBottom: theme.spacing.md,
                 borderLeftWidth: 4,
                 borderLeftColor: theme.colors.primary,
@@ -362,16 +402,16 @@ export default function PerformanceTab() {
                 style={{
                   flexDirection: "row",
                   alignItems: "center",
-                  marginBottom: theme.spacing.md,
-                  gap: theme.spacing.md,
+                  marginBottom: isMobile ? theme.spacing.sm : theme.spacing.md,
+                  gap: isMobile ? theme.spacing.sm : theme.spacing.md,
                 }}
               >
                 {/* Rank Badge */}
                 <View
                   style={{
-                    width: 40,
-                    height: 40,
-                    borderRadius: 20,
+                    width: isMobile ? 32 : 40,
+                    height: isMobile ? 32 : 40,
+                    borderRadius: isMobile ? 16 : 20,
                     backgroundColor: theme.colors.primary,
                     alignItems: "center",
                     justifyContent: "center",
@@ -379,7 +419,9 @@ export default function PerformanceTab() {
                 >
                   <Text
                     style={{
-                      fontSize: theme.fontSize.base,
+                      fontSize: isMobile
+                        ? theme.fontSize.sm
+                        : theme.fontSize.base,
                       fontWeight: theme.fontWeight.bold,
                       color: theme.colors.white,
                     }}
@@ -392,7 +434,9 @@ export default function PerformanceTab() {
                 <Text
                   style={{
                     flex: 1,
-                    fontSize: theme.fontSize.lg,
+                    fontSize: isMobile
+                      ? theme.fontSize.base
+                      : theme.fontSize.lg,
                     fontWeight: theme.fontWeight.bold,
                     color: theme.colors.text,
                   }}
@@ -406,7 +450,7 @@ export default function PerformanceTab() {
               <View
                 style={{
                   gap: theme.spacing.sm,
-                  marginBottom: theme.spacing.md,
+                  marginBottom: isMobile ? theme.spacing.sm : theme.spacing.md,
                 }}
               >
                 {/* Total Cost */}
@@ -419,7 +463,7 @@ export default function PerformanceTab() {
                 >
                   <Text
                     style={{
-                      fontSize: theme.fontSize.sm,
+                      fontSize: isMobile ? 10 : theme.fontSize.sm,
                       color: theme.colors.textSecondary,
                     }}
                   >
@@ -427,7 +471,7 @@ export default function PerformanceTab() {
                   </Text>
                   <Text
                     style={{
-                      fontSize: theme.fontSize.sm,
+                      fontSize: isMobile ? 10 : theme.fontSize.sm,
                       color: theme.colors.text,
                       fontWeight: theme.fontWeight.medium,
                     }}
@@ -446,7 +490,7 @@ export default function PerformanceTab() {
                 >
                   <Text
                     style={{
-                      fontSize: theme.fontSize.sm,
+                      fontSize: isMobile ? 10 : theme.fontSize.sm,
                       color: theme.colors.textSecondary,
                     }}
                   >
@@ -454,7 +498,7 @@ export default function PerformanceTab() {
                   </Text>
                   <Text
                     style={{
-                      fontSize: theme.fontSize.sm,
+                      fontSize: isMobile ? 10 : theme.fontSize.sm,
                       color: theme.colors.text,
                       fontWeight: theme.fontWeight.medium,
                     }}
@@ -473,7 +517,7 @@ export default function PerformanceTab() {
                 >
                   <Text
                     style={{
-                      fontSize: theme.fontSize.sm,
+                      fontSize: isMobile ? 10 : theme.fontSize.sm,
                       color: theme.colors.textSecondary,
                     }}
                   >
@@ -481,7 +525,7 @@ export default function PerformanceTab() {
                   </Text>
                   <Text
                     style={{
-                      fontSize: theme.fontSize.sm,
+                      fontSize: isMobile ? 10 : theme.fontSize.sm,
                       color: theme.colors.text,
                       fontWeight: theme.fontWeight.medium,
                     }}
@@ -500,7 +544,7 @@ export default function PerformanceTab() {
                 >
                   <Text
                     style={{
-                      fontSize: theme.fontSize.sm,
+                      fontSize: isMobile ? 10 : theme.fontSize.sm,
                       color: theme.colors.textSecondary,
                     }}
                   >
@@ -508,7 +552,7 @@ export default function PerformanceTab() {
                   </Text>
                   <Text
                     style={{
-                      fontSize: theme.fontSize.sm,
+                      fontSize: isMobile ? 10 : theme.fontSize.sm,
                       color: theme.colors.text,
                       fontWeight: theme.fontWeight.medium,
                     }}
@@ -527,7 +571,7 @@ export default function PerformanceTab() {
                 >
                   <Text
                     style={{
-                      fontSize: theme.fontSize.sm,
+                      fontSize: isMobile ? 10 : theme.fontSize.sm,
                       color: theme.colors.textSecondary,
                     }}
                   >
@@ -535,7 +579,7 @@ export default function PerformanceTab() {
                   </Text>
                   <Text
                     style={{
-                      fontSize: theme.fontSize.sm,
+                      fontSize: isMobile ? 10 : theme.fontSize.sm,
                       color: theme.colors.text,
                       fontWeight: theme.fontWeight.medium,
                     }}
@@ -549,7 +593,7 @@ export default function PerformanceTab() {
               <View style={{ marginTop: theme.spacing.sm }}>
                 <Text
                   style={{
-                    fontSize: theme.fontSize.xs,
+                    fontSize: 10,
                     color: theme.colors.textSecondary,
                     marginBottom: theme.spacing.xs,
                   }}
@@ -558,7 +602,7 @@ export default function PerformanceTab() {
                 </Text>
                 <View
                   style={{
-                    height: 8,
+                    height: isMobile ? 6 : 8,
                     backgroundColor: theme.colors.border,
                     borderRadius: theme.borderRadius.sm,
                     overflow: "hidden",

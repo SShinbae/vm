@@ -12,12 +12,14 @@ import {
   usePeriodSelector,
   useVehicleFilter,
 } from "@/hooks/useAnalytics";
+import { useResponsiveLayout } from "@/hooks/use-responsive-layout";
 import React, { useMemo } from "react";
 import { RefreshControl, ScrollView, Text, View } from "react-native";
 import { useStyles } from "react-native-unistyles";
 
 export default function ServiceTab() {
   const { theme } = useStyles();
+  const { isMobile, isTablet } = useResponsiveLayout();
   const { period, setPeriod, periods } = usePeriodSelector();
   const {
     vehicles,
@@ -81,13 +83,17 @@ export default function ServiceTab() {
         <ScrollView style={{ flex: 1 }}>
           <View
             style={{
-              paddingHorizontal: theme.spacing.xl,
-              paddingVertical: theme.spacing.lg,
+              paddingHorizontal: isMobile ? theme.spacing.lg : theme.spacing.xl,
+              paddingVertical: isMobile ? theme.spacing.md : theme.spacing.lg,
             }}
           >
             <Text
               style={{
-                fontSize: theme.fontSize["3xl"],
+                fontSize: isMobile
+                  ? theme.fontSize["2xl"]
+                  : isTablet
+                    ? theme.fontSize["2xl"]
+                    : theme.fontSize["3xl"],
                 fontWeight: theme.fontWeight.bold,
                 color: theme.colors.text,
                 marginBottom: theme.spacing.xs,
@@ -97,14 +103,16 @@ export default function ServiceTab() {
             </Text>
             <Text
               style={{
-                fontSize: theme.fontSize.base,
+                fontSize: isMobile ? theme.fontSize.sm : theme.fontSize.base,
                 color: theme.colors.textSecondary,
               }}
             >
               Track maintenance and service costs
             </Text>
           </View>
-          <View style={{ padding: theme.spacing.lg }}>
+          <View
+            style={{ padding: isMobile ? theme.spacing.md : theme.spacing.lg }}
+          >
             <EmptyAnalytics
               icon="alert-circle-outline"
               title="Error Loading Data"
@@ -123,13 +131,17 @@ export default function ServiceTab() {
         <ScrollView style={{ flex: 1 }}>
           <View
             style={{
-              paddingHorizontal: theme.spacing.xl,
-              paddingVertical: theme.spacing.lg,
+              paddingHorizontal: isMobile ? theme.spacing.lg : theme.spacing.xl,
+              paddingVertical: isMobile ? theme.spacing.md : theme.spacing.lg,
             }}
           >
             <Text
               style={{
-                fontSize: theme.fontSize["3xl"],
+                fontSize: isMobile
+                  ? theme.fontSize["2xl"]
+                  : isTablet
+                    ? theme.fontSize["2xl"]
+                    : theme.fontSize["3xl"],
                 fontWeight: theme.fontWeight.bold,
                 color: theme.colors.text,
                 marginBottom: theme.spacing.xs,
@@ -139,15 +151,21 @@ export default function ServiceTab() {
             </Text>
             <Text
               style={{
-                fontSize: theme.fontSize.base,
+                fontSize: isMobile ? theme.fontSize.sm : theme.fontSize.base,
                 color: theme.colors.textSecondary,
               }}
             >
               Track maintenance and service costs
             </Text>
           </View>
-          <View style={{ padding: theme.spacing.lg }}>
-            <View style={{ marginBottom: theme.spacing.lg }}>
+          <View
+            style={{ padding: isMobile ? theme.spacing.md : theme.spacing.lg }}
+          >
+            <View
+              style={{
+                marginBottom: isMobile ? theme.spacing.md : theme.spacing.lg,
+              }}
+            >
               <PeriodSelector
                 selectedPeriod={period}
                 onPeriodChange={setPeriod}
@@ -197,14 +215,18 @@ export default function ServiceTab() {
         {/* Header */}
         <View
           style={{
-            paddingHorizontal: theme.spacing.xl,
-            paddingVertical: theme.spacing.lg,
+            paddingHorizontal: isMobile ? theme.spacing.lg : theme.spacing.xl,
+            paddingVertical: isMobile ? theme.spacing.md : theme.spacing.lg,
             backgroundColor: theme.colors.background,
           }}
         >
           <Text
             style={{
-              fontSize: theme.fontSize["3xl"],
+              fontSize: isMobile
+                ? theme.fontSize["2xl"]
+                : isTablet
+                  ? theme.fontSize["2xl"]
+                  : theme.fontSize["3xl"],
               fontWeight: theme.fontWeight.bold,
               color: theme.colors.text,
               marginBottom: theme.spacing.xs,
@@ -214,7 +236,7 @@ export default function ServiceTab() {
           </Text>
           <Text
             style={{
-              fontSize: theme.fontSize.base,
+              fontSize: isMobile ? theme.fontSize.sm : theme.fontSize.base,
               color: theme.colors.textSecondary,
             }}
           >
@@ -222,9 +244,15 @@ export default function ServiceTab() {
           </Text>
         </View>
 
-        <View style={{ padding: theme.spacing.lg }}>
+        <View
+          style={{ padding: isMobile ? theme.spacing.md : theme.spacing.lg }}
+        >
           {/* Filters */}
-          <View style={{ marginBottom: theme.spacing.lg }}>
+          <View
+            style={{
+              marginBottom: isMobile ? theme.spacing.md : theme.spacing.lg,
+            }}
+          >
             <PeriodSelector
               selectedPeriod={period}
               onPeriodChange={setPeriod}
@@ -242,11 +270,15 @@ export default function ServiceTab() {
           {/* Service Overview */}
           <Text
             style={{
-              fontSize: theme.fontSize.xl,
+              fontSize: isMobile
+                ? theme.fontSize.lg
+                : isTablet
+                  ? theme.fontSize.lg
+                  : theme.fontSize.xl,
               fontWeight: theme.fontWeight.bold,
               color: theme.colors.text,
-              marginBottom: theme.spacing.md,
-              marginTop: theme.spacing.lg,
+              marginBottom: isMobile ? theme.spacing.sm : theme.spacing.md,
+              marginTop: isMobile ? theme.spacing.md : theme.spacing.lg,
             }}
           >
             Service Overview
@@ -256,7 +288,7 @@ export default function ServiceTab() {
           <View
             style={{
               flexDirection: "row",
-              gap: theme.spacing.md,
+              gap: isMobile ? theme.spacing.sm : theme.spacing.md,
               marginBottom: theme.spacing.md,
             }}
           >
@@ -284,7 +316,7 @@ export default function ServiceTab() {
           <View
             style={{
               flexDirection: "row",
-              gap: theme.spacing.md,
+              gap: isMobile ? theme.spacing.sm : theme.spacing.md,
               marginBottom: theme.spacing.md,
             }}
           >
@@ -311,18 +343,25 @@ export default function ServiceTab() {
           {/* Most Frequent Services */}
           <Text
             style={{
-              fontSize: theme.fontSize.xl,
+              fontSize: isMobile
+                ? theme.fontSize.lg
+                : isTablet
+                  ? theme.fontSize.lg
+                  : theme.fontSize.xl,
               fontWeight: theme.fontWeight.bold,
               color: theme.colors.text,
-              marginBottom: theme.spacing.md,
-              marginTop: theme.spacing.lg,
+              marginBottom: isMobile ? theme.spacing.sm : theme.spacing.md,
+              marginTop: isMobile ? theme.spacing.md : theme.spacing.lg,
             }}
           >
             Most Frequent Services
           </Text>
 
           <View
-            style={{ gap: theme.spacing.md, marginBottom: theme.spacing.md }}
+            style={{
+              gap: isMobile ? theme.spacing.sm : theme.spacing.md,
+              marginBottom: theme.spacing.md,
+            }}
           >
             {topServiceTypes.map(([type, count]) => {
               const cost =
@@ -335,7 +374,7 @@ export default function ServiceTab() {
                   style={{
                     backgroundColor: theme.colors.surface,
                     borderRadius: theme.borderRadius.lg,
-                    padding: theme.spacing.lg,
+                    padding: isMobile ? theme.spacing.md : theme.spacing.lg,
                     borderLeftWidth: 4,
                     borderLeftColor: theme.colors.analytics.service,
                   }}
@@ -350,7 +389,9 @@ export default function ServiceTab() {
                   >
                     <Text
                       style={{
-                        fontSize: theme.fontSize.base,
+                        fontSize: isMobile
+                          ? theme.fontSize.sm
+                          : theme.fontSize.base,
                         fontWeight: theme.fontWeight.bold,
                         color: theme.colors.text,
                       }}
@@ -359,7 +400,9 @@ export default function ServiceTab() {
                     </Text>
                     <Text
                       style={{
-                        fontSize: theme.fontSize.lg,
+                        fontSize: isMobile
+                          ? theme.fontSize.base
+                          : theme.fontSize.lg,
                         fontWeight: theme.fontWeight.bold,
                         color: theme.colors.analytics.service,
                       }}
@@ -369,7 +412,7 @@ export default function ServiceTab() {
                   </View>
                   <Text
                     style={{
-                      fontSize: theme.fontSize.sm,
+                      fontSize: isMobile ? 10 : theme.fontSize.sm,
                       color: theme.colors.textSecondary,
                     }}
                   >
@@ -385,11 +428,15 @@ export default function ServiceTab() {
             <>
               <Text
                 style={{
-                  fontSize: theme.fontSize.xl,
+                  fontSize: isMobile
+                    ? theme.fontSize.lg
+                    : isTablet
+                      ? theme.fontSize.lg
+                      : theme.fontSize.xl,
                   fontWeight: theme.fontWeight.bold,
                   color: theme.colors.text,
-                  marginBottom: theme.spacing.md,
-                  marginTop: theme.spacing.lg,
+                  marginBottom: isMobile ? theme.spacing.sm : theme.spacing.md,
+                  marginTop: isMobile ? theme.spacing.md : theme.spacing.lg,
                 }}
               >
                 Upcoming Maintenance
@@ -405,11 +452,15 @@ export default function ServiceTab() {
             <>
               <Text
                 style={{
-                  fontSize: theme.fontSize.xl,
+                  fontSize: isMobile
+                    ? theme.fontSize.lg
+                    : isTablet
+                      ? theme.fontSize.lg
+                      : theme.fontSize.xl,
                   fontWeight: theme.fontWeight.bold,
                   color: theme.colors.text,
-                  marginBottom: theme.spacing.md,
-                  marginTop: theme.spacing.lg,
+                  marginBottom: isMobile ? theme.spacing.sm : theme.spacing.md,
+                  marginTop: isMobile ? theme.spacing.md : theme.spacing.lg,
                 }}
               >
                 Service Frequency
