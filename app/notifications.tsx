@@ -41,7 +41,7 @@ export default function NotificationsScreen() {
         // Refresh notifications to remove the invitation
         await refreshNotifications();
       }
-    } catch (error) {
+    } catch {
       showError("Failed to accept invitation");
     }
   };
@@ -58,7 +58,7 @@ export default function NotificationsScreen() {
         // Refresh notifications
         await refreshNotifications();
       }
-    } catch (error) {
+    } catch {
       showError("Failed to decline invitation");
     }
   };

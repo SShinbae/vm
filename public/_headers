@@ -13,20 +13,24 @@
 /assets/images/*
   Cache-Control: public, max-age=604800, must-revalidate
 
-*.png
+# All image files site-wide
+/*.png
   Cache-Control: public, max-age=604800, must-revalidate
 
-*.jpg
+/*.jpg
   Cache-Control: public, max-age=604800, must-revalidate
 
-*.webp
+/*.jpeg
+  Cache-Control: public, max-age=604800, must-revalidate
+
+/*.webp
   Cache-Control: public, max-age=604800, must-revalidate
 
 # Fonts (very long cache)
-*.woff
+/*.woff
   Cache-Control: public, max-age=31536000, immutable
 
-*.woff2
+/*.woff2
   Cache-Control: public, max-age=31536000, immutable
 
 # HTML files (short cache, always revalidate)

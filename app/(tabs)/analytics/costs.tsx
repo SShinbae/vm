@@ -8,8 +8,8 @@ import {
   MetricCard,
   PeriodSelector,
   VehicleFilter,
+  LazyCostLineChart,
 } from "@/components/analytics";
-import { CostLineChart } from "@/components/analytics/charts";
 import {
   useAnalyticsData,
   useCostChartData,
@@ -314,8 +314,8 @@ export default function CostsTab() {
                   Cost Visualization
                 </Text>
 
-                {/* Line Chart - Total Costs */}
-                <CostLineChart
+                {/* OPTIMIZATION: Lazy-loaded Line Chart - Total Costs */}
+                <LazyCostLineChart
                   data={chartDataset.data}
                   title="Cost Trends Over Time"
                   showLegend={true}

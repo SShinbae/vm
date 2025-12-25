@@ -47,120 +47,121 @@ interface StatCardProps {
   index: number;
 }
 
-const StatCard: React.FC<StatCardProps & { reduceMotion?: boolean }> = ({
-  value,
-  label,
-  delay = 0,
-  index,
-  reduceMotion = false,
-}) => {
-  const { theme } = useStyles();
-  const { isMobile, isTablet } = useResponsiveDimensions();
+const StatCard: React.FC<StatCardProps & { reduceMotion?: boolean }> =
+  React.memo(({ value, label, delay = 0, index, reduceMotion = false }) => {
+    const { theme } = useStyles();
+    const { isMobile, isTablet } = useResponsiveDimensions();
 
-  // OPTIMIZATION: Skip animations on web for better performance
-  const shouldAnimate = Platform.OS !== "web" && !reduceMotion;
-  const fadeAnim = useRef(new Animated.Value(shouldAnimate ? 0 : 1)).current;
-  const slideAnim = useRef(new Animated.Value(shouldAnimate ? 30 : 0)).current;
+    // OPTIMIZATION: Skip animations on web for better performance
+    const shouldAnimate = Platform.OS !== "web" && !reduceMotion;
+    const fadeAnim = useRef(new Animated.Value(shouldAnimate ? 0 : 1)).current;
+    const slideAnim = useRef(
+      new Animated.Value(shouldAnimate ? 30 : 0),
+    ).current;
 
-  useEffect(() => {
-    if (!shouldAnimate) {
-      return;
-    }
+    useEffect(() => {
+      if (!shouldAnimate) {
+        return;
+      }
 
-    Animated.parallel([
-      Animated.timing(fadeAnim, {
-        toValue: 1,
-        duration: 450,
-        delay,
-        useNativeDriver: true,
-      }),
-      Animated.timing(slideAnim, {
-        toValue: 0,
-        duration: 450,
-        delay,
-        useNativeDriver: true,
-      }),
-    ]).start();
-  }, [shouldAnimate, delay, fadeAnim, slideAnim]);
+      Animated.parallel([
+        Animated.timing(fadeAnim, {
+          toValue: 1,
+          duration: 450,
+          delay,
+          useNativeDriver: true,
+        }),
+        Animated.timing(slideAnim, {
+          toValue: 0,
+          duration: 450,
+          delay,
+          useNativeDriver: true,
+        }),
+      ]).start();
+    }, [shouldAnimate, delay, fadeAnim, slideAnim]);
 
-  // Use theme card color for dark mode support
-  const cardBackground = (theme.colors as any).card || theme.colors.background;
+    // Use theme card color for dark mode support
+    const cardBackground =
+      (theme.colors as any).card || theme.colors.background;
 
-  const accentColors = [
-    theme.colors.primary,
-    theme.colors.primary,
-    theme.colors.primary,
-    theme.colors.primary,
-  ];
+    const accentColors = [
+      theme.colors.primary,
+      theme.colors.primary,
+      theme.colors.primary,
+      theme.colors.primary,
+    ];
 
-  return (
-    <Animated.View
-      accessible={true}
-      accessibilityRole="text"
-      accessibilityLabel={`${label}: ${value}`}
-      style={{
-        opacity: fadeAnim,
-        transform: reduceMotion ? [] : [{ translateY: slideAnim }],
-        width: isMobile ? "100%" : isTablet ? "48%" : "23%",
-        minWidth: isMobile ? "100%" : 200,
-        margin: isMobile ? 8 : 6,
-      }}
-    >
-      <View
+    return (
+      <Animated.View
+        accessible={true}
+        accessibilityRole="text"
+        accessibilityLabel={`${label}: ${value}`}
         style={{
-          backgroundColor: cardBackground,
-          borderRadius: isMobile ? 16 : 20,
-          padding: isMobile ? 24 : isTablet ? 28 : 32,
-          borderWidth: 1,
-          borderColor: (theme.colors as any).border || theme.colors.background,
-          shadowColor: "#000",
-          shadowOffset: { width: 0, height: 4 },
-          shadowOpacity: 0.08,
-          shadowRadius: 12,
-          elevation: 3,
+          opacity: fadeAnim,
+          transform: reduceMotion ? [] : [{ translateY: slideAnim }],
+          width: isMobile ? "100%" : isTablet ? "48%" : "23%",
+          minWidth: isMobile ? "100%" : 200,
+          margin: isMobile ? 8 : 6,
         }}
       >
-        {/* Subtle accent line */}
         <View
           style={{
-            position: "absolute",
-            top: 0,
-            left: 0,
-            right: 0,
-            height: 3,
-            backgroundColor: accentColors[index % 4],
-            borderTopLeftRadius: isMobile ? 16 : 20,
-            borderTopRightRadius: isMobile ? 16 : 20,
+            backgroundColor: cardBackground,
+            borderRadius: isMobile ? 16 : 20,
+            padding: isMobile ? 24 : isTablet ? 28 : 32,
+            borderWidth: 1,
+            borderColor:
+              (theme.colors as any).border || theme.colors.background,
+            shadowColor: "#000",
+            shadowOffset: { width: 0, height: 4 },
+            shadowOpacity: 0.08,
+            shadowRadius: 12,
+            elevation: 3,
           }}
-        />
+        >
+          {/* Subtle accent line */}
+          <View
+            style={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              right: 0,
+              height: 3,
+              backgroundColor: accentColors[index % 4],
+              borderTopLeftRadius: isMobile ? 16 : 20,
+              borderTopRightRadius: isMobile ? 16 : 20,
+            }}
+          />
 
-        <Text
-          accessible={true}
-          accessibilityRole="header"
-          style={{
-            fontSize: isMobile ? 32 : isTablet ? 36 : 40,
-            fontWeight: "700",
-            color: theme.colors.text,
-            marginBottom: 8,
-            letterSpacing: -0.5,
-          }}
-        >
-          {value}
-        </Text>
-        <Text
-          accessible={true}
-          style={{
-            fontSize: 13,
-            color: theme.colors.textSecondary,
-            fontWeight: "500",
-          }}
-        >
-          {label}
-        </Text>
-      </View>
-    </Animated.View>
-  );
-};
+          <Text
+            accessible={true}
+            accessibilityRole="header"
+            style={{
+              fontSize: isMobile ? 32 : isTablet ? 36 : 40,
+              fontWeight: "700",
+              color: theme.colors.text,
+              marginBottom: 8,
+              letterSpacing: -0.5,
+            }}
+          >
+            {value}
+          </Text>
+          <Text
+            accessible={true}
+            style={{
+              fontSize: 13,
+              color: theme.colors.textSecondary,
+              fontWeight: "500",
+            }}
+          >
+            {label}
+          </Text>
+        </View>
+      </Animated.View>
+    );
+  });
+
+StatCard.displayName = "StatCard";
 
 interface FeatureCardProps {
   icon: keyof typeof Ionicons.glyphMap;
@@ -170,116 +171,119 @@ interface FeatureCardProps {
   index: number;
 }
 
-const FeatureCard: React.FC<FeatureCardProps & { reduceMotion?: boolean }> = ({
-  icon,
-  title,
-  description,
-  delay = 0,
-  index,
-  reduceMotion = false,
-}) => {
-  const { theme } = useStyles();
-  const { isMobile, isTablet } = useResponsiveDimensions();
+const FeatureCard: React.FC<FeatureCardProps & { reduceMotion?: boolean }> =
+  React.memo(
+    ({ icon, title, description, delay = 0, index, reduceMotion = false }) => {
+      const { theme } = useStyles();
+      const { isMobile, isTablet } = useResponsiveDimensions();
 
-  // OPTIMIZATION: Skip animations on web for better performance
-  const shouldAnimate = Platform.OS !== "web" && !reduceMotion;
-  const fadeAnim = useRef(new Animated.Value(shouldAnimate ? 0 : 1)).current;
-  const slideAnim = useRef(new Animated.Value(shouldAnimate ? 50 : 0)).current;
+      // OPTIMIZATION: Skip animations on web for better performance
+      const shouldAnimate = Platform.OS !== "web" && !reduceMotion;
+      const fadeAnim = useRef(
+        new Animated.Value(shouldAnimate ? 0 : 1),
+      ).current;
+      const slideAnim = useRef(
+        new Animated.Value(shouldAnimate ? 50 : 0),
+      ).current;
 
-  useEffect(() => {
-    if (!shouldAnimate) {
-      return;
-    }
+      useEffect(() => {
+        if (!shouldAnimate) {
+          return;
+        }
 
-    Animated.parallel([
-      Animated.timing(fadeAnim, {
-        toValue: 1,
-        duration: 500,
-        delay,
-        useNativeDriver: true,
-      }),
-      Animated.timing(slideAnim, {
-        toValue: 0,
-        duration: 500,
-        delay,
-        useNativeDriver: true,
-      }),
-    ]).start();
-  }, [shouldAnimate, delay, fadeAnim, slideAnim]);
+        Animated.parallel([
+          Animated.timing(fadeAnim, {
+            toValue: 1,
+            duration: 500,
+            delay,
+            useNativeDriver: true,
+          }),
+          Animated.timing(slideAnim, {
+            toValue: 0,
+            duration: 500,
+            delay,
+            useNativeDriver: true,
+          }),
+        ]).start();
+      }, [shouldAnimate, delay, fadeAnim, slideAnim]);
 
-  return (
-    <Animated.View
-      accessible={true}
-      accessibilityRole="button"
-      accessibilityLabel={`${title}. ${description}`}
-      style={{
-        opacity: fadeAnim,
-        transform: reduceMotion ? [] : [{ translateY: slideAnim }],
-        marginBottom: 20,
-      }}
-    >
-      <View
-        style={{
-          backgroundColor:
-            (theme.colors as any).card || theme.colors.background,
-          borderRadius: isMobile ? 16 : 20,
-          padding: isMobile ? 24 : isTablet ? 28 : 32,
-          borderWidth: 1,
-          borderColor: (theme.colors as any).border || theme.colors.background,
-          shadowColor: "#000",
-          shadowOffset: { width: 0, height: 2 },
-          shadowOpacity: 0.05,
-          shadowRadius: 10,
-          elevation: 2,
-        }}
-      >
-        {/* Icon Container */}
-        <View
-          style={{
-            width: isMobile ? 56 : 64,
-            height: isMobile ? 56 : 64,
-            borderRadius: isMobile ? 12 : 14,
-            backgroundColor: theme.colors.primary + "15",
-            justifyContent: "center",
-            alignItems: "center",
-            marginBottom: isMobile ? 20 : 24,
-          }}
-        >
-          <Ionicons
-            name={icon}
-            size={isMobile ? 28 : 32}
-            color={theme.colors.primary}
-          />
-        </View>
-
-        <Text
+      return (
+        <Animated.View
           accessible={true}
-          accessibilityRole="header"
+          accessibilityRole="button"
+          accessibilityLabel={`${title}. ${description}`}
           style={{
-            fontSize: isMobile ? 20 : isTablet ? 22 : 24,
-            fontWeight: "700",
-            color: theme.colors.text,
-            marginBottom: isMobile ? 12 : 14,
-            letterSpacing: -0.3,
+            opacity: fadeAnim,
+            transform: reduceMotion ? [] : [{ translateY: slideAnim }],
+            marginBottom: 20,
           }}
         >
-          {title}
-        </Text>
-        <Text
-          accessible={true}
-          style={{
-            fontSize: isMobile ? 15 : 16,
-            color: theme.colors.textSecondary,
-            lineHeight: isMobile ? 23 : 25,
-            fontWeight: "400",
-          }}
-        >
-          {description}
-        </Text>
-      </View>
-    </Animated.View>
+          <View
+            style={{
+              backgroundColor:
+                (theme.colors as any).card || theme.colors.background,
+              borderRadius: isMobile ? 16 : 20,
+              padding: isMobile ? 24 : isTablet ? 28 : 32,
+              borderWidth: 1,
+              borderColor:
+                (theme.colors as any).border || theme.colors.background,
+              shadowColor: "#000",
+              shadowOffset: { width: 0, height: 2 },
+              shadowOpacity: 0.05,
+              shadowRadius: 10,
+              elevation: 2,
+            }}
+          >
+            {/* Icon Container */}
+            <View
+              style={{
+                width: isMobile ? 56 : 64,
+                height: isMobile ? 56 : 64,
+                borderRadius: isMobile ? 12 : 14,
+                backgroundColor: theme.colors.primary + "15",
+                justifyContent: "center",
+                alignItems: "center",
+                marginBottom: isMobile ? 20 : 24,
+              }}
+            >
+              <Ionicons
+                name={icon}
+                size={isMobile ? 28 : 32}
+                color={theme.colors.primary}
+              />
+            </View>
+
+            <Text
+              accessible={true}
+              accessibilityRole="header"
+              style={{
+                fontSize: isMobile ? 20 : isTablet ? 22 : 24,
+                fontWeight: "700",
+                color: theme.colors.text,
+                marginBottom: isMobile ? 12 : 14,
+                letterSpacing: -0.3,
+              }}
+            >
+              {title}
+            </Text>
+            <Text
+              accessible={true}
+              style={{
+                fontSize: isMobile ? 15 : 16,
+                color: theme.colors.textSecondary,
+                lineHeight: isMobile ? 23 : 25,
+                fontWeight: "400",
+              }}
+            >
+              {description}
+            </Text>
+          </View>
+        </Animated.View>
+      );
+    },
   );
-};
+
+FeatureCard.displayName = "FeatureCard";
 
 export default function Index() {
   const { user, loading, initialized } = useAuth();

@@ -2,7 +2,7 @@ import {
   EmptyAnalytics,
   MetricCard,
   PeriodSelector,
-  TrendLineChart,
+  LazyTrendLineChart,
   UpcomingServiceCard,
   VehicleFilter,
 } from "@/components/analytics";
@@ -465,7 +465,7 @@ export default function ServiceTab() {
               >
                 Service Frequency
               </Text>
-              <TrendLineChart
+              <LazyTrendLineChart
                 data={trendData}
                 title="Services Per Month"
                 color={theme.colors.analytics.service}

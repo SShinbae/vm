@@ -1,5 +1,5 @@
 import React from "react";
-import { View, StyleSheet, ViewStyle, Platform } from "react-native";
+import { View, StyleSheet, ViewStyle } from "react-native";
 import { useResponsiveLayout } from "@/hooks/use-responsive-layout";
 
 export interface ResponsiveGridProps {
