@@ -2,7 +2,7 @@ import {
   EmptyAnalytics,
   MetricCard,
   PeriodSelector,
-  TrendLineChart,
+  LazyTrendLineChart,
   VehicleFilter,
 } from "@/components/analytics";
 import {
@@ -11,12 +11,14 @@ import {
   usePeriodSelector,
   useVehicleFilter,
 } from "@/hooks/useAnalytics";
+import { useResponsiveLayout } from "@/hooks/use-responsive-layout";
 import React, { useMemo } from "react";
 import { RefreshControl, ScrollView, Text, View } from "react-native";
 import { useStyles } from "react-native-unistyles";
 
 export default function FuelTab() {
   const { theme } = useStyles();
+  const { isMobile, isTablet } = useResponsiveLayout();
   const { period, setPeriod, periods } = usePeriodSelector();
   const {
     vehicles,
@@ -77,13 +79,17 @@ export default function FuelTab() {
         <ScrollView style={{ flex: 1 }}>
           <View
             style={{
-              paddingHorizontal: theme.spacing.xl,
-              paddingVertical: theme.spacing.lg,
+              paddingHorizontal: isMobile ? theme.spacing.lg : theme.spacing.xl,
+              paddingVertical: isMobile ? theme.spacing.md : theme.spacing.lg,
             }}
           >
             <Text
               style={{
-                fontSize: theme.fontSize["3xl"],
+                fontSize: isMobile
+                  ? theme.fontSize["2xl"]
+                  : isTablet
+                    ? theme.fontSize["2xl"]
+                    : theme.fontSize["3xl"],
                 fontWeight: theme.fontWeight.bold,
                 color: theme.colors.text,
                 marginBottom: theme.spacing.xs,
@@ -93,14 +99,16 @@ export default function FuelTab() {
             </Text>
             <Text
               style={{
-                fontSize: theme.fontSize.base,
+                fontSize: isMobile ? theme.fontSize.sm : theme.fontSize.base,
                 color: theme.colors.textSecondary,
               }}
             >
               Track fuel consumption and efficiency
             </Text>
           </View>
-          <View style={{ padding: theme.spacing.lg }}>
+          <View
+            style={{ padding: isMobile ? theme.spacing.md : theme.spacing.lg }}
+          >
             <EmptyAnalytics
               icon="alert-circle-outline"
               title="Error Loading Data"
@@ -119,13 +127,17 @@ export default function FuelTab() {
         <ScrollView style={{ flex: 1 }}>
           <View
             style={{
-              paddingHorizontal: theme.spacing.xl,
-              paddingVertical: theme.spacing.lg,
+              paddingHorizontal: isMobile ? theme.spacing.lg : theme.spacing.xl,
+              paddingVertical: isMobile ? theme.spacing.md : theme.spacing.lg,
             }}
           >
             <Text
               style={{
-                fontSize: theme.fontSize["3xl"],
+                fontSize: isMobile
+                  ? theme.fontSize["2xl"]
+                  : isTablet
+                    ? theme.fontSize["2xl"]
+                    : theme.fontSize["3xl"],
                 fontWeight: theme.fontWeight.bold,
                 color: theme.colors.text,
                 marginBottom: theme.spacing.xs,
@@ -135,15 +147,21 @@ export default function FuelTab() {
             </Text>
             <Text
               style={{
-                fontSize: theme.fontSize.base,
+                fontSize: isMobile ? theme.fontSize.sm : theme.fontSize.base,
                 color: theme.colors.textSecondary,
               }}
             >
               Track fuel consumption and efficiency
             </Text>
           </View>
-          <View style={{ padding: theme.spacing.lg }}>
-            <View style={{ marginBottom: theme.spacing.lg }}>
+          <View
+            style={{ padding: isMobile ? theme.spacing.md : theme.spacing.lg }}
+          >
+            <View
+              style={{
+                marginBottom: isMobile ? theme.spacing.md : theme.spacing.lg,
+              }}
+            >
               <PeriodSelector
                 selectedPeriod={period}
                 onPeriodChange={setPeriod}
@@ -180,14 +198,18 @@ export default function FuelTab() {
         {/* Header */}
         <View
           style={{
-            paddingHorizontal: theme.spacing.xl,
-            paddingVertical: theme.spacing.lg,
+            paddingHorizontal: isMobile ? theme.spacing.lg : theme.spacing.xl,
+            paddingVertical: isMobile ? theme.spacing.md : theme.spacing.lg,
             backgroundColor: theme.colors.background,
           }}
         >
           <Text
             style={{
-              fontSize: theme.fontSize["3xl"],
+              fontSize: isMobile
+                ? theme.fontSize["2xl"]
+                : isTablet
+                  ? theme.fontSize["2xl"]
+                  : theme.fontSize["3xl"],
               fontWeight: theme.fontWeight.bold,
               color: theme.colors.text,
               marginBottom: theme.spacing.xs,
@@ -197,7 +219,7 @@ export default function FuelTab() {
           </Text>
           <Text
             style={{
-              fontSize: theme.fontSize.base,
+              fontSize: isMobile ? theme.fontSize.sm : theme.fontSize.base,
               color: theme.colors.textSecondary,
             }}
           >
@@ -205,9 +227,15 @@ export default function FuelTab() {
           </Text>
         </View>
 
-        <View style={{ padding: theme.spacing.lg }}>
+        <View
+          style={{ padding: isMobile ? theme.spacing.md : theme.spacing.lg }}
+        >
           {/* Filters */}
-          <View style={{ marginBottom: theme.spacing.lg }}>
+          <View
+            style={{
+              marginBottom: isMobile ? theme.spacing.md : theme.spacing.lg,
+            }}
+          >
             <PeriodSelector
               selectedPeriod={period}
               onPeriodChange={setPeriod}
@@ -225,11 +253,15 @@ export default function FuelTab() {
           {/* Fuel Efficiency Metrics */}
           <Text
             style={{
-              fontSize: theme.fontSize.xl,
+              fontSize: isMobile
+                ? theme.fontSize.lg
+                : isTablet
+                  ? theme.fontSize.lg
+                  : theme.fontSize.xl,
               fontWeight: theme.fontWeight.bold,
               color: theme.colors.text,
-              marginBottom: theme.spacing.md,
-              marginTop: theme.spacing.lg,
+              marginBottom: isMobile ? theme.spacing.sm : theme.spacing.md,
+              marginTop: isMobile ? theme.spacing.md : theme.spacing.lg,
             }}
           >
             Fuel Efficiency
@@ -239,7 +271,7 @@ export default function FuelTab() {
           <View
             style={{
               flexDirection: "row",
-              gap: theme.spacing.md,
+              gap: isMobile ? theme.spacing.sm : theme.spacing.md,
               marginBottom: theme.spacing.md,
             }}
           >
@@ -268,7 +300,7 @@ export default function FuelTab() {
           <View
             style={{
               flexDirection: "row",
-              gap: theme.spacing.md,
+              gap: isMobile ? theme.spacing.sm : theme.spacing.md,
               marginBottom: theme.spacing.md,
             }}
           >
@@ -295,11 +327,15 @@ export default function FuelTab() {
           {/* Cost Metrics */}
           <Text
             style={{
-              fontSize: theme.fontSize.xl,
+              fontSize: isMobile
+                ? theme.fontSize.lg
+                : isTablet
+                  ? theme.fontSize.lg
+                  : theme.fontSize.xl,
               fontWeight: theme.fontWeight.bold,
               color: theme.colors.text,
-              marginBottom: theme.spacing.md,
-              marginTop: theme.spacing.lg,
+              marginBottom: isMobile ? theme.spacing.sm : theme.spacing.md,
+              marginTop: isMobile ? theme.spacing.md : theme.spacing.lg,
             }}
           >
             Fuel Costs
@@ -309,7 +345,7 @@ export default function FuelTab() {
           <View
             style={{
               flexDirection: "row",
-              gap: theme.spacing.md,
+              gap: isMobile ? theme.spacing.sm : theme.spacing.md,
               marginBottom: theme.spacing.md,
             }}
           >
@@ -336,11 +372,15 @@ export default function FuelTab() {
           {/* Fill-up Statistics */}
           <Text
             style={{
-              fontSize: theme.fontSize.xl,
+              fontSize: isMobile
+                ? theme.fontSize.lg
+                : isTablet
+                  ? theme.fontSize.lg
+                  : theme.fontSize.xl,
               fontWeight: theme.fontWeight.bold,
               color: theme.colors.text,
-              marginBottom: theme.spacing.md,
-              marginTop: theme.spacing.lg,
+              marginBottom: isMobile ? theme.spacing.sm : theme.spacing.md,
+              marginTop: isMobile ? theme.spacing.md : theme.spacing.lg,
             }}
           >
             Fill-up Statistics
@@ -348,7 +388,7 @@ export default function FuelTab() {
           <View
             style={{
               flexDirection: "row",
-              gap: theme.spacing.md,
+              gap: isMobile ? theme.spacing.sm : theme.spacing.md,
               marginBottom: theme.spacing.md,
             }}
           >
@@ -358,13 +398,15 @@ export default function FuelTab() {
                 flex: 1,
                 backgroundColor: theme.colors.surface,
                 borderRadius: theme.borderRadius.lg,
-                padding: theme.spacing.lg,
+                padding: isMobile ? theme.spacing.md : theme.spacing.lg,
                 alignItems: "center",
               }}
             >
               <Text
                 style={{
-                  fontSize: theme.fontSize["2xl"],
+                  fontSize: isMobile
+                    ? theme.fontSize.xl
+                    : theme.fontSize["2xl"],
                   fontWeight: theme.fontWeight.bold,
                   color: theme.colors.text,
                   marginBottom: theme.spacing.xs,
@@ -374,7 +416,7 @@ export default function FuelTab() {
               </Text>
               <Text
                 style={{
-                  fontSize: theme.fontSize.xs,
+                  fontSize: 10,
                   color: theme.colors.textSecondary,
                   textAlign: "center",
                 }}
@@ -389,13 +431,15 @@ export default function FuelTab() {
                 flex: 1,
                 backgroundColor: theme.colors.surface,
                 borderRadius: theme.borderRadius.lg,
-                padding: theme.spacing.lg,
+                padding: isMobile ? theme.spacing.md : theme.spacing.lg,
                 alignItems: "center",
               }}
             >
               <Text
                 style={{
-                  fontSize: theme.fontSize["2xl"],
+                  fontSize: isMobile
+                    ? theme.fontSize.xl
+                    : theme.fontSize["2xl"],
                   fontWeight: theme.fontWeight.bold,
                   color: theme.colors.text,
                   marginBottom: theme.spacing.xs,
@@ -405,7 +449,7 @@ export default function FuelTab() {
               </Text>
               <Text
                 style={{
-                  fontSize: theme.fontSize.xs,
+                  fontSize: 10,
                   color: theme.colors.textSecondary,
                   textAlign: "center",
                 }}
@@ -420,13 +464,15 @@ export default function FuelTab() {
                 flex: 1,
                 backgroundColor: theme.colors.surface,
                 borderRadius: theme.borderRadius.lg,
-                padding: theme.spacing.lg,
+                padding: isMobile ? theme.spacing.md : theme.spacing.lg,
                 alignItems: "center",
               }}
             >
               <Text
                 style={{
-                  fontSize: theme.fontSize["2xl"],
+                  fontSize: isMobile
+                    ? theme.fontSize.xl
+                    : theme.fontSize["2xl"],
                   fontWeight: theme.fontWeight.bold,
                   color: theme.colors.text,
                   marginBottom: theme.spacing.xs,
@@ -438,7 +484,7 @@ export default function FuelTab() {
               </Text>
               <Text
                 style={{
-                  fontSize: theme.fontSize.xs,
+                  fontSize: 10,
                   color: theme.colors.textSecondary,
                   textAlign: "center",
                 }}
@@ -453,16 +499,20 @@ export default function FuelTab() {
             <>
               <Text
                 style={{
-                  fontSize: theme.fontSize.xl,
+                  fontSize: isMobile
+                    ? theme.fontSize.lg
+                    : isTablet
+                      ? theme.fontSize.lg
+                      : theme.fontSize.xl,
                   fontWeight: theme.fontWeight.bold,
                   color: theme.colors.text,
-                  marginBottom: theme.spacing.md,
-                  marginTop: theme.spacing.lg,
+                  marginBottom: isMobile ? theme.spacing.sm : theme.spacing.md,
+                  marginTop: isMobile ? theme.spacing.md : theme.spacing.lg,
                 }}
               >
                 Efficiency Trend
               </Text>
-              <TrendLineChart
+              <LazyTrendLineChart
                 data={trendData}
                 title="Fuel Consumption Over Time"
                 yAxisLabel=""

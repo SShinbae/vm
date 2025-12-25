@@ -29,35 +29,54 @@ class NotificationService {
   private userGroupIds: string[] = [];
   private userVehicleIds: string[] = [];
 
+  // Cache configuration for user data
+  private userDataCache: {
+    timestamp: number;
+    ttl: number; // Time to live in milliseconds
+  } = {
+    timestamp: 0,
+    ttl: 5 * 60 * 1000, // 5 minutes cache
+  };
+
   async initialize(userId: string): Promise<void> {
     this.userId = userId;
     await this.loadUserData();
     this.setupRealtimeSubscriptions();
   }
 
-  private async loadUserData(): Promise<void> {
+  private async loadUserData(force: boolean = false): Promise<void> {
     if (!this.userId) return;
 
-    // Get user's groups
-    const { data: userGroups } = await supabase
-      .from("group_members")
-      .select("group_id")
-      .eq("user_id", this.userId);
+    // Check cache validity
+    const now = Date.now();
+    const isCacheValid =
+      now - this.userDataCache.timestamp < this.userDataCache.ttl;
+
+    if (!force && isCacheValid && this.userGroupIds.length > 0) {
+      console.log("📦 Using cached user data, skipping database queries");
+      return;
+    }
+
+    console.log("🔄 Cache expired or forced, fetching fresh user data...");
+
+    // OPTIMIZATION: Run all queries in parallel for better performance
+    const [userGroupsResult, vehiclesResult] = await Promise.all([
+      supabase
+        .from("group_members")
+        .select("group_id")
+        .eq("user_id", this.userId),
+      supabase.from("vehicles").select("id").eq("user_id", this.userId),
+    ]);
 
     this.userGroupIds =
-      (userGroups as { group_id: string }[] | null)?.map((g) => g.group_id) ||
-      [];
-
-    // Get user's vehicles (owned)
-    const { data: vehicles } = await supabase
-      .from("vehicles")
-      .select("id")
-      .eq("user_id", this.userId);
+      (userGroupsResult.data as { group_id: string }[] | null)?.map(
+        (g) => g.group_id,
+      ) || [];
 
     this.userVehicleIds =
-      (vehicles as { id: string }[] | null)?.map((v) => v.id) || [];
+      (vehiclesResult.data as { id: string }[] | null)?.map((v) => v.id) || [];
 
-    // Get shared vehicles through groups
+    // Get shared vehicles through groups (only if user has groups)
     if (this.userGroupIds.length > 0) {
       const { data: sharedVehicles } = await supabase
         .from("vehicle_group_shares")
@@ -70,6 +89,10 @@ class NotificationService {
         ) || [];
       this.userVehicleIds = [...this.userVehicleIds, ...sharedVehicleIds];
     }
+
+    // Update cache timestamp
+    this.userDataCache.timestamp = now;
+    console.log("✅ User data loaded and cached");
   }
 
   private setupRealtimeSubscriptions(): void {
@@ -151,6 +174,7 @@ class NotificationService {
   }
 
   private subscribeToInvitations(): void {
+    console.log("🔌 Subscribing to group_invitations table changes...");
     // Subscribe to group invitations
     const invitationChannel = supabase
       .channel("group-invitations-changes")
@@ -162,12 +186,19 @@ class NotificationService {
           table: "group_invitations",
         },
         async (payload) => {
+          console.log(
+            "🔔 Realtime event received from group_invitations!",
+            payload,
+          );
           await this.handleInvitationChange(payload);
         },
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log("📡 group_invitations subscription status:", status);
+      });
 
     this.channels.push(invitationChannel);
+    console.log("✅ group_invitations subscription created");
   }
 
   private async handleLogChange(
@@ -325,38 +356,87 @@ class NotificationService {
   }
 
   private async handleInvitationChange(payload: any): Promise<void> {
+    console.log("🔔 handleInvitationChange called", {
+      eventType: payload.eventType,
+      newRecord: payload.new,
+    });
+
     const { eventType, new: newRecord } = payload;
 
-    if (eventType !== "INSERT") return;
-
-    // Get current user's email to check if this invitation is for them
-    const { data: userProfile } = await supabase
-      .from("profiles")
-      .select("email")
-      .eq("id", this.userId!)
-      .single();
-
-    const userProfileData = userProfile as { email: string } | null;
-
-    if (
-      !userProfileData ||
-      newRecord.email !== userProfileData.email.toLowerCase()
-    ) {
+    if (eventType !== "INSERT") {
+      console.log("❌ Event type is not INSERT, skipping");
       return;
     }
 
+    console.log("✅ Event type is INSERT, processing invitation");
+
+    // Get current user's email to check if this invitation is for them
+    console.log("🔍 Fetching user profile for userId:", this.userId);
+
+    let userProfile, profileError;
+    try {
+      const result = await supabase
+        .from("profiles")
+        .select("email")
+        .eq("id", this.userId!)
+        .single();
+      userProfile = result.data;
+      profileError = result.error;
+    } catch (error) {
+      console.error("💥 Exception while fetching user profile:", error);
+      return;
+    }
+
+    console.log("👤 Current user profile:", {
+      userId: this.userId,
+      userProfile,
+      profileError,
+    });
+
+    const userProfileData = userProfile as { email: string } | null;
+
+    console.log("📧 Email comparison:", {
+      invitationEmail: newRecord.email,
+      userEmail: userProfileData?.email,
+      invitationEmailLower: newRecord.email?.toLowerCase(),
+      userEmailLower: userProfileData?.email?.toLowerCase(),
+      match:
+        newRecord.email?.toLowerCase() ===
+        userProfileData?.email?.toLowerCase(),
+    });
+
+    if (
+      !userProfileData ||
+      newRecord.email.toLowerCase() !== userProfileData.email.toLowerCase()
+    ) {
+      console.log(
+        "❌ Email does not match current user, skipping notification",
+      );
+      return;
+    }
+
+    console.log("✅ Email matches! Creating notification...");
+
     // Get group and inviter information
-    const { data: group } = await supabase
+    const { data: group, error: groupError } = await supabase
       .from("groups")
       .select("name")
       .eq("id", newRecord.group_id)
       .single();
 
-    const { data: inviter } = await supabase
+    if (groupError) {
+      console.warn("⚠️ Could not fetch group details:", groupError);
+    }
+
+    const { data: inviter, error: inviterError } = await supabase
       .from("profiles")
       .select("full_name, email")
       .eq("id", newRecord.invited_by)
       .single();
+
+    if (inviterError) {
+      console.warn("⚠️ Could not fetch inviter details:", inviterError);
+    }
 
     const groupData = group as { name: string } | null;
     const inviterData = inviter as {
@@ -387,11 +467,25 @@ class NotificationService {
       created_at: new Date().toISOString(),
     };
 
+    console.log("📝 Notification object created:", notification);
+    console.log("🔔 Number of callbacks registered:", this.callbacks.length);
+
     this.notifyCallbacks(notification);
+
+    console.log("✅ notifyCallbacks called");
   }
 
   private notifyCallbacks(notification: NotificationData): void {
-    this.callbacks.forEach((callback) => callback(notification));
+    console.log("🔔 notifyCallbacks triggered with", {
+      notification,
+      callbackCount: this.callbacks.length,
+    });
+    this.callbacks.forEach((callback, index) => {
+      console.log(
+        `🔔 Executing callback ${index + 1}/${this.callbacks.length}`,
+      );
+      callback(notification);
+    });
   }
 
   addCallback(callback: NotificationCallback): void {
@@ -402,8 +496,16 @@ class NotificationService {
     this.callbacks = this.callbacks.filter((cb) => cb !== callback);
   }
 
-  async refreshUserData(): Promise<void> {
-    await this.loadUserData();
+  async refreshUserData(force: boolean = false): Promise<void> {
+    await this.loadUserData(force);
+  }
+
+  /**
+   * Invalidate cache - useful when user joins/leaves a group or adds/removes a vehicle
+   */
+  invalidateCache(): void {
+    this.userDataCache.timestamp = 0;
+    console.log("🗑️ User data cache invalidated");
   }
 
   cleanup(): void {

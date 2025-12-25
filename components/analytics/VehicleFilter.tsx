@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity, ScrollView } from "react-native";
 import { createStyleSheet, useStyles } from "react-native-unistyles";
 import { Ionicons } from "@expo/vector-icons";
 import { Vehicle } from "../../types";
+import { useResponsiveLayout } from "@/hooks/use-responsive-layout";
 
 interface VehicleFilterProps {
   vehicles: Vehicle[];
@@ -20,6 +21,7 @@ export function VehicleFilter({
   onClearAll,
 }: VehicleFilterProps) {
   const { styles, theme } = useStyles(stylesheet);
+  const { isMobile } = useResponsiveLayout();
 
   const isAllSelected = selectedVehicleIds.length === 0;
 
@@ -27,23 +29,38 @@ export function VehicleFilter({
     return isAllSelected || selectedVehicleIds.includes(vehicleId);
   };
 
+  const iconSize = isMobile ? 18 : 20;
+
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, isMobile && styles.containerMobile]}>
       <View style={styles.header}>
         <View style={styles.titleContainer}>
           <Ionicons
             name="car-outline"
-            size={20}
+            size={iconSize}
             color={theme.colors.textSecondary}
           />
-          <Text style={styles.title}>Filter by Vehicle</Text>
+          <Text style={[styles.title, isMobile && styles.titleMobile]}>
+            Filter by Vehicle
+          </Text>
         </View>
         <View style={styles.actions}>
           <TouchableOpacity onPress={onSelectAll}>
-            <Text style={styles.actionText}>All</Text>
+            <Text
+              style={[styles.actionText, isMobile && styles.actionTextMobile]}
+            >
+              All
+            </Text>
           </TouchableOpacity>
           <TouchableOpacity onPress={onClearAll}>
-            <Text style={styles.actionTextSecondary}>None</Text>
+            <Text
+              style={[
+                styles.actionTextSecondary,
+                isMobile && styles.actionTextSecondaryMobile,
+              ]}
+            >
+              None
+            </Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -58,11 +75,19 @@ export function VehicleFilter({
           return (
             <TouchableOpacity
               key={vehicle.id}
-              style={[styles.chip, isSelected && styles.chipSelected]}
+              style={[
+                styles.chip,
+                isSelected && styles.chipSelected,
+                isMobile && styles.chipMobile,
+              ]}
               onPress={() => onToggleVehicle(vehicle.id)}
             >
               <Text
-                style={[styles.chipText, isSelected && styles.chipTextSelected]}
+                style={[
+                  styles.chipText,
+                  isSelected && styles.chipTextSelected,
+                  isMobile && styles.chipTextMobile,
+                ]}
               >
                 {vehicle.year} {vehicle.make} {vehicle.model}
               </Text>
@@ -85,6 +110,9 @@ const stylesheet = createStyleSheet((theme) => ({
     shadowRadius: 2,
     elevation: 1,
   },
+  containerMobile: {
+    padding: theme.spacing.md,
+  },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -101,6 +129,9 @@ const stylesheet = createStyleSheet((theme) => ({
     fontWeight: theme.fontWeight.medium,
     color: theme.colors.text,
   },
+  titleMobile: {
+    fontSize: theme.fontSize.sm,
+  },
   actions: {
     flexDirection: "row",
     gap: theme.spacing.sm,
@@ -110,10 +141,16 @@ const stylesheet = createStyleSheet((theme) => ({
     fontWeight: theme.fontWeight.medium,
     color: theme.colors.primary,
   },
+  actionTextMobile: {
+    fontSize: 10,
+  },
   actionTextSecondary: {
     fontSize: theme.fontSize.xs,
     fontWeight: theme.fontWeight.medium,
     color: theme.colors.textSecondary,
+  },
+  actionTextSecondaryMobile: {
+    fontSize: 10,
   },
   chipsContainer: {
     gap: theme.spacing.sm,
@@ -125,6 +162,10 @@ const stylesheet = createStyleSheet((theme) => ({
     borderRadius: theme.borderRadius.full,
     backgroundColor: theme.colors.background,
   },
+  chipMobile: {
+    paddingHorizontal: theme.spacing.sm,
+    paddingVertical: theme.spacing.xs,
+  },
   chipSelected: {
     backgroundColor: theme.colors.primary,
   },
@@ -132,6 +173,9 @@ const stylesheet = createStyleSheet((theme) => ({
     fontSize: theme.fontSize.sm,
     fontWeight: theme.fontWeight.medium,
     color: theme.colors.text,
+  },
+  chipTextMobile: {
+    fontSize: theme.fontSize.xs,
   },
   chipTextSelected: {
     color: theme.colors.white,

@@ -1,18 +1,9 @@
 import { Ionicons } from "@expo/vector-icons";
 import React, { useEffect, useRef } from "react";
-import {
-  Animated,
-  Dimensions,
-  Platform,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { Animated, Platform, Text, TouchableOpacity, View } from "react-native";
 import { useThemeColor } from "../../hooks/use-theme-color";
 import { NotificationData } from "../../lib/services/notificationService";
 
-const { width: screenWidth } = Dimensions.get("window");
-const TOAST_WIDTH = screenWidth - 32;
 const ANIMATION_DURATION = 300;
 const AUTO_DISMISS_DURATION = 4000;
 
@@ -88,6 +79,7 @@ export function NotificationToast({
         clearTimeout(timeoutRef.current);
       }
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visible, notification]);
 
   const handlePress = () => {

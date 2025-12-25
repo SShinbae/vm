@@ -40,10 +40,16 @@ export function StatCard({ title, value, icon, trend }: StatCardProps) {
 
 const stylesheet = createStyleSheet((theme) => ({
   statCard: {
-    width: "47%", // Approximate 50% minus gap
+    flex: 1,
     backgroundColor: theme.colors.surface,
-    borderRadius: theme.borderRadius.xl,
-    padding: theme.spacing.lg,
+    borderRadius: {
+      xs: theme.borderRadius.lg,
+      sm: theme.borderRadius.xl,
+    },
+    padding: {
+      xs: theme.spacing.md,
+      sm: theme.spacing.lg,
+    },
     shadowColor: theme.colors.black,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
@@ -54,28 +60,46 @@ const stylesheet = createStyleSheet((theme) => ({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: theme.spacing.sm,
+    marginBottom: {
+      xs: theme.spacing.xs,
+      sm: theme.spacing.sm,
+    },
   },
   statIcon: {
-    fontSize: 24,
+    fontSize: {
+      xs: 20,
+      sm: 24,
+    },
   },
   trendBadge: {
-    paddingHorizontal: theme.spacing.sm,
+    paddingHorizontal: {
+      xs: theme.spacing.xs,
+      sm: theme.spacing.sm,
+    },
     paddingVertical: theme.spacing.xs,
     borderRadius: theme.borderRadius.sm,
   },
   trendText: {
-    fontSize: theme.fontSize.xs,
+    fontSize: {
+      xs: 10,
+      sm: theme.fontSize.xs,
+    },
     fontWeight: theme.fontWeight.semibold,
   },
   statValue: {
-    fontSize: theme.fontSize["2xl"],
+    fontSize: {
+      xs: theme.fontSize.xl,
+      sm: theme.fontSize["2xl"],
+    },
     fontWeight: theme.fontWeight.bold,
     color: theme.colors.text,
     marginBottom: theme.spacing.xs,
   },
   statTitle: {
-    fontSize: theme.fontSize.sm,
+    fontSize: {
+      xs: theme.fontSize.xs,
+      sm: theme.fontSize.sm,
+    },
     color: theme.colors.textSecondary,
   },
 }));

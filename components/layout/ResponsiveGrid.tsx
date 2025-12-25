@@ -1,38 +1,111 @@
 import React from "react";
-import { View, StyleSheet } from "react-native";
+import { View, StyleSheet, ViewStyle } from "react-native";
 import { useResponsiveLayout } from "@/hooks/use-responsive-layout";
 
-interface ResponsiveGridProps {
+export interface ResponsiveGridProps {
   children: React.ReactNode[];
+  /** Number of columns (overrides responsive defaults) */
+  columns?: {
+    mobile?: number;
+    tablet?: number;
+    desktop?: number;
+    largeDesktop?: number;
+  };
+  /** Spacing between grid items */
   spacing?: number;
+  /** Minimum item width (auto-calculates columns) */
   minItemWidth?: number;
+  /** Additional container style */
+  style?: ViewStyle;
 }
 
+/**
+ * ResponsiveGrid - 12-column responsive grid system
+ *
+ * Default columns:
+ * - Mobile (<768px): 1 column
+ * - Tablet (768-1024px): 2 columns
+ * - Desktop (1024-1440px): 2 columns
+ * - Large Desktop (>=1440px): 3 columns
+ *
+ * @example
+ * <ResponsiveGrid columns={{ mobile: 1, tablet: 2, desktop: 3 }}>
+ *   {items.map(item => <Card key={item.id} {...item} />)}
+ * </ResponsiveGrid>
+ */
 export function ResponsiveGrid({
   children,
-  spacing = 16,
-  minItemWidth = 300,
+  columns,
+  spacing,
+  minItemWidth,
+  style,
 }: ResponsiveGridProps) {
   const layout = useResponsiveLayout();
 
-  // Calculate optimal columns based on available width
-  const availableWidth = layout.screenWidth - layout.contentPadding * 2;
-  const itemsPerRow = Math.max(
-    1,
-    Math.floor((availableWidth + spacing) / (minItemWidth + spacing)),
-  );
-  const actualColumns = Math.min(itemsPerRow, children.length);
+  // Use provided spacing or default from layout
+  const gridSpacing = spacing ?? layout.gridGutter;
 
-  // For mobile, always use single column
-  const columns = layout.isMobile ? 1 : actualColumns;
+  // Determine columns based on breakpoint
+  let numColumns: number;
 
+  if (minItemWidth) {
+    // Auto-calculate based on minItemWidth
+    const availableWidth = layout.screenWidth - layout.contentPadding * 2;
+    const itemsPerRow = Math.max(
+      1,
+      Math.floor((availableWidth + gridSpacing) / (minItemWidth + gridSpacing)),
+    );
+    numColumns = Math.min(itemsPerRow, children.length);
+  } else if (columns) {
+    // Use provided column configuration
+    if (layout.isLargeDesktop && columns.largeDesktop) {
+      numColumns = columns.largeDesktop;
+    } else if (layout.isDesktop && columns.desktop) {
+      numColumns = columns.desktop;
+    } else if (layout.isTablet && columns.tablet) {
+      numColumns = columns.tablet;
+    } else if (layout.isMobile && columns.mobile) {
+      numColumns = columns.mobile;
+    } else {
+      numColumns = layout.columns; // Fallback to layout default
+    }
+  } else {
+    // Use responsive defaults from layout
+    numColumns = layout.columns;
+  }
+
+  // Only force mobile to 1 column if not explicitly overridden
+  if (layout.isMobile && !columns?.mobile) {
+    numColumns = 1;
+  }
+
+  // For single column, render as vertical stack
+  if (numColumns === 1) {
+    return (
+      <View style={[styles.container, style]}>
+        {children.map((child, index) => (
+          <View
+            key={index}
+            style={{
+              marginBottom: index < children.length - 1 ? gridSpacing : 0,
+            }}
+          >
+            {child}
+          </View>
+        ))}
+      </View>
+    );
+  }
+
+  // For multiple columns, render as grid
   const renderRows = () => {
-    const rows = [];
-    for (let i = 0; i < children.length; i += columns) {
-      const rowItems = children.slice(i, i + columns);
+    const rows: React.ReactElement[] = [];
+
+    for (let i = 0; i < children.length; i += numColumns) {
+      const rowItems = children.slice(i, i + numColumns);
 
       rows.push(
-        <View key={i} style={[styles.row, { marginBottom: spacing }]}>
+        <View key={i} style={[styles.row, { marginBottom: gridSpacing }]}>
           {rowItems.map((child, index) => (
             <View
               key={index}
@@ -40,7 +113,7 @@ export function ResponsiveGrid({
                 styles.gridItem,
                 {
                   flex: 1,
-                  marginRight: index < rowItems.length - 1 ? spacing : 0,
+                  marginRight: index < rowItems.length - 1 ? gridSpacing : 0,
                 },
               ]}
             >
@@ -48,8 +121,8 @@ export function ResponsiveGrid({
             </View>
           ))}
           {/* Fill remaining space if last row is incomplete */}
-          {rowItems.length < columns &&
-            Array.from({ length: columns - rowItems.length }).map(
+          {rowItems.length < numColumns &&
+            Array.from({ length: numColumns - rowItems.length }).map(
               (_, index) => (
                 <View
                   key={`spacer-${index}`}
@@ -58,7 +131,9 @@ export function ResponsiveGrid({
                     {
                       flex: 1,
                       marginRight:
-                        index < columns - rowItems.length - 1 ? spacing : 0,
+                        index < numColumns - rowItems.length - 1
+                          ? gridSpacing
+                          : 0,
                     },
                   ]}
                 />
@@ -67,19 +142,21 @@ export function ResponsiveGrid({
         </View>,
       );
     }
+
     return rows;
   };
 
-  return <View style={styles.container}>{renderRows()}</View>;
+  return <View style={[styles.container, style]}>{renderRows()}</View>;
 }
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
+    // Remove flex: 1 to prevent layout issues
   },
   row: {
     flexDirection: "row",
     alignItems: "flex-start",
+    justifyContent: "center",
   },
   gridItem: {
     // Base styles - content will determine height

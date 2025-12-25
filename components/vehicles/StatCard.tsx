@@ -15,7 +15,10 @@ interface StatCardProps {
  * Isolated component for better reusability and testing
  */
 export function StatCard({ title, value, icon }: StatCardProps) {
-  const { styles, theme } = useStyles(stylesheet);
+  const { styles, theme, breakpoint } = useStyles(stylesheet);
+
+  // Responsive icon size
+  const iconSize = breakpoint === "xs" ? 20 : 24;
 
   return (
     <View style={styles.statCard}>
@@ -23,7 +26,7 @@ export function StatCard({ title, value, icon }: StatCardProps) {
         <View style={styles.statIconContainer}>
           <IconSymbol
             name={icon as any}
-            size={24}
+            size={iconSize}
             color={theme.colors.primary}
           />
         </View>
@@ -40,10 +43,16 @@ export function StatCard({ title, value, icon }: StatCardProps) {
 
 const stylesheet = createStyleSheet((theme) => ({
   statCard: {
-    width: "47%", // Approximate 50% minus gap
+    flex: 1,
     backgroundColor: theme.colors.surface,
-    borderRadius: theme.borderRadius.xl,
-    padding: theme.spacing.lg,
+    borderRadius: {
+      xs: theme.borderRadius.lg,
+      sm: theme.borderRadius.xl,
+    },
+    padding: {
+      xs: theme.spacing.md,
+      sm: theme.spacing.lg,
+    },
     shadowColor: theme.colors.black,
     shadowOffset: {
       width: 0,
@@ -57,24 +66,39 @@ const stylesheet = createStyleSheet((theme) => ({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: theme.spacing.sm,
+    marginBottom: {
+      xs: theme.spacing.xs,
+      sm: theme.spacing.sm,
+    },
   },
   statIconContainer: {
-    width: 48,
-    height: 48,
+    width: {
+      xs: 40,
+      sm: 48,
+    },
+    height: {
+      xs: 40,
+      sm: 48,
+    },
     borderRadius: theme.borderRadius.full,
     backgroundColor: theme.colors.primary + "15",
     alignItems: "center",
     justifyContent: "center",
   },
   statValue: {
-    fontSize: theme.fontSize["2xl"],
+    fontSize: {
+      xs: theme.fontSize.xl,
+      sm: theme.fontSize["2xl"],
+    },
     fontWeight: theme.fontWeight.bold,
     color: theme.colors.text,
     marginBottom: theme.spacing.xs,
   },
   statTitle: {
-    fontSize: theme.fontSize.sm,
+    fontSize: {
+      xs: theme.fontSize.xs,
+      sm: theme.fontSize.sm,
+    },
     color: theme.colors.textSecondary,
   },
 }));

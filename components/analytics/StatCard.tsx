@@ -1,6 +1,7 @@
 import React from "react";
 import { View, Text } from "react-native";
 import { createStyleSheet, useStyles } from "react-native-unistyles";
+import { useResponsiveLayout } from "@/hooks/use-responsive-layout";
 
 interface StatCardProps {
   value: string | number;
@@ -9,11 +10,22 @@ interface StatCardProps {
 
 export function StatCard({ value, label }: StatCardProps) {
   const { styles } = useStyles(stylesheet);
+  const { isMobile, isTablet } = useResponsiveLayout();
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.value}>{value}</Text>
-      <Text style={styles.label}>{label}</Text>
+    <View style={[styles.container, isMobile && styles.containerMobile]}>
+      <Text
+        style={[
+          styles.value,
+          isMobile && styles.valueMobile,
+          isTablet && styles.valueTablet,
+        ]}
+      >
+        {value}
+      </Text>
+      <Text style={[styles.label, isMobile && styles.labelMobile]}>
+        {label}
+      </Text>
     </View>
   );
 }
@@ -31,6 +43,11 @@ const stylesheet = createStyleSheet((theme) => ({
     shadowOpacity: 0.1,
     shadowRadius: 2,
     elevation: 2,
+    minWidth: 100,
+  },
+  containerMobile: {
+    padding: theme.spacing.md,
+    minWidth: 80,
   },
   value: {
     fontSize: theme.fontSize["3xl"],
@@ -38,11 +55,21 @@ const stylesheet = createStyleSheet((theme) => ({
     color: theme.colors.text,
     marginBottom: 4,
   },
+  valueMobile: {
+    fontSize: theme.fontSize.xl,
+  },
+  valueTablet: {
+    fontSize: theme.fontSize["2xl"],
+  },
   label: {
     fontSize: theme.fontSize.xs,
     color: theme.colors.textSecondary,
     textAlign: "center",
     textTransform: "uppercase",
     letterSpacing: 0.5,
+  },
+  labelMobile: {
+    fontSize: 10,
+    letterSpacing: 0.3,
   },
 }));

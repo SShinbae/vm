@@ -128,41 +128,42 @@ export const useDashboardData = () => {
           0,
         ) || 0;
 
-      // Get monthly fuel cost (current month)
+      // OPTIMIZATION: Fetch fuel and service data in parallel
       const now = new Date();
       const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
       startOfMonth.setHours(0, 0, 0, 0);
+      const thirtyDaysLater = new Date(
+        now.getTime() + 30 * 24 * 60 * 60 * 1000,
+      );
 
-      const { data: currentMonthFuelData, error: fuelError } = await supabase
-        .from("fuel_logs")
-        .select("cost, date")
-        .in("vehicle_id", vehicleIds)
-        .gte("date", startOfMonth.toISOString());
-      if (fuelError) throw fuelError;
+      const [fuelResult, servicesResult] = await Promise.all([
+        // Get monthly fuel cost (current month)
+        supabase
+          .from("fuel_logs")
+          .select("cost, date")
+          .in("vehicle_id", vehicleIds)
+          .gte("date", startOfMonth.toISOString()),
+        // Get upcoming services (services due in next 30 days)
+        supabase
+          .from("service_logs")
+          .select("next_service_due")
+          .in("vehicle_id", vehicleIds)
+          .gte("next_service_due", now.toISOString())
+          .lte("next_service_due", thirtyDaysLater.toISOString()),
+      ]);
+
+      if (fuelResult.error) throw fuelResult.error;
+      if (servicesResult.error) throw servicesResult.error;
 
       let monthlyFuelCost =
-        currentMonthFuelData?.reduce((sum, f: any) => sum + (f.cost || 0), 0) ||
-        0;
+        fuelResult.data?.reduce((sum, f: any) => sum + (f.cost || 0), 0) || 0;
       if (__DEV__) {
         console.log(
           `📊 Dashboard - Monthly fuel cost for ${vehicleIds.length} vehicles: RM${monthlyFuelCost.toFixed(2)}`,
         );
       }
 
-      // Get upcoming services (services due in next 30 days) for ALL vehicles
-      const thirtyDaysLater = new Date(
-        now.getTime() + 30 * 24 * 60 * 60 * 1000,
-      );
-
-      const { data: servicesData, error: servicesError } = await supabase
-        .from("service_logs")
-        .select("next_service_due")
-        .in("vehicle_id", vehicleIds)
-        .gte("next_service_due", now.toISOString())
-        .lte("next_service_due", thirtyDaysLater.toISOString());
-      if (servicesError) throw servicesError;
-
-      const upcomingServices = servicesData?.length || 0;
+      const upcomingServices = servicesResult.data?.length || 0;
 
       setStats({
         totalVehicles,

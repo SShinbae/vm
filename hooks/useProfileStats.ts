@@ -26,21 +26,27 @@ export function useProfileStats() {
     try {
       setLoading(true);
 
-      // Get user's vehicles (owned + shared)
-      const { data: ownVehicles } = await supabase
-        .from("vehicles")
-        .select("id")
-        .eq("user_id", user.id);
+      // OPTIMIZATION: Fetch vehicles, groups, and memberships in parallel
+      const [
+        { data: ownVehicles },
+        { data: groupMemberships },
+        { data: ownedGroups },
+      ] = await Promise.all([
+        supabase.from("vehicles").select("id").eq("user_id", user.id),
+        supabase
+          .from("group_members")
+          .select("group_id")
+          .eq("user_id", user.id),
+        supabase
+          .from("groups")
+          .select("id", { count: "exact" })
+          .eq("owner_id", user.id),
+      ]);
 
       const vehicleIds =
         (ownVehicles as { id: string }[] | null)?.map((v) => v.id) || [];
 
       // Get shared vehicle IDs
-      const { data: groupMemberships } = await supabase
-        .from("group_members")
-        .select("group_id")
-        .eq("user_id", user.id);
-
       let sharedVehicleIds: string[] = [];
       if (groupMemberships && groupMemberships.length > 0) {
         const groupIds = (groupMemberships as { group_id: string }[]).map(
@@ -60,7 +66,7 @@ export function useProfileStats() {
 
       const allVehicleIds = [...new Set([...vehicleIds, ...sharedVehicleIds])];
 
-      // Count total logs across all types
+      // Count total logs across all types in parallel
       const [mileageResult, fuelResult, serviceResult] = await Promise.all([
         supabase
           .from("mileage_logs")
@@ -82,11 +88,6 @@ export function useProfileStats() {
         (serviceResult.count || 0);
 
       // Count active groups (owned + member of)
-      const { data: ownedGroups } = await supabase
-        .from("groups")
-        .select("id", { count: "exact" })
-        .eq("owner_id", user.id);
-
       const activeGroups =
         (ownedGroups?.length || 0) + (groupMemberships?.length || 0);
 

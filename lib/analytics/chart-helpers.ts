@@ -51,7 +51,6 @@ export function formatChartLabel(date: Date, grouping: ChartGrouping): string {
     "Nov",
     "Dec",
   ];
-  const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
   switch (grouping) {
     case "day":
@@ -63,7 +62,6 @@ export function formatChartLabel(date: Date, grouping: ChartGrouping): string {
     case "week":
       // Format: "Week 1" or "Jan W1"
       const weekNum = getWeekNumber(date);
-      const yearWeek = date.getFullYear();
       return `W${weekNum}`;
 
     case "month":

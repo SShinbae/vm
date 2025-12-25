@@ -1,6 +1,7 @@
 import { router } from "expo-router";
 import React, { useEffect, useRef } from "react";
 import {
+  Alert,
   Animated,
   Modal,
   Platform,
@@ -15,6 +16,8 @@ import { useNotifications } from "../../lib/contexts/NotificationContext";
 import { NotificationData } from "../../lib/services/notificationService";
 import { formatDistanceToNow } from "../../lib/utils/dateUtils";
 import { IconSymbol } from "./icon-symbol";
+import { GroupInvitationService } from "../../lib/services/groupService";
+import { useToast } from "../../hooks/useToast";
 
 interface NotificationPopupProps {
   visible: boolean;
@@ -159,11 +162,16 @@ const itemStylesheet = createStyleSheet((theme) => ({
 export function NotificationPopup({
   visible,
   onClose,
-  anchorPosition,
 }: NotificationPopupProps) {
   const { styles, theme } = useStyles(popupStylesheet);
-  const { notifications, isInitialized, markAllAsRead, unreadCount } =
-    useNotifications();
+  const {
+    notifications,
+    isInitialized,
+    markAllAsRead,
+    unreadCount,
+    refreshNotifications,
+  } = useNotifications();
+  const { showSuccess, showError, showInfo } = useToast();
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(-10)).current;
 
@@ -185,22 +193,99 @@ export function NotificationPopup({
       fadeAnim.setValue(0);
       slideAnim.setValue(-10);
     }
-  }, [visible]);
+  }, [visible, fadeAnim, slideAnim]);
+
+  const handleAcceptInvitation = async (
+    invitationId: string,
+    groupName: string,
+  ) => {
+    try {
+      console.log("🔄 Accepting invitation:", { invitationId, groupName });
+      const result =
+        await GroupInvitationService.acceptInvitation(invitationId);
+      console.log("✅ Accept invitation result:", result);
+
+      if (result.error) {
+        console.error("❌ Error accepting invitation:", result.error);
+        showError(result.error);
+      } else {
+        console.log("✅ Successfully joined group!");
+        showSuccess(`You joined ${groupName}!`);
+        await refreshNotifications();
+      }
+    } catch {
+      console.error("❌ Exception accepting invitation");
+      showError("Failed to accept invitation");
+    }
+  };
+
+  const handleDeclineInvitation = async (invitationId: string) => {
+    try {
+      const result =
+        await GroupInvitationService.declineInvitation(invitationId);
+
+      if (result.error) {
+        showError(result.error);
+      } else {
+        showInfo("Invitation declined");
+        await refreshNotifications();
+      }
+    } catch {
+      showError("Failed to decline invitation");
+    }
+  };
 
   const handleNotificationPress = (notification: NotificationData) => {
-    onClose();
     switch (notification.notification_type) {
       case "mileage_log":
       case "fuel_log":
       case "service_log":
         if (notification.related_vehicle_id) {
+          onClose();
           router.push(`/vehicles/${notification.related_vehicle_id}`);
         }
         break;
       case "group_member":
-      case "group_invite":
         if (notification.related_group_id) {
+          onClose();
           router.push(`/groups/${notification.related_group_id}`);
+        }
+        break;
+      case "group_invite":
+        // Extract group name from notification body
+        const groupName = notification.body.split("join ")[1] || "this group";
+        const invitationId = notification.data?.invitationId;
+
+        if (!invitationId) {
+          showError("Invalid invitation");
+          return;
+        }
+
+        // Use browser confirm on web, Alert.alert on native
+        if (Platform.OS === "web") {
+          const confirmed = window.confirm(`Do you want to join ${groupName}?`);
+          if (confirmed) {
+            handleAcceptInvitation(invitationId, groupName);
+          } else {
+            handleDeclineInvitation(invitationId);
+          }
+        } else {
+          Alert.alert(
+            "Group Invitation",
+            `Do you want to join ${groupName}?`,
+            [
+              {
+                text: "No",
+                style: "cancel",
+                onPress: () => handleDeclineInvitation(invitationId),
+              },
+              {
+                text: "Yes",
+                onPress: () => handleAcceptInvitation(invitationId, groupName),
+              },
+            ],
+            { cancelable: true },
+          );
         }
         break;
       default:
