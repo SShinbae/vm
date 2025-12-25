@@ -29,8 +29,7 @@ export class StorageSetupTester {
       console.error("Error checking bucket existence:", err);
       return {
         data: false,
-        error:
-          err instanceof Error ? err.message : "Failed to check bucket",
+        error: err instanceof Error ? err.message : "Failed to check bucket",
         loading: false,
       };
     }
@@ -57,6 +56,7 @@ export class StorageSetupTester {
 
       const testFileName = `${user.id}/test_${Date.now()}.png`;
 
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { data, error } = await supabase.storage
         .from("receipt-images")
         .upload(testFileName, testBlob, {
@@ -90,7 +90,7 @@ export class StorageSetupTester {
   static async testSchemaUpdate(): Promise<ApiResponse<boolean>> {
     try {
       // Try to select the new columns from service_logs table
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from("service_logs")
         .select("receipt_image_url, ocr_extracted_data, auto_filled")
         .limit(1);
@@ -116,9 +116,7 @@ export class StorageSetupTester {
       return {
         data: false,
         error:
-          err instanceof Error
-            ? err.message
-            : "Failed to test schema update",
+          err instanceof Error ? err.message : "Failed to test schema update",
         loading: false,
       };
     }
