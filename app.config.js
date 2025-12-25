@@ -37,7 +37,7 @@ module.exports = {
       ],
     },
     web: {
-      output: "static",
+      output: "single",
       favicon: "./assets/images/vm_logo.png",
       bundler: "metro",
       name: "Vehicle Management System",

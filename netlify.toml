@@ -1,16 +1,26 @@
 [build]
-  command = "rm -f package-lock.json && npm install --force lightningcss && npm install && npm run build"
+  command = "npm install && npm run build"
   publish = "dist"
   functions = "netlify/functions"
 
 [build.environment]
   NODE_VERSION = "20"
   EXPO_PLATFORM = "web"
-  EXPO_USE_FAST_RESOLVER = "1"
-  USE_SIMPLE_CSS_MINIFIER = "1"
+  NODE_ENV = "production"
 
 [functions]
   node_bundler = "esbuild"
+
+# Proper headers for JavaScript modules
+[[headers]]
+  for = "/*.js"
+  [headers.values]
+    Content-Type = "application/javascript; charset=utf-8"
+
+[[headers]]
+  for = "/assets/*.js"
+  [headers.values]
+    Content-Type = "application/javascript; charset=utf-8"
 
 # API routes for Netlify Functions
 [[redirects]]

@@ -2,6 +2,9 @@ module.exports = function (api) {
   api.cache(true);
 
   const plugins = [
+    // Transform import.meta to avoid syntax errors
+    "@babel/plugin-syntax-import-meta",
+
     // React Native reanimated plugin (if you use reanimated)
     "react-native-reanimated/plugin",
 

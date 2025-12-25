@@ -96,6 +96,8 @@
     "victory-native": "^41.20.1"
   },
   "devDependencies": {
+    "@babel/plugin-syntax-import-meta": "^7.10.4",
+    "@expo/webpack-config": "^19.0.1",
     "@netlify/functions": "^2.8.2",
     "@react-native/codegen": "^0.82.0",
     "@testing-library/react-native": "^13.3.3",
@@ -103,6 +105,7 @@
     "@types/react": "~19.1.10",
     "@typescript-eslint/eslint-plugin": "^8.46.0",
     "@typescript-eslint/parser": "^8.46.0",
+    "babel-plugin-transform-import-meta": "^2.3.3",
     "babel-plugin-transform-remove-console": "^6.9.4",
     "eslint": "^9.38.0",
     "eslint-config-expo": "~10.0.0",
@@ -118,7 +121,8 @@
     "sharp": "^0.34.5",
     "ts-jest": "^29.4.5",
     "typescript": "~5.9.2",
-    "victory": "^37.3.6"
+    "victory": "^37.3.6",
+    "webpack-dev-server": "^5.2.2"
   },
   "engines": {
     "node": ">=20.0.0"
