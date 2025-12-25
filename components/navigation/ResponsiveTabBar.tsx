@@ -10,7 +10,7 @@ interface TabBarBadgeProps {
 }
 
 const TabBarBadge: React.FC<TabBarBadgeProps> = ({ count }) => {
-  const { styles, theme } = useStyles(stylesheet);
+  const { styles } = useStyles(stylesheet);
 
   if (!count || count === 0) return null;
 

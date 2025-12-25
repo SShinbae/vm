@@ -206,10 +206,7 @@ export class VehicleServiceFallback {
 
       // Try to include shared_with_groups if it exists
       try {
-        const { data: testVehicles } = await supabase
-          .from("vehicles")
-          .select("shared_with_groups")
-          .limit(1);
+        await supabase.from("vehicles").select("shared_with_groups").limit(1);
 
         // Column exists, include it
         vehicleData.shared_with_groups = vehicle.shared_with_groups ?? false;
@@ -395,10 +392,7 @@ export class VehicleServiceFallback {
 
       // Check if shared_with_groups column exists
       try {
-        const { data: testVehicles } = await supabase
-          .from("vehicles")
-          .select("shared_with_groups")
-          .limit(1);
+        await supabase.from("vehicles").select("shared_with_groups").limit(1);
 
         // Column exists, update it
         const updateData: any = {

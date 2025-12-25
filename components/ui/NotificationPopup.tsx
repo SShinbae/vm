@@ -193,7 +193,7 @@ export function NotificationPopup({
       fadeAnim.setValue(0);
       slideAnim.setValue(-10);
     }
-  }, [visible]);
+  }, [visible, fadeAnim, slideAnim]);
 
   const handleAcceptInvitation = async (
     invitationId: string,
@@ -213,8 +213,8 @@ export function NotificationPopup({
         showSuccess(`You joined ${groupName}!`);
         await refreshNotifications();
       }
-    } catch (error) {
-      console.error("❌ Exception accepting invitation:", error);
+    } catch {
+      console.error("❌ Exception accepting invitation");
       showError("Failed to accept invitation");
     }
   };
@@ -230,7 +230,7 @@ export function NotificationPopup({
         showInfo("Invitation declined");
         await refreshNotifications();
       }
-    } catch (error) {
+    } catch {
       showError("Failed to decline invitation");
     }
   };

@@ -22,6 +22,7 @@ import { Image } from "expo-image";
 import { router } from "expo-router";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
+  ActivityIndicator,
   RefreshControl,
   ScrollView,
   Text,
@@ -58,6 +59,16 @@ export default function LogsScreen() {
   const [showAllLogsForVehicle, setShowAllLogsForVehicle] = useState<
     Set<string>
   >(new Set());
+
+  // OPTIMIZATION: Pagination state
+  const [mileagePage, setMileagePage] = useState(0);
+  const [fuelPage, setFuelPage] = useState(0);
+  const [servicePage, setServicePage] = useState(0);
+  const [hasMoreMileage, setHasMoreMileage] = useState(true);
+  const [hasMoreFuel, setHasMoreFuel] = useState(true);
+  const [hasMoreService, setHasMoreService] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const PAGE_SIZE = 20;
 
   // Modal states
   const [deleteModalVisible, setDeleteModalVisible] = useState(false);
@@ -97,13 +108,23 @@ export default function LogsScreen() {
     }
   };
 
+  // OPTIMIZATION: Fetch initial logs with pagination
   const fetchAllLogs = useCallback(async () => {
     try {
       const results = await safePromiseAll(
         [
-          MileageLogService.getMileageLogs(),
-          FuelLogService.getFuelLogs() as any,
-          ServiceLogService.getServiceLogs() as any,
+          MileageLogService.getMileageLogs(undefined, {
+            limit: PAGE_SIZE,
+            offset: 0,
+          }),
+          FuelLogService.getFuelLogs(undefined, {
+            limit: PAGE_SIZE,
+            offset: 0,
+          }) as any,
+          ServiceLogService.getServiceLogs(undefined, {
+            limit: PAGE_SIZE,
+            offset: 0,
+          }) as any,
         ],
         8000,
       );
@@ -114,43 +135,168 @@ export default function LogsScreen() {
         isFulfilled(mileageResult) &&
         (mileageResult.value as { data: MileageLog[] }).data
       ) {
-        setMileageLogs((mileageResult.value as { data: MileageLog[] }).data);
+        const data = (mileageResult.value as { data: MileageLog[] }).data;
+        setMileageLogs(data);
+        setHasMoreMileage(data.length === PAGE_SIZE);
+        setMileagePage(1);
       } else {
         setMileageLogs([]);
+        setHasMoreMileage(false);
       }
 
       if (
         isFulfilled(fuelResult) &&
         (fuelResult.value as { data: FuelLog[] }).data
       ) {
-        setFuelLogs((fuelResult.value as { data: FuelLog[] }).data);
+        const data = (fuelResult.value as { data: FuelLog[] }).data;
+        setFuelLogs(data);
+        setHasMoreFuel(data.length === PAGE_SIZE);
+        setFuelPage(1);
       } else {
         setFuelLogs([]);
+        setHasMoreFuel(false);
       }
 
       if (
         isFulfilled(serviceResult) &&
         (serviceResult.value as { data: ServiceLog[] }).data
       ) {
-        setServiceLogs((serviceResult.value as { data: ServiceLog[] }).data);
+        const data = (serviceResult.value as { data: ServiceLog[] }).data;
+        setServiceLogs(data);
+        setHasMoreService(data.length === PAGE_SIZE);
+        setServicePage(1);
       } else {
         setServiceLogs([]);
+        setHasMoreService(false);
       }
     } catch (error) {
       console.error("Error fetching logs:", error);
       setMileageLogs([]);
       setFuelLogs([]);
       setServiceLogs([]);
+      setHasMoreMileage(false);
+      setHasMoreFuel(false);
+      setHasMoreService(false);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [PAGE_SIZE]);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
+    // Reset pagination on refresh
+    setMileagePage(0);
+    setFuelPage(0);
+    setServicePage(0);
     await fetchAllLogs();
     setRefreshing(false);
   }, [fetchAllLogs]);
+
+  // OPTIMIZATION: Load more logs for pagination
+  const loadMoreLogs = useCallback(
+    async (type: LogType) => {
+      if (loadingMore) return;
+
+      const currentPage =
+        type === "mileage"
+          ? mileagePage
+          : type === "fuel"
+            ? fuelPage
+            : servicePage;
+      const hasMore =
+        type === "mileage"
+          ? hasMoreMileage
+          : type === "fuel"
+            ? hasMoreFuel
+            : hasMoreService;
+
+      if (!hasMore) return;
+
+      setLoadingMore(true);
+      try {
+        const offset = currentPage * PAGE_SIZE;
+        let result;
+
+        switch (type) {
+          case "mileage":
+            result = await MileageLogService.getMileageLogs(undefined, {
+              limit: PAGE_SIZE,
+              offset,
+            });
+            break;
+          case "fuel":
+            result = await FuelLogService.getFuelLogs(undefined, {
+              limit: PAGE_SIZE,
+              offset,
+            });
+            break;
+          case "service":
+            result = await ServiceLogService.getServiceLogs(undefined, {
+              limit: PAGE_SIZE,
+              offset,
+            });
+            break;
+        }
+
+        if (
+          result?.data &&
+          Array.isArray(result.data) &&
+          result.data.length > 0
+        ) {
+          switch (type) {
+            case "mileage":
+              setMileageLogs((prev) => [
+                ...prev,
+                ...(result.data as MileageLog[]),
+              ]);
+              setHasMoreMileage(result.data.length === PAGE_SIZE);
+              setMileagePage((prev) => prev + 1);
+              break;
+            case "fuel":
+              setFuelLogs((prev) => [...prev, ...(result.data as FuelLog[])]);
+              setHasMoreFuel(result.data.length === PAGE_SIZE);
+              setFuelPage((prev) => prev + 1);
+              break;
+            case "service":
+              setServiceLogs((prev) => [
+                ...prev,
+                ...(result.data as ServiceLog[]),
+              ]);
+              setHasMoreService(result.data.length === PAGE_SIZE);
+              setServicePage((prev) => prev + 1);
+              break;
+          }
+        } else {
+          // No more logs to load
+          switch (type) {
+            case "mileage":
+              setHasMoreMileage(false);
+              break;
+            case "fuel":
+              setHasMoreFuel(false);
+              break;
+            case "service":
+              setHasMoreService(false);
+              break;
+          }
+        }
+      } catch (error) {
+        console.error(`Error loading more ${type} logs:`, error);
+      } finally {
+        setLoadingMore(false);
+      }
+    },
+    [
+      loadingMore,
+      mileagePage,
+      fuelPage,
+      servicePage,
+      hasMoreMileage,
+      hasMoreFuel,
+      hasMoreService,
+      PAGE_SIZE,
+    ],
+  );
 
   const handleDeleteLog = (type: LogType, id: string, description: string) => {
     setSelectedLog({ type, id, description });
@@ -851,7 +997,7 @@ export default function LogsScreen() {
     );
   };
 
-  const getCurrentLogs = () => {
+  const getCurrentLogs = useCallback(() => {
     switch (activeTab) {
       case "mileage":
         return mileageLogs;
@@ -862,7 +1008,7 @@ export default function LogsScreen() {
       default:
         return [];
     }
-  };
+  }, [activeTab, mileageLogs, fuelLogs, serviceLogs]);
 
   const getGroupedLogsByVehicle = useCallback(() => {
     const logs = getCurrentLogs();
@@ -1190,6 +1336,53 @@ export default function LogsScreen() {
                   </View>
                 );
               },
+            )}
+
+            {/* OPTIMIZATION: Load More Button */}
+            {((activeTab === "mileage" && hasMoreMileage) ||
+              (activeTab === "fuel" && hasMoreFuel) ||
+              (activeTab === "service" && hasMoreService)) && (
+              <View
+                style={{
+                  paddingHorizontal: theme.spacing.xl,
+                  paddingBottom: theme.spacing.xl,
+                }}
+              >
+                <TouchableOpacity
+                  style={{
+                    backgroundColor: theme.colors.primary,
+                    borderRadius: theme.borderRadius.lg,
+                    padding: theme.spacing.lg,
+                    alignItems: "center",
+                    flexDirection: "row",
+                    justifyContent: "center",
+                    gap: theme.spacing.sm,
+                  }}
+                  onPress={() => loadMoreLogs(activeTab)}
+                  disabled={loadingMore}
+                >
+                  {loadingMore ? (
+                    <ActivityIndicator color={theme.colors.white} />
+                  ) : (
+                    <>
+                      <Text
+                        style={{
+                          fontSize: theme.fontSize.base,
+                          fontWeight: theme.fontWeight.semibold,
+                          color: theme.colors.white,
+                        }}
+                      >
+                        Load More Logs
+                      </Text>
+                      <IconSymbol
+                        name="arrow.down.circle"
+                        size={20}
+                        color={theme.colors.white}
+                      />
+                    </>
+                  )}
+                </TouchableOpacity>
+              </View>
             )}
           </ScrollView>
         )}

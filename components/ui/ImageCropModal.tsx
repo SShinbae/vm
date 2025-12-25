@@ -1,12 +1,8 @@
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
-import * as ImageManipulator from "expo-image-manipulator";
 import React, { useCallback, useState } from "react";
 import {
-  Animated,
-  Image,
   Modal,
-  PanResponder,
   Platform,
   StyleSheet,
   Text,
@@ -146,24 +142,6 @@ interface ImageCropModalProps {
   description?: string;
   aspectRatio?: number;
 }
-
-interface CropArea {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-}
-
-type ResizeHandle =
-  | "topLeft"
-  | "topRight"
-  | "bottomLeft"
-  | "bottomRight"
-  | "top"
-  | "right"
-  | "bottom"
-  | "left"
-  | null;
 
 export const ImageCropModal: React.FC<ImageCropModalProps> = ({
   visible,

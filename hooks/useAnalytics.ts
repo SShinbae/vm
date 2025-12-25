@@ -28,9 +28,12 @@ import {
   TrendDataPoint,
   VehiclePerformance,
 } from "../types/analytics";
+// OPTIMIZATION: Import Web Worker hook for off-thread calculations
+import { useAnalyticsWorker } from "./useAnalyticsWorker";
 
 /**
  * Main hook for analytics data
+ * OPTIMIZATION: Now uses Web Workers for heavy calculations
  */
 export function useAnalyticsData(filters: AnalyticsFilters) {
   const { user } = useAuth();
@@ -47,8 +50,11 @@ export function useAnalyticsData(filters: AnalyticsFilters) {
     VehiclePerformance[]
   >([]);
 
+  // OPTIMIZATION: Use Web Worker for calculations
+  const { calculateAllMetrics, isReady } = useAnalyticsWorker();
+
   const fetchData = useCallback(async () => {
-    if (!user?.id) return;
+    if (!user?.id || !isReady) return;
 
     try {
       setLoading(true);
@@ -56,38 +62,36 @@ export function useAnalyticsData(filters: AnalyticsFilters) {
 
       const data = await fetchAnalyticsData(user.id, filters);
 
-      // Calculate metrics
-      const totalDistance = calculateTotalDistance(data.mileageLogs);
-      const fuel = calculateFuelEfficiency(data.fuelLogs, data.mileageLogs);
-      const cost = calculateCostMetrics(
-        data.fuelLogs,
-        data.serviceLogs,
-        fuel.totalDistance || totalDistance,
-      );
-      const service = calculateServiceMetrics(data.serviceLogs, data.vehicles);
-
-      // Calculate vehicle comparison if multiple vehicles
-      let comparison: VehiclePerformance[] = [];
+      // Fetch vehicle logs if needed
+      let vehiclesWithLogs;
       if (data.vehicles.length > 0) {
-        const vehiclesWithLogs = await fetchVehiclesWithLogs(
+        vehiclesWithLogs = await fetchVehiclesWithLogs(
           data.vehicles.map((v) => v.id),
           filters.period.startDate,
           filters.period.endDate,
         );
-        comparison = calculateVehicleComparison(vehiclesWithLogs);
       }
 
-      setFuelMetrics(fuel);
-      setCostMetrics(cost);
-      setServiceMetrics(service);
-      setVehicleComparison(comparison);
+      // OPTIMIZATION: Calculate all metrics in Web Worker
+      const metrics = await calculateAllMetrics({
+        fuelLogs: data.fuelLogs,
+        serviceLogs: data.serviceLogs,
+        mileageLogs: data.mileageLogs,
+        vehicles: data.vehicles,
+        vehiclesWithLogs,
+      });
+
+      setFuelMetrics(metrics.fuelMetrics);
+      setCostMetrics(metrics.costMetrics);
+      setServiceMetrics(metrics.serviceMetrics);
+      setVehicleComparison(metrics.vehicleComparison);
     } catch (err) {
       console.error("Error fetching analytics data:", err);
       setError(err as Error);
     } finally {
       setLoading(false);
     }
-  }, [user?.id, filters]);
+  }, [user?.id, filters, isReady, calculateAllMetrics]);
 
   useEffect(() => {
     fetchData();
@@ -106,6 +110,7 @@ export function useAnalyticsData(filters: AnalyticsFilters) {
 
 /**
  * Hook for analytics trends
+ * OPTIMIZATION: Now uses Web Workers for trend generation
  */
 export function useAnalyticsTrends(
   filters: AnalyticsFilters,
@@ -118,44 +123,38 @@ export function useAnalyticsTrends(
     null,
   );
 
+  // OPTIMIZATION: Use Web Worker for trend calculations
+  const { generateTrendDataAsync, isReady } = useAnalyticsWorker();
+
   useEffect(() => {
     async function fetchTrends() {
-      if (!user?.id) return;
+      if (!user?.id || !isReady) return;
 
       try {
         setLoading(true);
         const data = await fetchAnalyticsData(user.id, filters);
 
         let trends: TrendDataPoint[] = [];
+        let logs: any[] = [];
         let metricType: "cost" | "efficiency" | "frequency" = "cost";
 
         switch (metric) {
           case "fuel":
-            trends = generateTrendData(
-              data.fuelLogs,
-              filters.period,
-              "efficiency",
-            );
+            logs = data.fuelLogs;
             metricType = "efficiency";
             break;
           case "service":
-            trends = generateTrendData(
-              data.serviceLogs,
-              filters.period,
-              "frequency",
-            );
+            logs = data.serviceLogs;
             metricType = "frequency";
             break;
           case "cost":
-            trends = generateTrendData(
-              [...data.fuelLogs, ...data.serviceLogs],
-              filters.period,
-              "cost",
-            );
+            logs = [...data.fuelLogs, ...data.serviceLogs];
             metricType = "cost";
             break;
         }
 
+        // OPTIMIZATION: Generate trends in Web Worker
+        trends = await generateTrendDataAsync(logs, filters.period, metricType);
         setTrendData(trends);
 
         // Calculate trend analysis (compare first half vs second half)
@@ -207,7 +206,7 @@ export function useAnalyticsTrends(
     }
 
     fetchTrends();
-  }, [user?.id, filters, metric]);
+  }, [user?.id, filters, metric, isReady, generateTrendDataAsync]);
 
   return { loading, trendData, trendAnalysis };
 }

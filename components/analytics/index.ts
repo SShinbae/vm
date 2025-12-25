@@ -9,3 +9,13 @@ export { AnalyticsTabBar } from "./AnalyticsTabBar";
 export { AnalyticsHeader } from "./AnalyticsHeader";
 export { CostBreakdownCard } from "./CostBreakdownCard";
 export { StatCard } from "./StatCard";
+
+// OPTIMIZATION: Export lazy-loaded chart components for code splitting
+export {
+  LazyTrendLineChart as LazyTrendLineChartV2,
+  LazyCostLineChart,
+  LazyCostAreaChart,
+  LazyCostBarChart,
+  LazyCostPieChart,
+  LazyCostStackedBarChart,
+} from "./LazyChartComponents";
