@@ -13,12 +13,14 @@ import {
   usePeriodSelector,
   useVehicleFilter,
 } from "@/hooks/useAnalytics";
+import { useResponsiveLayout } from "@/hooks/use-responsive-layout";
 import React, { useMemo } from "react";
 import { RefreshControl, ScrollView, Text, View } from "react-native";
 import { useStyles } from "react-native-unistyles";
 
 export default function OverviewTab() {
   const { theme } = useStyles();
+  const { isMobile, isTablet } = useResponsiveLayout();
   const { period, setPeriod, periods } = usePeriodSelector();
   const {
     vehicles,
@@ -62,13 +64,17 @@ export default function OverviewTab() {
         <ScrollView style={{ flex: 1 }}>
           <View
             style={{
-              paddingHorizontal: theme.spacing.xl,
-              paddingVertical: theme.spacing.lg,
+              paddingHorizontal: isMobile ? theme.spacing.lg : theme.spacing.xl,
+              paddingVertical: isMobile ? theme.spacing.md : theme.spacing.lg,
             }}
           >
             <Text
               style={{
-                fontSize: theme.fontSize["3xl"],
+                fontSize: isMobile
+                  ? theme.fontSize["2xl"]
+                  : isTablet
+                    ? theme.fontSize["2xl"]
+                    : theme.fontSize["3xl"],
                 fontWeight: theme.fontWeight.bold,
                 color: theme.colors.text,
                 marginBottom: theme.spacing.xs,
@@ -78,14 +84,16 @@ export default function OverviewTab() {
             </Text>
             <Text
               style={{
-                fontSize: theme.fontSize.base,
+                fontSize: isMobile ? theme.fontSize.sm : theme.fontSize.base,
                 color: theme.colors.textSecondary,
               }}
             >
               Track costs, fuel, and maintenance
             </Text>
           </View>
-          <View style={{ padding: theme.spacing.lg }}>
+          <View
+            style={{ padding: isMobile ? theme.spacing.md : theme.spacing.lg }}
+          >
             <EmptyAnalytics
               icon="alert-circle-outline"
               title="Error Loading Data"
@@ -104,13 +112,17 @@ export default function OverviewTab() {
         <ScrollView style={{ flex: 1 }}>
           <View
             style={{
-              paddingHorizontal: theme.spacing.xl,
-              paddingVertical: theme.spacing.lg,
+              paddingHorizontal: isMobile ? theme.spacing.lg : theme.spacing.xl,
+              paddingVertical: isMobile ? theme.spacing.md : theme.spacing.lg,
             }}
           >
             <Text
               style={{
-                fontSize: theme.fontSize["3xl"],
+                fontSize: isMobile
+                  ? theme.fontSize["2xl"]
+                  : isTablet
+                    ? theme.fontSize["2xl"]
+                    : theme.fontSize["3xl"],
                 fontWeight: theme.fontWeight.bold,
                 color: theme.colors.text,
                 marginBottom: theme.spacing.xs,
@@ -120,14 +132,16 @@ export default function OverviewTab() {
             </Text>
             <Text
               style={{
-                fontSize: theme.fontSize.base,
+                fontSize: isMobile ? theme.fontSize.sm : theme.fontSize.base,
                 color: theme.colors.textSecondary,
               }}
             >
               Track costs, fuel, and maintenance
             </Text>
           </View>
-          <View style={{ padding: theme.spacing.lg }}>
+          <View
+            style={{ padding: isMobile ? theme.spacing.md : theme.spacing.lg }}
+          >
             <PeriodSelector
               selectedPeriod={period}
               onPeriodChange={setPeriod}
@@ -167,14 +181,18 @@ export default function OverviewTab() {
         {/* Header */}
         <View
           style={{
-            paddingHorizontal: theme.spacing.xl,
-            paddingVertical: theme.spacing.lg,
+            paddingHorizontal: isMobile ? theme.spacing.lg : theme.spacing.xl,
+            paddingVertical: isMobile ? theme.spacing.md : theme.spacing.lg,
             backgroundColor: theme.colors.background,
           }}
         >
           <Text
             style={{
-              fontSize: theme.fontSize["3xl"],
+              fontSize: isMobile
+                ? theme.fontSize["2xl"]
+                : isTablet
+                  ? theme.fontSize["2xl"]
+                  : theme.fontSize["3xl"],
               fontWeight: theme.fontWeight.bold,
               color: theme.colors.text,
               marginBottom: theme.spacing.xs,
@@ -184,7 +202,7 @@ export default function OverviewTab() {
           </Text>
           <Text
             style={{
-              fontSize: theme.fontSize.base,
+              fontSize: isMobile ? theme.fontSize.sm : theme.fontSize.base,
               color: theme.colors.textSecondary,
             }}
           >
@@ -192,7 +210,9 @@ export default function OverviewTab() {
           </Text>
         </View>
 
-        <View style={{ padding: theme.spacing.lg }}>
+        <View
+          style={{ padding: isMobile ? theme.spacing.md : theme.spacing.lg }}
+        >
           {/* Filters */}
           <PeriodSelector
             selectedPeriod={period}
@@ -210,11 +230,15 @@ export default function OverviewTab() {
           {/* Summary Section */}
           <Text
             style={{
-              fontSize: theme.fontSize["2xl"],
+              fontSize: isMobile
+                ? theme.fontSize.xl
+                : isTablet
+                  ? theme.fontSize.xl
+                  : theme.fontSize["2xl"],
               fontWeight: theme.fontWeight.bold,
               color: theme.colors.text,
-              marginBottom: theme.spacing.md,
-              marginTop: theme.spacing.lg,
+              marginBottom: isMobile ? theme.spacing.sm : theme.spacing.md,
+              marginTop: isMobile ? theme.spacing.md : theme.spacing.lg,
             }}
           >
             Summary
@@ -222,9 +246,17 @@ export default function OverviewTab() {
 
           {/* Metric Cards Grid */}
           <View
-            style={{ gap: theme.spacing.md, marginBottom: theme.spacing.md }}
+            style={{
+              gap: isMobile ? theme.spacing.sm : theme.spacing.md,
+              marginBottom: theme.spacing.md,
+            }}
           >
-            <View style={{ flexDirection: "row", gap: theme.spacing.md }}>
+            <View
+              style={{
+                flexDirection: "row",
+                gap: isMobile ? theme.spacing.sm : theme.spacing.md,
+              }}
+            >
               <View style={{ flex: 1 }}>
                 <MetricCard
                   title="Total Cost"
@@ -243,7 +275,12 @@ export default function OverviewTab() {
               </View>
             </View>
 
-            <View style={{ flexDirection: "row", gap: theme.spacing.md }}>
+            <View
+              style={{
+                flexDirection: "row",
+                gap: isMobile ? theme.spacing.sm : theme.spacing.md,
+              }}
+            >
               <View style={{ flex: 1 }}>
                 <MetricCard
                   title="Fuel Cost"
@@ -266,11 +303,15 @@ export default function OverviewTab() {
           {/* Cost Breakdown Section */}
           <Text
             style={{
-              fontSize: theme.fontSize["2xl"],
+              fontSize: isMobile
+                ? theme.fontSize.xl
+                : isTablet
+                  ? theme.fontSize.xl
+                  : theme.fontSize["2xl"],
               fontWeight: theme.fontWeight.bold,
               color: theme.colors.text,
-              marginBottom: theme.spacing.md,
-              marginTop: theme.spacing.lg,
+              marginBottom: isMobile ? theme.spacing.sm : theme.spacing.md,
+              marginTop: isMobile ? theme.spacing.md : theme.spacing.lg,
             }}
           >
             Cost Breakdown
@@ -284,11 +325,15 @@ export default function OverviewTab() {
           {/* Quick Stats Section */}
           <Text
             style={{
-              fontSize: theme.fontSize["2xl"],
+              fontSize: isMobile
+                ? theme.fontSize.xl
+                : isTablet
+                  ? theme.fontSize.xl
+                  : theme.fontSize["2xl"],
               fontWeight: theme.fontWeight.bold,
               color: theme.colors.text,
-              marginBottom: theme.spacing.md,
-              marginTop: theme.spacing.lg,
+              marginBottom: isMobile ? theme.spacing.sm : theme.spacing.md,
+              marginTop: isMobile ? theme.spacing.md : theme.spacing.lg,
             }}
           >
             Quick Stats
@@ -296,7 +341,7 @@ export default function OverviewTab() {
           <View
             style={{
               flexDirection: "row",
-              gap: theme.spacing.md,
+              gap: isMobile ? theme.spacing.sm : theme.spacing.md,
               marginBottom: theme.spacing.md,
             }}
           >
@@ -316,16 +361,22 @@ export default function OverviewTab() {
             <>
               <Text
                 style={{
-                  fontSize: theme.fontSize["2xl"],
+                  fontSize: isMobile
+                    ? theme.fontSize.xl
+                    : isTablet
+                      ? theme.fontSize.xl
+                      : theme.fontSize["2xl"],
                   fontWeight: theme.fontWeight.bold,
                   color: theme.colors.text,
-                  marginBottom: theme.spacing.md,
-                  marginTop: theme.spacing.lg,
+                  marginBottom: isMobile ? theme.spacing.sm : theme.spacing.md,
+                  marginTop: isMobile ? theme.spacing.md : theme.spacing.lg,
                 }}
               >
                 Upcoming Maintenance
               </Text>
-              <View style={{ gap: theme.spacing.md }}>
+              <View
+                style={{ gap: isMobile ? theme.spacing.sm : theme.spacing.md }}
+              >
                 {upcomingServices.map((service, index) => (
                   <UpcomingServiceCard key={index} service={service} />
                 ))}

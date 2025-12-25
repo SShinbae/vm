@@ -1,4 +1,5 @@
 import { useColorScheme } from "@/hooks/use-color-scheme";
+import { useResponsiveLayout } from "@/hooks/use-responsive-layout";
 import React from "react";
 import {
   Text as RNText,
@@ -39,6 +40,12 @@ export const Text: React.FC<TextComponentProps> = ({
 }) => {
   const colorScheme = useColorScheme();
   const colors = theme.getThemeColors(colorScheme);
+  const layout = useResponsiveLayout();
+
+  // Select font scale based on platform
+  const fontScale = layout.useDesktopTypography
+    ? tokens.fontSizeDesktop
+    : tokens.fontSize;
 
   // Variant-based font sizes
   const variantSizes: Record<typeof variant, keyof typeof tokens.fontSize> = {
@@ -60,10 +67,8 @@ export const Text: React.FC<TextComponentProps> = ({
   };
 
   // Final font size (size prop overrides variant default)
-  const fontSize =
-    size !== "md"
-      ? tokens.fontSize[sizeMap[size]]
-      : tokens.fontSize[variantSizes[variant]];
+  const fontSizeKey = size !== "md" ? sizeMap[size] : variantSizes[variant];
+  const fontSize = fontScale[fontSizeKey];
 
   // Font weight mapping
   const fontWeight = tokens.fontWeight[weight];

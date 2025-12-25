@@ -203,13 +203,6 @@ export const Input = forwardRef<TextInput, InputProps>(
       }
     };
 
-    const getBorderColor = () => {
-      if (error) return colors.error;
-      if (success) return colors.success;
-      if (isFocused) return colors.primary;
-      return colors.icon;
-    };
-
     const getIconColor = () => {
       if (error) return colors.error;
       if (success) return colors.success;

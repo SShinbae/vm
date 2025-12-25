@@ -50,5 +50,6 @@ const stylesheet = createStyleSheet((theme) => ({
     flexWrap: "wrap",
     gap: theme.spacing.sm,
     paddingVertical: theme.spacing.xs,
+    justifyContent: "center",
   },
 }));

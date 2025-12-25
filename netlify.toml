@@ -6,7 +6,6 @@
 [build.environment]
   NODE_VERSION = "20"
   EXPO_PLATFORM = "web"
-  NPM_FLAGS = "--include=optional"
   EXPO_USE_FAST_RESOLVER = "1"
   USE_SIMPLE_CSS_MINIFIER = "1"
 

@@ -70,9 +70,24 @@ export default function VehiclesScreen() {
     return (
       <SafeAreaView style={styles.container}>
         <WebLayout>
-          <View style={styles.header}>
-            <Text style={styles.greeting}>Vehicles</Text>
-            <Text style={styles.subtitle}>Loading your fleet...</Text>
+          <View style={[styles.header, layout.isMobile && styles.headerMobile]}>
+            <Text
+              style={[
+                styles.greeting,
+                layout.isMobile && styles.greetingMobile,
+                layout.isTablet && styles.greetingTablet,
+              ]}
+            >
+              Vehicles
+            </Text>
+            <Text
+              style={[
+                styles.subtitle,
+                layout.isMobile && styles.subtitleMobile,
+              ]}
+            >
+              Loading your fleet...
+            </Text>
           </View>
           <SkeletonVehicleList itemCount={4} />
         </WebLayout>
@@ -97,21 +112,48 @@ export default function VehiclesScreen() {
             showsVerticalScrollIndicator={false}
           >
             {/* Header */}
-            <View style={styles.header}>
-              <Text style={styles.greeting}>Vehicles</Text>
-              <Text style={styles.subtitle}>
+            <View
+              style={[styles.header, layout.isMobile && styles.headerMobile]}
+            >
+              <Text
+                style={[
+                  styles.greeting,
+                  layout.isMobile && styles.greetingMobile,
+                  layout.isTablet && styles.greetingTablet,
+                ]}
+              >
+                Vehicles
+              </Text>
+              <Text
+                style={[
+                  styles.subtitle,
+                  layout.isMobile && styles.subtitleMobile,
+                ]}
+              >
                 Manage your fleet and maintenance
               </Text>
             </View>
 
             {/* Statistics Summary */}
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Overview</Text>
+            <View
+              style={[styles.section, layout.isMobile && styles.sectionMobile]}
+            >
+              <Text
+                style={[
+                  styles.sectionTitle,
+                  layout.isMobile && styles.sectionTitleMobile,
+                  layout.isTablet && styles.sectionTitleTablet,
+                ]}
+              >
+                Overview
+              </Text>
               <VehicleStatsGrid stats={stats} />
             </View>
 
             {/* Search Bar */}
-            <View style={styles.section}>
+            <View
+              style={[styles.section, layout.isMobile && styles.sectionMobile]}
+            >
               <VehicleSearchBar
                 searchQuery={searchQuery}
                 onSearchChange={setSearchQuery}
@@ -119,7 +161,9 @@ export default function VehiclesScreen() {
             </View>
 
             {/* Filter Chips */}
-            <View style={styles.section}>
+            <View
+              style={[styles.section, layout.isMobile && styles.sectionMobile]}
+            >
               <VehicleFilters
                 activeFilter={activeFilter}
                 onFilterChange={setActiveFilter}
@@ -127,7 +171,9 @@ export default function VehiclesScreen() {
             </View>
 
             {/* Vehicles Grid/List */}
-            <View style={styles.section}>
+            <View
+              style={[styles.section, layout.isMobile && styles.sectionMobile]}
+            >
               <VehicleList
                 vehicles={filteredVehicles}
                 filterLabel={filterLabel}
@@ -166,15 +212,28 @@ const stylesheet = createStyleSheet((theme) => ({
     paddingVertical: theme.spacing.lg,
     backgroundColor: theme.colors.background,
   },
+  headerMobile: {
+    paddingHorizontal: theme.spacing.lg,
+    paddingVertical: theme.spacing.md,
+  },
   greeting: {
     fontSize: theme.fontSize["3xl"],
     fontWeight: theme.fontWeight.bold,
     color: theme.colors.text,
     marginBottom: theme.spacing.xs,
   },
+  greetingMobile: {
+    fontSize: theme.fontSize["2xl"],
+  },
+  greetingTablet: {
+    fontSize: theme.fontSize["2xl"],
+  },
   subtitle: {
     fontSize: theme.fontSize.base,
     color: theme.colors.textSecondary,
+  },
+  subtitleMobile: {
+    fontSize: theme.fontSize.sm,
   },
   content: {
     flex: 1,
@@ -186,11 +245,22 @@ const stylesheet = createStyleSheet((theme) => ({
     paddingHorizontal: theme.spacing.xl,
     marginBottom: theme.spacing.xl,
   },
+  sectionMobile: {
+    paddingHorizontal: theme.spacing.lg,
+    marginBottom: theme.spacing.lg,
+  },
   sectionTitle: {
     fontSize: theme.fontSize.xl,
     fontWeight: theme.fontWeight.semibold,
     color: theme.colors.text,
     marginBottom: theme.spacing.lg,
+  },
+  sectionTitleMobile: {
+    fontSize: theme.fontSize.lg,
+    marginBottom: theme.spacing.md,
+  },
+  sectionTitleTablet: {
+    fontSize: theme.fontSize.lg,
   },
   statsGrid: {
     flexDirection: "row",

@@ -21,9 +21,10 @@ import { IconSymbol } from "./icon-symbol";
 let createPortal: any = null;
 if (Platform.OS === "web") {
   try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const ReactDOM = require("react-dom");
     createPortal = ReactDOM.createPortal;
-  } catch (e) {
+  } catch {
     // Fallback if react-dom is not available
   }
 }

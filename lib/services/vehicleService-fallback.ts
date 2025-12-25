@@ -135,8 +135,8 @@ export class VehicleServiceFallback {
       });
 
       return { data: allVehicles, error: null, loading: false };
-    } catch {
-      console.error("Unexpected error fetching vehicles:", error);
+    } catch (err) {
+      console.error("Unexpected error fetching vehicles:", err);
       return { data: null, error: "Failed to fetch vehicles", loading: false };
     }
   }
@@ -164,8 +164,8 @@ export class VehicleServiceFallback {
       }
 
       return { data, error: null, loading: false };
-    } catch {
-      console.error("Unexpected error fetching vehicle:", error);
+    } catch (err) {
+      console.error("Unexpected error fetching vehicle:", err);
       return { data: null, error: "Failed to fetch vehicle", loading: false };
     }
   }
@@ -206,10 +206,7 @@ export class VehicleServiceFallback {
 
       // Try to include shared_with_groups if it exists
       try {
-        const { data: testVehicles } = await supabase
-          .from("vehicles")
-          .select("shared_with_groups")
-          .limit(1);
+        await supabase.from("vehicles").select("shared_with_groups").limit(1);
 
         // Column exists, include it
         vehicleData.shared_with_groups = vehicle.shared_with_groups ?? false;
@@ -232,8 +229,8 @@ export class VehicleServiceFallback {
       }
 
       return { data, error: null, loading: false };
-    } catch {
-      console.error("Unexpected error creating vehicle:", error);
+    } catch (err) {
+      console.error("Unexpected error creating vehicle:", err);
       return { data: null, error: "Failed to create vehicle", loading: false };
     }
   }
@@ -291,8 +288,8 @@ export class VehicleServiceFallback {
       }
 
       return { data, error: null, loading: false };
-    } catch {
-      console.error("Unexpected error updating vehicle:", error);
+    } catch (err) {
+      console.error("Unexpected error updating vehicle:", err);
       return { data: null, error: "Failed to update vehicle", loading: false };
     }
   }
@@ -307,8 +304,8 @@ export class VehicleServiceFallback {
       }
 
       return { data: true, error: null, loading: false };
-    } catch {
-      console.error("Unexpected error deleting vehicle:", error);
+    } catch (err) {
+      console.error("Unexpected error deleting vehicle:", err);
       return { data: null, error: "Failed to delete vehicle", loading: false };
     }
   }
@@ -348,8 +345,8 @@ export class VehicleServiceFallback {
         fuelLogs: fuelLogs || [],
         nextService: nextService?.[0] || null,
       };
-    } catch {
-      console.error("Error fetching vehicle stats:", error);
+    } catch (err) {
+      console.error("Error fetching vehicle stats:", err);
       return {
         currentMileage: 0,
         fuelLogs: [],
@@ -395,10 +392,7 @@ export class VehicleServiceFallback {
 
       // Check if shared_with_groups column exists
       try {
-        const { data: testVehicles } = await supabase
-          .from("vehicles")
-          .select("shared_with_groups")
-          .limit(1);
+        await supabase.from("vehicles").select("shared_with_groups").limit(1);
 
         // Column exists, update it
         const updateData: any = {
@@ -426,8 +420,8 @@ export class VehicleServiceFallback {
           loading: false,
         };
       }
-    } catch {
-      console.error("Unexpected error toggling vehicle sharing:", error);
+    } catch (err) {
+      console.error("Unexpected error toggling vehicle sharing:", err);
       return {
         data: null,
         error: "Failed to update vehicle sharing",

@@ -42,11 +42,20 @@ const stylesheet = createStyleSheet((theme) => ({
   filterChip: {
     backgroundColor: theme.colors.surface,
     borderRadius: theme.borderRadius.full,
-    paddingHorizontal: theme.spacing.lg,
-    paddingVertical: theme.spacing.sm,
+    paddingHorizontal: {
+      xs: theme.spacing.md,
+      sm: theme.spacing.lg,
+    },
+    paddingVertical: {
+      xs: theme.spacing.xs,
+      sm: theme.spacing.sm,
+    },
     borderWidth: 1,
     borderColor: theme.colors.border,
-    minWidth: "30%", // Ensures 3 items per row on mobile
+    minWidth: {
+      xs: "30%", // Ensures 3 items per row on mobile
+      sm: "auto",
+    },
     alignItems: "center",
     justifyContent: "center",
   },
@@ -55,7 +64,10 @@ const stylesheet = createStyleSheet((theme) => ({
     borderColor: theme.colors.primary,
   },
   filterChipText: {
-    fontSize: theme.fontSize.sm,
+    fontSize: {
+      xs: theme.fontSize.xs,
+      sm: theme.fontSize.sm,
+    },
     fontWeight: theme.fontWeight.medium,
     color: theme.colors.text,
   },

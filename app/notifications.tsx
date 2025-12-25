@@ -1,5 +1,6 @@
 import React from "react";
 import {
+  Alert,
   Platform,
   RefreshControl,
   ScrollView,
@@ -15,29 +16,127 @@ import { NotificationList } from "@/components/ui/NotificationList";
 import { NotificationData } from "@/lib/services/notificationService";
 import { useResponsiveLayout } from "@/hooks/use-responsive-layout";
 import { useNotifications } from "@/lib/contexts/NotificationContext";
+import { GroupInvitationService } from "@/lib/services/groupService";
+import { useToast } from "@/hooks/useToast";
 
 export default function NotificationsScreen() {
   const { styles, theme } = useStyles(stylesheet);
   const { isDesktop } = useResponsiveLayout();
   const { unreadCount, refreshNotifications } = useNotifications();
+  const { showSuccess, showError, showInfo } = useToast();
   const [refreshing, setRefreshing] = React.useState(false);
 
+  const handleAcceptInvitation = async (
+    invitationId: string,
+    groupName: string,
+  ) => {
+    try {
+      const result =
+        await GroupInvitationService.acceptInvitation(invitationId);
+
+      if (result.error) {
+        showError(result.error);
+      } else {
+        showSuccess(`You joined ${groupName}!`);
+        // Refresh notifications to remove the invitation
+        await refreshNotifications();
+      }
+    } catch {
+      showError("Failed to accept invitation");
+    }
+  };
+
+  const handleDeclineInvitation = async (invitationId: string) => {
+    try {
+      const result =
+        await GroupInvitationService.declineInvitation(invitationId);
+
+      if (result.error) {
+        showError(result.error);
+      } else {
+        showInfo("Invitation declined");
+        // Refresh notifications
+        await refreshNotifications();
+      }
+    } catch {
+      showError("Failed to decline invitation");
+    }
+  };
+
   const handleNotificationPress = (notification: NotificationData) => {
+    console.log("🔔 Notification pressed:", notification);
+    console.log("🔔 Notification type:", notification.notification_type);
+    console.log("🔔 Related group ID:", notification.related_group_id);
+
     switch (notification.notification_type) {
       case "mileage_log":
       case "fuel_log":
       case "service_log":
         if (notification.related_vehicle_id) {
+          console.log(
+            "📍 Navigating to vehicle:",
+            notification.related_vehicle_id,
+          );
           router.push(`/vehicles/${notification.related_vehicle_id}`);
         }
         break;
       case "group_member":
-      case "group_invite":
         if (notification.related_group_id) {
-          router.push(`/vehicles/${notification.related_group_id}`);
+          console.log("📍 Navigating to group:", notification.related_group_id);
+          router.push(`/groups/${notification.related_group_id}`);
+        }
+        break;
+      case "group_invite":
+        // Extract group name from notification body
+        console.log("🔍 Full notification data:", notification);
+        console.log("🔍 notification.data:", notification.data);
+        console.log("🔍 notification.data type:", typeof notification.data);
+
+        const groupName = notification.body.split("join ")[1] || "this group";
+        const invitationId = notification.data?.invitationId;
+
+        console.log("🔍 Extracted invitationId:", invitationId);
+        console.log("🔍 Extracted groupName:", groupName);
+
+        if (!invitationId) {
+          console.error("❌ No invitation ID found!");
+          console.error(
+            "❌ Full notification object:",
+            JSON.stringify(notification, null, 2),
+          );
+          showError("Invalid invitation");
+          return;
+        }
+
+        // Use browser confirm on web, Alert.alert on native
+        if (Platform.OS === "web") {
+          const confirmed = window.confirm(`Do you want to join ${groupName}?`);
+          if (confirmed) {
+            handleAcceptInvitation(invitationId, groupName);
+          } else {
+            handleDeclineInvitation(invitationId);
+          }
+        } else {
+          Alert.alert(
+            "Group Invitation",
+            `Do you want to join ${groupName}?`,
+            [
+              {
+                text: "No",
+                style: "cancel",
+                onPress: () => handleDeclineInvitation(invitationId),
+              },
+              {
+                text: "Yes",
+                onPress: () => handleAcceptInvitation(invitationId, groupName),
+              },
+            ],
+            { cancelable: true },
+          );
         }
         break;
       default:
+        console.log("❓ Unknown notification type");
         break;
     }
   };

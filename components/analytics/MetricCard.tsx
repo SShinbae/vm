@@ -2,6 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import React from "react";
 import { Text, View } from "react-native";
 import { createStyleSheet, useStyles } from "react-native-unistyles";
+import { useResponsiveLayout } from "@/hooks/use-responsive-layout";
 
 interface MetricCardProps {
   title: string;
@@ -55,29 +56,51 @@ export function MetricCard({
   color,
 }: MetricCardProps) {
   const { styles, theme } = useStyles(stylesheet);
+  const { isMobile, isTablet } = useResponsiveLayout();
   const iconColors = getIconColors(icon, theme);
 
+  const iconSize = isMobile ? 20 : 24;
+
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, isMobile && styles.containerMobile]}>
       <View style={styles.content}>
         {icon && (
           <View
-            style={[styles.iconContainer, { backgroundColor: iconColors.bg }]}
+            style={[
+              styles.iconContainer,
+              { backgroundColor: iconColors.bg },
+              isMobile && styles.iconContainerMobile,
+            ]}
           >
-            <Ionicons name={icon} size={24} color={color || iconColors.color} />
+            <Ionicons
+              name={icon}
+              size={iconSize}
+              color={color || iconColors.color}
+            />
           </View>
         )}
         <View style={styles.textContainer}>
-          <Text style={styles.title}>{title}</Text>
+          <Text style={[styles.title, isMobile && styles.titleMobile]}>
+            {title}
+          </Text>
           <Text
-            style={[styles.value, color && { color }]}
+            style={[
+              styles.value,
+              color && { color },
+              isMobile && styles.valueMobile,
+              isTablet && styles.valueTablet,
+            ]}
             numberOfLines={1}
             adjustsFontSizeToFit
             minimumFontScale={0.7}
           >
             {value}
           </Text>
-          {subtitle && <Text style={styles.subtitle}>{subtitle}</Text>}
+          {subtitle && (
+            <Text style={[styles.subtitle, isMobile && styles.subtitleMobile]}>
+              {subtitle}
+            </Text>
+          )}
         </View>
       </View>
     </View>
@@ -97,6 +120,10 @@ const stylesheet = createStyleSheet((theme) => ({
     minHeight: 120,
     flex: 1,
   },
+  containerMobile: {
+    padding: theme.spacing.md,
+    minHeight: 100,
+  },
   content: {
     flexDirection: "row",
     alignItems: "flex-start",
@@ -109,6 +136,9 @@ const stylesheet = createStyleSheet((theme) => ({
     alignItems: "center",
     justifyContent: "center",
   },
+  iconContainerMobile: {
+    padding: theme.spacing.sm,
+  },
   textContainer: {
     flex: 1,
     justifyContent: "center",
@@ -119,6 +149,10 @@ const stylesheet = createStyleSheet((theme) => ({
     fontWeight: theme.fontWeight.medium,
     marginBottom: 4,
   },
+  titleMobile: {
+    fontSize: theme.fontSize.xs,
+    marginBottom: 2,
+  },
   value: {
     fontSize: theme.fontSize["2xl"],
     color: theme.colors.text,
@@ -127,8 +161,17 @@ const stylesheet = createStyleSheet((theme) => ({
     flexWrap: "nowrap",
     flexShrink: 1,
   },
+  valueMobile: {
+    fontSize: theme.fontSize.base,
+  },
+  valueTablet: {
+    fontSize: theme.fontSize.xl,
+  },
   subtitle: {
     fontSize: theme.fontSize.xs,
     color: theme.colors.textSecondary,
+  },
+  subtitleMobile: {
+    fontSize: 10,
   },
 }));

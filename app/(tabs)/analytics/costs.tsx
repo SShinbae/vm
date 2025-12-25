@@ -8,14 +8,15 @@ import {
   MetricCard,
   PeriodSelector,
   VehicleFilter,
+  LazyCostLineChart,
 } from "@/components/analytics";
-import { CostLineChart } from "@/components/analytics/charts";
 import {
   useAnalyticsData,
   useCostChartData,
   usePeriodSelector,
   useVehicleFilter,
 } from "@/hooks/useAnalytics";
+import { useResponsiveLayout } from "@/hooks/use-responsive-layout";
 import { formatDate } from "@/lib/utils/dateUtils";
 import { AnalyticsPeriod } from "@/types/analytics";
 import React, { useMemo, useState } from "react";
@@ -24,6 +25,7 @@ import { useStyles } from "react-native-unistyles";
 
 export default function CostsTab() {
   const { theme } = useStyles();
+  const { isMobile, isTablet } = useResponsiveLayout();
   const { period, setPeriod, periods } = usePeriodSelector();
   const [customPeriod, setCustomPeriod] = useState<AnalyticsPeriod | null>(
     null,
@@ -90,7 +92,7 @@ export default function CostsTab() {
         >
           <Text
             style={{
-              fontSize: theme.fontSize.base,
+              fontSize: isMobile ? theme.fontSize.sm : theme.fontSize.base,
               color: theme.colors.textSecondary,
             }}
           >
@@ -108,13 +110,17 @@ export default function CostsTab() {
         <ScrollView style={{ flex: 1 }}>
           <View
             style={{
-              paddingHorizontal: theme.spacing.xl,
-              paddingVertical: theme.spacing.lg,
+              paddingHorizontal: isMobile ? theme.spacing.lg : theme.spacing.xl,
+              paddingVertical: isMobile ? theme.spacing.md : theme.spacing.lg,
             }}
           >
             <Text
               style={{
-                fontSize: theme.fontSize["3xl"],
+                fontSize: isMobile
+                  ? theme.fontSize["2xl"]
+                  : isTablet
+                    ? theme.fontSize["2xl"]
+                    : theme.fontSize["3xl"],
                 fontWeight: theme.fontWeight.bold,
                 color: theme.colors.text,
                 marginBottom: theme.spacing.xs,
@@ -124,7 +130,7 @@ export default function CostsTab() {
             </Text>
             <Text
               style={{
-                fontSize: theme.fontSize.base,
+                fontSize: isMobile ? theme.fontSize.sm : theme.fontSize.base,
                 color: theme.colors.analytics.warning,
                 marginTop: theme.spacing.md,
               }}
@@ -148,13 +154,17 @@ export default function CostsTab() {
         {/* Header */}
         <View
           style={{
-            paddingHorizontal: theme.spacing.xl,
-            paddingVertical: theme.spacing.lg,
+            paddingHorizontal: isMobile ? theme.spacing.lg : theme.spacing.xl,
+            paddingVertical: isMobile ? theme.spacing.md : theme.spacing.lg,
           }}
         >
           <Text
             style={{
-              fontSize: theme.fontSize["3xl"],
+              fontSize: isMobile
+                ? theme.fontSize["2xl"]
+                : isTablet
+                  ? theme.fontSize["2xl"]
+                  : theme.fontSize["3xl"],
               fontWeight: theme.fontWeight.bold,
               color: theme.colors.text,
               marginBottom: theme.spacing.xs,
@@ -164,7 +174,7 @@ export default function CostsTab() {
           </Text>
           <Text
             style={{
-              fontSize: theme.fontSize.base,
+              fontSize: isMobile ? theme.fontSize.sm : theme.fontSize.base,
               color: theme.colors.textSecondary,
             }}
           >
@@ -175,7 +185,8 @@ export default function CostsTab() {
         {/* Filters */}
         <View
           style={{
-            paddingHorizontal: theme.spacing.xl,
+            paddingHorizontal: isMobile ? theme.spacing.lg : theme.spacing.xl,
+            marginBottom: isMobile ? theme.spacing.md : theme.spacing.lg,
           }}
         >
           <PeriodSelector
@@ -206,7 +217,7 @@ export default function CostsTab() {
         ) : (
           <View
             style={{
-              paddingHorizontal: theme.spacing.xl,
+              paddingHorizontal: isMobile ? theme.spacing.lg : theme.spacing.xl,
               paddingBottom: theme.spacing.xl,
             }}
           >
@@ -214,63 +225,73 @@ export default function CostsTab() {
             <View
               style={{
                 flexDirection: "row",
-                gap: theme.spacing.md,
-                marginBottom: theme.spacing.lg,
+                gap: isMobile ? theme.spacing.sm : theme.spacing.md,
+                marginBottom: isMobile ? theme.spacing.md : theme.spacing.lg,
               }}
             >
-              <MetricCard
-                title="Total Cost"
-                value={`RM${costMetrics?.totalCost.toFixed(2) || "0.00"}`}
-                subtitle={activePeriod.label}
-                icon="cash-outline"
-                color={theme.colors.analytics.cost}
-              />
+              <View style={{ flex: 1 }}>
+                <MetricCard
+                  title="Total Cost"
+                  value={`RM${costMetrics?.totalCost.toFixed(2) || "0.00"}`}
+                  subtitle={activePeriod.label}
+                  icon="cash-outline"
+                  color={theme.colors.analytics.cost}
+                />
+              </View>
             </View>
 
             <View
               style={{
                 flexDirection: "row",
-                gap: theme.spacing.md,
-                marginBottom: theme.spacing.lg,
+                gap: isMobile ? theme.spacing.sm : theme.spacing.md,
+                marginBottom: isMobile ? theme.spacing.md : theme.spacing.lg,
               }}
             >
-              <MetricCard
-                title="Fuel Cost"
-                value={`RM${costMetrics?.totalFuelCost.toFixed(2) || "0.00"}`}
-                subtitle={activePeriod.label}
-                icon="water-outline"
-                color={theme.colors.analytics.fuel}
-              />
-              <MetricCard
-                title="Service Cost"
-                value={`RM${costMetrics?.totalServiceCost.toFixed(2) || "0.00"}`}
-                subtitle={activePeriod.label}
-                icon="construct-outline"
-                color={theme.colors.analytics.service}
-              />
+              <View style={{ flex: 1 }}>
+                <MetricCard
+                  title="Fuel Cost"
+                  value={`RM${costMetrics?.totalFuelCost.toFixed(2) || "0.00"}`}
+                  subtitle={activePeriod.label}
+                  icon="water-outline"
+                  color={theme.colors.analytics.fuel}
+                />
+              </View>
+              <View style={{ flex: 1 }}>
+                <MetricCard
+                  title="Service Cost"
+                  value={`RM${costMetrics?.totalServiceCost.toFixed(2) || "0.00"}`}
+                  subtitle={activePeriod.label}
+                  icon="construct-outline"
+                  color={theme.colors.analytics.service}
+                />
+              </View>
             </View>
 
             <View
               style={{
                 flexDirection: "row",
-                gap: theme.spacing.md,
-                marginBottom: theme.spacing.xl,
+                gap: isMobile ? theme.spacing.sm : theme.spacing.md,
+                marginBottom: isMobile ? theme.spacing.lg : theme.spacing.xl,
               }}
             >
-              <MetricCard
-                title="Cost per km"
-                value={`RM${costMetrics?.costPerKm.toFixed(2) || "0.00"}`}
-                subtitle="average"
-                icon="speedometer-outline"
-                color={theme.colors.analytics.purple}
-              />
-              <MetricCard
-                title="Daily Average"
-                value={`RM${chartDataset?.summary.averageDailyCost.toFixed(2) || "0.00"}`}
-                subtitle="per day"
-                icon="calendar-outline"
-                color={theme.colors.analytics.teal}
-              />
+              <View style={{ flex: 1 }}>
+                <MetricCard
+                  title="Cost per km"
+                  value={`RM${costMetrics?.costPerKm.toFixed(2) || "0.00"}`}
+                  subtitle="average"
+                  icon="speedometer-outline"
+                  color={theme.colors.analytics.purple}
+                />
+              </View>
+              <View style={{ flex: 1 }}>
+                <MetricCard
+                  title="Daily Average"
+                  value={`RM${chartDataset?.summary.averageDailyCost.toFixed(2) || "0.00"}`}
+                  subtitle="per day"
+                  icon="calendar-outline"
+                  color={theme.colors.analytics.teal}
+                />
+              </View>
             </View>
 
             {/* Charts */}
@@ -278,17 +299,23 @@ export default function CostsTab() {
               <>
                 <Text
                   style={{
-                    fontSize: theme.fontSize.xl,
+                    fontSize: isMobile
+                      ? theme.fontSize.lg
+                      : isTablet
+                        ? theme.fontSize.lg
+                        : theme.fontSize.xl,
                     fontWeight: theme.fontWeight.bold,
                     color: theme.colors.text,
-                    marginBottom: theme.spacing.lg,
+                    marginBottom: isMobile
+                      ? theme.spacing.md
+                      : theme.spacing.lg,
                   }}
                 >
                   Cost Visualization
                 </Text>
 
-                {/* Line Chart - Total Costs */}
-                <CostLineChart
+                {/* OPTIMIZATION: Lazy-loaded Line Chart - Total Costs */}
+                <LazyCostLineChart
                   data={chartDataset.data}
                   title="Cost Trends Over Time"
                   showLegend={true}
@@ -298,7 +325,7 @@ export default function CostsTab() {
                 <View
                   style={{
                     marginTop: theme.spacing.md,
-                    padding: theme.spacing.lg,
+                    padding: isMobile ? theme.spacing.md : theme.spacing.lg,
                     backgroundColor: theme.colors.surface,
                     borderRadius: theme.borderRadius.lg,
                     borderWidth: 1,
@@ -308,7 +335,9 @@ export default function CostsTab() {
                 >
                   <Text
                     style={{
-                      fontSize: theme.fontSize.base,
+                      fontSize: isMobile
+                        ? theme.fontSize.sm
+                        : theme.fontSize.base,
                       color: theme.colors.textSecondary,
                       textAlign: "center",
                       marginBottom: theme.spacing.xs,
@@ -318,7 +347,9 @@ export default function CostsTab() {
                   </Text>
                   <Text
                     style={{
-                      fontSize: theme.fontSize.sm,
+                      fontSize: isMobile
+                        ? theme.fontSize.xs
+                        : theme.fontSize.sm,
                       color: theme.colors.textSecondary,
                       textAlign: "center",
                     }}
@@ -331,15 +362,17 @@ export default function CostsTab() {
                 {/* Info Footer */}
                 <View
                   style={{
-                    marginTop: theme.spacing.xl,
-                    padding: theme.spacing.md,
+                    marginTop: isMobile ? theme.spacing.lg : theme.spacing.xl,
+                    padding: isMobile ? theme.spacing.sm : theme.spacing.md,
                     backgroundColor: theme.colors.surface,
                     borderRadius: theme.borderRadius.lg,
                   }}
                 >
                   <Text
                     style={{
-                      fontSize: theme.fontSize.sm,
+                      fontSize: isMobile
+                        ? theme.fontSize.xs
+                        : theme.fontSize.sm,
                       color: theme.colors.textSecondary,
                       textAlign: "center",
                     }}

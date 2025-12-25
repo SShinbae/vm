@@ -16,6 +16,7 @@ import { canUserAccessVehicle } from "../utils/serviceUtils";
 export class MileageLogService {
   static async getMileageLogs(
     vehicleId?: string,
+    options?: { limit?: number; offset?: number },
   ): Promise<ApiResponse<MileageLog[]>> {
     try {
       const {
@@ -27,6 +28,10 @@ export class MileageLogService {
         return { data: null, error: "User not authenticated", loading: false };
       }
 
+      // OPTIMIZATION: Add pagination support
+      const limit = options?.limit || 20;
+      const offset = options?.offset || 0;
+
       // Build base query for owned vehicles
       let ownedQuery = supabase
         .from("mileage_logs")
@@ -37,7 +42,8 @@ export class MileageLogService {
         `,
         )
         .eq("vehicles.user_id", user.id)
-        .order("date", { ascending: false });
+        .order("date", { ascending: false })
+        .range(offset, offset + limit - 1);
 
       if (vehicleId) {
         ownedQuery = ownedQuery.eq("vehicle_id", vehicleId);
@@ -88,6 +94,7 @@ export class MileageLogService {
               )
               .in("vehicle_id", sharedVehicleIds)
               .order("date", { ascending: false })
+              .range(offset, offset + limit - 1)
           : Promise.resolve({ data: [], error: null }),
       ]);
 
@@ -454,6 +461,7 @@ export class MileageLogService {
 export class FuelLogService {
   static async getFuelLogs(
     vehicleId?: string,
+    options?: { limit?: number; offset?: number },
   ): Promise<ApiResponse<FuelLog[]>> {
     try {
       const {
@@ -465,6 +473,10 @@ export class FuelLogService {
         return { data: null, error: "User not authenticated", loading: false };
       }
 
+      // OPTIMIZATION: Add pagination support
+      const limit = options?.limit || 20;
+      const offset = options?.offset || 0;
+
       // Build base query for owned vehicles
       let ownedQuery = supabase
         .from("fuel_logs")
@@ -475,7 +487,8 @@ export class FuelLogService {
         `,
         )
         .eq("vehicles.user_id", user.id)
-        .order("date", { ascending: false });
+        .order("date", { ascending: false })
+        .range(offset, offset + limit - 1);
 
       if (vehicleId) {
         ownedQuery = ownedQuery.eq("vehicle_id", vehicleId);
@@ -526,6 +539,7 @@ export class FuelLogService {
               )
               .in("vehicle_id", sharedVehicleIds)
               .order("date", { ascending: false })
+              .range(offset, offset + limit - 1)
           : Promise.resolve({ data: [], error: null }),
       ]);
 
@@ -919,6 +933,7 @@ export class FuelLogService {
 export class ServiceLogService {
   static async getServiceLogs(
     vehicleId?: string,
+    options?: { limit?: number; offset?: number },
   ): Promise<ApiResponse<ServiceLog[]>> {
     try {
       const {
@@ -930,6 +945,10 @@ export class ServiceLogService {
         return { data: null, error: "User not authenticated", loading: false };
       }
 
+      // OPTIMIZATION: Add pagination support
+      const limit = options?.limit || 20;
+      const offset = options?.offset || 0;
+
       // Build base query for owned vehicles
       let ownedQuery = supabase
         .from("service_logs")
@@ -940,7 +959,8 @@ export class ServiceLogService {
         `,
         )
         .eq("vehicles.user_id", user.id)
-        .order("date", { ascending: false });
+        .order("date", { ascending: false })
+        .range(offset, offset + limit - 1);
 
       if (vehicleId) {
         ownedQuery = ownedQuery.eq("vehicle_id", vehicleId);
@@ -991,6 +1011,7 @@ export class ServiceLogService {
               )
               .in("vehicle_id", sharedVehicleIds)
               .order("date", { ascending: false })
+              .range(offset, offset + limit - 1)
           : Promise.resolve({ data: [], error: null }),
       ]);
 

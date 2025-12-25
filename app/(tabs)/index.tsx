@@ -17,7 +17,9 @@ import { ActivityTimelineItem } from "@/components/dashboard/ActivityTimelineIte
 import { QuickActionButton } from "@/components/dashboard/QuickActionButton";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { VehicleCard } from "@/components/dashboard/VehicleCard";
-import { useDashboardData } from "@/hooks/useDashboardData";
+import { useDashboardDataQuery } from "@/hooks/useDashboardDataQuery";
+import { MaxWidthContainer } from "@/components/layout/MaxWidthContainer";
+import { ResponsiveGrid } from "@/components/layout/ResponsiveGrid";
 // Assume you also created these helper components:
 // import { LoadingState } from "@/components/ui/LoadingState";
 // import { ErrorState } from "@/components/ui/ErrorState";
@@ -34,7 +36,7 @@ export default function DashboardScreen() {
     error,
     user,
     onRefresh,
-  } = useDashboardData();
+  } = useDashboardDataQuery();
 
   // Loading state
   if (loading) {
@@ -66,127 +68,141 @@ export default function DashboardScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={onRefresh}
-            tintColor={theme.colors.primary}
-          />
-        }
-        showsVerticalScrollIndicator={false}
-      >
-        {/* Header */}
-        <View style={styles.header}>
-          <Text style={styles.greeting}>
-            Welcome
-            {user?.profile?.full_name
-              ? `, ${user.profile.full_name.split(" ")[0]}`
-              : ""}
-            !
-          </Text>
-          <Text style={styles.subtitle}>Track and manage your vehicles</Text>
-        </View>
-
-        {/* Stats Grid Section */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Overview</Text>
-          <View style={styles.statsGrid}>
-            <StatCard
-              title="Total Vehicles"
-              value={stats.totalVehicles}
-              icon="🚗"
-              trend={stats.totalVehiclesTrend}
+      <MaxWidthContainer>
+        <ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollContent}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              tintColor={theme.colors.primary}
             />
-            <StatCard
-              title="Monthly Fuel"
-              value={`RM${stats.monthlyFuelCost.toFixed(2)}`}
-              icon="⛽"
-              trend={stats.monthlyFuelCostTrend}
-            />
+          }
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Header */}
+          <View style={styles.header}>
+            <Text style={styles.greeting}>
+              Welcome
+              {user?.profile?.full_name
+                ? `, ${user.profile.full_name.split(" ")[0]}`
+                : ""}
+              !
+            </Text>
+            <Text style={styles.subtitle}>Track and manage your vehicles</Text>
           </View>
-        </View>
 
-        {/* Quick Actions Section */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Quick Actions</Text>
-          <View style={styles.quickActionsRow}>
-            <QuickActionButton
-              title="Add Fuel"
-              icon="fuelpump.fill"
-              color={theme.colors.warning}
-              onPress={() => router.push("/logs/fuel/add" as any)}
-            />
-            <QuickActionButton
-              title="Log Service"
-              icon="wrench.fill"
-              color={theme.colors.error}
-              onPress={() => router.push("/logs/service/add" as any)}
-            />
-            <QuickActionButton
-              title="Update Mileage"
-              icon="speedometer"
-              color={theme.colors.primary}
-              onPress={() => router.push("/logs/mileage/add" as any)}
-            />
-            <QuickActionButton
-              title="Add Vehicle"
-              icon="plus.circle.fill"
-              color={theme.colors.success}
-              onPress={() => router.push("/vehicles/add" as any)}
-            />
+          {/* Stats Grid Section */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Overview</Text>
+            <ResponsiveGrid
+              columns={{ mobile: 2, tablet: 2, desktop: 2, largeDesktop: 4 }}
+              spacing={16}
+            >
+              <StatCard
+                title="Total Vehicles"
+                value={stats.totalVehicles}
+                icon="🚗"
+                trend={stats.totalVehiclesTrend}
+              />
+              <StatCard
+                title="Monthly Fuel"
+                value={`RM${stats.monthlyFuelCost.toFixed(2)}`}
+                icon="⛽"
+                trend={stats.monthlyFuelCostTrend}
+              />
+            </ResponsiveGrid>
           </View>
-        </View>
 
-        {/* Vehicles Section */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>My Vehicles</Text>
-            {vehicles.length > 0 && (
-              <TouchableOpacity onPress={() => router.push("/vehicles" as any)}>
-                <Text style={styles.viewAllText}>View All</Text>
-              </TouchableOpacity>
+          {/* Quick Actions Section */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Quick Actions</Text>
+            <ResponsiveGrid
+              columns={{ mobile: 2, tablet: 4, desktop: 4, largeDesktop: 4 }}
+              spacing={12}
+            >
+              <QuickActionButton
+                title="Add Fuel"
+                icon="fuelpump.fill"
+                color={theme.colors.warning}
+                onPress={() => router.push("/logs/fuel/add" as any)}
+              />
+              <QuickActionButton
+                title="Log Service"
+                icon="wrench.fill"
+                color={theme.colors.error}
+                onPress={() => router.push("/logs/service/add" as any)}
+              />
+              <QuickActionButton
+                title="Update Mileage"
+                icon="speedometer"
+                color={theme.colors.primary}
+                onPress={() => router.push("/logs/mileage/add" as any)}
+              />
+              <QuickActionButton
+                title="Add Vehicle"
+                icon="plus.circle.fill"
+                color={theme.colors.success}
+                onPress={() => router.push("/vehicles/add" as any)}
+              />
+            </ResponsiveGrid>
+          </View>
+
+          {/* Vehicles Section */}
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>My Vehicles</Text>
+              {vehicles.length > 0 && (
+                <TouchableOpacity
+                  onPress={() => router.push("/vehicles" as any)}
+                >
+                  <Text style={styles.viewAllText}>View All</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+
+            {vehicles.length === 0 ? (
+              <View style={styles.emptyState}>
+                <Text style={styles.emptyIcon}>🚗</Text>
+                <Text style={styles.emptyTitle}>No vehicles yet</Text>
+                <Text style={styles.emptyDescription}>
+                  Add your first vehicle to start tracking
+                </Text>
+                <TouchableOpacity
+                  style={styles.emptyButton}
+                  onPress={() => router.push("/vehicles/add" as any)}
+                >
+                  <IconSymbol
+                    name="plus"
+                    size={18}
+                    color={theme.colors.white}
+                  />
+                  <Text style={styles.emptyButtonText}>Add Vehicle</Text>
+                </TouchableOpacity>
+              </View>
+            ) : (
+              <View style={styles.vehiclesList}>
+                {vehicles.slice(0, 3).map((vehicle) => (
+                  <VehicleCard key={vehicle.id} vehicle={vehicle} />
+                ))}
+              </View>
             )}
           </View>
 
-          {vehicles.length === 0 ? (
-            <View style={styles.emptyState}>
-              <Text style={styles.emptyIcon}>🚗</Text>
-              <Text style={styles.emptyTitle}>No vehicles yet</Text>
-              <Text style={styles.emptyDescription}>
-                Add your first vehicle to start tracking
-              </Text>
-              <TouchableOpacity
-                style={styles.emptyButton}
-                onPress={() => router.push("/vehicles/add" as any)}
-              >
-                <IconSymbol name="plus" size={18} color={theme.colors.white} />
-                <Text style={styles.emptyButtonText}>Add Vehicle</Text>
-              </TouchableOpacity>
-            </View>
-          ) : (
-            <View style={styles.vehiclesList}>
-              {vehicles.slice(0, 3).map((vehicle) => (
-                <VehicleCard key={vehicle.id} vehicle={vehicle} />
-              ))}
+          {/* Recent Activity Timeline */}
+          {recentActivity.length > 0 && (
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Recent Activity</Text>
+              <View style={styles.activityTimeline}>
+                {recentActivity.slice(0, 4).map((item) => (
+                  <ActivityTimelineItem key={item.id} item={item} />
+                ))}
+              </View>
             </View>
           )}
-        </View>
-
-        {/* Recent Activity Timeline */}
-        {recentActivity.length > 0 && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Recent Activity</Text>
-            <View style={styles.activityTimeline}>
-              {recentActivity.map((item) => (
-                <ActivityTimelineItem key={item.id} item={item} />
-              ))}
-            </View>
-          </View>
-        )}
-      </ScrollView>
+        </ScrollView>
+      </MaxWidthContainer>
     </SafeAreaView>
   );
 }

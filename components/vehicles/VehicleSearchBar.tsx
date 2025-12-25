@@ -2,6 +2,7 @@ import React from "react";
 import { View, TextInput, TouchableOpacity } from "react-native";
 import { createStyleSheet, useStyles } from "react-native-unistyles";
 import { IconSymbol } from "@/components/ui/icon-symbol";
+import { useResponsiveLayout } from "@/hooks/use-responsive-layout";
 
 interface VehicleSearchBarProps {
   searchQuery: string;
@@ -18,16 +19,21 @@ export function VehicleSearchBar({
   onSearchChange,
 }: VehicleSearchBarProps) {
   const { styles, theme } = useStyles(stylesheet);
+  const { isMobile } = useResponsiveLayout();
+
+  const iconSize = isMobile ? 18 : 20;
 
   return (
-    <View style={styles.searchContainer}>
+    <View
+      style={[styles.searchContainer, isMobile && styles.searchContainerMobile]}
+    >
       <IconSymbol
         name="magnifyingglass"
-        size={20}
+        size={iconSize}
         color={theme.colors.textSecondary}
       />
       <TextInput
-        style={styles.searchInput}
+        style={[styles.searchInput, isMobile && styles.searchInputMobile]}
         placeholder="Search vehicles by make, model, plate..."
         placeholderTextColor={theme.colors.textSecondary}
         value={searchQuery}
@@ -37,7 +43,7 @@ export function VehicleSearchBar({
         <TouchableOpacity onPress={() => onSearchChange("")}>
           <IconSymbol
             name="xmark.circle.fill"
-            size={20}
+            size={iconSize}
             color={theme.colors.textSecondary}
           />
         </TouchableOpacity>
@@ -56,9 +62,17 @@ const stylesheet = createStyleSheet((theme) => ({
     paddingVertical: theme.spacing.md,
     gap: theme.spacing.sm,
   },
+  searchContainerMobile: {
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.sm,
+    gap: theme.spacing.xs,
+  },
   searchInput: {
     flex: 1,
     fontSize: theme.fontSize.base,
     color: theme.colors.text,
+  },
+  searchInputMobile: {
+    fontSize: theme.fontSize.sm,
   },
 }));
