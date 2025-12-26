@@ -11,26 +11,23 @@
  * - Automatic worker cleanup
  */
 
-import { useEffect, useRef, useCallback, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import type { FuelLog, MileageLog, ServiceLog, Vehicle } from "../types";
 import type {
-  WorkerMessage,
-  WorkerResponse,
-} from "../workers/analytics.worker";
-import type { FuelLog, ServiceLog, MileageLog, Vehicle } from "../types";
-import type {
-  FuelEfficiencyMetrics,
-  CostMetrics,
-  ServiceMetrics,
-  VehiclePerformance,
-  TrendDataPoint,
   AnalyticsPeriod,
+  CostMetrics,
+  FuelEfficiencyMetrics,
+  ServiceMetrics,
+  TrendDataPoint,
+  VehiclePerformance,
   VehicleWithLogs,
 } from "../types/analytics";
+import type { WorkerMessage } from "../workers/analytics.worker";
 
 // Import fallback calculations
 import {
-  calculateFuelEfficiency,
   calculateCostMetrics,
+  calculateFuelEfficiency,
   calculateServiceMetrics,
   calculateTotalDistance,
   calculateVehicleComparison,
@@ -38,7 +35,8 @@ import {
 } from "../lib/analytics/calculations";
 
 // Check if Web Workers are supported
-const supportsWorkers = typeof Worker !== "undefined";
+// Disabled: Metro bundler doesn't support import.meta.url for Worker instantiation
+const supportsWorkers = false;
 
 type PendingTask = {
   resolve: (result: any) => void;
@@ -53,68 +51,14 @@ export function useAnalyticsWorker() {
   const [usesFallback, setUsesFallback] = useState(!supportsWorkers);
 
   // Initialize worker
+  // Note: Workers disabled due to Metro bundler not supporting import.meta.url
+  // The worker initialization code has been removed to prevent bundling errors
   useEffect(() => {
-    if (!supportsWorkers) {
-      console.warn(
-        "Web Workers not supported, using fallback calculations on main thread",
-      );
-      setUsesFallback(true);
-      setIsReady(true);
-      return;
-    }
-
-    try {
-      // Create worker from the analytics worker file
-      workerRef.current = new Worker(
-        new URL("../workers/analytics.worker.ts", import.meta.url),
-        { type: "module" },
-      );
-
-      // Handle worker messages
-      workerRef.current.onmessage = (
-        event: MessageEvent<WorkerResponse | { type: "READY" }>,
-      ) => {
-        const message = event.data;
-
-        if (message.type === "READY") {
-          setIsReady(true);
-          return;
-        }
-
-        const response = message as WorkerResponse;
-        const pending = pendingTasksRef.current.get(response.taskType);
-
-        if (pending) {
-          if (response.type === "SUCCESS") {
-            pending.resolve(response.result);
-          } else if (response.type === "ERROR") {
-            pending.reject(new Error(response.error));
-          }
-          pendingTasksRef.current.delete(response.taskType);
-        }
-      };
-
-      workerRef.current.onerror = (error) => {
-        console.error("Worker error:", error);
-        setUsesFallback(true);
-        setIsReady(true);
-      };
-    } catch (error) {
-      console.error("Failed to create worker:", error);
-      setUsesFallback(true);
-      setIsReady(true);
-    }
-
-    // Cleanup
-    return () => {
-      if (workerRef.current) {
-        workerRef.current.terminate();
-        workerRef.current = null;
-      }
-      // Clear all pending tasks on cleanup
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-      pendingTasksRef.current.clear();
-    };
+    console.warn(
+      "Web Workers not supported, using fallback calculations on main thread",
+    );
+    setUsesFallback(true);
+    setIsReady(true);
   }, []);
 
   // Generic method to send messages to worker
