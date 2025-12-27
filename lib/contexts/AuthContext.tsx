@@ -164,34 +164,47 @@ export function AuthProvider({ children }: AuthProviderProps) {
           loading: false,
         }));
       }
-    }, 3000); // 3 second timeout for session restoration
+    }, 5000); // 5 second timeout for session restoration (increased from 3s for web)
 
-    supabase.auth
-      .getSession()
-      .then(({ data: { session }, error }) => {
-        clearTimeout(sessionTimeout);
-        if (error && __DEV__) {
-          console.error("Error getting session:", error);
-        }
-        if (mounted) {
-          setUser(session);
-          setState((prev) => ({ ...prev, initialized: true }));
-        }
-      })
-      .catch((err) => {
-        clearTimeout(sessionTimeout);
-        if (__DEV__) {
-          console.error("Failed to get session:", err);
-        }
-        if (mounted) {
-          setState((prev) => ({
-            ...prev,
-            initialized: true,
-            loading: false,
-            user: null,
-          }));
-        }
-      });
+    // CRITICAL FIX: Use a small delay to ensure localStorage is ready on web
+    // This prevents race conditions where getSession is called before localStorage is accessible
+    const initDelay = Platform.OS === "web" ? 100 : 0;
+
+    setTimeout(() => {
+      supabase.auth
+        .getSession()
+        .then(({ data: { session }, error }) => {
+          clearTimeout(sessionTimeout);
+          if (error && __DEV__) {
+            console.error("Error getting session:", error);
+          }
+          if (mounted) {
+            if (__DEV__ && session) {
+              console.log("Session restored successfully:", {
+                userId: session.user.id,
+                email: session.user.email,
+                expiresAt: session.expires_at,
+              });
+            }
+            setUser(session);
+            setState((prev) => ({ ...prev, initialized: true }));
+          }
+        })
+        .catch((err) => {
+          clearTimeout(sessionTimeout);
+          if (__DEV__) {
+            console.error("Failed to get session:", err);
+          }
+          if (mounted) {
+            setState((prev) => ({
+              ...prev,
+              initialized: true,
+              loading: false,
+              user: null,
+            }));
+          }
+        });
+    }, initDelay);
 
     // Listen for auth changes
     const {
