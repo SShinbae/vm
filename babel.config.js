@@ -1,10 +1,9 @@
 module.exports = function (api) {
   api.cache(true);
 
-  const plugins = [
-    // React Native reanimated plugin (if you use reanimated)
-    "react-native-reanimated/plugin",
+  const isProduction = process.env.NODE_ENV === "production";
 
+  const plugins = [
     // Optional - Plugin transform for optimization
     [
       "module-resolver",
@@ -24,11 +23,21 @@ module.exports = function (api) {
 
     // Optional - For using decorators
     ["@babel/plugin-proposal-decorators", { legacy: true }],
+
+    // React Native reanimated plugin (must be last)
+    "react-native-reanimated/plugin",
   ];
 
   // Remove console.* statements in production builds
-  if (process.env.NODE_ENV === "production") {
-    plugins.push("babel-plugin-transform-remove-console");
+  if (isProduction) {
+    // Only add if the package is installed
+    try {
+      require.resolve("babel-plugin-transform-remove-console");
+      plugins.unshift("babel-plugin-transform-remove-console");
+      // eslint-disable-next-line no-unused-vars
+    } catch (e) {
+      console.warn("babel-plugin-transform-remove-console not found, skipping");
+    }
   }
 
   return {
