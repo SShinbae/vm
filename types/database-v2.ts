@@ -752,8 +752,10 @@ export interface ValidationError {
 export type { Database as DatabaseV2 };
 
 // Legacy compatibility (for gradual migration)
-export interface LegacyVehicle
-  extends Omit<Vehicle, "main_image_url" | "color" | "current_mileage"> {
+export interface LegacyVehicle extends Omit<
+  Vehicle,
+  "main_image_url" | "color" | "current_mileage"
+> {
   shared_with_groups?: boolean; // Old boolean field
 }
 
