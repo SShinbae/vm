@@ -198,7 +198,7 @@ async function fetchRecentActivity(userId: string): Promise<ActivityItem[]> {
       .from("service_logs")
       .select("*, vehicles(year, make, model)")
       .eq("user_id", userId)
-      .order("service_date", { ascending: false })
+      .order("date", { ascending: false })
       .limit(10),
   ]);
 
