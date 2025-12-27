@@ -26,24 +26,51 @@ const safeSupabaseUrl = supabaseUrl || "https://placeholder.supabase.co";
 const safeSupabaseKey = supabaseKey || "placeholder-key";
 
 // Use AsyncStorage for mobile, localStorage for web
+// IMPORTANT: Web storage must return Promise<string | null> for proper session restoration
 const storage =
   Platform.OS === "web"
     ? {
-        getItem: async (key: string) => {
+        getItem: async (key: string): Promise<string | null> => {
           if (typeof window !== "undefined") {
-            return window.localStorage.getItem(key);
+            try {
+              const value = window.localStorage.getItem(key);
+              return Promise.resolve(value);
+            } catch (error) {
+              if (__DEV__) {
+                console.error("Error reading from localStorage:", error);
+              }
+              return Promise.resolve(null);
+            }
           }
-          return null;
+          return Promise.resolve(null);
         },
-        setItem: async (key: string, value: string) => {
+        setItem: async (key: string, value: string): Promise<void> => {
           if (typeof window !== "undefined") {
-            window.localStorage.setItem(key, value);
+            try {
+              window.localStorage.setItem(key, value);
+              return Promise.resolve();
+            } catch (error) {
+              if (__DEV__) {
+                console.error("Error writing to localStorage:", error);
+              }
+              return Promise.resolve();
+            }
           }
+          return Promise.resolve();
         },
-        removeItem: async (key: string) => {
+        removeItem: async (key: string): Promise<void> => {
           if (typeof window !== "undefined") {
-            window.localStorage.removeItem(key);
+            try {
+              window.localStorage.removeItem(key);
+              return Promise.resolve();
+            } catch (error) {
+              if (__DEV__) {
+                console.error("Error removing from localStorage:", error);
+              }
+              return Promise.resolve();
+            }
           }
+          return Promise.resolve();
         },
       }
     : AsyncStorage;
@@ -56,7 +83,16 @@ export const supabase = createClient<Database>(
       storage: storage,
       autoRefreshToken: true,
       persistSession: true,
-      detectSessionInUrl: Platform.OS === "web",
+      // CRITICAL FIX: Disable detectSessionInUrl to prevent session clearing on reload
+      // This was causing the logout loop - on page reload, Supabase would try to
+      // detect session from URL, fail to find one, and clear the stored session
+      detectSessionInUrl: false,
+      // Enable debug mode in development to see what's happening
+      debug: __DEV__,
+      // Increase storage key to avoid conflicts
+      storageKey: "sb-auth-token",
+      // Flow type for better compatibility
+      flowType: "pkce",
     },
   },
 );
