@@ -57,18 +57,18 @@ function RootLayoutContent() {
   // OPTIMIZATION: Register service worker for asset caching (web only)
   useEffect(() => {
     if (Platform.OS === "web" && "serviceWorker" in navigator) {
-      navigator.serviceWorker
-        .register("/service-worker.js")
-        .then((registration) => {
-          if (__DEV__) {
-            console.log("✅ Service Worker registered:", registration);
-          }
-        })
-        .catch((error) => {
-          if (__DEV__) {
-            console.error("❌ Service Worker registration failed:", error);
-          }
-        });
+      // Only register in production
+      if (process.env.NODE_ENV === "production") {
+        navigator.serviceWorker
+          .register("/service-worker.js", { scope: "/" })
+          .then((registration) => {
+            // Check for updates on load
+            registration.update();
+          })
+          .catch(() => {
+            // Silent fail in production
+          });
+      }
     }
   }, []);
 
