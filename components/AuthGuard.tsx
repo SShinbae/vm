@@ -195,6 +195,21 @@ export function AuthGuard({ children }: AuthGuardProps) {
     previousPath: null,
   });
 
+  // Force initialization after timeout to prevent infinite loading
+  const [forceInitialized, setForceInitialized] = useState(false);
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      if (!initialized) {
+        if (__DEV__) {
+          console.warn("[AuthGuard] Forcing initialization after timeout");
+        }
+        setForceInitialized(true);
+      }
+    }, 5000); // 5 second timeout
+
+    return () => clearTimeout(timeout);
+  }, [initialized]);
+
   const routeState = useRouteState(segments);
   const wasRecentlyOnAuthPage = useAuthPageTracking(routeState.isOnAuthPage);
   const { navigate } = useSecureNavigation();
@@ -339,10 +354,22 @@ export function AuthGuard({ children }: AuthGuardProps) {
    * Show loading screen while initializing
    * But not on auth pages - they handle their own loading
    * Also skip if we were recently on auth page to prevent toast interruption
+   * Force stop loading after timeout to prevent infinite loading
    */
   const shouldShowLoading = useMemo(() => {
-    return (!initialized || loading) && !isOnAuthPage && !wasRecentlyOnAuthPage;
-  }, [initialized, loading, isOnAuthPage, wasRecentlyOnAuthPage]);
+    return (
+      (!initialized || loading) &&
+      !isOnAuthPage &&
+      !wasRecentlyOnAuthPage &&
+      !forceInitialized
+    );
+  }, [
+    initialized,
+    loading,
+    isOnAuthPage,
+    wasRecentlyOnAuthPage,
+    forceInitialized,
+  ]);
 
   if (shouldShowLoading) {
     return (

@@ -150,16 +150,48 @@ export function AuthProvider({ children }: AuthProviderProps) {
   useEffect(() => {
     let mounted = true;
 
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session }, error }) => {
-      if (error && __DEV__) {
-        console.error("Error getting session:", error);
+    // Get initial session with timeout to prevent infinite loading
+    const sessionTimeout = setTimeout(() => {
+      if (mounted && !state.initialized) {
+        if (__DEV__) {
+          console.warn(
+            "Session initialization timeout - forcing initialized state",
+          );
+        }
+        setState((prev) => ({
+          ...prev,
+          initialized: true,
+          loading: false,
+        }));
       }
-      if (mounted) {
-        setUser(session);
-        setState((prev) => ({ ...prev, initialized: true }));
-      }
-    });
+    }, 3000); // 3 second timeout for session restoration
+
+    supabase.auth
+      .getSession()
+      .then(({ data: { session }, error }) => {
+        clearTimeout(sessionTimeout);
+        if (error && __DEV__) {
+          console.error("Error getting session:", error);
+        }
+        if (mounted) {
+          setUser(session);
+          setState((prev) => ({ ...prev, initialized: true }));
+        }
+      })
+      .catch((err) => {
+        clearTimeout(sessionTimeout);
+        if (__DEV__) {
+          console.error("Failed to get session:", err);
+        }
+        if (mounted) {
+          setState((prev) => ({
+            ...prev,
+            initialized: true,
+            loading: false,
+            user: null,
+          }));
+        }
+      });
 
     // Listen for auth changes
     const {
@@ -214,9 +246,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
     return () => {
       mounted = false;
+      clearTimeout(sessionTimeout);
       subscription.unsubscribe();
     };
-  }, [setUser, fetchUserProfile]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Empty deps - setUser and fetchUserProfile are stable via useCallback
 
   const signUp = async (email: string, password: string, fullName?: string) => {
     setState((prev) => ({ ...prev, loading: true }));

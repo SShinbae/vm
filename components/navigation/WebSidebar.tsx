@@ -428,7 +428,7 @@ export function WebSidebar() {
       </Tooltip>
 
       {/* Brand Section */}
-      <Tooltip content="Vehicle Manager" position="right" disabled={isOpen}>
+      <Tooltip content="Vehicle Management" position="right" disabled={isOpen}>
         <View style={styles.brand}>
           <IconSymbol name="car.fill" size={24} color={colors.tint} />
           {isOpen && (
