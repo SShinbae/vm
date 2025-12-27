@@ -2,18 +2,10 @@ const { getDefaultConfig } = require("expo/metro-config");
 
 const config = getDefaultConfig(__dirname);
 
-config.transformer = {
-  ...config.transformer,
-  babelTransformerPath: require.resolve("react-native-svg-transformer"),
-};
-
+// Keep only webp asset extension if needed
 config.resolver = {
   ...config.resolver,
-  assetExts: [
-    ...config.resolver.assetExts.filter((ext) => ext !== "svg"),
-    "webp",
-  ],
-  sourceExts: [...config.resolver.sourceExts, "svg"],
+  assetExts: [...config.resolver.assetExts, "webp"],
 };
 
 module.exports = config;
