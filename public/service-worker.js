@@ -9,7 +9,7 @@
  * - Background sync support
  */
 
-const CACHE_VERSION = "v1";
+const CACHE_VERSION = "v2";
 const CACHE_NAME = `vm-cache-${CACHE_VERSION}`;
 
 // Assets to cache immediately on install
@@ -26,13 +26,10 @@ const CACHEABLE_PATTERNS = {
  * Install event - cache static assets
  */
 self.addEventListener("install", (event) => {
-  console.log("[Service Worker] Installing...");
-
   event.waitUntil(
     caches
       .open(CACHE_NAME)
       .then((cache) => {
-        console.log("[Service Worker] Caching static assets");
         return cache.addAll(STATIC_ASSETS);
       })
       .then(() => {
@@ -46,8 +43,6 @@ self.addEventListener("install", (event) => {
  * Activate event - cleanup old caches
  */
 self.addEventListener("activate", (event) => {
-  console.log("[Service Worker] Activating...");
-
   event.waitUntil(
     caches
       .keys()
@@ -55,7 +50,6 @@ self.addEventListener("activate", (event) => {
         return Promise.all(
           cacheNames.map((cacheName) => {
             if (cacheName !== CACHE_NAME) {
-              console.log("[Service Worker] Deleting old cache:", cacheName);
               return caches.delete(cacheName);
             }
           }),
@@ -129,8 +123,8 @@ async function cacheFirst(request) {
       cache.put(request, response.clone());
     }
     return response;
+    // eslint-disable-next-line no-unused-vars
   } catch (error) {
-    console.error("[Service Worker] Fetch failed:", error);
     // Return a fallback response if needed
     return new Response("Offline", {
       status: 503,
@@ -152,8 +146,8 @@ async function networkFirst(request) {
       cache.put(request, response.clone());
     }
     return response;
+    // eslint-disable-next-line no-unused-vars
   } catch (error) {
-    console.error("[Service Worker] Network failed, trying cache:", error);
     const cached = await cache.match(request);
     if (cached) {
       return cached;
@@ -176,9 +170,8 @@ function updateCacheInBackground(request, cache) {
         cache.put(request, response.clone());
       }
     })
-    .catch((error) => {
+    .catch(() => {
       // Silently fail - we already served from cache
-      console.debug("[Service Worker] Background update failed:", error);
     });
 }
 
@@ -200,5 +193,3 @@ self.addEventListener("message", (event) => {
     );
   }
 });
-
-console.log("[Service Worker] Loaded successfully");

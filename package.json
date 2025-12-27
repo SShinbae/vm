@@ -71,10 +71,8 @@
     "expo-system-ui": "~6.0.9",
     "expo-web-browser": "~15.0.10",
     "nativewind": "^4.2.1",
-    "netlify-cli": "^23.13.0",
     "onesignal-expo-plugin": "^1.1.2",
     "react": "19.1.0",
-    "react-easy-crop": "^5.5.2",
     "react-native": "0.81.5",
     "react-native-chart-kit": "^6.12.0",
     "react-native-gesture-handler": "~2.28.0",
@@ -96,7 +94,6 @@
     "victory-native": "^41.20.1"
   },
   "devDependencies": {
-    "@netlify/functions": "^2.8.2",
     "@react-native/codegen": "^0.82.0",
     "@testing-library/react-native": "^13.3.3",
     "@types/jest": "29.5.14",
@@ -111,13 +108,18 @@
     "jest-expo": "~54.0.16",
     "lint-staged": "^16.2.4",
     "prettier": "^3.6.2",
+    "ts-jest": "^29.4.5",
+    "typescript": "~5.9.2"
+  },
+  "optionalDependencies": {
+    "@netlify/functions": "^2.8.2",
+    "netlify-cli": "^23.13.0",
     "react-dom": "19.1.0",
+    "react-easy-crop": "^5.5.2",
     "react-image-crop": "^11.0.10",
     "react-native-web": "^0.21.1",
     "recharts": "^3.2.1",
     "sharp": "^0.34.5",
-    "ts-jest": "^29.4.5",
-    "typescript": "~5.9.2",
     "victory": "^37.3.6"
   },
   "engines": {
