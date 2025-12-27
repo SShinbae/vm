@@ -19,7 +19,8 @@ interface CardProps {
 }
 
 interface TouchableCardProps
-  extends Omit<CardProps, "onPress">,
+  extends
+    Omit<CardProps, "onPress">,
     Omit<TouchableOpacityProps, "style" | "children"> {}
 
 export function Card({
