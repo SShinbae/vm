@@ -196,6 +196,12 @@ function WebModal({
         },
         containerStyle,
       ]}
+      // @ts-ignore - Web-specific props
+      role="dialog"
+      // @ts-ignore - Web-specific props
+      aria-modal={true}
+      // @ts-ignore - Web-specific props
+      aria-labelledby={title ? "modal-title" : undefined}
     >
       {/* Backdrop */}
       <Pressable
@@ -210,6 +216,8 @@ function WebModal({
           bottom: 0,
           backgroundColor: "rgba(0, 0, 0, 0.5)",
         }}
+        // @ts-ignore - Web-specific props
+        aria-hidden={true}
       />
 
       {/* Modal Content */}
@@ -224,9 +232,22 @@ function WebModal({
         <View style={getContentStyle()}>
           {(title || showCloseButton) && (
             <View style={styles.header}>
-              {title && <Text style={getTitleStyle()}>{title}</Text>}
+              {title && (
+                <Text
+                  style={getTitleStyle()}
+                  // @ts-ignore - Web-specific props
+                  id="modal-title"
+                >
+                  {title}
+                </Text>
+              )}
               {showCloseButton && (
-                <TouchableOpacity style={styles.closeButton} onPress={onClose}>
+                <TouchableOpacity
+                  style={styles.closeButton}
+                  onPress={onClose}
+                  // @ts-ignore - Web-specific props
+                  aria-label="Close modal"
+                >
                   <IconSymbol name="xmark" size={20} color={colors.text} />
                 </TouchableOpacity>
               )}
