@@ -1,0 +1,202 @@
+name: Staging Deployment
+
+on:
+  push:
+    branches: [staging]
+  pull_request:
+    branches: [staging]
+  workflow_dispatch:
+    inputs:
+      buildType:
+        type: choice
+        description: "Build type to run"
+        options:
+          - dev
+          - preview
+          - all
+
+env:
+  EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+
+jobs:
+  check-skip:
+    runs-on: ubuntu-latest
+    if: "!contains(github.event.head_commit.message, '[skip ci]')"
+    steps:
+      - name: Skip CI check
+        run: echo "Proceeding with staging workflow"
+
+  test:
+    needs: check-skip
+    runs-on: ubuntu-latest
+    steps:
+      - name: 🏗 Checkout repository
+        uses: actions/checkout@v4
+
+      - name: 🏗 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: 📦 Install dependencies
+        run: npm ci --omit=optional --ignore-scripts || npm install --omit=optional
+
+      - name: 🧪 Run TypeScript check
+        run: npm run tsc --if-present || npx tsc --noEmit
+
+      - name: 🧹 Run ESLint
+        run: npm run lint
+
+      - name: 🎨 Run Prettier check
+        run: npm run format:check --if-present || npx prettier --check .
+
+  build-staging:
+    needs: test
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - name: 🧹 Free up disk space
+        run: |
+          echo "Disk space before cleanup:"
+          df -h
+
+          # Remove unnecessary packages to free up space
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /opt/ghc
+          sudo rm -rf /usr/local/share/boost
+          sudo rm -rf "$AGENT_TOOLSDIRECTORY"
+          sudo apt-get clean
+
+          # Remove Docker images and containers
+          docker rmi $(docker images -q) -f || true
+          docker system prune -af || true
+
+          echo "Disk space after cleanup:"
+          df -h
+
+      - name: 🏗 Checkout repository
+        uses: actions/checkout@v4
+
+      - name: 🏗 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: 📱 Setup Android SDK and NDK
+        uses: android-actions/setup-android@v3
+        with:
+          cmdline-tools-version: 11076708
+
+      - name: 📦 Install Android NDK
+        run: |
+          echo "Installing NDK..."
+          sdkmanager --install "ndk;27.3.13750724"
+          echo "ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT" >> $GITHUB_ENV
+          echo "ANDROID_HOME=$ANDROID_SDK_ROOT" >> $GITHUB_ENV
+          echo "NDK_PATH=$ANDROID_SDK_ROOT/ndk/27.3.13750724" >> $GITHUB_ENV
+
+      - name: 📦 Install dependencies
+        run: |
+          npm ci --omit=optional --ignore-scripts || npm install --omit=optional
+          npm install -g eas-cli@latest
+
+      - name: 📱 Setup EAS build cache
+        uses: actions/cache@v3
+        with:
+          path: ~/.eas-build-local
+          key: ${{ runner.os }}-eas-build-local-staging-${{ hashFiles('**/package.json') }}
+          restore-keys: |
+            ${{ runner.os }}-eas-build-local-staging-
+            ${{ runner.os }}-eas-build-local-
+
+      - name: 🔄 Verify EAS CLI installation
+        run: |
+          echo "EAS CLI version:"
+          eas --version
+
+      - name: 📋 Verify config files
+        run: |
+          echo "Verifying configuration files..."
+
+          # Check package.json
+          if [ -f ./package.json ]; then
+            echo "✓ package.json exists"
+            echo "Main entry: $(cat package.json | grep '"main"')"
+          else
+            echo "✗ package.json not found"
+            exit 1
+          fi
+
+          # Check app.config.js
+          if [ -f ./app.config.js ]; then
+            echo "✓ app.config.js exists"
+            echo "First 3 lines:"
+            head -3 app.config.js
+          else
+            echo "✗ app.config.js not found"
+            exit 1
+          fi
+
+          # Check metro.config.js
+          if [ -f ./metro.config.js ]; then
+            echo "✓ metro.config.js exists"
+            echo "First 3 lines:"
+            head -3 metro.config.js
+          else
+            echo "✗ metro.config.js not found"
+            exit 1
+          fi
+
+      - name: 📱 Build Development APK (Staging)
+        if: github.event.inputs.buildType == 'all' || github.event.inputs.buildType == 'dev' || (github.event_name == 'push' && (github.event.inputs.buildType == '' || github.event.inputs.buildType == null))
+        run: |
+          # Build with increased memory limit
+          export NODE_OPTIONS="--max_old_space_size=4096"
+          eas build --platform android --profile development --local --non-interactive --output=./app-staging-dev.apk
+        env:
+          NODE_ENV: development
+          SUPABASE_URL: ${{ secrets.STAGING_SUPABASE_URL || secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.STAGING_SUPABASE_KEY || secrets.SUPABASE_KEY }}
+          GOOGLE_VISION_API_KEY: ${{ secrets.STAGING_GOOGLE_VISION_API_KEY || secrets.GOOGLE_VISION_API_KEY }}
+          SITE_URL: ${{ secrets.STAGING_SITE_URL || secrets.SITE_URL }}
+
+      - name: 🧹 Clean up after dev build
+        if: github.event.inputs.buildType == 'all'
+        run: |
+          echo "Cleaning up temporary build files..."
+          rm -rf ~/.gradle/caches/
+          rm -rf ~/.gradle/wrapper/
+          rm -rf node_modules/.cache
+          df -h
+
+      - name: 📱 Build Preview APK (Staging)
+        if: github.event.inputs.buildType == 'all' || github.event.inputs.buildType == 'preview'
+        run: |
+          export NODE_OPTIONS="--max_old_space_size=4096"
+          eas build --platform android --profile preview --local --non-interactive --output=./app-staging-preview.apk
+        env:
+          NODE_ENV: staging
+          SUPABASE_URL: ${{ secrets.STAGING_SUPABASE_URL || secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.STAGING_SUPABASE_KEY || secrets.SUPABASE_KEY }}
+          GOOGLE_VISION_API_KEY: ${{ secrets.STAGING_GOOGLE_VISION_API_KEY || secrets.GOOGLE_VISION_API_KEY }}
+          SITE_URL: ${{ secrets.STAGING_SITE_URL || secrets.SITE_URL }}
+
+      - name: 📦 Upload build artifacts to GitHub
+        uses: actions/upload-artifact@v4
+        with:
+          name: staging-builds
+          path: |
+            ./app-staging-*.apk
+          retention-days: 7
+
+      - name: 📢 Build Summary
+        run: |
+          echo "## 🎉 Staging Build Complete" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Environment:** Staging" >> $GITHUB_STEP_SUMMARY
+          echo "**Branch:** ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Commit:** ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Build artifacts have been uploaded and are available for download." >> $GITHUB_STEP_SUMMARY
