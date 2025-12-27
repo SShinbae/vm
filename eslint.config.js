@@ -8,6 +8,13 @@ module.exports = defineConfig([
     ignores: ["dist/*"],
   },
   {
+    // Disable import plugin rules that require native bindings incompatible with Node 18
+    rules: {
+      "import/namespace": "off",
+      "import/no-unresolved": "off",
+    },
+  },
+  {
     files: [
       "jest.setup.js",
       "jest.config.js",

@@ -14,8 +14,10 @@ import { tokens } from "../../../tokens";
 import { Icon } from "../../atoms/Icon";
 import { Text } from "../../atoms/Text";
 
-export interface ButtonProps
-  extends Omit<PressableProps, "style" | "children"> {
+export interface ButtonProps extends Omit<
+  PressableProps,
+  "style" | "children"
+> {
   variant?: "primary" | "secondary" | "outline" | "ghost" | "danger";
   size?: "sm" | "md" | "lg";
   fullWidth?: boolean;
