@@ -9,8 +9,8 @@ import { ActivityIndicator, StyleSheet, View } from "react-native";
 // Constants
 // ============================================================================
 
-const AUTH_PAGE_TIMEOUT = 2000; // 2 seconds
-const REDIRECT_DELAY = 0;
+const AUTH_PAGE_TIMEOUT = 1500; // 1.5 seconds (optimized for faster transitions)
+const REDIRECT_DELAY = 0; // No delay for instant navigation
 
 const AUTH_PAGES = [
   "login",
@@ -144,25 +144,28 @@ function useRouteState(segments: string[]): RouteState {
  * Hook to handle navigation with error handling
  */
 function useSecureNavigation() {
-  const navigate = (route: string, options?: { delay?: number }) => {
-    try {
-      const delay = options?.delay ?? REDIRECT_DELAY;
+  const navigate = React.useCallback(
+    (route: string, options?: { delay?: number }) => {
+      try {
+        const delay = options?.delay ?? REDIRECT_DELAY;
 
-      if (delay > 0) {
-        setTimeout(() => {
+        if (delay > 0) {
+          setTimeout(() => {
+            router.replace(route as any);
+          }, delay);
+        } else {
           router.replace(route as any);
-        }, delay);
-      } else {
-        router.replace(route as any);
-      }
+        }
 
-      if (__DEV__) {
-        console.log(`[AuthGuard] Navigating to: ${route}`);
+        if (__DEV__) {
+          console.log(`[AuthGuard] Navigating to: ${route}`);
+        }
+      } catch (error) {
+        console.error("[AuthGuard] Navigation error:", error);
       }
-    } catch (error) {
-      console.error("[AuthGuard] Navigation error:", error);
-    }
-  };
+    },
+    [],
+  ); // Empty deps - router.replace is stable
 
   return { navigate };
 }
@@ -325,12 +328,10 @@ export function AuthGuard({ children }: AuthGuardProps) {
     }
 
     // Reset redirect flag when in valid state
-    setRedirectState((prev) => {
-      if (prev.hasRedirected) {
-        return { ...prev, hasRedirected: false };
-      }
-      return prev;
-    });
+    // Only update if actually changed to prevent unnecessary re-renders
+    if (redirectState.hasRedirected) {
+      setRedirectState((prev) => ({ ...prev, hasRedirected: false }));
+    }
   }, [
     user,
     initialized,
