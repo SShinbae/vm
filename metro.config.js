@@ -19,6 +19,13 @@ config.transformer = {
       keep_fnames: true,
     },
   },
+  // Disable eager bundling for production builds
+  getTransformOptions: async () => ({
+    transform: {
+      experimentalImportSupport: false,
+      inlineRequires: true,
+    },
+  }),
 };
 
 // Increase max workers for better build performance

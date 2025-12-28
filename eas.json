@@ -65,22 +65,28 @@
       "distribution": "internal",
       "node": "20.18.2",
       "android": {
-        "buildType": "apk"
+        "buildType": "apk",
+        "gradleCommand": ":app:assembleRelease"
       },
       "ios": {
         "resourceClass": "m-medium"
       },
       "env": {
-        "NODE_ENV": "production"
+        "NODE_ENV": "production",
+        "EXPO_SKIP_EAGER_BUNDLE": "1"
       }
     },
     "production": {
       "node": "20.18.2",
+      "android": {
+        "gradleCommand": ":app:bundleRelease"
+      },
       "ios": {
         "resourceClass": "m-medium"
       },
       "env": {
-        "NODE_ENV": "production"
+        "NODE_ENV": "production",
+        "EXPO_SKIP_EAGER_BUNDLE": "1"
       }
     }
   },

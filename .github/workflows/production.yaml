@@ -160,7 +160,6 @@ jobs:
         run: |
           export NODE_OPTIONS="--max_old_space_size=6144"
           export EXPO_NO_METRO_LAZY=1
-          export EXPO_UNSTABLE_SKIP_EAGER_BUNDLES=1
           eas build --platform android --profile production-apk --local --non-interactive --output=./app-prod.apk
         env:
           NODE_ENV: production
@@ -183,7 +182,6 @@ jobs:
         run: |
           export NODE_OPTIONS="--max_old_space_size=6144"
           export EXPO_NO_METRO_LAZY=1
-          export EXPO_UNSTABLE_SKIP_EAGER_BUNDLES=1
           eas build --platform android --profile production --local --non-interactive --output=./app-prod.aab
         env:
           NODE_ENV: production
