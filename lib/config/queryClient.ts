@@ -8,13 +8,14 @@ import { QueryClient } from "@tanstack/react-query";
  * - Smart retry logic: Retries failed requests but not auth errors
  * - Background refetching: Keeps data fresh without blocking UI
  * - Request deduplication: Prevents duplicate requests for same data
+ * - Optimized cache times based on Chrome Performance best practices
  */
 export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       // Show cached data immediately, then refetch in background
-      staleTime: 2 * 60 * 1000, // Data is fresh for 2 minutes
-      gcTime: 10 * 60 * 1000, // Keep unused data in cache for 10 minutes (formerly cacheTime)
+      staleTime: 5 * 60 * 1000, // Data is fresh for 5 minutes (increased from 2min)
+      gcTime: 15 * 60 * 1000, // Keep unused data in cache for 15 minutes (increased from 10min)
 
       // Retry logic - don't retry auth errors
       retry: (failureCount, error: any) => {
@@ -30,10 +31,14 @@ export const queryClient = new QueryClient({
       // Background refetching for fresh data
       refetchOnWindowFocus: true, // Refetch when user returns to app
       refetchOnReconnect: true, // Refetch when internet reconnects
-      refetchOnMount: true, // Refetch when component mounts
+      refetchOnMount: "always", // Always refetch on mount for fresh data
 
       // Network mode
       networkMode: "online", // Only fetch when online
+
+      // Performance optimizations
+      structuralSharing: true, // Share unchanged data between queries
+      refetchInterval: false, // Disable auto-refetch unless specifically enabled
     },
     mutations: {
       // Don't retry mutations by default (user actions should be explicit)
