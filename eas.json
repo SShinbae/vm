@@ -72,7 +72,6 @@
         "resourceClass": "m-medium"
       },
       "env": {
-        "NODE_ENV": "production",
         "EXPO_SKIP_EAGER_BUNDLE": "1"
       }
     },
@@ -85,7 +84,6 @@
         "resourceClass": "m-medium"
       },
       "env": {
-        "NODE_ENV": "production",
         "EXPO_SKIP_EAGER_BUNDLE": "1"
       }
     }
