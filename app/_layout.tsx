@@ -104,6 +104,19 @@ function RootLayoutContent() {
         {Platform.OS === "web" && (
           <Head>
             <title>Vehicle Management</title>
+            {/* Resource hints for performance optimization */}
+            <link rel="dns-prefetch" href="https://supabase.co" />
+            <link
+              rel="preconnect"
+              href={process.env.EXPO_PUBLIC_SUPABASE_URL || ""}
+            />
+            <link rel="preconnect" href="https://fonts.googleapis.com" />
+            <meta
+              name="viewport"
+              content="width=device-width, initial-scale=1, viewport-fit=cover"
+            />
+            {/* Performance optimization meta tags */}
+            <meta httpEquiv="x-dns-prefetch-control" content="on" />
           </Head>
         )}
         <AuthGuard>
