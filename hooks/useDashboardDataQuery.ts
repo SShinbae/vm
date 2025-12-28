@@ -229,8 +229,10 @@ export const useDashboardDataQuery = () => {
         queryKey: ["dashboard", "stats", user?.id],
         queryFn: () => fetchStats(user!.id),
         enabled: !!user,
-        staleTime: 2 * 60 * 1000, // 2min - stats change relatively slowly (aligned with global config)
-        gcTime: 10 * 60 * 1000, // 10min cache (aligned with global config)
+        staleTime: 2 * 60 * 1000, // 2min - stats change relatively slowly
+        gcTime: 10 * 60 * 1000, // 10min cache
+        refetchOnMount: false, // Don't refetch if data is fresh
+        refetchOnWindowFocus: false, // Reduce unnecessary refetches
       },
       {
         queryKey: ["dashboard", "vehicles", user?.id],
@@ -238,6 +240,8 @@ export const useDashboardDataQuery = () => {
         enabled: !!user,
         staleTime: 3 * 60 * 1000, // 3min - vehicles change less frequently
         gcTime: 15 * 60 * 1000, // 15min cache
+        refetchOnMount: false,
+        refetchOnWindowFocus: false,
       },
       {
         queryKey: ["dashboard", "activity", user?.id],
@@ -245,6 +249,8 @@ export const useDashboardDataQuery = () => {
         enabled: !!user,
         staleTime: 1 * 60 * 1000, // 1min - activity updates more frequently
         gcTime: 5 * 60 * 1000, // 5min cache
+        refetchOnMount: false,
+        refetchOnWindowFocus: false,
       },
     ],
   });

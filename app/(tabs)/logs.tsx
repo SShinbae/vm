@@ -1,10 +1,9 @@
+import { MaxWidthContainer } from "@/components/layout/MaxWidthContainer";
 import { ActionMenu, ActionMenuItem } from "@/components/ui/ActionMenu";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { AlertModal, ConfirmModal } from "@/components/ui/Modal";
 import { ServiceReceiptIndicator } from "@/components/ui/ReceiptViewer";
 import { SkeletonLogList } from "@/components/ui/Skeleton";
-import { LogDetailsBottomSheet } from "@/components/logs/LogDetailsBottomSheet";
-import { MaxWidthContainer } from "@/components/layout/MaxWidthContainer";
 import {
   FuelLogService,
   MileageLogService,
@@ -15,7 +14,6 @@ import { isFulfilled, safePromiseAll } from "@/lib/utils/networkUtils";
 import { canUserAccessVehicle } from "@/lib/utils/serviceUtils";
 import { supabase } from "@/services/supabaseClient";
 import { FuelLog, MileageLog, ServiceLog, ServiceType } from "@/types";
-import BottomSheet from "@gorhom/bottom-sheet";
 import { useFocusEffect } from "@react-navigation/native";
 import * as Haptics from "expo-haptics";
 import { Image } from "expo-image";
@@ -23,6 +21,7 @@ import { router } from "expo-router";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
+  Platform,
   RefreshControl,
   ScrollView,
   Text,
@@ -31,6 +30,14 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useStyles } from "react-native-unistyles";
+
+// Conditionally import BottomSheet components only on native platforms
+// This prevents react-native-reanimated web compatibility issues
+let LogDetailsBottomSheet: any;
+if (Platform.OS !== "web") {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  LogDetailsBottomSheet = require("@/components/logs").LogDetailsBottomSheet;
+}
 
 type LogType = "mileage" | "fuel" | "service";
 
@@ -86,7 +93,7 @@ export default function LogsScreen() {
   >("info");
 
   // Bottom sheet states
-  const bottomSheetRef = useRef<BottomSheet>(null);
+  const bottomSheetRef = useRef<any>(null);
   const [selectedBottomSheetLog, setSelectedBottomSheetLog] = useState<
     FuelLog | MileageLog | ServiceLog | null
   >(null);
@@ -1432,15 +1439,17 @@ export default function LogsScreen() {
           onClose={() => setAlertModalVisible(false)}
         />
 
-        <LogDetailsBottomSheet
-          ref={bottomSheetRef}
-          log={selectedBottomSheetLog}
-          logType={selectedBottomSheetLogType}
-          canModify={bottomSheetCanModify}
-          onClose={handleCloseBottomSheet}
-          onEdit={handleBottomSheetEdit}
-          onDelete={handleBottomSheetDelete}
-        />
+        {Platform.OS !== "web" && LogDetailsBottomSheet && (
+          <LogDetailsBottomSheet
+            ref={bottomSheetRef}
+            log={selectedBottomSheetLog}
+            logType={selectedBottomSheetLogType}
+            canModify={bottomSheetCanModify}
+            onClose={handleCloseBottomSheet}
+            onEdit={handleBottomSheetEdit}
+            onDelete={handleBottomSheetDelete}
+          />
+        )}
       </MaxWidthContainer>
     </SafeAreaView>
   );

@@ -9,7 +9,18 @@ module.exports = function (api) {
       "module-resolver",
       {
         root: ["./"],
-        extensions: [".ios.js", ".android.js", ".js", ".ts", ".tsx", ".json"],
+        extensions: [
+          ".web.ts",
+          ".web.tsx",
+          ".web.js",
+          ".web.jsx",
+          ".ios.js",
+          ".android.js",
+          ".js",
+          ".ts",
+          ".tsx",
+          ".json",
+        ],
         alias: {
           "@": "./",
           "@components": "./src/components",
@@ -17,6 +28,9 @@ module.exports = function (api) {
           "@utils": "./src/utils",
           "@hooks": "./src/hooks",
           "@assets": "./assets",
+          // Web polyfills for native animation libraries
+          "react-native-worklets": "./polyfills/react-native-worklets.web",
+          "react-native-reanimated": "./polyfills/react-native-reanimated.web",
         },
       },
     ],
