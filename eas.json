@@ -70,9 +70,6 @@
       },
       "ios": {
         "resourceClass": "m-medium"
-      },
-      "env": {
-        "EXPO_SKIP_EAGER_BUNDLE": "1"
       }
     },
     "production": {
@@ -82,9 +79,6 @@
       },
       "ios": {
         "resourceClass": "m-medium"
-      },
-      "env": {
-        "EXPO_SKIP_EAGER_BUNDLE": "1"
       }
     }
   },

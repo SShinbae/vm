@@ -158,8 +158,7 @@ jobs:
       - name: 📱 Build Production APK
         if: github.event.inputs.buildType == 'all' || github.event.inputs.buildType == 'prod-apk' || (github.event_name == 'push' && (github.event.inputs.buildType == '' || github.event.inputs.buildType == null))
         run: |
-          export NODE_OPTIONS="--max_old_space_size=6144"
-          export EXPO_NO_METRO_LAZY=1
+          export NODE_OPTIONS="--max_old_space_size=8192"
 
           echo "Starting production APK build..."
           eas build --platform android --profile production-apk --local --non-interactive --output=./app-prod.apk
@@ -202,8 +201,7 @@ jobs:
       - name: 📱 Build Production AAB
         if: github.event.inputs.buildType == 'all' || github.event.inputs.buildType == 'prod-aab'
         run: |
-          export NODE_OPTIONS="--max_old_space_size=6144"
-          export EXPO_NO_METRO_LAZY=1
+          export NODE_OPTIONS="--max_old_space_size=8192"
 
           echo "Starting production AAB build..."
           eas build --platform android --profile production --local --non-interactive --output=./app-prod.aab
