@@ -154,7 +154,6 @@ jobs:
           rm -rf node_modules/.cache
           rm -rf /tmp/metro-*
           rm -rf $HOME/.expo
-          npx expo start --clear || true
 
       - name: 📱 Build Development APK (Staging)
         if: github.event.inputs.buildType == 'all' || github.event.inputs.buildType == 'dev' || (github.event_name == 'push' && (github.event.inputs.buildType == '' || github.event.inputs.buildType == null))
