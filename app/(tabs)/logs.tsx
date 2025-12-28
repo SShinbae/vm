@@ -35,8 +35,9 @@ import { useStyles } from "react-native-unistyles";
 // This prevents react-native-reanimated web compatibility issues
 let LogDetailsBottomSheet: any;
 if (Platform.OS !== "web") {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  LogDetailsBottomSheet = require("@/components/logs").LogDetailsBottomSheet;
+  LogDetailsBottomSheet =
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    require("@/components/logs/LogDetailsBottomSheet").LogDetailsBottomSheet;
 }
 
 type LogType = "mileage" | "fuel" | "service";
