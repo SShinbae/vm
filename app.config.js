@@ -67,10 +67,10 @@ module.exports = {
       [
         "onesignal-expo-plugin",
         {
-          mode:
-            process.env.NODE_ENV === "production"
-              ? "production"
-              : "development",
+          mode: process.env.EAS_BUILD_PROFILE === "production-apk" ||
+                process.env.EAS_BUILD_PROFILE === "production"
+                  ? "production"
+                  : "development",
         },
       ],
     ],
