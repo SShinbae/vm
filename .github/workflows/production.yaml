@@ -160,7 +160,30 @@ jobs:
         run: |
           export NODE_OPTIONS="--max_old_space_size=6144"
           export EXPO_NO_METRO_LAZY=1
+
+          echo "Starting production APK build..."
           eas build --platform android --profile production-apk --local --non-interactive --output=./app-prod.apk
+
+          # Verify the build output
+          if [ -f "./app-prod.apk" ]; then
+            echo "✓ Production APK built successfully"
+            ls -lh ./app-prod.apk
+          else
+            echo "✗ Production APK not found at expected location"
+            echo "Searching for APK files..."
+            find . -name "*.apk" -type f -mmin -30 | head -20
+
+            # Try to find and copy the APK
+            APK_FILE=$(find . -name "*.apk" -type f -mmin -30 | grep -E "(app-release|production)" | head -1)
+            if [ -n "$APK_FILE" ]; then
+              echo "Found APK at: $APK_FILE"
+              cp "$APK_FILE" ./app-prod.apk
+              echo "✓ Copied APK to ./app-prod.apk"
+            else
+              echo "✗ Could not find any APK file"
+              exit 1
+            fi
+          fi
         env:
           NODE_ENV: production
           SUPABASE_URL: ${{ secrets.PROD_SUPABASE_URL || secrets.SUPABASE_URL }}
@@ -182,7 +205,30 @@ jobs:
         run: |
           export NODE_OPTIONS="--max_old_space_size=6144"
           export EXPO_NO_METRO_LAZY=1
+
+          echo "Starting production AAB build..."
           eas build --platform android --profile production --local --non-interactive --output=./app-prod.aab
+
+          # Verify the build output
+          if [ -f "./app-prod.aab" ]; then
+            echo "✓ Production AAB built successfully"
+            ls -lh ./app-prod.aab
+          else
+            echo "✗ Production AAB not found at expected location"
+            echo "Searching for AAB files..."
+            find . -name "*.aab" -type f -mmin -30 | head -20
+
+            # Try to find and copy the AAB
+            AAB_FILE=$(find . -name "*.aab" -type f -mmin -30 | grep -E "(app-release|production)" | head -1)
+            if [ -n "$AAB_FILE" ]; then
+              echo "Found AAB at: $AAB_FILE"
+              cp "$AAB_FILE" ./app-prod.aab
+              echo "✓ Copied AAB to ./app-prod.aab"
+            else
+              echo "✗ Could not find any AAB file"
+              exit 1
+            fi
+          fi
         env:
           NODE_ENV: production
           SUPABASE_URL: ${{ secrets.PROD_SUPABASE_URL || secrets.SUPABASE_URL }}
@@ -190,14 +236,32 @@ jobs:
           GOOGLE_VISION_API_KEY: ${{ secrets.PROD_GOOGLE_VISION_API_KEY || secrets.GOOGLE_VISION_API_KEY }}
           SITE_URL: ${{ secrets.PROD_SITE_URL || secrets.SITE_URL }}
 
+      - name: 📋 List build artifacts
+        run: |
+          echo "=== Build artifacts in current directory ==="
+          ls -lh *.apk *.aab 2>/dev/null || echo "No APK/AAB files in root"
+          echo ""
+          echo "=== Verifying expected files ==="
+          if [ -f "./app-prod.apk" ]; then
+            echo "✓ app-prod.apk exists ($(du -h ./app-prod.apk | cut -f1))"
+          else
+            echo "✗ app-prod.apk not found"
+          fi
+          if [ -f "./app-prod.aab" ]; then
+            echo "✓ app-prod.aab exists ($(du -h ./app-prod.aab | cut -f1))"
+          else
+            echo "✗ app-prod.aab not found"
+          fi
+
       - name: 📦 Upload build artifacts to GitHub
         uses: actions/upload-artifact@v4
         with:
-          name: production-builds
+          name: production-builds-${{ github.sha }}
           path: |
             ./app-prod.apk
             ./app-prod.aab
           retention-days: 30
+          if-no-files-found: warn
 
       - name: 📢 Build Summary
         run: |
@@ -206,7 +270,25 @@ jobs:
           echo "**Environment:** Production" >> $GITHUB_STEP_SUMMARY
           echo "**Branch:** ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
           echo "**Commit:** ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Build Type:** ${{ github.event.inputs.buildType || 'default (prod-apk)' }}" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "Build artifacts have been uploaded and are available for download." >> $GITHUB_STEP_SUMMARY
+
+          echo "### 📦 Build Artifacts" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if [ -f "./app-prod.apk" ]; then
+            APK_SIZE=$(du -h ./app-prod.apk | cut -f1)
+            echo "✅ **Production APK:** app-prod.apk ($APK_SIZE)" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          if [ -f "./app-prod.aab" ]; then
+            AAB_SIZE=$(du -h ./app-prod.aab | cut -f1)
+            echo "✅ **Production AAB:** app-prod.aab ($AAB_SIZE)" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 📥 Download" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Build artifacts are available in the **Artifacts** section of this workflow run." >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "⚠️ **Note:** Production builds are retained for 30 days." >> $GITHUB_STEP_SUMMARY
