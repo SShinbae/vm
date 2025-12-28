@@ -149,10 +149,17 @@ jobs:
             exit 1
           fi
 
+      - name: 🧹 Clean Metro cache before build
+        run: |
+          rm -rf node_modules/.cache
+          rm -rf /tmp/metro-*
+          rm -rf $HOME/.expo
+
       - name: 📱 Build Production APK
         if: github.event.inputs.buildType == 'all' || github.event.inputs.buildType == 'prod-apk' || (github.event_name == 'push' && (github.event.inputs.buildType == '' || github.event.inputs.buildType == null))
         run: |
-          export NODE_OPTIONS="--max_old_space_size=4096"
+          export NODE_OPTIONS="--max_old_space_size=6144"
+          export EXPO_NO_METRO_LAZY=1
           eas build --platform android --profile production-apk --local --non-interactive --output=./app-prod.apk
         env:
           NODE_ENV: production
@@ -173,7 +180,8 @@ jobs:
       - name: 📱 Build Production AAB
         if: github.event.inputs.buildType == 'all' || github.event.inputs.buildType == 'prod-aab'
         run: |
-          export NODE_OPTIONS="--max_old_space_size=4096"
+          export NODE_OPTIONS="--max_old_space_size=6144"
+          export EXPO_NO_METRO_LAZY=1
           eas build --platform android --profile production --local --non-interactive --output=./app-prod.aab
         env:
           NODE_ENV: production

@@ -213,11 +213,12 @@ async function fetchRecentActivity(userId: string): Promise<ActivityItem[]> {
  * React Query-powered dashboard hook with caching and automatic refetching
  *
  * Benefits:
- * - Automatic caching (30s stale time, 5min cache time)
+ * - Automatic caching with optimized stale times
  * - Request deduplication (no duplicate API calls)
  * - Background refetching on mount/reconnect
  * - Instant navigation when data is cached
  * - Optimistic updates support
+ * - Parallel query execution for faster initial load
  */
 export const useDashboardDataQuery = () => {
   const { user } = useAuth();
@@ -228,22 +229,22 @@ export const useDashboardDataQuery = () => {
         queryKey: ["dashboard", "stats", user?.id],
         queryFn: () => fetchStats(user!.id),
         enabled: !!user,
-        staleTime: 30000, // 30s - stats change relatively slowly
-        gcTime: 300000, // 5min cache
+        staleTime: 2 * 60 * 1000, // 2min - stats change relatively slowly (aligned with global config)
+        gcTime: 10 * 60 * 1000, // 10min cache (aligned with global config)
       },
       {
         queryKey: ["dashboard", "vehicles", user?.id],
         queryFn: () => fetchVehicles(user!.id),
         enabled: !!user,
-        staleTime: 60000, // 1min - vehicles change less frequently
-        gcTime: 600000, // 10min cache
+        staleTime: 3 * 60 * 1000, // 3min - vehicles change less frequently
+        gcTime: 15 * 60 * 1000, // 15min cache
       },
       {
         queryKey: ["dashboard", "activity", user?.id],
         queryFn: () => fetchRecentActivity(user!.id),
         enabled: !!user,
-        staleTime: 15000, // 15s - activity updates more frequently
-        gcTime: 180000, // 3min cache
+        staleTime: 1 * 60 * 1000, // 1min - activity updates more frequently
+        gcTime: 5 * 60 * 1000, // 5min cache
       },
     ],
   });
