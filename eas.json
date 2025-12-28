@@ -65,7 +65,8 @@
       "distribution": "internal",
       "node": "20.18.2",
       "android": {
-        "buildType": "apk"
+        "buildType": "apk",
+        "gradleCommand": ":app:assembleRelease"
       },
       "ios": {
         "resourceClass": "m-medium"
