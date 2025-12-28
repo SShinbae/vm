@@ -1,7 +1,6 @@
-import BottomSheet from "@gorhom/bottom-sheet";
 import { router } from "expo-router";
 import React, { useCallback, useRef, useState } from "react";
-import { RefreshControl, ScrollView, Text, View } from "react-native";
+import { RefreshControl, ScrollView, Text, View, Platform } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { createStyleSheet, useStyles } from "react-native-unistyles";
@@ -9,7 +8,6 @@ import { createStyleSheet, useStyles } from "react-native-unistyles";
 import { WebLayout } from "@/components/layout/WebLayout";
 import { FloatingActionButton } from "@/components/ui/FloatingActionButton";
 import { SkeletonVehicleList } from "@/components/ui/Skeleton";
-import { VehicleDetailsBottomSheet } from "@/components/vehicles/VehicleDetailsBottomSheet";
 import { VehicleFilters } from "@/components/vehicles/VehicleFilters";
 import { VehicleList } from "@/components/vehicles/VehicleList";
 import { VehicleSearchBar } from "@/components/vehicles/VehicleSearchBar";
@@ -21,6 +19,15 @@ import { useVehicles } from "@/hooks/useVehicles";
 import { useVehicleStats } from "@/hooks/useVehicleStats";
 
 import { VehicleWithDetails } from "@/types/database-v2";
+
+// Conditionally import BottomSheet components only on native platforms
+// This prevents react-native-reanimated web compatibility issues
+let VehicleDetailsBottomSheet: any;
+if (Platform.OS !== "web") {
+  VehicleDetailsBottomSheet =
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    require("@/components/vehicles/VehicleDetailsBottomSheet").VehicleDetailsBottomSheet;
+}
 
 /**
  * VehiclesScreen - Redesigned for scalability
@@ -49,20 +56,27 @@ export default function VehiclesScreen() {
   } = useVehicleFilters(allVehicles);
 
   // Bottom sheet state
-  const bottomSheetRef = useRef<BottomSheet>(null);
+  const bottomSheetRef = useRef<any>(null);
   const [selectedVehicle, setSelectedVehicle] =
     useState<VehicleWithDetails | null>(null);
 
   // Handle opening bottom sheet
   const handleOpenBottomSheet = useCallback((vehicle: VehicleWithDetails) => {
     setSelectedVehicle(vehicle);
-    bottomSheetRef.current?.expand();
+    if (Platform.OS !== "web") {
+      bottomSheetRef.current?.expand();
+    } else {
+      // On web, navigate directly to vehicle details
+      router.push(`/vehicles/${vehicle.id}` as any);
+    }
   }, []);
 
   // Handle closing bottom sheet
   const handleCloseBottomSheet = useCallback(() => {
-    bottomSheetRef.current?.close();
-    setTimeout(() => setSelectedVehicle(null), 300);
+    if (Platform.OS !== "web") {
+      bottomSheetRef.current?.close();
+      setTimeout(() => setSelectedVehicle(null), 300);
+    }
   }, []);
 
   // Loading state with skeletons
@@ -189,12 +203,14 @@ export default function VehiclesScreen() {
             icon="plus"
           />
 
-          {/* Bottom Sheet Modal */}
-          <VehicleDetailsBottomSheet
-            ref={bottomSheetRef}
-            vehicle={selectedVehicle}
-            onClose={handleCloseBottomSheet}
-          />
+          {/* Bottom Sheet Modal - Native only */}
+          {Platform.OS !== "web" && VehicleDetailsBottomSheet && (
+            <VehicleDetailsBottomSheet
+              ref={bottomSheetRef}
+              vehicle={selectedVehicle}
+              onClose={handleCloseBottomSheet}
+            />
+          )}
         </WebLayout>
       </SafeAreaView>
     </GestureHandlerRootView>

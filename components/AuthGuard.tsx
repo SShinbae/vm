@@ -304,15 +304,20 @@ export function AuthGuard({ children }: AuthGuardProps) {
     }
 
     // Case 2: User not authenticated and trying to access protected routes
+    // Add a small delay to give session restoration one more chance
     if (!user && !inAuthGroup && !inRootIndex) {
-      if (!redirectState.hasRedirected) {
-        if (__DEV__) {
-          console.log("[AuthGuard] Redirecting to login (no user)");
+      // Give it a brief moment to avoid race conditions on web refresh
+      const redirectTimer = setTimeout(() => {
+        if (!redirectState.hasRedirected) {
+          if (__DEV__) {
+            console.log("[AuthGuard] Redirecting to login (no user)");
+          }
+          setRedirectState((prev) => ({ ...prev, hasRedirected: true }));
+          navigate(AUTH_ROUTES.LOGIN);
         }
-        setRedirectState((prev) => ({ ...prev, hasRedirected: true }));
-        navigate(AUTH_ROUTES.LOGIN);
-      }
-      return;
+      }, 100); // 100ms grace period
+
+      return () => clearTimeout(redirectTimer);
     }
 
     // Case 3: User authenticated but still on auth pages

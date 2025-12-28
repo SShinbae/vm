@@ -65,12 +65,30 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const fetchUserProfile = useCallback(
     async (user: User): Promise<AuthUser | null> => {
       try {
-        const { data: profile, error }: { data: Profile | null; error: any } =
-          await supabase
-            .from("profiles")
-            .select("*")
-            .eq("id", user.id)
-            .single();
+        // Add timeout to prevent hanging on slow database queries
+        const timeoutPromise = new Promise<{ data: null; error: any }>(
+          (resolve) => {
+            setTimeout(
+              () =>
+                resolve({
+                  data: null,
+                  error: { message: "Profile fetch timeout" },
+                }),
+              3000,
+            );
+          },
+        );
+
+        const profilePromise = supabase
+          .from("profiles")
+          .select("*")
+          .eq("id", user.id)
+          .single();
+
+        const { data: profile, error } = await Promise.race([
+          profilePromise,
+          timeoutPromise,
+        ]);
 
         if (error && error.code !== "PGRST116") {
           if (__DEV__) {
@@ -150,61 +168,94 @@ export function AuthProvider({ children }: AuthProviderProps) {
   useEffect(() => {
     let mounted = true;
 
-    // Get initial session with timeout to prevent infinite loading
-    const sessionTimeout = setTimeout(() => {
-      if (mounted && !state.initialized) {
-        if (__DEV__) {
-          console.warn(
-            "Session initialization timeout - forcing initialized state",
-          );
+    // Initialize immediately - optimized for web performance
+    (async () => {
+      try {
+        // Mark as initialized early to prevent loading screen flash
+        // We'll update with real data as it comes in
+        setState((prev) => ({ ...prev, initialized: true }));
+
+        const {
+          data: { session },
+          error,
+        } = await supabase.auth.getSession();
+
+        if (!mounted) return;
+
+        if (error && __DEV__) {
+          console.error("Error getting session:", error);
         }
-        setState((prev) => ({
-          ...prev,
-          initialized: true,
-          loading: false,
-        }));
-      }
-    }, 5000); // 5 second timeout for session restoration (increased from 3s for web)
 
-    // CRITICAL FIX: Use a small delay to ensure localStorage is ready on web
-    // This prevents race conditions where getSession is called before localStorage is accessible
-    const initDelay = Platform.OS === "web" ? 100 : 0;
+        if (__DEV__ && session) {
+          console.log("Session restored successfully:", {
+            userId: session.user.id,
+            email: session.user.email,
+            expiresAt: session.expires_at,
+          });
+        }
 
-    setTimeout(() => {
-      supabase.auth
-        .getSession()
-        .then(({ data: { session }, error }) => {
-          clearTimeout(sessionTimeout);
-          if (error && __DEV__) {
-            console.error("Error getting session:", error);
-          }
-          if (mounted) {
-            if (__DEV__ && session) {
-              console.log("Session restored successfully:", {
-                userId: session.user.id,
-                email: session.user.email,
-                expiresAt: session.expires_at,
-              });
-            }
-            setUser(session);
-            setState((prev) => ({ ...prev, initialized: true }));
-          }
-        })
-        .catch((err) => {
-          clearTimeout(sessionTimeout);
-          if (__DEV__) {
-            console.error("Failed to get session:", err);
-          }
-          if (mounted) {
+        // If we have a session, set basic user info immediately
+        // Then fetch full profile in background
+        if (session?.user) {
+          const isEmailConfirmed = session.user.email_confirmed_at != null;
+
+          if (isEmailConfirmed) {
+            // Set basic user info immediately to prevent redirect
             setState((prev) => ({
               ...prev,
-              initialized: true,
+              user: {
+                id: session.user.id,
+                email: session.user.email || "",
+                username: null,
+              },
               loading: false,
+            }));
+
+            // Fetch full profile in background and update when ready
+            // This doesn't block the UI
+            fetchUserProfile(session.user)
+              .then((authUser) => {
+                if (mounted && authUser) {
+                  setState((prev) => ({
+                    ...prev,
+                    user: authUser,
+                  }));
+                }
+              })
+              .catch((err) => {
+                if (__DEV__) {
+                  console.error("Error fetching profile in background:", err);
+                }
+              });
+          } else {
+            // Email not confirmed, no user
+            setState((prev) => ({
+              ...prev,
               user: null,
+              loading: false,
             }));
           }
-        });
-    }, initDelay);
+        } else {
+          // No session
+          setState((prev) => ({
+            ...prev,
+            user: null,
+            loading: false,
+          }));
+        }
+      } catch (err) {
+        if (__DEV__) {
+          console.error("Failed to get session:", err);
+        }
+        if (mounted) {
+          setState((prev) => ({
+            ...prev,
+            user: null,
+            loading: false,
+          }));
+        }
+      }
+    })();
 
     // Listen for auth changes
     const {
@@ -259,7 +310,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
     return () => {
       mounted = false;
-      clearTimeout(sessionTimeout);
       subscription.unsubscribe();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
