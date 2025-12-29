@@ -33,11 +33,12 @@ import { useStyles } from "react-native-unistyles";
 
 // Conditionally import BottomSheet components only on native platforms
 // This prevents react-native-reanimated web compatibility issues
+// Platform-specific files handle the exports (index.android.ts, index.ios.ts, index.web.ts)
 let LogDetailsBottomSheet: any;
 if (Platform.OS !== "web") {
-  LogDetailsBottomSheet =
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    require("@/components/logs/LogDetailsBottomSheet").LogDetailsBottomSheet;
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const logsModule = require("../../components/logs");
+  LogDetailsBottomSheet = logsModule.LogDetailsBottomSheet;
 }
 
 type LogType = "mileage" | "fuel" | "service";
