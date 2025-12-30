@@ -66,18 +66,19 @@ export function AuthProvider({ children }: AuthProviderProps) {
     async (user: User): Promise<AuthUser | null> => {
       try {
         // Add timeout to prevent hanging on slow database queries
-        const timeoutPromise = new Promise<{ data: null; error: any }>(
-          (resolve) => {
-            setTimeout(
-              () =>
-                resolve({
-                  data: null,
-                  error: { message: "Profile fetch timeout" },
-                }),
-              3000,
-            );
-          },
-        );
+        const timeoutPromise = new Promise<{
+          data: Profile | null;
+          error: any;
+        }>((resolve) => {
+          setTimeout(
+            () =>
+              resolve({
+                data: null,
+                error: { message: "Profile fetch timeout" },
+              }),
+            3000,
+          );
+        });
 
         const profilePromise = supabase
           .from("profiles")
