@@ -158,10 +158,23 @@ jobs:
       - name: 📱 Build Production APK
         if: github.event.inputs.buildType == 'all' || github.event.inputs.buildType == 'prod-apk' || (github.event_name == 'push' && (github.event.inputs.buildType == '' || github.event.inputs.buildType == null))
         run: |
-          export NODE_OPTIONS="--max_old_space_size=8192"
+          export NODE_OPTIONS="--max-old-space-size=8192"
+          export EXPO_NO_METRO_LAZY=1
+          export EAS_SKIP_AUTO_FINGERPRINT=1
 
           echo "Starting production APK build..."
-          eas build --platform android --profile production-apk --local --non-interactive --output=./app-prod.apk
+          echo "Node version: $(node --version)"
+          echo "NPM version: $(npm --version)"
+          echo "EAS CLI version: $(eas --version)"
+
+          eas build --platform android --profile production-apk --local --non-interactive --output=./app-prod.apk 2>&1 | tee build.log
+
+          # Check if build failed
+          if [ ${PIPESTATUS[0]} -ne 0 ]; then
+            echo "❌ Build failed. Last 100 lines of output:"
+            tail -100 build.log
+            exit 1
+          fi
 
           # Verify the build output
           if [ -f "./app-prod.apk" ]; then
@@ -201,10 +214,23 @@ jobs:
       - name: 📱 Build Production AAB
         if: github.event.inputs.buildType == 'all' || github.event.inputs.buildType == 'prod-aab'
         run: |
-          export NODE_OPTIONS="--max_old_space_size=8192"
+          export NODE_OPTIONS="--max-old-space-size=8192"
+          export EXPO_NO_METRO_LAZY=1
+          export EAS_SKIP_AUTO_FINGERPRINT=1
 
           echo "Starting production AAB build..."
-          eas build --platform android --profile production --local --non-interactive --output=./app-prod.aab
+          echo "Node version: $(node --version)"
+          echo "NPM version: $(npm --version)"
+          echo "EAS CLI version: $(eas --version)"
+
+          eas build --platform android --profile production --local --non-interactive --output=./app-prod.aab 2>&1 | tee build-aab.log
+
+          # Check if build failed
+          if [ ${PIPESTATUS[0]} -ne 0 ]; then
+            echo "❌ Build failed. Last 100 lines of output:"
+            tail -100 build-aab.log
+            exit 1
+          fi
 
           # Verify the build output
           if [ -f "./app-prod.aab" ]; then
