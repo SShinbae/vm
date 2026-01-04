@@ -8,7 +8,7 @@ import { ServiceLog, ServiceType } from "@/types";
 import { router, useLocalSearchParams } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
-  Alert,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -16,6 +16,37 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+
+// Cross-platform alert helper
+const showAlert = (
+  title: string,
+  message: string,
+  buttons?: Array<{ text: string; style?: string; onPress?: () => void }>,
+) => {
+  if (Platform.OS === "web") {
+    if (buttons && buttons.length > 1) {
+      // For confirmation dialogs
+      const confirmed = window.confirm(`${title}\n\n${message}`);
+      if (confirmed) {
+        const confirmButton = buttons.find(
+          (b) => b.style === "destructive" || b.text === "OK",
+        );
+        confirmButton?.onPress?.();
+      } else {
+        const cancelButton = buttons.find((b) => b.style === "cancel");
+        cancelButton?.onPress?.();
+      }
+    } else {
+      // For simple alerts
+      window.alert(`${title}\n\n${message}`);
+      buttons?.[0]?.onPress?.();
+    }
+  } else {
+    // Dynamic import for native Alert to avoid web issues
+    const { Alert } = require("react-native");
+    Alert.alert(title, message, buttons as any);
+  }
+};
 
 const SERVICE_TYPE_LABELS: Record<ServiceType, string> = {
   oil_change: "Oil Change",
@@ -47,7 +78,7 @@ export default function ServiceLogDetailScreen() {
   useEffect(() => {
     const fetchServiceLog = async () => {
       if (!id) {
-        Alert.alert("Error", "Invalid service log ID");
+        showAlert("Error", "Invalid service log ID");
         router.back();
         return;
       }
@@ -55,14 +86,14 @@ export default function ServiceLogDetailScreen() {
       try {
         const { data: logs, error } = await ServiceLogService.getServiceLogs();
         if (error) {
-          Alert.alert("Error", "Failed to load service log");
+          showAlert("Error", "Failed to load service log");
           router.back();
           return;
         }
 
         const log = logs?.find((l) => l.id === id);
         if (!log) {
-          Alert.alert("Error", "Service log not found");
+          showAlert("Error", "Service log not found");
           router.back();
           return;
         }
@@ -70,7 +101,7 @@ export default function ServiceLogDetailScreen() {
         setServiceLog(log);
       } catch (error) {
         console.error("Error fetching service log:", error);
-        Alert.alert("Error", "Failed to load service log");
+        showAlert("Error", "Failed to load service log");
         router.back();
       }
 
@@ -85,7 +116,60 @@ export default function ServiceLogDetailScreen() {
   };
 
   const handleDelete = () => {
-    Alert.alert(
+    if (!id) {
+      showAlert("Error", "Cannot delete: Invalid service log ID");
+      return;
+    }
+
+    const performDelete = async () => {
+      try {
+        console.log("Attempting to delete service log with ID:", id);
+        const result = await ServiceLogService.deleteServiceLog(id);
+        console.log("Delete result:", result);
+
+        if (result.error) {
+          let errorMessage = result.error;
+          // Handle specific error codes with user-friendly messages
+          if (result.error === "PERMISSION_DENIED_SHARED_VEHICLE") {
+            errorMessage =
+              "This service log belongs to a shared vehicle. Only the vehicle owner can delete logs.";
+          } else if (result.error === "PERMISSION_DENIED_ACCESS") {
+            errorMessage =
+              "You do not have permission to delete this service log.";
+          } else if (result.error.includes("not found")) {
+            errorMessage =
+              "This service log no longer exists. It may have been deleted already.";
+          }
+          showAlert("Error", errorMessage);
+        } else if (result.data === true) {
+          showAlert("Success", "Service log deleted successfully", [
+            {
+              text: "OK",
+              onPress: () => router.back(),
+            },
+          ]);
+        } else {
+          showAlert(
+            "Warning",
+            "Delete operation completed but status is unclear. Please go back and check if the log was deleted.",
+            [
+              {
+                text: "OK",
+                onPress: () => router.back(),
+              },
+            ],
+          );
+        }
+      } catch (error) {
+        console.error("Error deleting service log:", error);
+        showAlert(
+          "Error",
+          "Failed to delete service log. Please check your connection and try again.",
+        );
+      }
+    };
+
+    showAlert(
       "Delete Service Log",
       "Are you sure you want to delete this service log? This action cannot be undone.",
       [
@@ -93,24 +177,7 @@ export default function ServiceLogDetailScreen() {
         {
           text: "Delete",
           style: "destructive",
-          onPress: async () => {
-            try {
-              const { error } = await ServiceLogService.deleteServiceLog(id!);
-              if (error) {
-                Alert.alert("Error", error);
-              } else {
-                Alert.alert("Success", "Service log deleted successfully", [
-                  {
-                    text: "OK",
-                    onPress: () => router.back(),
-                  },
-                ]);
-              }
-            } catch (error) {
-              console.error("Error deleting service log:", error);
-              Alert.alert("Error", "Failed to delete service log");
-            }
-          },
+          onPress: performDelete,
         },
       ],
     );

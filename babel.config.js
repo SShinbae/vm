@@ -3,7 +3,8 @@ module.exports = function (api) {
 
   const isProduction =
     process.env.EAS_BUILD_PROFILE === "production" ||
-    process.env.EAS_BUILD_PROFILE === "production-apk";
+    process.env.EAS_BUILD_PROFILE === "production-apk" ||
+    process.env.NODE_ENV === "production";
 
   // Base alias configuration (no web polyfills - those are handled by metro.config.js)
   const alias = {

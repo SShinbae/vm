@@ -4,5 +4,5 @@
  * Note: LogDetailsBottomSheet is not exported on web due to react-native-reanimated compatibility
  */
 
-// Empty export for web - LogDetailsBottomSheet requires native modules
-export {};
+// Web doesn't support @gorhom/bottom-sheet, export null component
+export const LogDetailsBottomSheet = null;
