@@ -21,6 +21,7 @@ import { AuthGuard } from "@/components/AuthGuard";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { AuthProvider } from "@/lib/contexts/AuthContext";
+import { DemoProvider } from "@/lib/contexts/DemoContext";
 import { DialogProvider } from "@/lib/contexts/DialogContext";
 import { NotificationProvider } from "@/lib/contexts/NotificationContext";
 import { ThemeProvider } from "@/lib/contexts/ThemeContext";
@@ -38,13 +39,15 @@ export default function RootLayout() {
     <ErrorBoundary>
       <QueryProvider>
         <ThemeProvider>
-          <AuthProvider>
-            <NotificationProvider>
-              <DialogProvider>
-                <RootLayoutContent />
-              </DialogProvider>
-            </NotificationProvider>
-          </AuthProvider>
+          <DemoProvider>
+            <AuthProvider>
+              <NotificationProvider>
+                <DialogProvider>
+                  <RootLayoutContent />
+                </DialogProvider>
+              </NotificationProvider>
+            </AuthProvider>
+          </DemoProvider>
         </ThemeProvider>
       </QueryProvider>
     </ErrorBoundary>
@@ -125,6 +128,7 @@ function RootLayoutContent() {
               <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
               <Stack.Screen name="(auth)" options={{ headerShown: false }} />
               <Stack.Screen name="auth" options={{ headerShown: false }} />
+              <Stack.Screen name="demo" options={{ headerShown: false }} />
               <Stack.Screen name="vehicles" options={{ headerShown: false }} />
               <Stack.Screen name="logs" options={{ headerShown: false }} />
               <Stack.Screen name="groups" options={{ headerShown: false }} />

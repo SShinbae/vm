@@ -155,6 +155,20 @@ jobs:
           rm -rf /tmp/metro-*
           rm -rf $HOME/.expo
 
+      - name: 🔧 Create production environment file
+        run: |
+          echo "Creating .env.production.build..."
+          cat > .env.production.build << 'ENV_EOF'
+          SUPABASE_URL=${{ secrets.PROD_SUPABASE_URL || secrets.SUPABASE_URL }}
+          SUPABASE_KEY=${{ secrets.PROD_SUPABASE_KEY || secrets.SUPABASE_KEY }}
+          GOOGLE_VISION_API_KEY=${{ secrets.PROD_GOOGLE_VISION_API_KEY || secrets.GOOGLE_VISION_API_KEY }}
+          SITE_URL=${{ secrets.PROD_SITE_URL || secrets.SITE_URL }}
+          ONESIGNAL_APP_ID=${{ secrets.PROD_ONESIGNAL_APP_ID || secrets.ONESIGNAL_APP_ID }}
+          NODE_ENV=production
+          ENV_EOF
+          echo "✓ Created. Verifying SITE_URL..."
+          grep "SITE_URL=" .env.production.build | sed 's/SITE_URL=/SITE_URL: /'
+
       - name: 📱 Build Production APK
         if: github.event.inputs.buildType == 'all' || github.event.inputs.buildType == 'prod-apk' || (github.event_name == 'push' && (github.event.inputs.buildType == '' || github.event.inputs.buildType == null))
         run: |
@@ -196,11 +210,11 @@ jobs:
               exit 1
             fi
           fi
-        env:
-          SUPABASE_URL: ${{ secrets.PROD_SUPABASE_URL || secrets.SUPABASE_URL }}
-          SUPABASE_KEY: ${{ secrets.PROD_SUPABASE_KEY || secrets.SUPABASE_KEY }}
-          GOOGLE_VISION_API_KEY: ${{ secrets.PROD_GOOGLE_VISION_API_KEY || secrets.GOOGLE_VISION_API_KEY }}
-          SITE_URL: ${{ secrets.PROD_SITE_URL || secrets.SITE_URL }}
+
+      - name: 🧹 Remove environment file
+        if: always()
+        run: |
+          [ -f .env.production.build ] && rm .env.production.build && echo "✓ Cleaned up"
 
       - name: 🧹 Clean up after prod APK build
         if: github.event.inputs.buildType == 'all'
@@ -210,6 +224,21 @@ jobs:
           rm -rf ~/.gradle/wrapper/
           rm -rf node_modules/.cache
           df -h
+
+      - name: 🔧 Create production environment file for AAB
+        if: github.event.inputs.buildType == 'all' || github.event.inputs.buildType == 'prod-aab'
+        run: |
+          echo "Creating .env.production.build..."
+          cat > .env.production.build << 'ENV_EOF'
+          SUPABASE_URL=${{ secrets.PROD_SUPABASE_URL || secrets.SUPABASE_URL }}
+          SUPABASE_KEY=${{ secrets.PROD_SUPABASE_KEY || secrets.SUPABASE_KEY }}
+          GOOGLE_VISION_API_KEY=${{ secrets.PROD_GOOGLE_VISION_API_KEY || secrets.GOOGLE_VISION_API_KEY }}
+          SITE_URL=${{ secrets.PROD_SITE_URL || secrets.SITE_URL }}
+          ONESIGNAL_APP_ID=${{ secrets.PROD_ONESIGNAL_APP_ID || secrets.ONESIGNAL_APP_ID }}
+          NODE_ENV=production
+          ENV_EOF
+          echo "✓ Created. Verifying SITE_URL..."
+          grep "SITE_URL=" .env.production.build | sed 's/SITE_URL=/SITE_URL: /'
 
       - name: 📱 Build Production AAB
         if: github.event.inputs.buildType == 'all' || github.event.inputs.buildType == 'prod-aab'
@@ -252,11 +281,11 @@ jobs:
               exit 1
             fi
           fi
-        env:
-          SUPABASE_URL: ${{ secrets.PROD_SUPABASE_URL || secrets.SUPABASE_URL }}
-          SUPABASE_KEY: ${{ secrets.PROD_SUPABASE_KEY || secrets.SUPABASE_KEY }}
-          GOOGLE_VISION_API_KEY: ${{ secrets.PROD_GOOGLE_VISION_API_KEY || secrets.GOOGLE_VISION_API_KEY }}
-          SITE_URL: ${{ secrets.PROD_SITE_URL || secrets.SITE_URL }}
+
+      - name: 🧹 Remove environment file after AAB
+        if: always()
+        run: |
+          [ -f .env.production.build ] && rm .env.production.build && echo "✓ Cleaned up"
 
       - name: 📋 List build artifacts
         run: |

@@ -1,6 +1,7 @@
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useAuth } from "@/lib/contexts/AuthContext";
+import { useDemoMode } from "@/lib/contexts/DemoContext";
 import { router, useSegments } from "expo-router";
 import React, { useEffect, useMemo, useState } from "react";
 import { ActivityIndicator, StyleSheet, View } from "react-native";
@@ -110,12 +111,15 @@ function useAuthPageTracking(
 /**
  * Hook to compute current route state
  */
-function useRouteState(segments: string[]): RouteState {
+function useRouteState(
+  segments: string[],
+): RouteState & { inDemoGroup: boolean } {
   return useMemo(() => {
     const segmentPath = segments.join("/");
     const lastSegment = segments[segments.length - 1];
 
     const inAuthGroup = segments[0] === "(auth)";
+    const inDemoGroup = segments[0] === "demo";
     const inRootIndex =
       !segmentPath || segmentPath === "" || segmentPath === "index";
     const inTabs = segments[0] === "(tabs)";
@@ -132,6 +136,7 @@ function useRouteState(segments: string[]): RouteState {
     return {
       segmentPath,
       inAuthGroup,
+      inDemoGroup,
       inRootIndex,
       inTabs,
       isOnAuthPage,
@@ -187,7 +192,12 @@ function useSecureNavigation() {
  * @param children - Child components to render when authentication check passes
  */
 export function AuthGuard({ children }: AuthGuardProps) {
+  // ============================================================================
+  // ALL HOOKS MUST BE CALLED BEFORE ANY CONDITIONAL RETURNS
+  // ============================================================================
+
   const { user, loading, initialized, isPasswordRecovery } = useAuth();
+  const { isDemoMode } = useDemoMode();
   const segments = useSegments();
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? "light"];
@@ -200,6 +210,41 @@ export function AuthGuard({ children }: AuthGuardProps) {
 
   // Force initialization after timeout to prevent infinite loading
   const [forceInitialized, setForceInitialized] = useState(false);
+
+  const routeState = useRouteState(segments);
+  const wasRecentlyOnAuthPage = useAuthPageTracking(routeState.isOnAuthPage);
+  const { navigate } = useSecureNavigation();
+
+  const {
+    segmentPath,
+    inAuthGroup,
+    inDemoGroup,
+    inRootIndex,
+    inTabs,
+    isOnAuthPage,
+    isOnInvalidAuthPage,
+  } = routeState;
+
+  // Compute shouldShowLoading early (used in multiple places)
+  const shouldShowLoading = useMemo(() => {
+    return (
+      (!initialized || loading) &&
+      !isOnAuthPage &&
+      !wasRecentlyOnAuthPage &&
+      !forceInitialized
+    );
+  }, [
+    initialized,
+    loading,
+    isOnAuthPage,
+    wasRecentlyOnAuthPage,
+    forceInitialized,
+  ]);
+
+  // ============================================================================
+  // ALL EFFECTS
+  // ============================================================================
+
   useEffect(() => {
     const timeout = setTimeout(() => {
       if (!initialized) {
@@ -212,19 +257,6 @@ export function AuthGuard({ children }: AuthGuardProps) {
 
     return () => clearTimeout(timeout);
   }, [initialized]);
-
-  const routeState = useRouteState(segments);
-  const wasRecentlyOnAuthPage = useAuthPageTracking(routeState.isOnAuthPage);
-  const { navigate } = useSecureNavigation();
-
-  const {
-    segmentPath,
-    inAuthGroup,
-    inRootIndex,
-    inTabs,
-    isOnAuthPage,
-    isOnInvalidAuthPage,
-  } = routeState;
 
   // ============================================================================
   // Effect: Track Previous Path
@@ -242,6 +274,8 @@ export function AuthGuard({ children }: AuthGuardProps) {
   // ============================================================================
 
   useEffect(() => {
+    // Skip for demo mode
+    if (inDemoGroup || isDemoMode) return;
     if (!initialized || loading) return;
     if (!segmentPath) return; // Skip during transitions
 
@@ -265,6 +299,8 @@ export function AuthGuard({ children }: AuthGuardProps) {
     segmentPath,
     redirectState.hasRedirected,
     navigate,
+    inDemoGroup,
+    isDemoMode,
   ]);
 
   // ============================================================================
@@ -272,6 +308,8 @@ export function AuthGuard({ children }: AuthGuardProps) {
   // ============================================================================
 
   useEffect(() => {
+    // Skip for demo mode
+    if (inDemoGroup || isDemoMode) return;
     if (!initialized || loading) return;
     if (!segmentPath) return; // Skip during transitions
     if (isPasswordRecovery) return; // Skip during password recovery
@@ -350,7 +388,22 @@ export function AuthGuard({ children }: AuthGuardProps) {
     wasRecentlyOnAuthPage,
     redirectState.hasRedirected,
     navigate,
+    inDemoGroup,
+    isDemoMode,
   ]);
+
+  // ============================================================================
+  // BYPASS AUTH FOR DEMO MODE
+  // ============================================================================
+
+  // If user is in demo routes, bypass all authentication checks
+  // This check happens AFTER all hooks have been called
+  if (inDemoGroup || isDemoMode) {
+    if (__DEV__) {
+      console.log("[AuthGuard] In demo mode, bypassing auth checks");
+    }
+    return <>{children}</>;
+  }
 
   // ============================================================================
   // Render Logic
@@ -362,21 +415,6 @@ export function AuthGuard({ children }: AuthGuardProps) {
    * Also skip if we were recently on auth page to prevent toast interruption
    * Force stop loading after timeout to prevent infinite loading
    */
-  const shouldShowLoading = useMemo(() => {
-    return (
-      (!initialized || loading) &&
-      !isOnAuthPage &&
-      !wasRecentlyOnAuthPage &&
-      !forceInitialized
-    );
-  }, [
-    initialized,
-    loading,
-    isOnAuthPage,
-    wasRecentlyOnAuthPage,
-    forceInitialized,
-  ]);
-
   if (shouldShowLoading) {
     return (
       <View
