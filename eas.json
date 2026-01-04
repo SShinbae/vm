@@ -76,7 +76,6 @@
         "resourceClass": "m-medium"
       },
       "env": {
-        "NODE_ENV": "production",
         "EAS_BUILD_PROFILE": "production-apk"
       }
     },
@@ -89,7 +88,6 @@
         "resourceClass": "m-medium"
       },
       "env": {
-        "NODE_ENV": "production",
         "EAS_BUILD_PROFILE": "production"
       }
     }

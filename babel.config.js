@@ -1,7 +1,19 @@
 module.exports = function (api) {
   api.cache(true);
 
-  const isProduction = process.env.NODE_ENV === "production";
+  const isProduction =
+    process.env.EAS_BUILD_PROFILE === "production" ||
+    process.env.EAS_BUILD_PROFILE === "production-apk";
+
+  // Base alias configuration (no web polyfills - those are handled by metro.config.js)
+  const alias = {
+    "@": "./",
+    "@components": "./src/components",
+    "@screens": "./src/screens",
+    "@utils": "./src/utils",
+    "@hooks": "./src/hooks",
+    "@assets": "./assets",
+  };
 
   const plugins = [
     // Optional - Plugin transform for optimization
@@ -21,17 +33,7 @@ module.exports = function (api) {
           ".tsx",
           ".json",
         ],
-        alias: {
-          "@": "./",
-          "@components": "./src/components",
-          "@screens": "./src/screens",
-          "@utils": "./src/utils",
-          "@hooks": "./src/hooks",
-          "@assets": "./assets",
-          // Web polyfills for native animation libraries
-          "react-native-worklets": "./polyfills/react-native-worklets.web",
-          "react-native-reanimated": "./polyfills/react-native-reanimated.web",
-        },
+        alias,
       },
     ],
 
