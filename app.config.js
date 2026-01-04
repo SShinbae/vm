@@ -1,4 +1,31 @@
-require("dotenv").config();
+/* global __dirname */
+const path = require("path");
+const fs = require("fs");
+
+// Determine which .env file to load
+let envFile = ".env.local"; // Default for local dev
+
+if (
+  process.env.EAS_BUILD_PROFILE === "production" ||
+  process.env.EAS_BUILD_PROFILE === "production-apk"
+) {
+  if (fs.existsSync(path.resolve(__dirname, ".env.production.build"))) {
+    envFile = ".env.production.build";
+  } else if (fs.existsSync(path.resolve(__dirname, ".env.production"))) {
+    envFile = ".env.production";
+  }
+} else if (process.env.EAS_BUILD_PROFILE === "preview") {
+  if (fs.existsSync(path.resolve(__dirname, ".env.staging.build"))) {
+    envFile = ".env.staging.build";
+  }
+}
+
+require("dotenv").config({ path: path.resolve(__dirname, envFile) });
+
+if (process.env.NODE_ENV !== "production" || process.env.DEBUG) {
+  console.log(`[app.config.js] Loaded: ${envFile}`);
+  console.log(`[app.config.js] SITE_URL: ${process.env.SITE_URL}`);
+}
 
 module.exports = {
   expo: {

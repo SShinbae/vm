@@ -9,8 +9,8 @@ import {
 import { withWebAlert } from "@/components/ui";
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
-import { useAuth } from "@/lib/contexts/AuthContext";
 import { useToast } from "@/hooks/useToast";
+import { useAuth } from "@/lib/contexts/AuthContext";
 import { isValidEmail } from "@/utils/validation";
 import { Link, router } from "expo-router";
 import React, { useRef, useState } from "react";
@@ -168,6 +168,17 @@ function LoginScreen() {
         linkText="Sign up"
         href="/(auth)/register"
       />
+
+      {/* Demo Mode Link */}
+      {/* <View style={{ marginTop: 20, alignItems: 'center' }}>
+        <Link href="/demo/login" asChild>
+          <TouchableOpacity style={{ padding: 10 }}>
+            <Text style={{ color: colors.primary, fontSize: 14, fontWeight: '600' }}>
+              🎭 Try Demo Mode
+            </Text>
+          </TouchableOpacity>
+        </Link>
+      </View> */}
     </AuthLayout>
   );
 }

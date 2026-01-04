@@ -48,6 +48,7 @@
     "date-fns": "^4.1.0",
     "dayjs": "^1.11.19",
     "dotenv": "^17.2.3",
+    "eas": "^0.1.0",
     "expo": "~54.0.30",
     "expo-constants": "^18.0.9",
     "expo-crop-image": "^0.2.1",
