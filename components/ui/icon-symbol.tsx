@@ -72,6 +72,9 @@ const MAPPING = {
   // Logout Icons
   "arrow.right.square.fill": "logout",
   "arrow.right.square": "logout",
+
+  // Menu Icons
+  ellipsis: "more-vert",
 } as IconMapping;
 
 /**

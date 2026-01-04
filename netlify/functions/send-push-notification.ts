@@ -258,7 +258,8 @@ async function handleLogChange(
 
     const title = "Vehicle Log Update";
     const body = `${userName} ${action} a ${logType} for ${vehicleName}`;
-    const notificationType = table.replace("_logs", "") as
+    // Convert table name to notification_type enum: "mileage_logs" -> "mileage_log"
+    const notificationType = table.replace("_logs", "_log") as
       | "mileage_log"
       | "fuel_log"
       | "service_log";

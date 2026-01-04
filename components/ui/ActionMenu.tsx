@@ -25,14 +25,17 @@ export function ActionMenu({ items, disabled = false }: ActionMenuProps) {
   const handleOpen = (event: any) => {
     if (disabled) return;
 
+    // Stop event from bubbling to parent TouchableOpacity
+    event.stopPropagation();
+
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
 
     // Get the position of the button for positioning the menu
     event.target.measure(
       (
-        x: number,
-        y: number,
-        width: number,
+        _x: number,
+        _y: number,
+        _width: number,
         height: number,
         pageX: number,
         pageY: number,
@@ -67,11 +70,7 @@ export function ActionMenu({ items, disabled = false }: ActionMenuProps) {
           opacity: disabled ? 0.5 : 1,
         }}
       >
-        <IconSymbol
-          name="ellipsis"
-          size={20}
-          color={theme.colors.textSecondary}
-        />
+        <IconSymbol name="ellipsis" size={20} color={theme.colors.text} />
       </TouchableOpacity>
 
       <Modal
