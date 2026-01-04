@@ -46,6 +46,9 @@
       "node": "20.18.2",
       "ios": {
         "resourceClass": "m-medium"
+      },
+      "env": {
+        "EAS_BUILD_PROFILE": "development"
       }
     },
     "preview": {
@@ -58,7 +61,8 @@
         "buildType": "apk"
       },
       "env": {
-        "NODE_ENV": "preview"
+        "NODE_ENV": "preview",
+        "EAS_BUILD_PROFILE": "preview"
       }
     },
     "production-apk": {
@@ -72,7 +76,8 @@
         "resourceClass": "m-medium"
       },
       "env": {
-        "NODE_ENV": "production"
+        "NODE_ENV": "production",
+        "EAS_BUILD_PROFILE": "production-apk"
       }
     },
     "production": {
@@ -84,7 +89,8 @@
         "resourceClass": "m-medium"
       },
       "env": {
-        "NODE_ENV": "production"
+        "NODE_ENV": "production",
+        "EAS_BUILD_PROFILE": "production"
       }
     }
   },
