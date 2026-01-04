@@ -214,7 +214,7 @@ jobs:
       - name: 🧹 Remove environment file
         if: always()
         run: |
-          [ -f .env.production.build ] && rm .env.production.build && echo "✓ Cleaned up"
+          if [ -f .env.production.build ]; then rm .env.production.build && echo "✓ Cleaned up"; else echo "✓ No cleanup needed"; fi
 
       - name: 🧹 Clean up after prod APK build
         if: github.event.inputs.buildType == 'all'
@@ -285,7 +285,7 @@ jobs:
       - name: 🧹 Remove environment file after AAB
         if: always()
         run: |
-          [ -f .env.production.build ] && rm .env.production.build && echo "✓ Cleaned up"
+          if [ -f .env.production.build ]; then rm .env.production.build && echo "✓ Cleaned up"; else echo "✓ No cleanup needed"; fi
 
       - name: 📋 List build artifacts
         run: |
