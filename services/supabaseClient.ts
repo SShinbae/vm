@@ -75,6 +75,38 @@ const storage =
       }
     : AsyncStorage;
 
+// Check if we're on a page that needs URL token detection (password reset, email confirmation)
+// This prevents logout loops on normal page refreshes while still detecting auth tokens
+const shouldDetectSessionInUrl = (): boolean => {
+  if (Platform.OS !== "web" || typeof window === "undefined") {
+    return false;
+  }
+
+  const searchParams = new URLSearchParams(window.location.search);
+  const hash = window.location.hash;
+
+  // Check for PKCE code (password reset, email confirmation)
+  if (searchParams.has("code")) {
+    return true;
+  }
+
+  // Check for hash-based tokens (older Supabase format)
+  if (
+    hash.includes("access_token") ||
+    hash.includes("refresh_token") ||
+    hash.includes("type=recovery")
+  ) {
+    return true;
+  }
+
+  // Check for error parameters from failed auth flows
+  if (searchParams.has("error") || searchParams.has("error_description")) {
+    return true;
+  }
+
+  return false;
+};
+
 export const supabase = createClient<Database>(
   safeSupabaseUrl,
   safeSupabaseKey,
@@ -83,10 +115,10 @@ export const supabase = createClient<Database>(
       storage: storage,
       autoRefreshToken: true,
       persistSession: true,
-      // CRITICAL FIX: Disable detectSessionInUrl to prevent session clearing on reload
-      // This was causing the logout loop - on page reload, Supabase would try to
-      // detect session from URL, fail to find one, and clear the stored session
-      detectSessionInUrl: false,
+      // Only detect session in URL when auth tokens are present
+      // This prevents logout loops on normal page refreshes while still
+      // handling password reset and email confirmation flows
+      detectSessionInUrl: shouldDetectSessionInUrl(),
       // Enable debug mode in development to see what's happening
       debug: __DEV__,
       // Increase storage key to avoid conflicts
