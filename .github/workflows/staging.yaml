@@ -180,7 +180,7 @@ jobs:
       - name: 🧹 Remove environment file after dev build
         if: always()
         run: |
-          [ -f .env.staging.build ] && rm .env.staging.build && echo "✓ Cleaned up"
+          if [ -f .env.staging.build ]; then rm .env.staging.build && echo "✓ Cleaned up"; else echo "✓ No cleanup needed"; fi
 
       - name: 🧹 Clean up after dev build
         if: github.event.inputs.buildType == 'all'
@@ -216,7 +216,7 @@ jobs:
       - name: 🧹 Remove environment file after preview build
         if: always()
         run: |
-          [ -f .env.staging.build ] && rm .env.staging.build && echo "✓ Cleaned up"
+          if [ -f .env.staging.build ]; then rm .env.staging.build && echo "✓ Cleaned up"; else echo "✓ No cleanup needed"; fi
 
       - name: 📦 Upload build artifacts to GitHub
         uses: actions/upload-artifact@v4
