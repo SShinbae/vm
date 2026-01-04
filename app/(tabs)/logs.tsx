@@ -1,3 +1,4 @@
+import { LogDetailsBottomSheet } from "@/components/logs";
 import { MaxWidthContainer } from "@/components/layout/MaxWidthContainer";
 import { ActionMenu, ActionMenuItem } from "@/components/ui/ActionMenu";
 import { IconSymbol } from "@/components/ui/icon-symbol";
@@ -30,16 +31,6 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useStyles } from "react-native-unistyles";
-
-// Conditionally import BottomSheet components only on native platforms
-// This prevents react-native-reanimated web compatibility issues
-// Platform-specific files handle the exports (index.android.ts, index.ios.ts, index.web.ts)
-let LogDetailsBottomSheet: any;
-if (Platform.OS !== "web") {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const logsModule = require("../../components/logs");
-  LogDetailsBottomSheet = logsModule.LogDetailsBottomSheet;
-}
 
 type LogType = "mileage" | "fuel" | "service";
 
@@ -961,10 +952,12 @@ export default function LogsScreen() {
                   fontWeight: theme.fontWeight.bold,
                   color: theme.colors.text,
                   letterSpacing: -0.3,
+                  flex: 1,
                 }}
               >
                 {details.title}
               </Text>
+              <ActionMenu items={actionMenuItems} />
             </View>
             <Text
               style={{
@@ -997,9 +990,6 @@ export default function LogsScreen() {
             >
               {formatDate(log.date)}
             </Text>
-          </View>
-          <View style={{ marginLeft: theme.spacing.sm }}>
-            <ActionMenu items={actionMenuItems} />
           </View>
         </View>
       </TouchableOpacity>
