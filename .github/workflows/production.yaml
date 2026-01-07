@@ -166,8 +166,12 @@ jobs:
           ONESIGNAL_APP_ID=${{ secrets.PROD_ONESIGNAL_APP_ID || secrets.ONESIGNAL_APP_ID }}
           NODE_ENV=production
           ENV_EOF
-          echo "✓ Created. Verifying SITE_URL..."
-          grep "SITE_URL=" .env.production.build | sed 's/SITE_URL=/SITE_URL: /'
+          # Remove leading whitespace from each line (caused by YAML heredoc indentation)
+          sed -i 's/^[[:space:]]*//' .env.production.build
+          echo "✓ Created. Verifying contents..."
+          echo "--- .env.production.build contents ---"
+          cat .env.production.build
+          echo "--------------------------------------"
 
       - name: 📱 Build Production APK
         if: github.event.inputs.buildType == 'all' || github.event.inputs.buildType == 'prod-apk' || (github.event_name == 'push' && (github.event.inputs.buildType == '' || github.event.inputs.buildType == null))
@@ -237,8 +241,12 @@ jobs:
           ONESIGNAL_APP_ID=${{ secrets.PROD_ONESIGNAL_APP_ID || secrets.ONESIGNAL_APP_ID }}
           NODE_ENV=production
           ENV_EOF
-          echo "✓ Created. Verifying SITE_URL..."
-          grep "SITE_URL=" .env.production.build | sed 's/SITE_URL=/SITE_URL: /'
+          # Remove leading whitespace from each line (caused by YAML heredoc indentation)
+          sed -i 's/^[[:space:]]*//' .env.production.build
+          echo "✓ Created. Verifying contents..."
+          echo "--- .env.production.build contents ---"
+          cat .env.production.build
+          echo "--------------------------------------"
 
       - name: 📱 Build Production AAB
         if: github.event.inputs.buildType == 'all' || github.event.inputs.buildType == 'prod-aab'
