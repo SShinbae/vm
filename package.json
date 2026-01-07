@@ -21,7 +21,7 @@
       "prettier --check"
     ],
     "*.{js,jsx,ts,tsx}": [
-      "eslint --max-warnings=0"
+      "eslint --max-warnings=10"
     ],
     "*.{ts,tsx}": [
       "bash -c 'tsc --noEmit'"

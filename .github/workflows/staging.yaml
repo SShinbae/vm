@@ -166,8 +166,12 @@ jobs:
           ONESIGNAL_APP_ID=${{ secrets.STAGING_ONESIGNAL_APP_ID || secrets.ONESIGNAL_APP_ID }}
           NODE_ENV=development
           ENV_EOF
-          echo "✓ Created. Verifying SITE_URL..."
-          grep "SITE_URL=" .env.staging.build | sed 's/SITE_URL=/SITE_URL: /'
+          # Remove leading whitespace from each line (caused by YAML heredoc indentation)
+          sed -i 's/^[[:space:]]*//' .env.staging.build
+          echo "✓ Created. Verifying contents..."
+          echo "--- .env.staging.build contents ---"
+          cat .env.staging.build
+          echo "-----------------------------------"
 
       - name: 📱 Build Development APK (Staging)
         if: github.event.inputs.buildType == 'all' || github.event.inputs.buildType == 'dev' || (github.event_name == 'push' && (github.event.inputs.buildType == '' || github.event.inputs.buildType == null))
@@ -203,8 +207,12 @@ jobs:
           ONESIGNAL_APP_ID=${{ secrets.STAGING_ONESIGNAL_APP_ID || secrets.ONESIGNAL_APP_ID }}
           NODE_ENV=staging
           ENV_EOF
-          echo "✓ Created. Verifying SITE_URL..."
-          grep "SITE_URL=" .env.staging.build | sed 's/SITE_URL=/SITE_URL: /'
+          # Remove leading whitespace from each line (caused by YAML heredoc indentation)
+          sed -i 's/^[[:space:]]*//' .env.staging.build
+          echo "✓ Created. Verifying contents..."
+          echo "--- .env.staging.build contents ---"
+          cat .env.staging.build
+          echo "-----------------------------------"
 
       - name: 📱 Build Preview APK (Staging)
         if: github.event.inputs.buildType == 'all' || github.event.inputs.buildType == 'preview'
