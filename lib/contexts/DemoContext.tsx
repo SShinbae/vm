@@ -36,7 +36,9 @@ export function DemoProvider({ children }: { children: React.ReactNode }) {
         setIsDemoMode(JSON.parse(stored));
       }
     } catch (error) {
-      console.error("Error loading demo mode state:", error);
+      if (__DEV__) {
+        console.error("Error loading demo mode state:", error);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -46,9 +48,13 @@ export function DemoProvider({ children }: { children: React.ReactNode }) {
     try {
       setIsDemoMode(true);
       await AsyncStorage.setItem(DEMO_MODE_KEY, JSON.stringify(true));
-      console.log("Demo mode enabled");
+      if (__DEV__) {
+        console.log("Demo mode enabled");
+      }
     } catch (error) {
-      console.error("Error enabling demo mode:", error);
+      if (__DEV__) {
+        console.error("Error enabling demo mode:", error);
+      }
     }
   };
 
@@ -56,9 +62,13 @@ export function DemoProvider({ children }: { children: React.ReactNode }) {
     try {
       setIsDemoMode(false);
       await AsyncStorage.setItem(DEMO_MODE_KEY, JSON.stringify(false));
-      console.log("Demo mode disabled");
+      if (__DEV__) {
+        console.log("Demo mode disabled");
+      }
     } catch (error) {
-      console.error("Error disabling demo mode:", error);
+      if (__DEV__) {
+        console.error("Error disabling demo mode:", error);
+      }
     }
   };
 
@@ -70,14 +80,13 @@ export function DemoProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  if (isLoading) {
-    return null; // or a loading spinner
-  }
-
+  // IMPORTANT: Never return null from a Provider - it breaks the React tree
+  // and causes immediate crash in production builds (before ErrorBoundary can catch)
+  // Instead, provide default values while loading
   return (
     <DemoContext.Provider
       value={{
-        isDemoMode,
+        isDemoMode: isLoading ? false : isDemoMode,
         enableDemoMode,
         disableDemoMode,
         toggleDemoMode,
