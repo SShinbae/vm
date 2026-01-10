@@ -161,14 +161,22 @@ export const breakpoints = {
 } as const;
 
 // Register themes and breakpoints
-UnistylesRegistry.addThemes({
-  light: lightTheme,
-  dark: darkTheme,
-})
-  .addBreakpoints(breakpoints)
-  .addConfig({
-    adaptiveThemes: false, // Manually controlled via ThemeContext
-  });
+// Wrapped in try-catch to prevent production crash if native module fails to initialize
+try {
+  UnistylesRegistry.addThemes({
+    light: lightTheme,
+    dark: darkTheme,
+  })
+    .addBreakpoints(breakpoints)
+    .addConfig({
+      adaptiveThemes: false, // Manually controlled via ThemeContext
+    });
+} catch (error) {
+  // Silent fail in production - app will use default React Native styling
+  if (__DEV__) {
+    console.error("Failed to initialize Unistyles:", error);
+  }
+}
 
 // Export types for TypeScript
 export type AppBreakpoints = typeof breakpoints;

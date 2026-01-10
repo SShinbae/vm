@@ -173,7 +173,9 @@ export function NotificationProvider({ children }: NotificationProviderProps) {
       // Only refresh user data if cache is expired (handled internally by notificationService)
       await notificationService.refreshUserData();
     } catch (error) {
-      console.error("Error refreshing notifications:", error);
+      if (__DEV__) {
+        console.error("Error refreshing notifications:", error);
+      }
     }
   }, [refetchNotifications]);
 
@@ -204,50 +206,74 @@ export function NotificationProvider({ children }: NotificationProviderProps) {
         setUserId(user.id);
 
         // OPTIMIZATION: Run migration check, and initialization in parallel
-        console.log("🚀 Starting parallel initialization...");
+        if (__DEV__) {
+          console.log("🚀 Starting parallel initialization...");
+        }
 
         try {
           await Promise.all([
             // Migration check (non-blocking for fetch)
             (async () => {
-              console.log("📦 Starting migration check...");
+              if (__DEV__) {
+                console.log("📦 Starting migration check...");
+              }
               const migrated = await hasMigratedNotifications();
               if (!migrated) {
-                console.log("Migrating notifications from AsyncStorage...");
+                if (__DEV__) {
+                  console.log("Migrating notifications from AsyncStorage...");
+                }
                 const result = await migrateNotificationsFromStorage(user.id);
                 if (result.success) {
-                  console.log(`Migrated ${result.count} notifications`);
+                  if (__DEV__) {
+                    console.log(`Migrated ${result.count} notifications`);
+                  }
                 } else {
-                  console.error("Migration failed:", result.error);
+                  if (__DEV__) {
+                    console.error("Migration failed:", result.error);
+                  }
                 }
               }
-              console.log("✅ Migration check complete");
+              if (__DEV__) {
+                console.log("✅ Migration check complete");
+              }
             })(),
 
             // Initialize notification service (fetches groups/vehicles with cache)
             (async () => {
-              console.log("🔧 Initializing notification service...");
+              if (__DEV__) {
+                console.log("🔧 Initializing notification service...");
+              }
               await notificationService.initialize(user.id);
-              console.log("✅ Notification service initialized");
+              if (__DEV__) {
+                console.log("✅ Notification service initialized");
+              }
             })(),
           ]);
 
-          console.log("✅ All parallel operations complete");
+          if (__DEV__) {
+            console.log("✅ All parallel operations complete");
+          }
         } catch (error) {
-          console.error("❌ Error in parallel initialization:", error);
+          if (__DEV__) {
+            console.error("❌ Error in parallel initialization:", error);
+          }
           throw error;
         }
 
         // Add callback to save notifications from notificationService to database
         notificationCallback = async (notification: NotificationData) => {
-          console.log(
-            "💾 NotificationContext callback triggered!",
-            notification,
-          );
-          try {
+          if (__DEV__) {
             console.log(
-              "💾 Attempting to insert notification into database...",
+              "💾 NotificationContext callback triggered!",
+              notification,
             );
+          }
+          try {
+            if (__DEV__) {
+              console.log(
+                "💾 Attempting to insert notification into database...",
+              );
+            }
             const { data, error } = await supabase
               .from("notifications")
               .insert({
@@ -263,12 +289,19 @@ export function NotificationProvider({ children }: NotificationProviderProps) {
               } as any);
 
             if (error) {
-              console.error("❌ Error saving notification to database:", error);
+              if (__DEV__) {
+                console.error(
+                  "❌ Error saving notification to database:",
+                  error,
+                );
+              }
             } else {
-              console.log(
-                "✅ Notification saved to database successfully!",
-                data,
-              );
+              if (__DEV__) {
+                console.log(
+                  "✅ Notification saved to database successfully!",
+                  data,
+                );
+              }
 
               // Invalidate React Query cache to trigger refetch
               queryClient.invalidateQueries({
@@ -276,13 +309,19 @@ export function NotificationProvider({ children }: NotificationProviderProps) {
               });
             }
           } catch (error) {
-            console.error("❌ Error in saveNotificationCallback:", error);
+            if (__DEV__) {
+              console.error("❌ Error in saveNotificationCallback:", error);
+            }
           }
         };
 
-        console.log("🔧 Adding callback to notificationService...");
+        if (__DEV__) {
+          console.log("🔧 Adding callback to notificationService...");
+        }
         notificationService.addCallback(notificationCallback);
-        console.log("✅ Callback added to notificationService");
+        if (__DEV__) {
+          console.log("✅ Callback added to notificationService");
+        }
 
         // Setup realtime subscription after data is loaded
         currentChannel = setupRealtimeSubscription(user.id);
