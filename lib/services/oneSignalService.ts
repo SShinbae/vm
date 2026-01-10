@@ -33,7 +33,9 @@ const loadOneSignalWeb = async (): Promise<boolean> => {
     OneSignalWeb = module.default;
     return true;
   } catch (error) {
-    console.error("OneSignal: Failed to load web SDK", error);
+    if (__DEV__) {
+      console.error("OneSignal: Failed to load web SDK", error);
+    }
     return false;
   }
 };
@@ -73,9 +75,11 @@ class OneSignalService {
       process.env.ONESIGNAL_APP_ID;
 
     if (!appId || appId === "YOUR_ONESIGNAL_APP_ID_HERE") {
-      console.warn(
-        "OneSignal: App ID not configured. Please set ONESIGNAL_APP_ID in your .env file",
-      );
+      if (__DEV__) {
+        console.warn(
+          "OneSignal: App ID not configured. Please set ONESIGNAL_APP_ID in your .env file",
+        );
+      }
       return;
     }
 
@@ -89,9 +93,11 @@ class OneSignalService {
     this.isAvailable = isOneSignalAvailable();
     const os = this.getOneSignal();
     if (!os) {
-      console.log(
-        "OneSignal: Native module not available. Please use a development build instead of Expo Go.",
-      );
+      if (__DEV__) {
+        console.log(
+          "OneSignal: Native module not available. Please use a development build instead of Expo Go.",
+        );
+      }
       return;
     }
 
@@ -111,22 +117,30 @@ class OneSignalService {
       this.setupNotificationHandlers(os);
 
       this.initialized = true;
-      console.log("OneSignal: Initialized successfully");
+      if (__DEV__) {
+        console.log("OneSignal: Initialized successfully");
+      }
     } catch (error) {
-      console.error("OneSignal: Failed to initialize", error);
+      if (__DEV__) {
+        console.error("OneSignal: Failed to initialize", error);
+      }
     }
   }
 
   private async initializeWeb(appId: string): Promise<void> {
     const loaded = await this.ensureWebSDKLoaded();
     if (!loaded) {
-      console.log("OneSignal: Web SDK not available");
+      if (__DEV__) {
+        console.log("OneSignal: Web SDK not available");
+      }
       return;
     }
 
     const osWeb = this.getOneSignalWeb();
     if (!osWeb) {
-      console.log("OneSignal: Web SDK failed to initialize");
+      if (__DEV__) {
+        console.log("OneSignal: Web SDK failed to initialize");
+      }
       return;
     }
 
@@ -143,24 +157,28 @@ class OneSignalService {
       });
 
       this.initialized = true;
-      console.log("OneSignal: Web SDK initialized successfully");
+      if (__DEV__) {
+        console.log("OneSignal: Web SDK initialized successfully");
 
-      // Check permission status
-      const permission = osWeb.Notifications.permission;
-      console.log("OneSignal: Web notification permission:", permission);
+        // Check permission status
+        const permission = osWeb.Notifications.permission;
+        console.log("OneSignal: Web notification permission:", permission);
 
-      // If permission not granted, request it
-      if (!permission) {
-        console.log("OneSignal: Requesting web notification permission...");
-        const granted = await osWeb.Notifications.requestPermission();
-        console.log("OneSignal: Permission granted:", granted);
+        // If permission not granted, request it
+        if (!permission) {
+          console.log("OneSignal: Requesting web notification permission...");
+          const granted = await osWeb.Notifications.requestPermission();
+          console.log("OneSignal: Permission granted:", granted);
+        }
+
+        // Log subscription status after permission
+        const subscriptionId = osWeb.User.PushSubscription.id;
+        console.log("OneSignal: Web subscription ID:", subscriptionId);
       }
-
-      // Log subscription status after permission
-      const subscriptionId = osWeb.User.PushSubscription.id;
-      console.log("OneSignal: Web subscription ID:", subscriptionId);
     } catch (error) {
-      console.error("OneSignal: Failed to initialize web SDK", error);
+      if (__DEV__) {
+        console.error("OneSignal: Failed to initialize web SDK", error);
+      }
     }
   }
 
@@ -171,7 +189,9 @@ class OneSignalService {
     os.Notifications.addEventListener(
       "foregroundWillDisplay",
       (event: NotificationWillDisplayEvent) => {
-        console.log("OneSignal: Notification received in foreground", event);
+        if (__DEV__) {
+          console.log("OneSignal: Notification received in foreground", event);
+        }
         // Display the notification
         event.getNotification().display();
       },
@@ -181,7 +201,9 @@ class OneSignalService {
     os.Notifications.addEventListener(
       "click",
       (event: NotificationClickEvent) => {
-        console.log("OneSignal: Notification clicked", event);
+        if (__DEV__) {
+          console.log("OneSignal: Notification clicked", event);
+        }
         this.handleNotificationClick(event);
       },
     );
@@ -196,14 +218,18 @@ class OneSignalService {
       switch (data.type) {
         case "log_update":
           if (data.vehicleId) {
-            console.log("Navigate to vehicle:", data.vehicleId);
+            if (__DEV__) {
+              console.log("Navigate to vehicle:", data.vehicleId);
+            }
             // Add navigation logic here
           }
           break;
         case "group_invite":
         case "group_member":
           if (data.groupId) {
-            console.log("Navigate to group:", data.groupId);
+            if (__DEV__) {
+              console.log("Navigate to group:", data.groupId);
+            }
             // Add navigation logic here
           }
           break;
@@ -223,9 +249,13 @@ class OneSignalService {
       if (!osWeb) return;
       try {
         osWeb.login(userId);
-        console.log("OneSignal: Web external user ID set", userId);
+        if (__DEV__) {
+          console.log("OneSignal: Web external user ID set", userId);
+        }
       } catch (error) {
-        console.error("OneSignal: Failed to set web external user ID", error);
+        if (__DEV__) {
+          console.error("OneSignal: Failed to set web external user ID", error);
+        }
       }
       return;
     }
@@ -236,9 +266,13 @@ class OneSignalService {
 
     try {
       os.login(userId);
-      console.log("OneSignal: External user ID set", userId);
+      if (__DEV__) {
+        console.log("OneSignal: External user ID set", userId);
+      }
     } catch (error) {
-      console.error("OneSignal: Failed to set external user ID", error);
+      if (__DEV__) {
+        console.error("OneSignal: Failed to set external user ID", error);
+      }
     }
   }
 
@@ -254,9 +288,16 @@ class OneSignalService {
       if (!osWeb) return;
       try {
         osWeb.logout();
-        console.log("OneSignal: Web external user ID cleared");
+        if (__DEV__) {
+          console.log("OneSignal: Web external user ID cleared");
+        }
       } catch (error) {
-        console.error("OneSignal: Failed to clear web external user ID", error);
+        if (__DEV__) {
+          console.error(
+            "OneSignal: Failed to clear web external user ID",
+            error,
+          );
+        }
       }
       return;
     }
@@ -267,9 +308,13 @@ class OneSignalService {
 
     try {
       os.logout();
-      console.log("OneSignal: External user ID cleared");
+      if (__DEV__) {
+        console.log("OneSignal: External user ID cleared");
+      }
     } catch (error) {
-      console.error("OneSignal: Failed to clear external user ID", error);
+      if (__DEV__) {
+        console.error("OneSignal: Failed to clear external user ID", error);
+      }
     }
   }
 
@@ -285,7 +330,9 @@ class OneSignalService {
       try {
         osWeb.User.addTag(key, value);
       } catch (error) {
-        console.error("OneSignal: Failed to add web tag", error);
+        if (__DEV__) {
+          console.error("OneSignal: Failed to add web tag", error);
+        }
       }
       return;
     }
@@ -296,7 +343,9 @@ class OneSignalService {
     try {
       os.User.addTag(key, value);
     } catch (error) {
-      console.error("OneSignal: Failed to add tag", error);
+      if (__DEV__) {
+        console.error("OneSignal: Failed to add tag", error);
+      }
     }
   }
 
@@ -312,7 +361,9 @@ class OneSignalService {
       try {
         osWeb.User.addTags(tags);
       } catch (error) {
-        console.error("OneSignal: Failed to add web tags", error);
+        if (__DEV__) {
+          console.error("OneSignal: Failed to add web tags", error);
+        }
       }
       return;
     }
@@ -323,7 +374,9 @@ class OneSignalService {
     try {
       os.User.addTags(tags);
     } catch (error) {
-      console.error("OneSignal: Failed to add tags", error);
+      if (__DEV__) {
+        console.error("OneSignal: Failed to add tags", error);
+      }
     }
   }
 
@@ -339,7 +392,9 @@ class OneSignalService {
       try {
         osWeb.User.removeTag(key);
       } catch (error) {
-        console.error("OneSignal: Failed to remove web tag", error);
+        if (__DEV__) {
+          console.error("OneSignal: Failed to remove web tag", error);
+        }
       }
       return;
     }
@@ -350,7 +405,9 @@ class OneSignalService {
     try {
       os.User.removeTag(key);
     } catch (error) {
-      console.error("OneSignal: Failed to remove tag", error);
+      if (__DEV__) {
+        console.error("OneSignal: Failed to remove tag", error);
+      }
     }
   }
 
@@ -366,7 +423,9 @@ class OneSignalService {
       try {
         return osWeb.User.PushSubscription.id ?? null;
       } catch (error) {
-        console.error("OneSignal: Failed to get web subscription ID", error);
+        if (__DEV__) {
+          console.error("OneSignal: Failed to get web subscription ID", error);
+        }
         return null;
       }
     }
@@ -377,7 +436,9 @@ class OneSignalService {
     try {
       return os.User.pushSubscription.getPushSubscriptionId() ?? null;
     } catch (error) {
-      console.error("OneSignal: Failed to get subscription ID", error);
+      if (__DEV__) {
+        console.error("OneSignal: Failed to get subscription ID", error);
+      }
       return null;
     }
   }
@@ -392,7 +453,9 @@ class OneSignalService {
       try {
         return osWeb.Notifications.permission;
       } catch (error) {
-        console.error("OneSignal: Failed to check web permission", error);
+        if (__DEV__) {
+          console.error("OneSignal: Failed to check web permission", error);
+        }
         return false;
       }
     }
@@ -403,7 +466,9 @@ class OneSignalService {
     try {
       return os.Notifications.getPermissionAsync();
     } catch (error) {
-      console.error("OneSignal: Failed to check permission", error);
+      if (__DEV__) {
+        console.error("OneSignal: Failed to check permission", error);
+      }
       return false;
     }
   }
@@ -419,7 +484,9 @@ class OneSignalService {
         await osWeb.Notifications.requestPermission();
         return osWeb.Notifications.permission;
       } catch (error) {
-        console.error("OneSignal: Failed to request web permission", error);
+        if (__DEV__) {
+          console.error("OneSignal: Failed to request web permission", error);
+        }
         return false;
       }
     }
@@ -430,7 +497,9 @@ class OneSignalService {
     try {
       return os.Notifications.requestPermission(true);
     } catch (error) {
-      console.error("OneSignal: Failed to request permission", error);
+      if (__DEV__) {
+        console.error("OneSignal: Failed to request permission", error);
+      }
       return false;
     }
   }
@@ -471,7 +540,9 @@ class OneSignalService {
         });
       }
     } catch (error) {
-      console.error("OneSignal: Failed to sync user", error);
+      if (__DEV__) {
+        console.error("OneSignal: Failed to sync user", error);
+      }
     }
   }
 
