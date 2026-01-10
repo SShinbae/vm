@@ -34,7 +34,8 @@ const AUTH_ROUTES = {
   TABS: "/(tabs)",
 } as const;
 
-const __DEV__ = process.env.NODE_ENV === "development";
+// Note: Use global __DEV__ from React Native - don't redefine it
+// process.env.NODE_ENV is not reliably available in production native builds
 
 // ============================================================================
 // Types
@@ -166,7 +167,9 @@ function useSecureNavigation() {
           console.log(`[AuthGuard] Navigating to: ${route}`);
         }
       } catch (error) {
-        console.error("[AuthGuard] Navigation error:", error);
+        if (__DEV__) {
+          console.error("[AuthGuard] Navigation error:", error);
+        }
       }
     },
     [],
