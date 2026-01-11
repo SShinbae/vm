@@ -21,7 +21,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 const showAlert = (
   title: string,
   message: string,
-  buttons?: Array<{ text: string; style?: string; onPress?: () => void }>,
+  buttons?: { text: string; style?: string; onPress?: () => void }[],
 ) => {
   if (Platform.OS === "web") {
     if (buttons && buttons.length > 1) {
