@@ -4,8 +4,19 @@ import Constants from "expo-constants";
 import { Platform } from "react-native";
 import { Database } from "../types/database";
 
-const supabaseUrl = Constants.expoConfig?.extra?.supabaseUrl || "";
-const supabaseKey = Constants.expoConfig?.extra?.supabaseKey || "";
+// Safely get environment variables with error handling for production
+let supabaseUrl = "";
+let supabaseKey = "";
+
+try {
+  supabaseUrl = Constants.expoConfig?.extra?.supabaseUrl || "";
+  supabaseKey = Constants.expoConfig?.extra?.supabaseKey || "";
+} catch (error) {
+  // Silent fail in production - Constants.expoConfig might not be available
+  if (__DEV__) {
+    console.error("Failed to get Supabase config from Constants:", error);
+  }
+}
 
 // Warn instead of throwing to prevent production crashes
 if (!supabaseUrl || !supabaseKey) {
@@ -107,10 +118,11 @@ const shouldDetectSessionInUrl = (): boolean => {
   return false;
 };
 
-export const supabase = createClient<Database>(
-  safeSupabaseUrl,
-  safeSupabaseKey,
-  {
+// Create Supabase client with error handling to prevent production crashes
+let supabase: ReturnType<typeof createClient<Database>>;
+
+try {
+  supabase = createClient<Database>(safeSupabaseUrl, safeSupabaseKey, {
     auth: {
       storage: storage,
       autoRefreshToken: true,
@@ -126,7 +138,25 @@ export const supabase = createClient<Database>(
       // Flow type for better compatibility
       flowType: "pkce",
     },
-  },
-);
+  });
+} catch (error) {
+  // If client creation fails, create a minimal client that won't crash
+  if (__DEV__) {
+    console.error("Failed to create Supabase client:", error);
+  }
+  // Create with placeholder values - API calls will fail gracefully
+  supabase = createClient<Database>(
+    "https://placeholder.supabase.co",
+    "placeholder-key",
+    {
+      auth: {
+        storage: storage,
+        autoRefreshToken: false,
+        persistSession: false,
+      },
+    },
+  );
+}
 
+export { supabase };
 export default supabase;
