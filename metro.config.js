@@ -59,10 +59,11 @@ config.transformer = {
     },
   },
   // Disable eager bundling for production builds
+  // DISABLED inlineRequires: Can cause issues with circular dependencies and module loading order
   getTransformOptions: async () => ({
     transform: {
       experimentalImportSupport: false,
-      inlineRequires: true,
+      inlineRequires: false,
     },
   }),
 };

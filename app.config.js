@@ -36,9 +36,7 @@ module.exports = {
     icon: "./assets/images/vm_logo.png",
     scheme: "vehiclesmanagement",
     userInterfaceStyle: "automatic",
-    // DISABLED: New Architecture causing crashes in production release builds
-    // with native libraries (react-native-skia, react-native-unistyles)
-    newArchEnabled: false,
+    newArchEnabled: true,
     ios: {
       supportsTablet: true,
       bundleIdentifier: "com.vehiclesmanagement.app",
