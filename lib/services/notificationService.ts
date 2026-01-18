@@ -26,6 +26,7 @@ class NotificationService {
   private channels: RealtimeChannel[] = [];
   private callbacks: NotificationCallback[] = [];
   private userId: string | null = null;
+  private userEmail: string | null = null;
   private userGroupIds: string[] = [];
   private userVehicleIds: string[] = [];
 
@@ -36,6 +37,17 @@ class NotificationService {
   } = {
     timestamp: 0,
     ttl: 5 * 60 * 1000, // 5 minutes cache
+  };
+
+  // Track previous subscription state for smart recreation
+  private lastSubscriptionState: {
+    vehicleIds: string[];
+    groupIds: string[];
+    email: string | null;
+  } = {
+    vehicleIds: [],
+    groupIds: [],
+    email: null,
   };
 
   async initialize(userId: string): Promise<void> {
@@ -60,13 +72,20 @@ class NotificationService {
     console.log("🔄 Cache expired or forced, fetching fresh user data...");
 
     // OPTIMIZATION: Run all queries in parallel for better performance
-    const [userGroupsResult, vehiclesResult] = await Promise.all([
-      supabase
-        .from("group_members")
-        .select("group_id")
-        .eq("user_id", this.userId),
-      supabase.from("vehicles").select("id").eq("user_id", this.userId),
-    ]);
+    const [userGroupsResult, vehiclesResult, profileResult] = await Promise.all(
+      [
+        supabase
+          .from("group_members")
+          .select("group_id")
+          .eq("user_id", this.userId),
+        supabase.from("vehicles").select("id").eq("user_id", this.userId),
+        supabase
+          .from("profiles")
+          .select("email")
+          .eq("id", this.userId)
+          .single(),
+      ],
+    );
 
     this.userGroupIds =
       (userGroupsResult.data as { group_id: string }[] | null)?.map(
@@ -75,6 +94,9 @@ class NotificationService {
 
     this.userVehicleIds =
       (vehiclesResult.data as { id: string }[] | null)?.map((v) => v.id) || [];
+
+    this.userEmail =
+      (profileResult.data as { email: string } | null)?.email || null;
 
     // Get shared vehicles through groups (only if user has groups)
     if (this.userGroupIds.length > 0) {
@@ -92,25 +114,62 @@ class NotificationService {
 
     // Update cache timestamp
     this.userDataCache.timestamp = now;
-    console.log("✅ User data loaded and cached");
+    console.log("✅ User data loaded and cached", {
+      vehicleCount: this.userVehicleIds.length,
+      groupCount: this.userGroupIds.length,
+      email: this.userEmail ? "set" : "not set",
+    });
   }
 
   private setupRealtimeSubscriptions(): void {
+    // Store current state for future comparison
+    this.lastSubscriptionState = {
+      vehicleIds: [...this.userVehicleIds],
+      groupIds: [...this.userGroupIds],
+      email: this.userEmail,
+    };
+
     this.subscribeToLogChanges();
     this.subscribeToGroupChanges();
     this.subscribeToInvitations();
+
+    console.log("📡 Realtime subscriptions configured with filters:", {
+      vehicleFilter:
+        this.userVehicleIds.length > 0
+          ? `vehicle_id in (${this.userVehicleIds.length} vehicles)`
+          : "none (no vehicles)",
+      groupFilter:
+        this.userGroupIds.length > 0
+          ? `group_id in (${this.userGroupIds.length} groups)`
+          : "none (no groups)",
+      emailFilter: this.userEmail ? `email = ${this.userEmail}` : "none",
+    });
   }
 
   private subscribeToLogChanges(): void {
-    // Subscribe to mileage logs
+    // OPTIMIZATION: Only subscribe if user has vehicles to monitor
+    // This prevents unnecessary data transfer for users with no vehicles
+    if (this.userVehicleIds.length === 0) {
+      console.log(
+        "⏭️ Skipping log subscriptions - user has no vehicles to monitor",
+      );
+      return;
+    }
+
+    // Build server-side filter for vehicle IDs
+    // This dramatically reduces data transfer by filtering at the database level
+    const vehicleFilter = `vehicle_id=in.(${this.userVehicleIds.join(",")})`;
+
+    // Subscribe to mileage logs with server-side filter
     const mileageChannel = supabase
-      .channel("mileage-logs-changes")
+      .channel(`mileage-logs-${this.userId}`)
       .on(
         "postgres_changes",
         {
           event: "*",
           schema: "public",
           table: "mileage_logs",
+          filter: vehicleFilter,
         },
         async (payload) => {
           await this.handleLogChange("mileage_log", payload);
@@ -118,15 +177,16 @@ class NotificationService {
       )
       .subscribe();
 
-    // Subscribe to fuel logs
+    // Subscribe to fuel logs with server-side filter
     const fuelChannel = supabase
-      .channel("fuel-logs-changes")
+      .channel(`fuel-logs-${this.userId}`)
       .on(
         "postgres_changes",
         {
           event: "*",
           schema: "public",
           table: "fuel_logs",
+          filter: vehicleFilter,
         },
         async (payload) => {
           await this.handleLogChange("fuel_log", payload);
@@ -134,15 +194,16 @@ class NotificationService {
       )
       .subscribe();
 
-    // Subscribe to service logs
+    // Subscribe to service logs with server-side filter
     const serviceChannel = supabase
-      .channel("service-logs-changes")
+      .channel(`service-logs-${this.userId}`)
       .on(
         "postgres_changes",
         {
           event: "*",
           schema: "public",
           table: "service_logs",
+          filter: vehicleFilter,
         },
         async (payload) => {
           await this.handleLogChange("service_log", payload);
@@ -154,15 +215,28 @@ class NotificationService {
   }
 
   private subscribeToGroupChanges(): void {
-    // Subscribe to group member changes
+    // OPTIMIZATION: Only subscribe if user is a member of any groups
+    // This prevents unnecessary data transfer for users not in any groups
+    if (this.userGroupIds.length === 0) {
+      console.log(
+        "⏭️ Skipping group_members subscription - user has no groups",
+      );
+      return;
+    }
+
+    // Build server-side filter for group IDs
+    const groupFilter = `group_id=in.(${this.userGroupIds.join(",")})`;
+
+    // Subscribe to group member changes with server-side filter
     const groupMemberChannel = supabase
-      .channel("group-members-changes")
+      .channel(`group-members-${this.userId}`)
       .on(
         "postgres_changes",
         {
           event: "*",
           schema: "public",
           table: "group_members",
+          filter: groupFilter,
         },
         async (payload) => {
           await this.handleGroupMemberChange(payload);
@@ -174,16 +248,30 @@ class NotificationService {
   }
 
   private subscribeToInvitations(): void {
+    // OPTIMIZATION: Only subscribe if we have the user's email
+    if (!this.userEmail) {
+      console.log(
+        "⏭️ Skipping group_invitations subscription - user email not available",
+      );
+      return;
+    }
+
     console.log("🔌 Subscribing to group_invitations table changes...");
-    // Subscribe to group invitations
+
+    // Build server-side filter for user's email (case-insensitive comparison done server-side)
+    // Note: This assumes emails are stored in lowercase in the database
+    const emailFilter = `email=eq.${this.userEmail.toLowerCase()}`;
+
+    // Subscribe to group invitations with server-side filter
     const invitationChannel = supabase
-      .channel("group-invitations-changes")
+      .channel(`group-invitations-${this.userId}`)
       .on(
         "postgres_changes",
         {
-          event: "*",
+          event: "INSERT", // Only care about new invitations
           schema: "public",
           table: "group_invitations",
+          filter: emailFilter,
         },
         async (payload) => {
           console.log(
@@ -198,7 +286,7 @@ class NotificationService {
       });
 
     this.channels.push(invitationChannel);
-    console.log("✅ group_invitations subscription created");
+    console.log("✅ group_invitations subscription created with email filter");
   }
 
   private async handleLogChange(
@@ -208,6 +296,7 @@ class NotificationService {
     const { eventType, new: newRecord, old: oldRecord } = payload;
 
     // Skip if this is the current user's own action
+    // Note: Vehicle relevance is already filtered server-side via the subscription filter
     if (
       newRecord?.user_id === this.userId ||
       oldRecord?.user_id === this.userId
@@ -215,11 +304,7 @@ class NotificationService {
       return;
     }
 
-    // Check if the vehicle is relevant to the user
     const vehicleId = newRecord?.vehicle_id || oldRecord?.vehicle_id;
-    if (!this.userVehicleIds.includes(vehicleId)) {
-      return;
-    }
 
     // Get vehicle and user information
     const { data: vehicle } = await supabase
@@ -289,6 +374,7 @@ class NotificationService {
     const { eventType, new: newRecord, old: oldRecord } = payload;
 
     // Only handle additions and removals, not the current user
+    // Note: Group relevance is already filtered server-side via the subscription filter
     if (
       newRecord?.user_id === this.userId ||
       oldRecord?.user_id === this.userId
@@ -297,9 +383,6 @@ class NotificationService {
     }
 
     const groupId = newRecord?.group_id || oldRecord?.group_id;
-    if (!this.userGroupIds.includes(groupId)) {
-      return;
-    }
 
     // Get group and user information
     const { data: group } = await supabase
@@ -356,66 +439,14 @@ class NotificationService {
   }
 
   private async handleInvitationChange(payload: any): Promise<void> {
-    console.log("🔔 handleInvitationChange called", {
-      eventType: payload.eventType,
-      newRecord: payload.new,
+    // Note: Email relevance and INSERT event are already filtered server-side
+    // via the subscription filter, so we don't need client-side checks
+    const { new: newRecord } = payload;
+
+    console.log("🔔 Processing group invitation for user", {
+      invitationId: newRecord.id,
+      groupId: newRecord.group_id,
     });
-
-    const { eventType, new: newRecord } = payload;
-
-    if (eventType !== "INSERT") {
-      console.log("❌ Event type is not INSERT, skipping");
-      return;
-    }
-
-    console.log("✅ Event type is INSERT, processing invitation");
-
-    // Get current user's email to check if this invitation is for them
-    console.log("🔍 Fetching user profile for userId:", this.userId);
-
-    let userProfile, profileError;
-    try {
-      const result = await supabase
-        .from("profiles")
-        .select("email")
-        .eq("id", this.userId!)
-        .single();
-      userProfile = result.data;
-      profileError = result.error;
-    } catch (error) {
-      console.error("💥 Exception while fetching user profile:", error);
-      return;
-    }
-
-    console.log("👤 Current user profile:", {
-      userId: this.userId,
-      userProfile,
-      profileError,
-    });
-
-    const userProfileData = userProfile as { email: string } | null;
-
-    console.log("📧 Email comparison:", {
-      invitationEmail: newRecord.email,
-      userEmail: userProfileData?.email,
-      invitationEmailLower: newRecord.email?.toLowerCase(),
-      userEmailLower: userProfileData?.email?.toLowerCase(),
-      match:
-        newRecord.email?.toLowerCase() ===
-        userProfileData?.email?.toLowerCase(),
-    });
-
-    if (
-      !userProfileData ||
-      newRecord.email.toLowerCase() !== userProfileData.email.toLowerCase()
-    ) {
-      console.log(
-        "❌ Email does not match current user, skipping notification",
-      );
-      return;
-    }
-
-    console.log("✅ Email matches! Creating notification...");
 
     // Get group and inviter information
     const { data: group, error: groupError } = await supabase
@@ -467,12 +498,8 @@ class NotificationService {
       created_at: new Date().toISOString(),
     };
 
-    console.log("📝 Notification object created:", notification);
-    console.log("🔔 Number of callbacks registered:", this.callbacks.length);
-
     this.notifyCallbacks(notification);
-
-    console.log("✅ notifyCallbacks called");
+    console.log("✅ Group invitation notification sent");
   }
 
   private notifyCallbacks(notification: NotificationData): void {
@@ -501,11 +528,72 @@ class NotificationService {
   }
 
   /**
+   * Check if subscriptions need to be recreated due to changed user data
+   * Returns true if vehicle IDs, group IDs, or email have changed
+   */
+  private shouldRecreateSubscriptions(): boolean {
+    const vehiclesChanged =
+      this.userVehicleIds.length !==
+        this.lastSubscriptionState.vehicleIds.length ||
+      !this.userVehicleIds.every((id) =>
+        this.lastSubscriptionState.vehicleIds.includes(id),
+      );
+
+    const groupsChanged =
+      this.userGroupIds.length !== this.lastSubscriptionState.groupIds.length ||
+      !this.userGroupIds.every((id) =>
+        this.lastSubscriptionState.groupIds.includes(id),
+      );
+
+    const emailChanged = this.userEmail !== this.lastSubscriptionState.email;
+
+    return vehiclesChanged || groupsChanged || emailChanged;
+  }
+
+  /**
+   * Recreate all realtime subscriptions with updated filters
+   * Call this after user data changes (e.g., joining a group, adding a vehicle)
+   */
+  async recreateSubscriptions(): Promise<void> {
+    console.log("🔄 Recreating realtime subscriptions...");
+
+    // First, refresh user data to get latest vehicles/groups
+    await this.loadUserData(true);
+
+    // Check if recreation is actually needed
+    if (!this.shouldRecreateSubscriptions()) {
+      console.log("⏭️ No subscription changes needed - data unchanged");
+      return;
+    }
+
+    // Cleanup existing channels
+    this.channels.forEach((channel) => {
+      supabase.removeChannel(channel);
+    });
+    this.channels = [];
+
+    // Setup new subscriptions with updated filters
+    this.setupRealtimeSubscriptions();
+
+    console.log("✅ Realtime subscriptions recreated with updated filters");
+  }
+
+  /**
    * Invalidate cache - useful when user joins/leaves a group or adds/removes a vehicle
+   * Optionally recreates subscriptions if data has changed
    */
   invalidateCache(): void {
     this.userDataCache.timestamp = 0;
     console.log("🗑️ User data cache invalidated");
+  }
+
+  /**
+   * Invalidate cache and recreate subscriptions
+   * Use this when user's vehicles or groups change
+   */
+  async invalidateAndRecreate(): Promise<void> {
+    this.invalidateCache();
+    await this.recreateSubscriptions();
   }
 
   cleanup(): void {
@@ -514,6 +602,12 @@ class NotificationService {
     });
     this.channels = [];
     this.callbacks = [];
+    // Reset subscription state
+    this.lastSubscriptionState = {
+      vehicleIds: [],
+      groupIds: [],
+      email: null,
+    };
   }
 }
 

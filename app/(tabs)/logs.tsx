@@ -1067,24 +1067,6 @@ export default function LogsScreen() {
       >
         <View
           style={{
-            paddingHorizontal: theme.spacing.xl,
-            paddingVertical: theme.spacing.lg,
-            borderBottomWidth: 1,
-            borderBottomColor: theme.colors.border,
-          }}
-        >
-          <Text
-            style={{
-              fontSize: theme.fontSize["3xl"],
-              fontWeight: theme.fontWeight.bold,
-              color: theme.colors.text,
-            }}
-          >
-            Logs
-          </Text>
-        </View>
-        <View
-          style={{
             flexDirection: "row",
             padding: theme.spacing.lg,
             gap: theme.spacing.sm,

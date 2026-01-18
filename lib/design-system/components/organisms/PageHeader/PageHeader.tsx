@@ -1,5 +1,6 @@
 import { Icon } from "@/lib/design-system/components/atoms/Icon";
-import { useRouter } from "expo-router";
+import { IconSymbol } from "@/components/ui/icon-symbol";
+import { useRouter, router as staticRouter } from "expo-router";
 import React from "react";
 import { Pressable, Text, View } from "react-native";
 import { useStyles } from "react-native-unistyles";
@@ -17,7 +18,7 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
   backgroundColor,
   noBorder = false,
 }) => {
-  const { styles } = useStyles(stylesheet);
+  const { styles, theme } = useStyles(stylesheet);
   const router = useRouter();
 
   const handleBack = () => {
@@ -25,6 +26,8 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
       onBack();
     } else if (router.canGoBack()) {
       router.back();
+    } else {
+      staticRouter.replace("/(tabs)");
     }
   };
 
@@ -45,7 +48,11 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
               accessibilityRole="button"
               accessibilityLabel="Go back"
             >
-              <Icon name="back" size={24} color="primary" />
+              <IconSymbol
+                name="chevron.left"
+                size={20}
+                color={theme.colors.text}
+              />
             </Pressable>
           )}
 
