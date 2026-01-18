@@ -75,6 +75,10 @@ const MAPPING = {
 
   // Menu Icons
   ellipsis: "more-vert",
+
+  // Profile Quick Action Icons
+  "person.2": "people",
+  "lock.shield": "security",
 } as IconMapping;
 
 /**

@@ -470,14 +470,9 @@ export default function ProfileScreen() {
         />
         <QuickActionRow
           icon="lock.shield"
-          label="Privacy Settings"
-          subtitle="Manage your privacy preferences"
-          onPress={() =>
-            Alert.alert(
-              "Coming Soon",
-              "Privacy settings will be available soon",
-            )
-          }
+          label="Privacy & Terms"
+          subtitle="View privacy policy and terms of service"
+          onPress={() => router.push("/privacy")}
         />
       </View>
     </>
