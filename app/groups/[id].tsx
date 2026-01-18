@@ -5,6 +5,7 @@ import {
   RefreshControl,
   ScrollView,
   ActivityIndicator,
+  useWindowDimensions,
 } from "react-native";
 import { Image } from "expo-image";
 import { router, useLocalSearchParams } from "expo-router";
@@ -28,6 +29,10 @@ type TabType = "members" | "invitations" | "vehicles";
 export default function GroupDetailScreen() {
   const { theme } = useStyles();
   const { id } = useLocalSearchParams<{ id: string }>();
+  const { width } = useWindowDimensions();
+
+  // Clamp font size: min 10, preferred based on width, max 14
+  const tabFontSize = Math.min(Math.max(width * 0.03, 10), 14);
   const { user } = useAuth();
   const dialog = useDialog();
   const [activeTab, setActiveTab] = useState<TabType>("members");
@@ -146,6 +151,33 @@ export default function GroupDetailScreen() {
               dialog.showError("Error", error);
             } else {
               dialog.showSuccess("Success", "You have left the group", () =>
+                router.back(),
+              );
+            }
+            dialog.hideConfirm();
+          },
+        },
+      ],
+    );
+  };
+
+  const handleDeleteGroup = async () => {
+    if (!group) return;
+
+    dialog.alert(
+      "Delete Group",
+      `Are you sure you want to delete "${group.name}"? This action cannot be undone. All members will be removed and shared vehicle access will be revoked.`,
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete Group",
+          style: "destructive",
+          onPress: async () => {
+            const { error } = await GroupService.deleteGroup(group.id);
+            if (error) {
+              dialog.showError("Error", error);
+            } else {
+              dialog.showSuccess("Success", "Group deleted successfully", () =>
                 router.back(),
               );
             }
@@ -555,6 +587,7 @@ export default function GroupDetailScreen() {
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.background }}>
       <PageHeader
         title={group.name}
+        subtitle={group.description ?? undefined}
         showBack
         rightContent={
           isOwner ? (
@@ -579,46 +612,6 @@ export default function GroupDetailScreen() {
         }
       />
 
-      {/* Group Info Section */}
-      {group.description && (
-        <View
-          style={{
-            padding: theme.spacing.md,
-            backgroundColor: theme.colors.surface,
-          }}
-        >
-          <Text color="secondary" style={{ marginBottom: theme.spacing.sm }}>
-            {group.description}
-          </Text>
-          <View style={{ flexDirection: "row", gap: theme.spacing.lg }}>
-            <View>
-              <Text size="xl" weight="bold">
-                {group.member_count}
-              </Text>
-              <Text size="sm" color="secondary">
-                Members
-              </Text>
-            </View>
-            <View>
-              <Text size="xl" weight="bold">
-                {invitations.length}
-              </Text>
-              <Text size="sm" color="secondary">
-                Pending
-              </Text>
-            </View>
-            <View>
-              <Text size="xl" weight="bold">
-                {sharedVehicles.length}
-              </Text>
-              <Text size="sm" color="secondary">
-                Vehicles
-              </Text>
-            </View>
-          </View>
-        </View>
-      )}
-
       {/* Tabs */}
       <View
         style={{
@@ -633,22 +626,24 @@ export default function GroupDetailScreen() {
           style={{
             flex: 1,
             paddingVertical: theme.spacing.sm,
-            paddingHorizontal: theme.spacing.md,
+            paddingHorizontal: theme.spacing.sm,
             borderRadius: theme.spacing.sm,
             backgroundColor:
               activeTab === "members" ? theme.colors.primary : "transparent",
             alignItems: "center",
+            justifyContent: "center",
           }}
           onPress={() => setActiveTab("members")}
         >
           <Text
             weight="semibold"
-            size="sm"
+            numberOfLines={1}
             style={{
               color: activeTab === "members" ? "white" : theme.colors.text,
+              fontSize: tabFontSize,
             }}
           >
-            Members ({group.member_count})
+            Members({group.member_count})
           </Text>
         </TouchableOpacity>
 
@@ -656,22 +651,24 @@ export default function GroupDetailScreen() {
           style={{
             flex: 1,
             paddingVertical: theme.spacing.sm,
-            paddingHorizontal: theme.spacing.md,
+            paddingHorizontal: theme.spacing.sm,
             borderRadius: theme.spacing.sm,
             backgroundColor:
               activeTab === "vehicles" ? theme.colors.primary : "transparent",
             alignItems: "center",
+            justifyContent: "center",
           }}
           onPress={() => setActiveTab("vehicles")}
         >
           <Text
             weight="semibold"
-            size="sm"
+            numberOfLines={1}
             style={{
               color: activeTab === "vehicles" ? "white" : theme.colors.text,
+              fontSize: tabFontSize,
             }}
           >
-            Vehicles ({sharedVehicles.length})
+            Vehicles({sharedVehicles.length})
           </Text>
         </TouchableOpacity>
 
@@ -680,25 +677,27 @@ export default function GroupDetailScreen() {
             style={{
               flex: 1,
               paddingVertical: theme.spacing.sm,
-              paddingHorizontal: theme.spacing.md,
+              paddingHorizontal: theme.spacing.sm,
               borderRadius: theme.spacing.sm,
               backgroundColor:
                 activeTab === "invitations"
                   ? theme.colors.primary
                   : "transparent",
               alignItems: "center",
+              justifyContent: "center",
             }}
             onPress={() => setActiveTab("invitations")}
           >
             <Text
               weight="semibold"
-              size="sm"
+              numberOfLines={1}
               style={{
                 color:
                   activeTab === "invitations" ? "white" : theme.colors.text,
+                fontSize: tabFontSize,
               }}
             >
-              Invitations ({invitations.length})
+              Invites({invitations.length})
             </Text>
           </TouchableOpacity>
         )}
@@ -730,6 +729,38 @@ export default function GroupDetailScreen() {
           >
             <Text color="error" weight="semibold">
               Leave Group
+            </Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
+      {/* Delete Group Button (for owners) */}
+      {isOwner && (
+        <View
+          style={{
+            padding: theme.spacing.md,
+            borderTopWidth: 1,
+            borderTopColor: theme.colors.border,
+          }}
+        >
+          <TouchableOpacity
+            style={{
+              backgroundColor: theme.colors.error + "10",
+              paddingVertical: theme.spacing.sm,
+              paddingHorizontal: theme.spacing.md,
+              borderRadius: theme.spacing.sm,
+              borderWidth: 1,
+              borderColor: theme.colors.error,
+              alignItems: "center",
+              flexDirection: "row",
+              justifyContent: "center",
+              gap: theme.spacing.sm,
+            }}
+            onPress={handleDeleteGroup}
+          >
+            <IconSymbol name="trash" size={16} color={theme.colors.error} />
+            <Text color="error" weight="semibold">
+              Delete Group
             </Text>
           </TouchableOpacity>
         </View>

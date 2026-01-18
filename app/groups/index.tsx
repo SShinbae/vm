@@ -5,7 +5,7 @@ import { useDialog } from "@/lib/contexts/DialogContext";
 import { GroupService } from "@/lib/services/groupService";
 import { GroupWithMembers } from "@/types";
 import { Image } from "expo-image";
-import { router } from "expo-router";
+import { router, useRouter } from "expo-router";
 import React, { useCallback, useEffect, useState } from "react";
 import {
   RefreshControl,
@@ -21,9 +21,18 @@ export default function GroupsScreen() {
   const { theme } = useStyles();
   const { user } = useAuth();
   const dialog = useDialog();
+  const navigation = useRouter();
   const [groups, setGroups] = useState<GroupWithMembers[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+
+  const handleBack = () => {
+    if (navigation.canGoBack()) {
+      navigation.back();
+    } else {
+      router.replace("/(tabs)");
+    }
+  };
 
   const fetchGroups = useCallback(async () => {
     const result = await GroupService.getGroups();
@@ -249,8 +258,30 @@ export default function GroupsScreen() {
             paddingVertical: theme.spacing.lg,
             borderBottomWidth: 1,
             borderBottomColor: theme.colors.border,
+            flexDirection: "row",
+            alignItems: "center",
           }}
         >
+          <TouchableOpacity
+            onPress={handleBack}
+            style={{
+              width: 40,
+              height: 40,
+              borderRadius: 20,
+              backgroundColor: theme.colors.surface,
+              alignItems: "center",
+              justifyContent: "center",
+              marginRight: theme.spacing.md,
+            }}
+            accessibilityLabel="Go back"
+            accessibilityRole="button"
+          >
+            <IconSymbol
+              name="chevron.left"
+              size={20}
+              color={theme.colors.text}
+            />
+          </TouchableOpacity>
           <Text
             style={{
               fontSize: theme.fontSize["3xl"],
@@ -279,15 +310,37 @@ export default function GroupsScreen() {
           alignItems: "center",
         }}
       >
-        <Text
-          style={{
-            fontSize: theme.fontSize["3xl"],
-            fontWeight: theme.fontWeight.bold,
-            color: theme.colors.text,
-          }}
-        >
-          Groups
-        </Text>
+        <View style={{ flexDirection: "row", alignItems: "center" }}>
+          <TouchableOpacity
+            onPress={handleBack}
+            style={{
+              width: 40,
+              height: 40,
+              borderRadius: 20,
+              backgroundColor: theme.colors.surface,
+              alignItems: "center",
+              justifyContent: "center",
+              marginRight: theme.spacing.md,
+            }}
+            accessibilityLabel="Go back"
+            accessibilityRole="button"
+          >
+            <IconSymbol
+              name="chevron.left"
+              size={20}
+              color={theme.colors.text}
+            />
+          </TouchableOpacity>
+          <Text
+            style={{
+              fontSize: theme.fontSize["3xl"],
+              fontWeight: theme.fontWeight.bold,
+              color: theme.colors.text,
+            }}
+          >
+            Groups
+          </Text>
+        </View>
         <TouchableOpacity
           style={{
             backgroundColor: theme.colors.primary,

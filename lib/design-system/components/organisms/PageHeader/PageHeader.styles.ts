@@ -23,9 +23,13 @@ export const stylesheet = createStyleSheet((theme, runtime) => ({
     flex: 1,
   },
   backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: theme.colors.surface,
+    alignItems: "center",
+    justifyContent: "center",
     marginRight: 12,
-    padding: 8,
-    marginLeft: -8,
   },
   titleContainer: {
     flex: 1,
