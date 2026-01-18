@@ -45,17 +45,17 @@ module.exports = function (api) {
     "react-native-reanimated/plugin",
   ];
 
-  // Remove console.* statements in production builds
-  if (isProduction) {
-    // Only add if the package is installed
-    try {
-      require.resolve("babel-plugin-transform-remove-console");
-      plugins.unshift("babel-plugin-transform-remove-console");
-      // eslint-disable-next-line no-unused-vars
-    } catch (e) {
-      console.warn("babel-plugin-transform-remove-console not found, skipping");
-    }
-  }
+  // DISABLED: Console removal was causing production crashes
+  // The babel-plugin-transform-remove-console can cause issues with some libraries
+  // that expect console to be defined. Keep console statements for now to aid debugging.
+  // if (isProduction) {
+  //   try {
+  //     require.resolve("babel-plugin-transform-remove-console");
+  //     plugins.unshift("babel-plugin-transform-remove-console");
+  //   } catch (e) {
+  //     console.warn("babel-plugin-transform-remove-console not found, skipping");
+  //   }
+  // }
 
   return {
     presets: ["babel-preset-expo"],
