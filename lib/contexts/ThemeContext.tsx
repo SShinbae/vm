@@ -1,7 +1,21 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { Platform, useColorScheme as useNativeColorScheme } from "react-native";
-import { UnistylesRuntime } from "react-native-unistyles";
+
+// Safely import UnistylesRuntime to prevent production crashes
+let UnistylesRuntime:
+  | typeof import("react-native-unistyles").UnistylesRuntime
+  | null = null;
+
+try {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const unistyles = require("react-native-unistyles");
+  UnistylesRuntime = unistyles.UnistylesRuntime;
+} catch (error) {
+  if (__DEV__) {
+    console.error("Failed to load UnistylesRuntime:", error);
+  }
+}
 
 export type ThemeMode = "system" | "light" | "dark";
 export type ColorScheme = "light" | "dark";
@@ -43,9 +57,17 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
         ? "dark"
         : "light";
 
-  // Sync unistyles theme with color scheme
+  // Sync unistyles theme with color scheme (safely)
   useEffect(() => {
-    UnistylesRuntime.setTheme(colorScheme);
+    try {
+      if (UnistylesRuntime) {
+        UnistylesRuntime.setTheme(colorScheme);
+      }
+    } catch (error) {
+      if (__DEV__) {
+        console.error("Failed to set Unistyles theme:", error);
+      }
+    }
   }, [colorScheme]);
 
   // Handle hydration for web
