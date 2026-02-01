@@ -4,7 +4,7 @@ import { Spacer } from "@/lib/design-system/components/atoms/Spacer";
 import { GroupService } from "@/lib/services/groupService";
 import { useToast } from "@/hooks/useToast";
 import { GroupFormData } from "@/types";
-import { router } from "expo-router";
+import { router, useRouter } from "expo-router";
 import React, { useState } from "react";
 
 export default function CreateGroupScreen() {
@@ -14,6 +14,15 @@ export default function CreateGroupScreen() {
   });
   const [loading, setLoading] = useState(false);
   const { showSuccess, showError } = useToast();
+  const navigation = useRouter();
+
+  const handleGoBack = () => {
+    if (navigation.canGoBack()) {
+      router.back();
+    } else {
+      router.replace("/groups");
+    }
+  };
 
   const handleSave = async () => {
     if (!formData.name.trim()) {
@@ -35,7 +44,7 @@ export default function CreateGroupScreen() {
       showError(error);
     } else {
       showSuccess("Group created successfully!");
-      router.back();
+      handleGoBack();
     }
   };
 
@@ -58,7 +67,7 @@ export default function CreateGroupScreen() {
         submitLabel="Create Group"
         cancelLabel="Cancel"
         onSubmit={handleSave}
-        onCancel={() => router.back()}
+        onCancel={handleGoBack}
         loading={loading}
       >
         <Input

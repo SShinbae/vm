@@ -4,15 +4,15 @@ import { DatePicker } from "@/components/ui/DatePicker";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { Input } from "@/components/ui/Input";
 import { ConfirmModal } from "@/components/ui/Modal";
+import { SkeletonFuelLogEdit } from "@/components/ui/Skeleton";
 import { useToast } from "@/hooks/useToast";
 import { FuelLogService } from "@/lib/services/loggingService";
 import { canUserAccessVehicle } from "@/lib/utils/serviceUtils";
 import { supabase } from "@/services/supabaseClient";
 import { FuelLog, FuelLogFormData, Vehicle } from "@/types";
-import { router, useLocalSearchParams } from "expo-router";
+import { router, useLocalSearchParams, useNavigation } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
-  ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -46,12 +46,38 @@ export default function EditFuelLogScreen() {
   const [canModify, setCanModify] = useState(true);
   const [deleteModalVisible, setDeleteModalVisible] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
+  const [lastEditedField, setLastEditedField] = useState<
+    "cost" | "liters" | null
+  >(null);
+  const [isCustomPrice, setIsCustomPrice] = useState(false);
+  const [customPriceInput, setCustomPriceInput] = useState("");
+  // Raw string inputs to preserve decimals while typing
+  const [costInput, setCostInput] = useState("");
+  const [litersInput, setLitersInput] = useState("");
   const isWeb = Platform.OS === "web";
+  const navigation = useNavigation();
 
-  // Auto-calculate liters based on cost and fuel price (only this direction)
+  // Safe back navigation - fallback to logs tab if no history
+  const handleGoBack = () => {
+    if (navigation.canGoBack()) {
+      router.back();
+    } else {
+      router.replace("/(tabs)/logs");
+    }
+  };
+
+  // Auto-calculate liters based on cost and fuel price
   const calculateLiters = (cost: number, fuelPrice: number) => {
     if (fuelPrice > 0 && cost > 0) {
-      return Math.round((cost / fuelPrice) * 1000) / 1000; // Round to 3 decimal places
+      return Math.round((cost / fuelPrice) * 1000) / 1000;
+    }
+    return 0;
+  };
+
+  // Auto-calculate cost based on liters and fuel price
+  const calculateCost = (liters: number, fuelPrice: number) => {
+    if (fuelPrice > 0 && liters > 0) {
+      return Math.round(liters * fuelPrice * 100) / 100;
     }
     return 0;
   };
@@ -60,7 +86,7 @@ export default function EditFuelLogScreen() {
     const fetchFuelLog = async () => {
       if (!id) {
         showError("Invalid fuel log ID");
-        router.back();
+        router.replace("/(tabs)/logs");
         return;
       }
 
@@ -76,7 +102,7 @@ export default function EditFuelLogScreen() {
               "Unable to load fuel log. Please check your internet connection.";
           }
           showError(errorMsg);
-          router.back();
+          router.replace("/(tabs)/logs");
           return;
         }
 
@@ -85,7 +111,7 @@ export default function EditFuelLogScreen() {
           showError(
             "This fuel log no longer exists. It may have been deleted.",
           );
-          router.back();
+          router.replace("/(tabs)/logs");
           return;
         }
 
@@ -99,6 +125,11 @@ export default function EditFuelLogScreen() {
           odometer_reading: log.odometer_reading,
           location: log.location || "",
         });
+        // Initialize raw input displays
+        setCostInput(log.cost ? log.cost.toString() : "");
+        setLitersInput(
+          log.liters_filled > 0 ? log.liters_filled.toFixed(3) : "",
+        );
 
         // Check if user can modify this log
         const {
@@ -114,7 +145,7 @@ export default function EditFuelLogScreen() {
       } catch (error) {
         console.error("Error fetching fuel log:", error);
         showError("Failed to load fuel log");
-        router.back();
+        router.replace("/(tabs)/logs");
       }
 
       setDataLoading(false);
@@ -252,10 +283,7 @@ export default function EditFuelLogScreen() {
   // Custom Header Component
   const CustomHeader = () => (
     <View style={styles.customHeader}>
-      <TouchableOpacity
-        style={styles.customBackButton}
-        onPress={() => router.back()}
-      >
+      <TouchableOpacity style={styles.customBackButton} onPress={handleGoBack}>
         <IconSymbol name="chevron.left" size={24} color={theme.colors.text} />
       </TouchableOpacity>
       <View style={styles.titleContainer}>
@@ -269,9 +297,9 @@ export default function EditFuelLogScreen() {
     return (
       <SafeAreaView style={styles.container}>
         <CustomHeader />
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={theme.colors.primary} />
-        </View>
+        <ScrollView contentContainerStyle={styles.scrollContent(isWeb)}>
+          <SkeletonFuelLogEdit />
+        </ScrollView>
       </SafeAreaView>
     );
   }
@@ -331,18 +359,37 @@ export default function EditFuelLogScreen() {
                       key={price}
                       style={[
                         styles.fuelPriceOption,
-                        formData.fuel_price === price &&
+                        !isCustomPrice &&
+                          formData.fuel_price === price &&
                           styles.fuelPriceOptionSelected,
                       ]}
                       onPress={() => {
+                        setIsCustomPrice(false);
+                        setCustomPriceInput("");
                         setFormData((prev) => {
                           const newData = { ...prev, fuel_price: price };
 
-                          // Auto-calculate liters if cost is entered
-                          if (prev.cost && prev.cost > 0) {
+                          // Recalculate based on which field was last edited
+                          if (
+                            lastEditedField === "liters" &&
+                            prev.liters_filled > 0
+                          ) {
+                            newData.cost = calculateCost(
+                              prev.liters_filled,
+                              price,
+                            );
+                            setCostInput(
+                              newData.cost > 0 ? newData.cost.toFixed(2) : "",
+                            );
+                          } else if (prev.cost && prev.cost > 0) {
                             newData.liters_filled = calculateLiters(
                               prev.cost,
                               price,
+                            );
+                            setLitersInput(
+                              newData.liters_filled > 0
+                                ? newData.liters_filled.toFixed(3)
+                                : "",
                             );
                           }
 
@@ -353,7 +400,8 @@ export default function EditFuelLogScreen() {
                       <Text
                         style={[
                           styles.fuelPriceOptionText,
-                          formData.fuel_price === price &&
+                          !isCustomPrice &&
+                            formData.fuel_price === price &&
                             styles.fuelPriceOptionTextSelected,
                         ]}
                       >
@@ -361,16 +409,79 @@ export default function EditFuelLogScreen() {
                       </Text>
                     </TouchableOpacity>
                   ))}
+                  <TouchableOpacity
+                    style={[
+                      styles.fuelPriceOption,
+                      isCustomPrice && styles.fuelPriceOptionSelected,
+                    ]}
+                    onPress={() => setIsCustomPrice(true)}
+                  >
+                    <Text
+                      style={[
+                        styles.fuelPriceOptionText,
+                        isCustomPrice && styles.fuelPriceOptionTextSelected,
+                      ]}
+                    >
+                      Custom
+                    </Text>
+                  </TouchableOpacity>
                 </View>
+                {isCustomPrice && (
+                  <Input
+                    label=""
+                    value={customPriceInput}
+                    onChangeText={(text) => {
+                      setCustomPriceInput(text);
+                      const price = parseFloat(text) || 0;
+                      if (price > 0) {
+                        setFormData((prev) => {
+                          const newData = { ...prev, fuel_price: price };
+
+                          // Recalculate based on which field was last edited
+                          if (
+                            lastEditedField === "liters" &&
+                            prev.liters_filled > 0
+                          ) {
+                            newData.cost = calculateCost(
+                              prev.liters_filled,
+                              price,
+                            );
+                            setCostInput(
+                              newData.cost > 0 ? newData.cost.toFixed(2) : "",
+                            );
+                          } else if (prev.cost && prev.cost > 0) {
+                            newData.liters_filled = calculateLiters(
+                              prev.cost,
+                              price,
+                            );
+                            setLitersInput(
+                              newData.liters_filled > 0
+                                ? newData.liters_filled.toFixed(3)
+                                : "",
+                            );
+                          }
+
+                          return newData;
+                        });
+                      }
+                    }}
+                    placeholder="Enter custom price (e.g., 2.45)"
+                    keyboardType="decimal-pad"
+                    containerStyle={{ marginTop: theme.spacing.sm }}
+                    leftIcon="dollarsign"
+                  />
+                )}
               </View>
 
               <View style={styles.row}>
                 <View style={styles.flex1}>
                   <Input
                     label="Cost (RM)"
-                    value={formData.cost?.toString() || ""}
+                    value={costInput}
                     onChangeText={(text) => {
+                      setCostInput(text); // Store raw input to preserve decimals
                       const cost = parseFloat(text) || 0;
+                      setLastEditedField("cost");
                       setFormData((prev) => {
                         const newData = { ...prev, cost };
 
@@ -384,19 +495,25 @@ export default function EditFuelLogScreen() {
                             cost,
                             prev.fuel_price,
                           );
+                          setLitersInput(
+                            newData.liters_filled > 0
+                              ? newData.liters_filled.toFixed(3)
+                              : "",
+                          );
                         }
 
                         return newData;
                       });
                     }}
                     placeholder="65.00"
-                    keyboardType="numeric"
+                    keyboardType="decimal-pad"
                     required
                     error={
                       formData.cost
                         ? validateCost(formData.cost.toString())
                         : undefined
                     }
+                    helperText="Enter cost or auto-calculate from liters"
                     leftIcon="dollarsign"
                   />
                 </View>
@@ -404,11 +521,33 @@ export default function EditFuelLogScreen() {
                 <View style={styles.flex1}>
                   <Input
                     label="Liters Filled"
-                    value={formData.liters_filled.toString()}
-                    placeholder="Auto-calculated"
-                    onChangeText={() => {}}
-                    editable={false}
-                    helperText="Calculated from cost and fuel price"
+                    value={litersInput}
+                    placeholder="15.083"
+                    onChangeText={(text) => {
+                      setLitersInput(text); // Store raw input to preserve decimals
+                      const liters = parseFloat(text) || 0;
+                      setLastEditedField("liters");
+                      setFormData((prev) => {
+                        const newData = { ...prev, liters_filled: liters };
+
+                        // Auto-calculate cost if fuel price is selected
+                        if (
+                          prev.fuel_price &&
+                          prev.fuel_price > 0 &&
+                          liters > 0
+                        ) {
+                          newData.cost = calculateCost(liters, prev.fuel_price);
+                          setCostInput(
+                            newData.cost > 0 ? newData.cost.toFixed(2) : "",
+                          );
+                        }
+
+                        return newData;
+                      });
+                    }}
+                    keyboardType="decimal-pad"
+                    editable={true}
+                    helperText="Enter liters or auto-calculate from cost"
                     leftIcon="drop"
                   />
                 </View>
@@ -467,7 +606,7 @@ export default function EditFuelLogScreen() {
             <View style={styles.buttonContainer}>
               <Button
                 title="Cancel"
-                onPress={() => router.back()}
+                onPress={handleGoBack}
                 variant="outline"
                 icon="xmark"
                 style={styles.cancelButton}

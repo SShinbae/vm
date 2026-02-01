@@ -8,6 +8,7 @@ import {
   TextInput,
   TouchableOpacity,
   View,
+  useWindowDimensions,
 } from "react-native";
 import { IconSymbol } from "./icon-symbol";
 
@@ -24,6 +25,10 @@ export function ServiceItemsInput({
 }: ServiceItemsInputProps) {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? "light"];
+  const { width: screenWidth } = useWindowDimensions();
+
+  // Responsive breakpoints
+  const isSmallScreen = screenWidth < 380;
 
   const updateItem = (
     index: number,
@@ -40,8 +45,8 @@ export function ServiceItemsInput({
   };
 
   const removeItem = (index: number) => {
-    if (items.length > 2) {
-      // Maintain minimum 2 rows
+    if (items.length > 1) {
+      // Maintain minimum 1 row
       const newItems = items.filter((_, i) => i !== index);
       onItemsChange(newItems);
     }
@@ -51,13 +56,13 @@ export function ServiceItemsInput({
 
   const styles = StyleSheet.create({
     container: {
-      marginBottom: 20,
+      marginBottom: isSmallScreen ? 16 : 20,
     },
     label: {
-      fontSize: 16,
+      fontSize: isSmallScreen ? 14 : 16,
       fontWeight: "500",
       color: colors.text,
-      marginBottom: 12,
+      marginBottom: isSmallScreen ? 8 : 12,
     },
     requiredLabel: {
       color: "#ff4444",
@@ -65,42 +70,44 @@ export function ServiceItemsInput({
     itemRow: {
       flexDirection: "row",
       alignItems: "center",
-      marginBottom: 12,
-      gap: 8,
+      marginBottom: isSmallScreen ? 8 : 12,
+      gap: isSmallScreen ? 4 : 8,
     },
     descriptionInput: {
       flex: 2,
+      minWidth: 0, // Allow shrinking below content size
       backgroundColor: colors.background,
       borderWidth: 1,
       borderColor: colors.icon,
       borderRadius: 8,
-      paddingHorizontal: 12,
-      paddingVertical: 10,
-      fontSize: 14,
+      paddingHorizontal: isSmallScreen ? 8 : 12,
+      paddingVertical: isSmallScreen ? 8 : 10,
+      fontSize: isSmallScreen ? 13 : 14,
       color: colors.text,
     },
     priceInput: {
       flex: 1,
+      minWidth: isSmallScreen ? 60 : 80,
+      maxWidth: isSmallScreen ? 80 : 120,
       backgroundColor: colors.background,
       borderWidth: 1,
       borderColor: colors.icon,
       borderRadius: 8,
-      paddingHorizontal: 12,
-      paddingVertical: 10,
-      fontSize: 14,
+      paddingHorizontal: isSmallScreen ? 6 : 12,
+      paddingVertical: isSmallScreen ? 8 : 10,
+      fontSize: isSmallScreen ? 13 : 14,
       color: colors.text,
       textAlign: "right",
     },
     removeButton: {
-      width: 32,
-      height: 32,
-      borderRadius: 16,
-      backgroundColor: colors.icon + "10",
+      width: isSmallScreen ? 28 : 32,
+      height: isSmallScreen ? 28 : 32,
       alignItems: "center",
       justifyContent: "center",
+      flexShrink: 0,
     },
     removeButtonDisabled: {
-      opacity: 0.3,
+      opacity: 0.4,
     },
     addButton: {
       flexDirection: "row",
@@ -111,18 +118,18 @@ export function ServiceItemsInput({
       borderColor: colors.tint,
       borderStyle: "dashed",
       borderRadius: 8,
-      paddingVertical: 12,
+      paddingVertical: isSmallScreen ? 10 : 12,
       gap: 8,
       marginTop: 8,
     },
     addButtonText: {
       color: colors.tint,
-      fontSize: 14,
+      fontSize: isSmallScreen ? 13 : 14,
       fontWeight: "500",
     },
     totalContainer: {
-      marginTop: 16,
-      paddingTop: 16,
+      marginTop: isSmallScreen ? 12 : 16,
+      paddingTop: isSmallScreen ? 12 : 16,
       borderTopWidth: 1,
       borderTopColor: colors.icon + "20",
     },
@@ -132,12 +139,12 @@ export function ServiceItemsInput({
       alignItems: "center",
     },
     totalLabel: {
-      fontSize: 16,
+      fontSize: isSmallScreen ? 14 : 16,
       fontWeight: "600",
       color: colors.text,
     },
     totalAmount: {
-      fontSize: 18,
+      fontSize: isSmallScreen ? 16 : 18,
       fontWeight: "bold",
       color: colors.tint,
     },
@@ -145,20 +152,24 @@ export function ServiceItemsInput({
       flexDirection: "row",
       marginBottom: 8,
       paddingHorizontal: 4,
+      gap: isSmallScreen ? 4 : 8,
     },
     columnHeader: {
-      fontSize: 12,
+      fontSize: isSmallScreen ? 10 : 12,
       fontWeight: "600",
       color: colors.icon,
       textTransform: "uppercase",
     },
     descriptionHeader: {
       flex: 2,
+      minWidth: 0,
     },
     priceHeader: {
       flex: 1,
+      minWidth: isSmallScreen ? 60 : 80,
+      maxWidth: isSmallScreen ? 80 : 120,
       textAlign: "right",
-      marginRight: 40, // Account for remove button space
+      marginRight: isSmallScreen ? 32 : 40, // Account for remove button space
     },
   });
 
@@ -243,15 +254,15 @@ export function ServiceItemsInput({
           <TouchableOpacity
             style={[
               styles.removeButton,
-              items.length <= 2 && styles.removeButtonDisabled,
+              items.length <= 1 && styles.removeButtonDisabled,
             ]}
             onPress={() => removeItem(index)}
-            disabled={items.length <= 2}
+            disabled={items.length <= 1}
           >
             <IconSymbol
               name="minus.circle.fill"
-              size={20}
-              color={items.length <= 2 ? colors.icon + "50" : "#ff4444"}
+              size={isSmallScreen ? 22 : 24}
+              color={items.length <= 1 ? colors.icon : "#ff4444"}
             />
           </TouchableOpacity>
         </View>
@@ -300,8 +311,5 @@ export const validateServiceItems = (
 
 // Helper function to create default items
 export const createDefaultServiceItems = (): ServiceLogItem[] => {
-  return [
-    { description: "", price: 0 },
-    { description: "", price: 0 },
-  ];
+  return [{ description: "", price: 0 }];
 };

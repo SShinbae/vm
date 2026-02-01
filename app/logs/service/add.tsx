@@ -8,6 +8,7 @@ import {
   ReceiptCapture,
 } from "@/components/ui/ReceiptCapture";
 import { ReceiptViewer } from "@/components/ui/ReceiptViewer";
+import { SkeletonServiceLogForm } from "@/components/ui/Skeleton";
 import {
   ServiceItemsInput,
   calculateTotalCost,
@@ -25,7 +26,6 @@ import { Image } from "expo-image";
 import { router, useLocalSearchParams } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
-  ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -33,6 +33,7 @@ import {
   Text,
   TouchableOpacity,
   View,
+  useWindowDimensions,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -125,6 +126,39 @@ export default function AddServiceLogScreen() {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? "light"];
   const isWeb = Platform.OS === "web";
+  const { width: screenWidth } = useWindowDimensions();
+
+  // Responsive breakpoints
+  const isSmallScreen = screenWidth < 380;
+  const isMediumScreen = screenWidth >= 380 && screenWidth < 600;
+  const isLargeScreen = screenWidth >= 600;
+
+  // --- Custom Header (standardized across all log forms) ---
+  const CustomHeader = () => {
+    const headerTitle =
+      vehicleId && vehicles.find((v) => v.id === vehicleId)
+        ? `Add Service - ${vehicles.find((v) => v.id === vehicleId)?.year} ${vehicles.find((v) => v.id === vehicleId)?.make}`
+        : "Add Service Log";
+
+    return (
+      <View style={styles.customHeader}>
+        <TouchableOpacity
+          style={styles.customBackButton}
+          onPress={() => router.back()}
+        >
+          <IconSymbol name="chevron.left" size={24} color={colors.text} />
+        </TouchableOpacity>
+        <View style={styles.titleContainer}>
+          <Text style={styles.headerTitle}>{headerTitle}</Text>
+          {!isWeb && (
+            <Text style={styles.headerSubtitle}>
+              Record your vehicle service
+            </Text>
+          )}
+        </View>
+      </View>
+    );
+  };
 
   useEffect(() => {
     const fetchVehicles = async () => {
@@ -451,60 +485,65 @@ export default function AddServiceLogScreen() {
     </View>
   );
 
+  // Calculate service type chip width based on screen size
+  // Small screens: full width (1 per row)
+  // Medium screens: ~48% width (2 per row)
+  // Large screens: ~31% width (3 per row)
+  const getServiceTypeWidth = () => {
+    if (isSmallScreen) return "100%";
+    if (isMediumScreen) return "48%";
+    return "31%";
+  };
+
   const styles = StyleSheet.create({
     container: {
       flex: 1,
       backgroundColor: colors.background,
     },
-    header: {
+    // --- Standardized Header Styles ---
+    customHeader: {
       flexDirection: "row",
       alignItems: "center",
-      paddingHorizontal: 20,
+      paddingHorizontal: isSmallScreen ? 12 : 20,
       paddingVertical: 16,
+      backgroundColor: colors.background,
       borderBottomWidth: 1,
       borderBottomColor: colors.icon + "20",
-      backgroundColor: colors.background,
     },
-    backButton: {
-      marginRight: 16,
+    customBackButton: {
+      marginRight: isSmallScreen ? 8 : 16,
       padding: 4,
     },
+    titleContainer: {
+      flex: 1,
+    },
     headerTitle: {
-      fontSize: 24,
+      fontSize: isSmallScreen ? 20 : 24,
       fontWeight: "bold",
       color: colors.text,
-      flex: 1,
+    },
+    headerSubtitle: {
+      fontSize: isSmallScreen ? 12 : 14,
+      color: colors.icon,
+      marginTop: 2,
     },
     content: {
       flex: 1,
     },
     scrollContent: {
-      padding: isWeb ? 40 : 20,
+      padding: isLargeScreen ? 40 : isSmallScreen ? 12 : 16,
       paddingBottom: 100,
-      ...(isWeb && {
+      ...(isLargeScreen && {
         maxWidth: 600,
         width: "100%",
         alignSelf: "center",
       }),
     },
-    title: {
-      fontSize: 32,
-      fontWeight: "bold",
-      color: colors.text,
-      marginBottom: 8,
-      textAlign: isWeb ? "center" : "left",
-    },
-    subtitle: {
-      fontSize: 16,
-      color: colors.icon,
-      marginBottom: 32,
-      textAlign: isWeb ? "center" : "left",
-    },
     card: {
       backgroundColor: colors.background,
-      borderRadius: isWeb ? 16 : 12,
-      padding: isWeb ? 32 : 20,
-      ...(isWeb && {
+      borderRadius: isLargeScreen ? 16 : 12,
+      padding: isLargeScreen ? 32 : isSmallScreen ? 12 : 16,
+      ...(isLargeScreen && {
         shadowColor: colorScheme === "dark" ? "#ffffff" : "#000000",
         shadowOffset: {
           width: 0,
@@ -516,16 +555,17 @@ export default function AddServiceLogScreen() {
       }),
     },
     row: {
-      flexDirection: isWeb ? "row" : "column",
-      gap: 16,
+      flexDirection: "row",
+      gap: isSmallScreen ? 8 : 12,
     },
     flex1: {
       flex: 1,
+      minWidth: 0, // Allow flex items to shrink below content size
     },
     buttonContainer: {
       flexDirection: "row",
-      gap: 12,
-      marginTop: 32,
+      gap: isSmallScreen ? 8 : 12,
+      marginTop: isSmallScreen ? 24 : 32,
     },
     cancelButton: {
       flex: 1,
@@ -539,10 +579,10 @@ export default function AddServiceLogScreen() {
       alignItems: "center",
     },
     inputContainer: {
-      marginBottom: 20,
+      marginBottom: isSmallScreen ? 16 : 20,
     },
     label: {
-      fontSize: 16,
+      fontSize: isSmallScreen ? 14 : 16,
       fontWeight: "500",
       color: colors.text,
       marginBottom: 8,
@@ -554,15 +594,15 @@ export default function AddServiceLogScreen() {
       maxHeight: 120,
     },
     vehicleSelectorContent: {
-      gap: 12,
+      gap: isSmallScreen ? 8 : 12,
     },
     vehicleOption: {
       backgroundColor: colors.background,
       borderWidth: 1,
       borderColor: colors.icon + "30",
       borderRadius: 8,
-      padding: 12,
-      minWidth: 120,
+      padding: isSmallScreen ? 10 : 12,
+      minWidth: isSmallScreen ? 100 : 120,
       alignItems: "center",
       gap: 8,
     },
@@ -579,7 +619,7 @@ export default function AddServiceLogScreen() {
       justifyContent: "center",
     },
     vehicleOptionText: {
-      fontSize: 14,
+      fontSize: isSmallScreen ? 12 : 14,
       fontWeight: "600",
       color: colors.text,
       textAlign: "center",
@@ -588,7 +628,7 @@ export default function AddServiceLogScreen() {
       color: colors.tint,
     },
     vehiclePlateText: {
-      fontSize: 12,
+      fontSize: isSmallScreen ? 10 : 12,
       color: colors.icon,
       textAlign: "center",
     },
@@ -603,21 +643,21 @@ export default function AddServiceLogScreen() {
       borderWidth: 1,
       borderColor: colors.tint,
       borderRadius: 8,
-      padding: 16,
+      padding: isSmallScreen ? 12 : 16,
       flexDirection: "row",
       alignItems: "center",
-      gap: 12,
+      gap: isSmallScreen ? 8 : 12,
     },
     lockedVehicleInfo: {
       flex: 1,
     },
     lockedVehicleText: {
-      fontSize: 16,
+      fontSize: isSmallScreen ? 14 : 16,
       fontWeight: "600",
       color: colors.text,
     },
     lockedVehiclePlate: {
-      fontSize: 14,
+      fontSize: isSmallScreen ? 12 : 14,
       color: colors.icon,
       marginTop: 2,
     },
@@ -625,14 +665,15 @@ export default function AddServiceLogScreen() {
       padding: 4,
     },
     lockedHelpText: {
-      fontSize: 12,
+      fontSize: isSmallScreen ? 11 : 12,
       color: colors.icon,
       fontStyle: "italic",
     },
     serviceTypeGrid: {
       flexDirection: "row",
       flexWrap: "wrap",
-      gap: 12,
+      gap: isSmallScreen ? 8 : 10,
+      justifyContent: "flex-start",
     },
     serviceTypeOption: {
       flexDirection: "row",
@@ -641,19 +682,23 @@ export default function AddServiceLogScreen() {
       borderWidth: 1,
       borderColor: colors.icon + "30",
       borderRadius: 8,
-      paddingHorizontal: 12,
-      paddingVertical: 8,
-      gap: 8,
-      minWidth: "45%",
+      paddingHorizontal: isSmallScreen ? 10 : 12,
+      paddingVertical: isSmallScreen ? 8 : 10,
+      gap: 6,
+      // Dynamic width based on screen size
+      width: getServiceTypeWidth(),
+      flexGrow: isSmallScreen ? 0 : 1,
+      flexShrink: 0,
     },
     serviceTypeOptionSelected: {
       borderColor: colors.tint,
       backgroundColor: colors.tint + "10",
     },
     serviceTypeText: {
-      fontSize: 14,
+      fontSize: isSmallScreen ? 12 : 14,
       fontWeight: "500",
       color: colors.text,
+      flexShrink: 1,
     },
     serviceTypeTextSelected: {
       color: colors.tint,
@@ -662,54 +707,46 @@ export default function AddServiceLogScreen() {
       flexDirection: "row",
       alignItems: "center",
       backgroundColor: "#4CAF50" + "15",
-      paddingHorizontal: 12,
+      paddingHorizontal: isSmallScreen ? 10 : 12,
       paddingVertical: 8,
       borderRadius: 8,
       gap: 8,
       marginBottom: 16,
     },
     autoFillText: {
-      fontSize: 14,
+      fontSize: isSmallScreen ? 12 : 14,
       color: "#4CAF50",
       fontWeight: "500",
+      flex: 1,
     },
     pictureIndicator: {
       flexDirection: "row",
       alignItems: "center",
       backgroundColor: colors.tint + "15",
-      paddingHorizontal: 12,
+      paddingHorizontal: isSmallScreen ? 10 : 12,
       paddingVertical: 8,
       borderRadius: 8,
       gap: 8,
       marginBottom: 16,
     },
     pictureText: {
-      fontSize: 14,
+      fontSize: isSmallScreen ? 12 : 14,
       color: colors.tint,
       fontWeight: "500",
+      flex: 1,
     },
     receiptContainer: {
-      marginBottom: 20,
+      marginBottom: isSmallScreen ? 16 : 20,
     },
   });
 
   if (vehiclesLoading) {
     return (
       <SafeAreaView style={styles.container}>
-        {!isWeb && (
-          <View style={styles.header}>
-            <TouchableOpacity
-              style={styles.backButton}
-              onPress={() => router.back()}
-            >
-              <IconSymbol name="chevron.left" size={24} color={colors.text} />
-            </TouchableOpacity>
-            <Text style={styles.headerTitle}>Add Service Log</Text>
-          </View>
-        )}
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={colors.tint} />
-        </View>
+        <CustomHeader />
+        <ScrollView contentContainerStyle={styles.scrollContent}>
+          <SkeletonServiceLogForm />
+        </ScrollView>
       </SafeAreaView>
     );
   }
@@ -717,17 +754,7 @@ export default function AddServiceLogScreen() {
   if (vehicles.length === 0) {
     return (
       <SafeAreaView style={styles.container}>
-        {!isWeb && (
-          <View style={styles.header}>
-            <TouchableOpacity
-              style={styles.backButton}
-              onPress={() => router.back()}
-            >
-              <IconSymbol name="chevron.left" size={24} color={colors.text} />
-            </TouchableOpacity>
-            <Text style={styles.headerTitle}>Add Service Log</Text>
-          </View>
-        )}
+        <CustomHeader />
         <View style={styles.loadingContainer}>
           <Text style={[styles.label, { textAlign: "center" }]}>
             No vehicles found. Please add a vehicle first.
@@ -745,21 +772,7 @@ export default function AddServiceLogScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      {!isWeb && (
-        <View style={styles.header}>
-          <TouchableOpacity
-            style={styles.backButton}
-            onPress={() => router.back()}
-          >
-            <IconSymbol name="chevron.left" size={24} color={colors.text} />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>
-            {vehicleId && vehicles.find((v) => v.id === vehicleId)
-              ? `Add Service - ${vehicles.find((v) => v.id === vehicleId)?.year} ${vehicles.find((v) => v.id === vehicleId)?.make}`
-              : "Add Service Log"}
-          </Text>
-        </View>
-      )}
+      <CustomHeader />
 
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
@@ -770,13 +783,6 @@ export default function AddServiceLogScreen() {
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
-          {isWeb && (
-            <>
-              <Text style={styles.title}>Add Service Log</Text>
-              <Text style={styles.subtitle}>Record your vehicle service</Text>
-            </>
-          )}
-
           <View style={styles.card}>
             <VehicleSelector />
 
@@ -877,12 +883,12 @@ export default function AddServiceLogScreen() {
 
               <View style={styles.flex1}>
                 <DatePicker
-                  label="Next Service Due"
+                  label="Next Service"
                   value={formData.next_service_due || ""}
                   onDateChange={(date) =>
                     setFormData((prev) => ({ ...prev, next_service_due: date }))
                   }
-                  placeholder="Select next service date"
+                  placeholder="Select date"
                   style={{ marginBottom: 0 }}
                 />
               </View>

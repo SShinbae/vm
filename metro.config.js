@@ -11,14 +11,9 @@ config.resolver = {
   platforms: ["ios", "android", "web"],
   // Ensure node modules are resolved correctly
   nodeModulesPaths: [path.resolve(__dirname, "node_modules")],
-  // Add extensions for better resolution (web extensions take priority)
-  sourceExts: [
-    "web.ts",
-    "web.tsx",
-    "web.js",
-    "web.jsx",
-    ...config.resolver.sourceExts,
-  ],
+  // Keep default sourceExts order - Metro automatically handles platform-specific extensions
+  // (.android.ts, .ios.ts, .native.ts, .web.ts based on target platform)
+  sourceExts: config.resolver.sourceExts,
   // Add resolver alias for web-specific polyfills
   resolveRequest: (context, moduleName, platform) => {
     // For web platform, redirect native animation libraries to polyfills

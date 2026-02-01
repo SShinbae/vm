@@ -2,10 +2,9 @@ import { Button } from "@/components/ui/Button";
 import { DatePicker } from "@/components/ui/DatePicker";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { Input } from "@/components/ui/Input";
-import { router } from "expo-router";
-import React from "react";
+import { router, useNavigation } from "expo-router";
+import React, { useState } from "react";
 import {
-  ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -19,6 +18,7 @@ import { createStyleSheet, useStyles } from "react-native-unistyles";
 // Import the new hook and components
 import { FuelPriceChip } from "@/components/forms/FuelPriceChip";
 import { VehicleSelector } from "@/components/forms/VehicleSelector";
+import { SkeletonFuelLogForm } from "@/components/ui/Skeleton";
 import { useAddFuelLog } from "@/hooks/useAddFuelLog";
 
 export default function AddFuelLogScreen() {
@@ -31,7 +31,10 @@ export default function AddFuelLogScreen() {
     isWeb,
     isLocked,
     fuelPrices,
+    costInput,
+    litersInput,
     handleCostChange,
+    handleLitersChange,
     handlePriceChange,
     handleOdometerChange,
     handleDateChange,
@@ -43,13 +46,23 @@ export default function AddFuelLogScreen() {
     isFormValid,
   } = useAddFuelLog();
 
+  const [isCustomPrice, setIsCustomPrice] = useState(false);
+  const [customPriceInput, setCustomPriceInput] = useState("");
+  const navigation = useNavigation();
+
+  // Safe back navigation - fallback to logs tab if no history
+  const handleGoBack = () => {
+    if (navigation.canGoBack()) {
+      router.back();
+    } else {
+      router.replace("/(tabs)/logs");
+    }
+  };
+
   // --- New Custom Header ---
   const CustomHeader = () => (
     <View style={styles.customHeader}>
-      <TouchableOpacity
-        style={styles.customBackButton}
-        onPress={() => router.back()}
-      >
+      <TouchableOpacity style={styles.customBackButton} onPress={handleGoBack}>
         <IconSymbol name="chevron.left" size={24} color={theme.colors.text} />
       </TouchableOpacity>
       <View style={styles.titleContainer}>
@@ -66,9 +79,9 @@ export default function AddFuelLogScreen() {
     return (
       <SafeAreaView style={styles.container}>
         <CustomHeader />
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={theme.colors.primary} />
-        </View>
+        <ScrollView contentContainerStyle={styles.scrollContent(isWeb)}>
+          <SkeletonFuelLogForm />
+        </ScrollView>
       </SafeAreaView>
     );
   }
@@ -128,36 +141,65 @@ export default function AddFuelLogScreen() {
                   <FuelPriceChip
                     key={price}
                     price={price}
-                    isSelected={formData.fuel_price === price}
-                    onPress={() => handlePriceChange(price)}
+                    isSelected={!isCustomPrice && formData.fuel_price === price}
+                    onPress={() => {
+                      setIsCustomPrice(false);
+                      setCustomPriceInput("");
+                      handlePriceChange(price);
+                    }}
                   />
                 ))}
+                <FuelPriceChip
+                  price={0}
+                  isSelected={isCustomPrice}
+                  label="Custom"
+                  onPress={() => setIsCustomPrice(true)}
+                />
               </View>
+              {isCustomPrice && (
+                <Input
+                  label=""
+                  value={customPriceInput}
+                  onChangeText={(text) => {
+                    setCustomPriceInput(text);
+                    const price = parseFloat(text) || 0;
+                    if (price > 0) {
+                      handlePriceChange(price);
+                    }
+                  }}
+                  placeholder="Enter custom price (e.g., 2.45)"
+                  keyboardType="decimal-pad"
+                  containerStyle={{ marginTop: theme.spacing.sm }}
+                  leftIcon="dollarsign.circle"
+                />
+              )}
             </View>
 
             <View style={styles.row}>
               <Input
                 label="Cost (RM)"
-                value={formData.cost > 0 ? formData.cost.toString() : ""}
+                value={costInput}
                 onChangeText={handleCostChange}
                 placeholder="65.00"
-                keyboardType="numeric"
+                keyboardType="decimal-pad"
                 required
                 error={
                   formData.cost
                     ? validateCost(formData.cost.toString())
                     : undefined
                 }
+                helperText="Enter cost or auto-calculate from liters"
                 leftIcon="dollarsign.circle"
                 containerStyle={styles.flex1}
               />
               <Input
                 label="Liters Filled"
-                value={formData.liters_filled.toFixed(3)}
-                onChangeText={() => {}}
-                placeholder="Auto-calculated"
-                editable={false}
-                helperText="Auto-calculated"
+                value={litersInput}
+                onChangeText={handleLitersChange}
+                placeholder="15.083"
+                keyboardType="decimal-pad"
+                editable={true}
+                helperText="Enter liters or auto-calculate from cost"
                 leftIcon="drop"
                 containerStyle={styles.flex1}
               />
@@ -179,7 +221,7 @@ export default function AddFuelLogScreen() {
                   ? validateOdometer(formData.odometer_reading.toString())
                   : undefined
               }
-              helperText="Odometer reading at fill-up"
+              helperText="Mileage log will be auto-created with this reading"
               leftIcon="speedometer"
             />
 
@@ -203,7 +245,7 @@ export default function AddFuelLogScreen() {
             <View style={styles.buttonContainer}>
               <Button
                 title="Cancel"
-                onPress={() => router.back()}
+                onPress={handleGoBack}
                 variant="outline"
                 icon="xmark"
                 style={styles.cancelButton}

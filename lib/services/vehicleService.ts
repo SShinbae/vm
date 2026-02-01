@@ -1455,8 +1455,9 @@ export class VehicleService {
       }
 
       // Transform the data to match our ServiceTemplate interface
-      const serviceTemplate: ServiceTemplate = {
+      const serviceTemplate = {
         id: template.id,
+        user_id: template.user_id,
         name: template.name,
         description: template.description || "",
         items: (template.service_template_items || [])

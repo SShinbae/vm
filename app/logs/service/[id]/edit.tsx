@@ -4,6 +4,7 @@ import { IconSymbol } from "@/components/ui/icon-symbol";
 import { Input } from "@/components/ui/Input";
 import { useToast } from "@/hooks/useToast";
 import { ReceiptViewer } from "@/components/ui/ReceiptViewer";
+import { SkeletonServiceLogEdit } from "@/components/ui/Skeleton";
 import {
   ServiceItemsInput,
   calculateTotalCost,
@@ -14,6 +15,7 @@ import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { ServiceLogService } from "@/lib/services/loggingService";
 import {
+  OCRExtractedData,
   ServiceLog,
   ServiceLogFormData,
   ServiceLogItem,
@@ -22,7 +24,6 @@ import {
 import { router, useLocalSearchParams } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
-  ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -132,7 +133,9 @@ export default function EditServiceLogScreen() {
           odometer_reading: log.odometer_reading,
           next_service_due: log.next_service_due || "",
           receipt_image_url: log.receipt_image_url || "",
-          ocr_extracted_data: log.ocr_extracted_data || undefined,
+          ocr_extracted_data: log.ocr_extracted_data as
+            | OCRExtractedData
+            | undefined,
           auto_filled: log.auto_filled || false,
         });
       } catch (error) {
@@ -427,9 +430,9 @@ export default function EditServiceLogScreen() {
             <Text style={styles.headerTitle}>Edit Service Log</Text>
           </View>
         )}
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={colors.tint} />
-        </View>
+        <ScrollView contentContainerStyle={styles.scrollContent}>
+          <SkeletonServiceLogEdit />
+        </ScrollView>
       </SafeAreaView>
     );
   }

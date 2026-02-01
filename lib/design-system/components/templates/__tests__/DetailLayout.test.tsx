@@ -1,7 +1,20 @@
-import { fireEvent, render, screen } from "@testing-library/react-native";
+import { fireEvent, screen } from "@testing-library/react-native";
+import { renderWithProviders as render } from "@/__tests__/setup/testUtils";
 import React from "react";
 import { Text } from "../../atoms/Text";
 import { DetailLayout } from "../DetailLayout";
+
+// Mock expo-router
+jest.mock("expo-router", () => ({
+  router: {
+    back: jest.fn(),
+    replace: jest.fn(),
+  },
+  useRouter: () => ({
+    back: jest.fn(),
+    canGoBack: () => false,
+  }),
+}));
 
 describe("DetailLayout", () => {
   const defaultProps = {
@@ -96,7 +109,8 @@ describe("DetailLayout", () => {
         { id: "tab1", label: "Tab 1", content: <Text>Content 1</Text> },
       ];
       render(<DetailLayout {...defaultProps} tabs={tabs} />);
-      const tab = screen.getByText("Tab 1");
+      // Find by accessibility label which is set on the TouchableOpacity
+      const tab = screen.getByLabelText("Tab 1");
       expect(tab.props.accessibilityRole).toBe("tab");
       expect(tab.props.accessibilityState).toEqual({ selected: true });
     });

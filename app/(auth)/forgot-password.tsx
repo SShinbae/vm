@@ -10,7 +10,7 @@ import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useAuth } from "@/lib/contexts/AuthContext";
 import { isValidEmail } from "@/utils/validation";
 import { Ionicons } from "@expo/vector-icons";
-import { Link, router } from "expo-router";
+import { Link, router, useRouter } from "expo-router";
 import React, { useState } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
@@ -22,6 +22,15 @@ function ForgotPasswordScreen() {
   const { showError } = useAlert();
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? "light"];
+  const navigation = useRouter();
+
+  const handleGoBack = () => {
+    if (navigation.canGoBack()) {
+      router.back();
+    } else {
+      router.replace("/(auth)/login");
+    }
+  };
 
   const handleResetPassword = async () => {
     if (!email.trim()) {
@@ -274,7 +283,7 @@ function ForgotPasswordScreen() {
       />
 
       {/* Back to Login */}
-      <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+      <TouchableOpacity style={styles.backButton} onPress={handleGoBack}>
         <Ionicons name="arrow-back" size={20} color={colors.textSecondary} />
         <Text style={styles.backButtonText}>Back to log in</Text>
       </TouchableOpacity>

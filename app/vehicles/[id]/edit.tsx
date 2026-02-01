@@ -3,6 +3,7 @@ import { IconSymbol } from "@/components/ui/icon-symbol";
 import { ImageUpload } from "@/components/ui/ImageUpload";
 import { Input } from "@/components/ui/Input";
 import { YearPicker } from "@/components/ui/YearPicker";
+import { SkeletonVehicleEdit } from "@/components/ui/Skeleton";
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useToast } from "@/hooks/useToast";
@@ -12,7 +13,6 @@ import { Vehicle } from "@/types/database-v2";
 import { router, useLocalSearchParams } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
-  ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -125,10 +125,11 @@ export default function EditVehicleScreen() {
 
   const handleImageUpload = (url: string) => {
     setImageUri(url);
+    showSuccess("Vehicle picture updated successfully!");
   };
 
   const handleImageError = (error: string) => {
-    showError(error);
+    showError(`Failed to update vehicle picture: ${error}`);
   };
 
   const validateMake = (value: string) => {
@@ -317,9 +318,9 @@ export default function EditVehicleScreen() {
             <Text style={styles.headerTitle}>Edit Vehicle</Text>
           </View>
         )}
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={colors.tint} />
-        </View>
+        <ScrollView contentContainerStyle={styles.scrollContent}>
+          <SkeletonVehicleEdit />
+        </ScrollView>
       </SafeAreaView>
     );
   }
@@ -376,12 +377,15 @@ export default function EditVehicleScreen() {
             {/* Circular Vehicle Photo */}
             <View style={styles.avatarContainer}>
               <ImageUpload
-                type="avatar"
+                type="vehicle_main"
+                vehicleId={vehicle?.id}
                 currentImageUrl={imageUri}
                 onUploadComplete={handleImageUpload}
                 onUploadError={handleImageError}
                 placeholder="Add Vehicle Photo"
                 style={styles.avatarUpload}
+                showDeleteButton={false}
+                circular
               />
               <Text style={styles.avatarLabel}>Vehicle Photo (Optional)</Text>
             </View>
