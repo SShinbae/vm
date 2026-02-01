@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/Button";
 import { DatePicker } from "@/components/ui/DatePicker";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { Input } from "@/components/ui/Input";
+import { SkeletonMileageLogForm } from "@/components/ui/Skeleton";
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useToast } from "@/hooks/useToast";
@@ -13,7 +14,6 @@ import { Image } from "expo-image";
 import { router, useLocalSearchParams } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
-  ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -433,9 +433,9 @@ export default function AddMileageLogScreen() {
     return (
       <SafeAreaView style={styles.container}>
         <CustomHeader />
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={colors.tint} />
-        </View>
+        <ScrollView contentContainerStyle={styles.scrollContent}>
+          <SkeletonMileageLogForm />
+        </ScrollView>
       </SafeAreaView>
     );
   }

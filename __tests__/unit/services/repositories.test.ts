@@ -4,10 +4,7 @@
  * Tests for the data access layer repositories.
  */
 
-import {
-  vehicleRepository,
-  VehicleRepository,
-} from "@/src/services/repositories";
+import { vehicleRepository } from "@/src/services/repositories";
 
 // Mock the Supabase client
 jest.mock("@/src/services/api/supabaseClient", () => ({

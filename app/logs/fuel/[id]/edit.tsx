@@ -4,6 +4,7 @@ import { DatePicker } from "@/components/ui/DatePicker";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { Input } from "@/components/ui/Input";
 import { ConfirmModal } from "@/components/ui/Modal";
+import { SkeletonFuelLogEdit } from "@/components/ui/Skeleton";
 import { useToast } from "@/hooks/useToast";
 import { FuelLogService } from "@/lib/services/loggingService";
 import { canUserAccessVehicle } from "@/lib/utils/serviceUtils";
@@ -12,7 +13,6 @@ import { FuelLog, FuelLogFormData, Vehicle } from "@/types";
 import { router, useLocalSearchParams, useNavigation } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
-  ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -297,9 +297,9 @@ export default function EditFuelLogScreen() {
     return (
       <SafeAreaView style={styles.container}>
         <CustomHeader />
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={theme.colors.primary} />
-        </View>
+        <ScrollView contentContainerStyle={styles.scrollContent(isWeb)}>
+          <SkeletonFuelLogEdit />
+        </ScrollView>
       </SafeAreaView>
     );
   }

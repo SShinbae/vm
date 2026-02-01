@@ -62,6 +62,9 @@ const MAPPING = {
   // Financial & Action Icons
   "dollarsign.circle.fill": "attach-money",
   "plus.circle.fill": "add-circle",
+  "plus.circle": "add-circle-outline",
+  "minus.circle.fill": "remove-circle",
+  "minus.circle": "remove-circle-outline",
   "wrench.fill": "build",
 
   // Trend Icons

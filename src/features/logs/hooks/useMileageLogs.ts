@@ -10,11 +10,7 @@ import {
   mileageLogRepository,
   vehicleRepository,
 } from "@/src/services/repositories";
-import type {
-  MileageLog,
-  MileageLogInsert,
-  MileageLogUpdate,
-} from "@/src/types";
+import type { MileageLogInsert, MileageLogUpdate } from "@/src/types";
 
 // ============================================================================
 // Query Hooks

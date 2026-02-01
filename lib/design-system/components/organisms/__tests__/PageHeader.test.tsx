@@ -4,8 +4,6 @@ import React from "react";
 import { PageHeader } from "../PageHeader";
 import { Text } from "../../atoms/Text";
 
-import { router } from "expo-router";
-
 // Mock expo-router
 jest.mock("expo-router", () => ({
   router: {

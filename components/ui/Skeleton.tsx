@@ -392,6 +392,643 @@ export function SkeletonVehicleDetail({ style }: { style?: ViewStyle }) {
   );
 }
 
+// ============================================
+// Form-Related Skeleton Components
+// ============================================
+
+// Reusable form field skeleton
+export function SkeletonFormField({
+  showLabel = true,
+  height = 48,
+  style,
+}: {
+  showLabel?: boolean;
+  height?: number;
+  style?: ViewStyle;
+}) {
+  return (
+    <View style={[{ marginBottom: 16 }, style]}>
+      {showLabel && (
+        <Skeleton width="30%" height={16} style={{ marginBottom: 8 }} />
+      )}
+      <Skeleton width="100%" height={height} borderRadius={8} />
+    </View>
+  );
+}
+
+// Horizontal vehicle selector skeleton
+export function SkeletonVehicleSelector({
+  itemCount = 3,
+  style,
+}: {
+  itemCount?: number;
+  style?: ViewStyle;
+}) {
+  return (
+    <View style={[formStyles.vehicleSelectorContainer, style]}>
+      <Skeleton width="20%" height={16} style={{ marginBottom: 8 }} />
+      <View style={formStyles.vehicleSelectorRow}>
+        {Array.from({ length: itemCount }).map((_, index) => (
+          <View key={index} style={formStyles.vehicleCard}>
+            <Skeleton width={32} height={32} borderRadius={16} />
+            <Skeleton
+              width="80%"
+              height={14}
+              style={{ marginTop: 8, alignSelf: "center" }}
+            />
+            <Skeleton
+              width="60%"
+              height={12}
+              style={{ marginTop: 4, alignSelf: "center" }}
+            />
+          </View>
+        ))}
+      </View>
+    </View>
+  );
+}
+
+// Locked vehicle display skeleton (for edit forms)
+export function SkeletonLockedVehicle({ style }: { style?: ViewStyle }) {
+  return (
+    <View style={[{ marginBottom: 16 }, style]}>
+      <Skeleton width="20%" height={16} style={{ marginBottom: 8 }} />
+      <View style={formStyles.lockedVehicleCard}>
+        <Skeleton width={32} height={32} borderRadius={16} />
+        <View style={{ flex: 1, marginLeft: 12 }}>
+          <Skeleton width="60%" height={16} style={{ marginBottom: 4 }} />
+          <Skeleton width="40%" height={12} />
+        </View>
+      </View>
+    </View>
+  );
+}
+
+// Add fuel log form skeleton
+export function SkeletonFuelLogForm({ style }: { style?: ViewStyle }) {
+  return (
+    <View style={[formStyles.formContainer, style]}>
+      {/* Vehicle Selector */}
+      <SkeletonVehicleSelector itemCount={3} />
+
+      {/* Fuel Price Chips */}
+      <View style={formStyles.inputContainer}>
+        <Skeleton width="40%" height={16} style={{ marginBottom: 8 }} />
+        <View style={formStyles.chipsRow}>
+          {[1, 2, 3, 4].map((i) => (
+            <Skeleton
+              key={i}
+              width={70}
+              height={36}
+              borderRadius={8}
+              style={{ marginRight: 8 }}
+            />
+          ))}
+        </View>
+      </View>
+
+      {/* Cost + Liters Row */}
+      <View style={formStyles.row}>
+        <View style={{ flex: 1 }}>
+          <SkeletonFormField height={48} />
+        </View>
+        <View style={{ flex: 1, marginLeft: 12 }}>
+          <SkeletonFormField height={48} />
+        </View>
+      </View>
+
+      {/* Odometer */}
+      <SkeletonFormField height={48} />
+
+      {/* Date Picker */}
+      <SkeletonFormField height={48} />
+
+      {/* Location */}
+      <SkeletonFormField height={48} />
+
+      {/* Buttons Row */}
+      <View style={formStyles.buttonRow}>
+        <Skeleton
+          width="30%"
+          height={48}
+          borderRadius={8}
+          style={{ marginRight: 12 }}
+        />
+        <Skeleton width="65%" height={48} borderRadius={8} />
+      </View>
+    </View>
+  );
+}
+
+// Edit fuel log form skeleton
+export function SkeletonFuelLogEdit({ style }: { style?: ViewStyle }) {
+  return (
+    <View style={[formStyles.formContainer, style]}>
+      {/* Locked Vehicle */}
+      <SkeletonLockedVehicle />
+
+      {/* Fuel Price Chips */}
+      <View style={formStyles.inputContainer}>
+        <Skeleton width="40%" height={16} style={{ marginBottom: 8 }} />
+        <View style={formStyles.chipsRow}>
+          {[1, 2, 3, 4].map((i) => (
+            <Skeleton
+              key={i}
+              width={70}
+              height={36}
+              borderRadius={8}
+              style={{ marginRight: 8 }}
+            />
+          ))}
+        </View>
+      </View>
+
+      {/* Cost + Liters Row */}
+      <View style={formStyles.row}>
+        <View style={{ flex: 1 }}>
+          <SkeletonFormField height={48} />
+        </View>
+        <View style={{ flex: 1, marginLeft: 12 }}>
+          <SkeletonFormField height={48} />
+        </View>
+      </View>
+
+      {/* Odometer + Date Row */}
+      <View style={formStyles.row}>
+        <View style={{ flex: 1 }}>
+          <SkeletonFormField height={48} />
+        </View>
+        <View style={{ flex: 1, marginLeft: 12 }}>
+          <SkeletonFormField height={48} />
+        </View>
+      </View>
+
+      {/* Location */}
+      <SkeletonFormField height={48} />
+
+      {/* Buttons Row */}
+      <View style={formStyles.buttonRow}>
+        <Skeleton
+          width="30%"
+          height={48}
+          borderRadius={8}
+          style={{ marginRight: 12 }}
+        />
+        <Skeleton width="65%" height={48} borderRadius={8} />
+      </View>
+    </View>
+  );
+}
+
+// Add mileage log form skeleton
+export function SkeletonMileageLogForm({ style }: { style?: ViewStyle }) {
+  return (
+    <View style={[formStyles.formContainer, style]}>
+      {/* Vehicle Selector */}
+      <SkeletonVehicleSelector itemCount={3} />
+
+      {/* Odometer */}
+      <SkeletonFormField height={48} />
+
+      {/* Date Picker */}
+      <SkeletonFormField height={48} />
+
+      {/* Notes (taller) */}
+      <SkeletonFormField height={100} />
+
+      {/* Buttons Row */}
+      <View style={formStyles.buttonRow}>
+        <Skeleton
+          width="30%"
+          height={48}
+          borderRadius={8}
+          style={{ marginRight: 12 }}
+        />
+        <Skeleton width="65%" height={48} borderRadius={8} />
+      </View>
+    </View>
+  );
+}
+
+// Edit mileage log form skeleton
+export function SkeletonMileageLogEdit({ style }: { style?: ViewStyle }) {
+  return (
+    <View style={[formStyles.formContainer, style]}>
+      {/* Locked Vehicle */}
+      <SkeletonLockedVehicle />
+
+      {/* Odometer */}
+      <SkeletonFormField height={48} />
+
+      {/* Date Picker */}
+      <SkeletonFormField height={48} />
+
+      {/* Notes (taller) */}
+      <SkeletonFormField height={100} />
+
+      {/* Buttons Row */}
+      <View style={formStyles.buttonRow}>
+        <Skeleton
+          width="30%"
+          height={48}
+          borderRadius={8}
+          style={{ marginRight: 12 }}
+        />
+        <Skeleton width="65%" height={48} borderRadius={8} />
+      </View>
+    </View>
+  );
+}
+
+// Add service log form skeleton
+export function SkeletonServiceLogForm({ style }: { style?: ViewStyle }) {
+  return (
+    <View style={[formStyles.formContainer, style]}>
+      {/* Vehicle Selector */}
+      <SkeletonVehicleSelector itemCount={3} />
+
+      {/* Receipt/Photo Placeholder */}
+      <View style={formStyles.inputContainer}>
+        <Skeleton width="30%" height={16} style={{ marginBottom: 8 }} />
+        <Skeleton width="100%" height={80} borderRadius={12} />
+      </View>
+
+      {/* Service Type Grid */}
+      <View style={formStyles.inputContainer}>
+        <Skeleton width="30%" height={16} style={{ marginBottom: 8 }} />
+        <View style={formStyles.serviceTypeGrid}>
+          {[1, 2, 3, 4, 5, 6].map((i) => (
+            <Skeleton
+              key={i}
+              width="45%"
+              height={40}
+              borderRadius={8}
+              style={{ marginBottom: 8 }}
+            />
+          ))}
+        </View>
+      </View>
+
+      {/* Service Items Section */}
+      <View style={formStyles.inputContainer}>
+        <Skeleton width="30%" height={16} style={{ marginBottom: 8 }} />
+        <Skeleton
+          width="100%"
+          height={60}
+          borderRadius={8}
+          style={{ marginBottom: 8 }}
+        />
+        <Skeleton width="100%" height={60} borderRadius={8} />
+      </View>
+
+      {/* Odometer */}
+      <SkeletonFormField height={48} />
+
+      {/* Two Date Pickers Row */}
+      <View style={formStyles.row}>
+        <View style={{ flex: 1 }}>
+          <SkeletonFormField height={48} />
+        </View>
+        <View style={{ flex: 1, marginLeft: 12 }}>
+          <SkeletonFormField height={48} />
+        </View>
+      </View>
+
+      {/* Buttons Row */}
+      <View style={formStyles.buttonRow}>
+        <Skeleton
+          width="30%"
+          height={48}
+          borderRadius={8}
+          style={{ marginRight: 12 }}
+        />
+        <Skeleton width="65%" height={48} borderRadius={8} />
+      </View>
+    </View>
+  );
+}
+
+// Edit service log form skeleton
+export function SkeletonServiceLogEdit({ style }: { style?: ViewStyle }) {
+  return (
+    <View style={[formStyles.formContainer, style]}>
+      {/* Locked Vehicle */}
+      <SkeletonLockedVehicle />
+
+      {/* Service Type Grid */}
+      <View style={formStyles.inputContainer}>
+        <Skeleton width="30%" height={16} style={{ marginBottom: 8 }} />
+        <View style={formStyles.serviceTypeGrid}>
+          {[1, 2, 3, 4, 5, 6].map((i) => (
+            <Skeleton
+              key={i}
+              width="45%"
+              height={40}
+              borderRadius={8}
+              style={{ marginBottom: 8 }}
+            />
+          ))}
+        </View>
+      </View>
+
+      {/* Service Items Section */}
+      <View style={formStyles.inputContainer}>
+        <Skeleton width="30%" height={16} style={{ marginBottom: 8 }} />
+        <Skeleton
+          width="100%"
+          height={60}
+          borderRadius={8}
+          style={{ marginBottom: 8 }}
+        />
+        <Skeleton width="100%" height={60} borderRadius={8} />
+      </View>
+
+      {/* Odometer */}
+      <SkeletonFormField height={48} />
+
+      {/* Two Date Pickers Row */}
+      <View style={formStyles.row}>
+        <View style={{ flex: 1 }}>
+          <SkeletonFormField height={48} />
+        </View>
+        <View style={{ flex: 1, marginLeft: 12 }}>
+          <SkeletonFormField height={48} />
+        </View>
+      </View>
+
+      {/* Buttons Row */}
+      <View style={formStyles.buttonRow}>
+        <Skeleton
+          width="30%"
+          height={48}
+          borderRadius={8}
+          style={{ marginRight: 12 }}
+        />
+        <Skeleton width="65%" height={48} borderRadius={8} />
+      </View>
+    </View>
+  );
+}
+
+// Edit vehicle form skeleton
+export function SkeletonVehicleEdit({ style }: { style?: ViewStyle }) {
+  return (
+    <View style={[formStyles.formContainer, style]}>
+      {/* Large Circular Photo Placeholder */}
+      <View style={formStyles.avatarContainer}>
+        <Skeleton width={120} height={120} borderRadius={60} />
+        <Skeleton width="40%" height={14} style={{ marginTop: 12 }} />
+      </View>
+
+      {/* Make + Model Row */}
+      <View style={formStyles.row}>
+        <View style={{ flex: 1 }}>
+          <SkeletonFormField height={48} />
+        </View>
+        <View style={{ flex: 1, marginLeft: 12 }}>
+          <SkeletonFormField height={48} />
+        </View>
+      </View>
+
+      {/* Year */}
+      <SkeletonFormField height={48} />
+
+      {/* License Plate */}
+      <SkeletonFormField height={48} />
+
+      {/* VIN */}
+      <SkeletonFormField height={48} />
+
+      {/* Buttons Row */}
+      <View style={formStyles.buttonRow}>
+        <Skeleton
+          width="30%"
+          height={48}
+          borderRadius={8}
+          style={{ marginRight: 12 }}
+        />
+        <Skeleton width="65%" height={48} borderRadius={8} />
+      </View>
+    </View>
+  );
+}
+
+// ============================================
+// Page-Level Skeleton Components
+// ============================================
+
+// Group detail page skeleton
+export function SkeletonGroupDetail({ style }: { style?: ViewStyle }) {
+  return (
+    <View style={[{ flex: 1, padding: 16 }, style]}>
+      {/* Tabs */}
+      <View style={formStyles.tabsRow}>
+        <Skeleton width="30%" height={40} borderRadius={8} />
+        <Skeleton
+          width="30%"
+          height={40}
+          borderRadius={8}
+          style={{ marginLeft: 8 }}
+        />
+        <Skeleton
+          width="30%"
+          height={40}
+          borderRadius={8}
+          style={{ marginLeft: 8 }}
+        />
+      </View>
+
+      {/* Member Cards */}
+      {[1, 2, 3, 4].map((i) => (
+        <View key={i} style={formStyles.memberCard}>
+          <Skeleton width={40} height={40} borderRadius={20} />
+          <View style={{ flex: 1, marginLeft: 12 }}>
+            <Skeleton width="60%" height={16} style={{ marginBottom: 4 }} />
+            <Skeleton width="80%" height={14} style={{ marginBottom: 4 }} />
+            <Skeleton width="40%" height={12} />
+          </View>
+        </View>
+      ))}
+    </View>
+  );
+}
+
+// Landing/splash page skeleton
+export function SkeletonLanding({ style }: { style?: ViewStyle }) {
+  return (
+    <View style={[{ flex: 1 }, style]}>
+      {/* Hero Section */}
+      <View style={formStyles.heroSection}>
+        {/* Logo Placeholder */}
+        <Skeleton
+          width={80}
+          height={80}
+          borderRadius={12}
+          style={{ marginBottom: 24 }}
+        />
+
+        {/* Title */}
+        <Skeleton
+          width="70%"
+          height={48}
+          style={{ marginBottom: 12, alignSelf: "flex-start" }}
+        />
+        <Skeleton
+          width="50%"
+          height={48}
+          style={{ marginBottom: 20, alignSelf: "flex-start" }}
+        />
+
+        {/* Subtitle */}
+        <Skeleton
+          width="90%"
+          height={20}
+          style={{ marginBottom: 8, alignSelf: "flex-start" }}
+        />
+        <Skeleton
+          width="70%"
+          height={20}
+          style={{ marginBottom: 32, alignSelf: "flex-start" }}
+        />
+
+        {/* CTA Buttons */}
+        <View style={formStyles.ctaRow}>
+          <Skeleton width="45%" height={56} borderRadius={12} />
+          <Skeleton
+            width="45%"
+            height={56}
+            borderRadius={12}
+            style={{ marginLeft: 12 }}
+          />
+        </View>
+
+        {/* Stats Cards Row */}
+        <View style={formStyles.statsRow}>
+          {[1, 2, 3, 4].map((i) => (
+            <Skeleton
+              key={i}
+              width="23%"
+              height={100}
+              borderRadius={16}
+              style={{ marginRight: 8 }}
+            />
+          ))}
+        </View>
+      </View>
+
+      {/* Features Section */}
+      <View style={formStyles.featuresSection}>
+        <Skeleton
+          width="40%"
+          height={28}
+          style={{ marginBottom: 16, alignSelf: "center" }}
+        />
+        <Skeleton
+          width="70%"
+          height={16}
+          style={{ marginBottom: 32, alignSelf: "center" }}
+        />
+
+        {/* Feature Cards */}
+        {[1, 2, 3, 4].map((i) => (
+          <View key={i} style={formStyles.featureCard}>
+            <Skeleton
+              width={56}
+              height={56}
+              borderRadius={12}
+              style={{ marginBottom: 16 }}
+            />
+            <Skeleton width="60%" height={20} style={{ marginBottom: 8 }} />
+            <Skeleton width="90%" height={14} style={{ marginBottom: 4 }} />
+            <Skeleton width="80%" height={14} />
+          </View>
+        ))}
+      </View>
+    </View>
+  );
+}
+
+// Form-specific styles
+const formStyles = StyleSheet.create({
+  formContainer: {
+    padding: 20,
+  },
+  inputContainer: {
+    marginBottom: 16,
+  },
+  row: {
+    flexDirection: "row",
+  },
+  buttonRow: {
+    flexDirection: "row",
+    marginTop: 24,
+  },
+  chipsRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+  },
+  vehicleSelectorContainer: {
+    marginBottom: 20,
+  },
+  vehicleSelectorRow: {
+    flexDirection: "row",
+    gap: 12,
+  },
+  vehicleCard: {
+    width: 100,
+    padding: 12,
+    alignItems: "center",
+    borderRadius: 8,
+  },
+  lockedVehicleCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 12,
+    borderRadius: 8,
+  },
+  serviceTypeGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "space-between",
+  },
+  avatarContainer: {
+    alignItems: "center",
+    marginBottom: 24,
+  },
+  tabsRow: {
+    flexDirection: "row",
+    marginBottom: 16,
+  },
+  memberCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 12,
+    marginBottom: 8,
+    borderRadius: 8,
+  },
+  heroSection: {
+    padding: 20,
+    paddingTop: 60,
+  },
+  ctaRow: {
+    flexDirection: "row",
+    marginBottom: 24,
+  },
+  statsRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    marginTop: 16,
+  },
+  featuresSection: {
+    padding: 20,
+  },
+  featureCard: {
+    padding: 20,
+    marginBottom: 16,
+    borderRadius: 16,
+  },
+});
+
 const styles = StyleSheet.create({
   skeleton: {
     // Base skeleton styles are handled by the component

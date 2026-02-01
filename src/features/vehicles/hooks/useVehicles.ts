@@ -7,14 +7,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { queryKeys } from "@/src/config";
 import { vehicleRepository } from "@/src/services/repositories";
-import type {
-  Vehicle,
-  VehicleInsert,
-  VehicleUpdate,
-  VehicleWithGroupInfo,
-  VehicleWithLogs,
-  VehicleFilters,
-} from "@/src/types";
+import type { VehicleInsert, VehicleUpdate, VehicleFilters } from "@/src/types";
 
 // ============================================================================
 // Query Hooks

@@ -5,7 +5,6 @@ import { Input } from "@/components/ui/Input";
 import { router, useNavigation } from "expo-router";
 import React, { useState } from "react";
 import {
-  ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -19,6 +18,7 @@ import { createStyleSheet, useStyles } from "react-native-unistyles";
 // Import the new hook and components
 import { FuelPriceChip } from "@/components/forms/FuelPriceChip";
 import { VehicleSelector } from "@/components/forms/VehicleSelector";
+import { SkeletonFuelLogForm } from "@/components/ui/Skeleton";
 import { useAddFuelLog } from "@/hooks/useAddFuelLog";
 
 export default function AddFuelLogScreen() {
@@ -79,9 +79,9 @@ export default function AddFuelLogScreen() {
     return (
       <SafeAreaView style={styles.container}>
         <CustomHeader />
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={theme.colors.primary} />
-        </View>
+        <ScrollView contentContainerStyle={styles.scrollContent(isWeb)}>
+          <SkeletonFuelLogForm />
+        </ScrollView>
       </SafeAreaView>
     );
   }

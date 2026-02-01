@@ -488,7 +488,7 @@ export class FuelLogService {
         odometer_reading: odometerReading,
         notes: "Auto-created from fuel log",
         user_id: userId,
-      });
+      } as any);
 
       console.log("Mileage log auto-created from fuel log");
     } catch (error) {
