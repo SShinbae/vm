@@ -1,13 +1,20 @@
-import { render, screen } from "@testing-library/react-native";
+import { screen } from "@testing-library/react-native";
+import { renderWithProviders as render } from "@/__tests__/setup/testUtils";
 import React from "react";
 import { Text } from "../../atoms/Text";
 import { PageLayout } from "../PageLayout";
+import { ActivityIndicator } from "react-native";
 
 // Mock dependencies
 jest.mock("expo-router", () => ({
   router: {
     back: jest.fn(),
+    replace: jest.fn(),
   },
+  useRouter: () => ({
+    back: jest.fn(),
+    canGoBack: () => false,
+  }),
 }));
 
 describe("PageLayout", () => {
@@ -43,12 +50,13 @@ describe("PageLayout", () => {
 
   describe("Loading State", () => {
     it("should show loading indicator when loading", () => {
-      render(
+      const { UNSAFE_getByType } = render(
         <PageLayout loading>
           <Text>Content</Text>
         </PageLayout>,
       );
       expect(screen.getByLabelText("Loading page")).toBeTruthy();
+      expect(UNSAFE_getByType(ActivityIndicator)).toBeTruthy();
       expect(screen.getByText("Loading...")).toBeTruthy();
       expect(screen.queryByText("Content")).toBeNull();
     });
@@ -66,11 +74,13 @@ describe("PageLayout", () => {
   describe("Error State", () => {
     it("should show error message", () => {
       render(
-        <PageLayout error="Something went wrong">
+        <PageLayout error="Network connection failed">
           <Text>Content</Text>
         </PageLayout>,
       );
+      // Error state shows both a heading "Something went wrong" and the actual error message
       expect(screen.getByText("Something went wrong")).toBeTruthy();
+      expect(screen.getByText("Network connection failed")).toBeTruthy();
       expect(screen.queryByText("Content")).toBeNull();
     });
 

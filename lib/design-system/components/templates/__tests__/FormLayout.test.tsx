@@ -1,7 +1,20 @@
-import { fireEvent, render, screen } from "@testing-library/react-native";
+import { fireEvent, screen } from "@testing-library/react-native";
+import { renderWithProviders as render } from "@/__tests__/setup/testUtils";
 import React from "react";
 import { Text } from "../../atoms/Text";
 import { FormLayout } from "../FormLayout";
+
+// Mock expo-router
+jest.mock("expo-router", () => ({
+  router: {
+    back: jest.fn(),
+    replace: jest.fn(),
+  },
+  useRouter: () => ({
+    back: jest.fn(),
+    canGoBack: () => false,
+  }),
+}));
 
 describe("FormLayout", () => {
   const defaultProps = {
@@ -187,10 +200,17 @@ describe("FormLayout", () => {
           <Text>Form Fields</Text>
         </FormLayout>,
       );
-      const submitButton = screen.getByText("Submit");
-      const cancelButton = screen.getByText("Cancel");
-      expect(submitButton.props.accessibilityState).toEqual({ disabled: true });
-      expect(cancelButton.props.accessibilityState).toEqual({ disabled: true });
+      // Get buttons by accessibility label (set on the Pressable, not the Text child)
+      const submitButton = screen.getByLabelText("Submit");
+      const cancelButton = screen.getByLabelText("Cancel");
+      expect(submitButton.props.accessibilityState).toEqual({
+        disabled: true,
+        busy: true,
+      });
+      expect(cancelButton.props.accessibilityState).toEqual({
+        disabled: true,
+        busy: false,
+      });
     });
   });
 });

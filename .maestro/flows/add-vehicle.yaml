@@ -1,0 +1,54 @@
+# Add Vehicle Flow
+# Tests the complete flow of adding a new vehicle
+
+appId: com.vehiclesmanagement.app
+---
+# Launch the app
+- launchApp
+
+# Navigate to Vehicles tab (if not already there)
+- tapOn:
+    text: "Vehicles"
+    optional: true
+
+# Tap on Add Vehicle button
+- tapOn: "Add Vehicle"
+
+# Wait for the form to load
+- assertVisible: "Add New Vehicle"
+
+# Fill in the vehicle form
+- tapOn:
+    id: "make-input"
+- inputText: "Toyota"
+
+- tapOn:
+    id: "model-input"
+- inputText: "Camry"
+
+- tapOn:
+    id: "year-input"
+- inputText: "2022"
+
+- tapOn:
+    id: "license-plate-input"
+- inputText: "ABC123"
+
+# Optional: Add VIN
+- tapOn:
+    id: "vin-input"
+    optional: true
+- inputText:
+    text: "1HGBH41JXMN109186"
+    optional: true
+
+# Submit the form
+- tapOn: "Save"
+
+# Verify success
+- assertVisible:
+    text: "Vehicle added"
+    timeout: 10000
+
+# Verify we're back on the vehicles list
+- assertVisible: "Toyota Camry"

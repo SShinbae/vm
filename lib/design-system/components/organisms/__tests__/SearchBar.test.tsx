@@ -1,4 +1,5 @@
-import { fireEvent, render, screen } from "@testing-library/react-native";
+import { fireEvent, screen } from "@testing-library/react-native";
+import { renderWithProviders as render } from "@/__tests__/setup/testUtils";
 import React from "react";
 import { SearchBar } from "../SearchBar";
 
@@ -73,11 +74,12 @@ describe("SearchBar", () => {
       expect(filterButtons.length).toBe(0);
     });
 
-    it("should render filter button when onFilterPress is provided", () => {
+    it("should render filter button when showFilter is true", () => {
       render(
         <SearchBar
           value=""
           onChangeText={jest.fn()}
+          showFilter
           onFilterPress={jest.fn()}
         />,
       );
@@ -90,6 +92,7 @@ describe("SearchBar", () => {
         <SearchBar
           value=""
           onChangeText={jest.fn()}
+          showFilter
           onFilterPress={onFilterPress}
         />,
       );
@@ -103,6 +106,7 @@ describe("SearchBar", () => {
         <SearchBar
           value=""
           onChangeText={jest.fn()}
+          showFilter
           onFilterPress={jest.fn()}
           activeFilters={0}
         />,
@@ -116,6 +120,7 @@ describe("SearchBar", () => {
         <SearchBar
           value=""
           onChangeText={jest.fn()}
+          showFilter
           onFilterPress={jest.fn()}
           activeFilters={3}
         />,
@@ -131,9 +136,14 @@ describe("SearchBar", () => {
       expect(sortButtons.length).toBe(0);
     });
 
-    it("should render sort button when onSortPress is provided", () => {
+    it("should render sort button when showSort is true", () => {
       render(
-        <SearchBar value="" onChangeText={jest.fn()} onSortPress={jest.fn()} />,
+        <SearchBar
+          value=""
+          onChangeText={jest.fn()}
+          showSort
+          onSortPress={jest.fn()}
+        />,
       );
       expect(screen.getByLabelText("Sort")).toBeTruthy();
     });
@@ -144,6 +154,7 @@ describe("SearchBar", () => {
         <SearchBar
           value=""
           onChangeText={jest.fn()}
+          showSort
           onSortPress={onSortPress}
         />,
       );
@@ -170,10 +181,10 @@ describe("SearchBar", () => {
   });
 
   describe("Accessibility", () => {
-    it("should have proper accessibility label", () => {
+    it("should have proper accessibility label on input", () => {
       render(<SearchBar value="" onChangeText={jest.fn()} />);
-      const input = screen.getByPlaceholderText("Search...");
-      expect(input.props.accessibilityLabel).toBe("Search");
+      const input = screen.getByLabelText("Search input");
+      expect(input).toBeTruthy();
     });
 
     it("should have proper accessibility role for buttons", () => {
@@ -181,7 +192,9 @@ describe("SearchBar", () => {
         <SearchBar
           value="test"
           onChangeText={jest.fn()}
+          showFilter
           onFilterPress={jest.fn()}
+          showSort
           onSortPress={jest.fn()}
         />,
       );

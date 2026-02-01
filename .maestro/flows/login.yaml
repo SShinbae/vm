@@ -1,0 +1,36 @@
+# Login Flow
+# Tests the user login flow
+
+appId: com.vehiclesmanagement.app
+---
+# Launch the app fresh (logged out)
+- launchApp:
+    clearState: true
+
+# Wait for the login screen
+- assertVisible:
+    text: "Sign In"
+    timeout: 10000
+
+# Enter email
+- tapOn:
+    id: "email-input"
+- inputText: "test@example.com"
+
+# Enter password
+- tapOn:
+    id: "password-input"
+- inputText: "TestPassword123!"
+
+# Tap the Sign In button
+- tapOn:
+    text: "Sign In"
+    index: 1
+
+# Wait for dashboard to load (indicates successful login)
+- assertVisible:
+    text: "Dashboard"
+    timeout: 15000
+
+# Verify user is logged in
+- assertVisible: "Welcome"

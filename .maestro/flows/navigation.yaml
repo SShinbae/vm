@@ -1,0 +1,43 @@
+# Navigation Flow
+# Tests basic app navigation between tabs
+
+appId: com.vehiclesmanagement.app
+---
+# Launch the app
+- launchApp
+
+# Start at Dashboard (home)
+- assertVisible: "Dashboard"
+
+# Navigate to Vehicles
+- tapOn: "Vehicles"
+- assertVisible:
+    text: "My Vehicles"
+    timeout: 5000
+
+# Navigate to Logs
+- tapOn: "Logs"
+- assertVisible:
+    text: "Maintenance Logs"
+    timeout: 5000
+
+# Navigate to Analytics (if available)
+- tapOn:
+    text: "Analytics"
+    optional: true
+- assertVisible:
+    text: "Cost Overview"
+    optional: true
+    timeout: 5000
+
+# Navigate to Profile
+- tapOn: "Profile"
+- assertVisible:
+    text: "My Profile"
+    timeout: 5000
+
+# Navigate back to Dashboard
+- tapOn: "Dashboard"
+- assertVisible:
+    text: "Welcome"
+    timeout: 5000

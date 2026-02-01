@@ -125,10 +125,11 @@ export default function EditVehicleScreen() {
 
   const handleImageUpload = (url: string) => {
     setImageUri(url);
+    showSuccess("Vehicle picture updated successfully!");
   };
 
   const handleImageError = (error: string) => {
-    showError(error);
+    showError(`Failed to update vehicle picture: ${error}`);
   };
 
   const validateMake = (value: string) => {
@@ -376,12 +377,15 @@ export default function EditVehicleScreen() {
             {/* Circular Vehicle Photo */}
             <View style={styles.avatarContainer}>
               <ImageUpload
-                type="avatar"
+                type="vehicle_main"
+                vehicleId={vehicle?.id}
                 currentImageUrl={imageUri}
                 onUploadComplete={handleImageUpload}
                 onUploadError={handleImageError}
                 placeholder="Add Vehicle Photo"
                 style={styles.avatarUpload}
+                showDeleteButton={false}
+                circular
               />
               <Text style={styles.avatarLabel}>Vehicle Photo (Optional)</Text>
             </View>

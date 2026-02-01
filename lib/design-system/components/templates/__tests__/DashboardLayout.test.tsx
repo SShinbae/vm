@@ -1,7 +1,20 @@
-import { render, screen } from "@testing-library/react-native";
+import { screen } from "@testing-library/react-native";
+import { renderWithProviders as render } from "@/__tests__/setup/testUtils";
 import React from "react";
 import { Text } from "../../atoms/Text";
 import { DashboardLayout } from "../DashboardLayout";
+
+// Mock expo-router
+jest.mock("expo-router", () => ({
+  router: {
+    back: jest.fn(),
+    replace: jest.fn(),
+  },
+  useRouter: () => ({
+    back: jest.fn(),
+    canGoBack: () => false,
+  }),
+}));
 
 describe("DashboardLayout", () => {
   const defaultProps = {

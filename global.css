@@ -1,6 +1,9 @@
 @tailwind components;
 @tailwind utilities;
 
+/* React Advanced Cropper styles */
+@import "react-advanced-cropper/dist/style.css";
+
 /* Theme Variables */
 :root {
   --background-color: #ffffff;

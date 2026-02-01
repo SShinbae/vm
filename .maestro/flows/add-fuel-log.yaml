@@ -1,0 +1,67 @@
+# Add Fuel Log Flow
+# Tests adding a fuel log with cost calculation
+
+appId: com.vehiclesmanagement.app
+---
+# Launch the app (assumes user is logged in)
+- launchApp
+
+# Navigate to Logs tab
+- tapOn: "Logs"
+
+# Wait for logs screen
+- assertVisible: "Maintenance Logs"
+
+# Tap on Add Fuel Log
+- tapOn: "Add Fuel"
+
+# Wait for the form
+- assertVisible: "Add Fuel Log"
+
+# Select a vehicle (tap on the vehicle selector)
+- tapOn:
+    id: "vehicle-selector"
+- tapOn:
+    text: "Toyota Camry"
+    optional: true
+
+# Enter cost
+- tapOn:
+    id: "cost-input"
+- inputText: "85.50"
+
+# Select fuel price (from dropdown)
+- tapOn:
+    id: "fuel-price-selector"
+- tapOn:
+    text: "2.09"
+    optional: true
+
+# The liters should auto-calculate
+- assertVisible:
+    text: "L"
+    timeout: 5000
+
+# Enter odometer reading
+- tapOn:
+    id: "odometer-input"
+- inputText: "52000"
+
+# Optional: Add location
+- tapOn:
+    id: "location-input"
+    optional: true
+- inputText:
+    text: "Shell Gas Station"
+    optional: true
+
+# Submit the form
+- tapOn: "Save"
+
+# Verify success
+- assertVisible:
+    text: "Fuel log added"
+    timeout: 10000
+
+# Verify the log appears in the list
+- assertVisible: "$85.50"
