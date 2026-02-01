@@ -126,6 +126,33 @@ export default function AddServiceLogScreen() {
   const colors = Colors[colorScheme ?? "light"];
   const isWeb = Platform.OS === "web";
 
+  // --- Custom Header (standardized across all log forms) ---
+  const CustomHeader = () => {
+    const headerTitle =
+      vehicleId && vehicles.find((v) => v.id === vehicleId)
+        ? `Add Service - ${vehicles.find((v) => v.id === vehicleId)?.year} ${vehicles.find((v) => v.id === vehicleId)?.make}`
+        : "Add Service Log";
+
+    return (
+      <View style={styles.customHeader}>
+        <TouchableOpacity
+          style={styles.customBackButton}
+          onPress={() => router.back()}
+        >
+          <IconSymbol name="chevron.left" size={24} color={colors.text} />
+        </TouchableOpacity>
+        <View style={styles.titleContainer}>
+          <Text style={styles.headerTitle}>{headerTitle}</Text>
+          {!isWeb && (
+            <Text style={styles.headerSubtitle}>
+              Record your vehicle service
+            </Text>
+          )}
+        </View>
+      </View>
+    );
+  };
+
   useEffect(() => {
     const fetchVehicles = async () => {
       const { data, error } = await VehicleService.getVehiclesSeparated();
@@ -456,24 +483,32 @@ export default function AddServiceLogScreen() {
       flex: 1,
       backgroundColor: colors.background,
     },
-    header: {
+    // --- Standardized Header Styles ---
+    customHeader: {
       flexDirection: "row",
       alignItems: "center",
       paddingHorizontal: 20,
       paddingVertical: 16,
+      backgroundColor: colors.background,
       borderBottomWidth: 1,
       borderBottomColor: colors.icon + "20",
-      backgroundColor: colors.background,
     },
-    backButton: {
+    customBackButton: {
       marginRight: 16,
       padding: 4,
+    },
+    titleContainer: {
+      flex: 1,
     },
     headerTitle: {
       fontSize: 24,
       fontWeight: "bold",
       color: colors.text,
-      flex: 1,
+    },
+    headerSubtitle: {
+      fontSize: 14,
+      color: colors.icon,
+      marginTop: 2,
     },
     content: {
       flex: 1,
@@ -486,19 +521,6 @@ export default function AddServiceLogScreen() {
         width: "100%",
         alignSelf: "center",
       }),
-    },
-    title: {
-      fontSize: 32,
-      fontWeight: "bold",
-      color: colors.text,
-      marginBottom: 8,
-      textAlign: isWeb ? "center" : "left",
-    },
-    subtitle: {
-      fontSize: 16,
-      color: colors.icon,
-      marginBottom: 32,
-      textAlign: isWeb ? "center" : "left",
     },
     card: {
       backgroundColor: colors.background,
@@ -696,17 +718,7 @@ export default function AddServiceLogScreen() {
   if (vehiclesLoading) {
     return (
       <SafeAreaView style={styles.container}>
-        {!isWeb && (
-          <View style={styles.header}>
-            <TouchableOpacity
-              style={styles.backButton}
-              onPress={() => router.back()}
-            >
-              <IconSymbol name="chevron.left" size={24} color={colors.text} />
-            </TouchableOpacity>
-            <Text style={styles.headerTitle}>Add Service Log</Text>
-          </View>
-        )}
+        <CustomHeader />
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={colors.tint} />
         </View>
@@ -717,17 +729,7 @@ export default function AddServiceLogScreen() {
   if (vehicles.length === 0) {
     return (
       <SafeAreaView style={styles.container}>
-        {!isWeb && (
-          <View style={styles.header}>
-            <TouchableOpacity
-              style={styles.backButton}
-              onPress={() => router.back()}
-            >
-              <IconSymbol name="chevron.left" size={24} color={colors.text} />
-            </TouchableOpacity>
-            <Text style={styles.headerTitle}>Add Service Log</Text>
-          </View>
-        )}
+        <CustomHeader />
         <View style={styles.loadingContainer}>
           <Text style={[styles.label, { textAlign: "center" }]}>
             No vehicles found. Please add a vehicle first.
@@ -745,21 +747,7 @@ export default function AddServiceLogScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      {!isWeb && (
-        <View style={styles.header}>
-          <TouchableOpacity
-            style={styles.backButton}
-            onPress={() => router.back()}
-          >
-            <IconSymbol name="chevron.left" size={24} color={colors.text} />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>
-            {vehicleId && vehicles.find((v) => v.id === vehicleId)
-              ? `Add Service - ${vehicles.find((v) => v.id === vehicleId)?.year} ${vehicles.find((v) => v.id === vehicleId)?.make}`
-              : "Add Service Log"}
-          </Text>
-        </View>
-      )}
+      <CustomHeader />
 
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
@@ -770,13 +758,6 @@ export default function AddServiceLogScreen() {
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
-          {isWeb && (
-            <>
-              <Text style={styles.title}>Add Service Log</Text>
-              <Text style={styles.subtitle}>Record your vehicle service</Text>
-            </>
-          )}
-
           <View style={styles.card}>
             <VehicleSelector />
 

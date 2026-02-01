@@ -1,0 +1,20 @@
+# Maestro E2E Test Configuration
+# See: https://maestro.mobile.dev/
+
+# App configuration
+appId: com.vehiclesmanagement.app
+
+# Device settings
+device:
+  platform: ios # or android
+  locale: en-US
+
+# Default timeouts
+timeout:
+  general: 30000 # 30 seconds
+  launchApp: 60000 # 60 seconds
+
+# Screenshot settings
+screenshots:
+  enabled: true
+  format: png

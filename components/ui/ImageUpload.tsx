@@ -27,6 +27,8 @@ interface ImageUploadProps {
   disabled?: boolean;
   placeholder?: string;
   style?: any;
+  showDeleteButton?: boolean; // Whether to show the delete (x) button
+  circular?: boolean; // Force circular shape regardless of type
 }
 
 export const ImageUpload: React.FC<ImageUploadProps> = ({
@@ -39,6 +41,8 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
   disabled = false,
   placeholder,
   style,
+  showDeleteButton = true,
+  circular = false,
 }) => {
   const [uploading, setUploading] = useState(false);
   const [localImageUri, setLocalImageUri] = useState<string | null>(null);
@@ -403,6 +407,11 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
   };
 
   const getImageSize = () => {
+    // If circular is forced, use avatar-like dimensions
+    if (circular) {
+      return { width: 120, height: 120, borderRadius: 60 };
+    }
+
     switch (type) {
       case "avatar":
         return { width: 120, height: 120, borderRadius: 60 };
@@ -522,7 +531,7 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
               cachePolicy="memory-disk"
               transition={200}
             />
-            {!uploading && (
+            {!uploading && showDeleteButton && (
               <TouchableOpacity
                 style={styles.deleteButton}
                 onPress={handleDeleteImage}
