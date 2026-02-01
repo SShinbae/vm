@@ -6,12 +6,14 @@ type FuelPriceChipProps = {
   price: number;
   isSelected: boolean;
   onPress: () => void;
+  label?: string;
 };
 
 export function FuelPriceChip({
   price,
   isSelected,
   onPress,
+  label,
 }: FuelPriceChipProps) {
   const { styles, theme } = useStyles(stylesheet);
 
@@ -29,7 +31,7 @@ export function FuelPriceChip({
       <Text
         style={[styles.fuelPriceOptionText, isSelected && styles.selectedText]}
       >
-        RM {price.toFixed(2)}
+        {label || `RM ${price.toFixed(2)}`}
       </Text>
     </TouchableOpacity>
   );

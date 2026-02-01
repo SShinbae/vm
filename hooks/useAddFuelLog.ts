@@ -26,6 +26,13 @@ export const useAddFuelLog = () => {
 
   const [loading, setLoading] = useState(false);
   const [vehiclesLoading, setVehiclesLoading] = useState(true);
+  const [lastEditedField, setLastEditedField] = useState<
+    "cost" | "liters" | null
+  >(null);
+
+  // Raw string inputs to preserve decimals while typing
+  const [costInput, setCostInput] = useState("");
+  const [litersInput, setLitersInput] = useState("");
 
   // --- Data Fetching ---
   useEffect(() => {
@@ -54,21 +61,67 @@ export const useAddFuelLog = () => {
     return 0;
   };
 
+  const calculateCost = (liters: number, fuelPrice: number) => {
+    if (fuelPrice > 0 && liters > 0) {
+      return Math.round(liters * fuelPrice * 100) / 100;
+    }
+    return 0;
+  };
+
   const handleCostChange = (text: string) => {
+    setCostInput(text); // Store raw input to preserve decimals while typing
     const cost = parseFloat(text) || 0;
-    setFormData((prev) => ({
-      ...prev,
-      cost,
-      liters_filled: calculateLiters(cost, prev.fuel_price),
-    }));
+    setLastEditedField("cost");
+    setFormData((prev) => {
+      const liters = calculateLiters(cost, prev.fuel_price);
+      // Update liters input display when auto-calculating
+      if (cost > 0 && prev.fuel_price > 0) {
+        setLitersInput(liters > 0 ? liters.toFixed(3) : "");
+      }
+      return {
+        ...prev,
+        cost,
+        liters_filled: liters,
+      };
+    });
+  };
+
+  const handleLitersChange = (text: string) => {
+    setLitersInput(text); // Store raw input to preserve decimals while typing
+    const liters = parseFloat(text) || 0;
+    setLastEditedField("liters");
+    setFormData((prev) => {
+      const cost = calculateCost(liters, prev.fuel_price);
+      // Update cost input display when auto-calculating
+      if (liters > 0 && prev.fuel_price > 0) {
+        setCostInput(cost > 0 ? cost.toFixed(2) : "");
+      }
+      return {
+        ...prev,
+        liters_filled: liters,
+        cost,
+      };
+    });
   };
 
   const handlePriceChange = (price: number) => {
-    setFormData((prev) => ({
-      ...prev,
-      fuel_price: price,
-      liters_filled: calculateLiters(prev.cost, price),
-    }));
+    setFormData((prev) => {
+      const newData = { ...prev, fuel_price: price };
+
+      // Recalculate based on which field was last edited
+      if (lastEditedField === "liters" && prev.liters_filled > 0) {
+        newData.cost = calculateCost(prev.liters_filled, price);
+        setCostInput(newData.cost > 0 ? newData.cost.toFixed(2) : "");
+      } else if (prev.cost > 0) {
+        // Default to recalculating liters from cost
+        newData.liters_filled = calculateLiters(prev.cost, price);
+        setLitersInput(
+          newData.liters_filled > 0 ? newData.liters_filled.toFixed(3) : "",
+        );
+      }
+
+      return newData;
+    });
   };
 
   const handleOdometerChange = (text: string) => {
@@ -142,8 +195,13 @@ export const useAddFuelLog = () => {
     selectedVehicle: vehicles.find((v) => v.id === formData.vehicle_id),
     fuelPrices: MOCK_FUEL_PRICES,
 
+    // Raw input values for display (preserves decimals while typing)
+    costInput,
+    litersInput,
+
     // Handlers
     handleCostChange,
+    handleLitersChange,
     handlePriceChange,
     handleOdometerChange,
     handleDateChange,
