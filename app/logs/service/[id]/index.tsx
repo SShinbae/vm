@@ -4,7 +4,7 @@ import { SkeletonCard } from "@/components/ui/Skeleton";
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { ServiceLogService } from "@/lib/services/loggingService";
-import { ServiceLog, ServiceType } from "@/types";
+import { OCRExtractedData, ServiceLog, ServiceType } from "@/types";
 import { router, useLocalSearchParams } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
@@ -599,7 +599,9 @@ export default function ServiceLogDetailScreen() {
           <View style={styles.card}>
             <ReceiptViewer
               receiptImageUrl={serviceLog.receipt_image_url}
-              ocrData={serviceLog.ocr_extracted_data}
+              ocrData={
+                serviceLog.ocr_extracted_data as OCRExtractedData | undefined
+              }
               showOcrData={!!serviceLog.ocr_extracted_data}
             />
           </View>

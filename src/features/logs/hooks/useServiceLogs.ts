@@ -11,7 +11,6 @@ import {
   vehicleRepository,
 } from "@/src/services/repositories";
 import type {
-  ServiceLog,
   ServiceLogInsert,
   ServiceLogUpdate,
   ServiceType,

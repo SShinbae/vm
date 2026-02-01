@@ -6,6 +6,7 @@ import {
   StyleSheet,
   Modal,
   Platform,
+  useWindowDimensions,
 } from "react-native";
 import DateTimePicker from "react-native-ui-datepicker";
 import dayjs from "dayjs";
@@ -33,6 +34,10 @@ export function DatePicker({
   const [showPicker, setShowPicker] = useState(false);
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? "light"];
+  const { width: screenWidth } = useWindowDimensions();
+
+  // Responsive breakpoints
+  const isSmallScreen = screenWidth < 380;
 
   const parseDate = (dateString: string): dayjs.Dayjs => {
     if (!dateString) return dayjs();
@@ -76,13 +81,13 @@ export function DatePicker({
 
   const styles = StyleSheet.create({
     container: {
-      marginBottom: 20,
+      marginBottom: isSmallScreen ? 16 : 20,
     },
     label: {
-      fontSize: 16,
+      fontSize: isSmallScreen ? 13 : 16,
       fontWeight: "500",
       color: colors.text,
-      marginBottom: 8,
+      marginBottom: isSmallScreen ? 6 : 8,
     },
     requiredLabel: {
       color: "#ff4444",
@@ -92,18 +97,21 @@ export function DatePicker({
       borderWidth: 1,
       borderColor: colors.icon,
       borderRadius: 8,
-      paddingHorizontal: 16,
-      paddingVertical: 12,
+      paddingHorizontal: isSmallScreen ? 10 : 16,
+      paddingVertical: isSmallScreen ? 10 : 12,
       flexDirection: "row",
       alignItems: "center",
       justifyContent: "space-between",
+      minHeight: isSmallScreen ? 44 : 48,
     },
     dateText: {
-      fontSize: 16,
+      fontSize: isSmallScreen ? 13 : 16,
       color: value ? colors.text : colors.icon,
+      flex: 1,
     },
     iconContainer: {
-      marginLeft: 12,
+      marginLeft: isSmallScreen ? 6 : 12,
+      flexShrink: 0,
     },
     modalOverlay: {
       flex: 1,
@@ -114,7 +122,7 @@ export function DatePicker({
     modalContent: {
       backgroundColor: colors.background,
       borderRadius: 16,
-      padding: 20,
+      padding: isSmallScreen ? 16 : 20,
       width: "90%",
       maxWidth: 400,
       ...Platform.select({
@@ -136,7 +144,7 @@ export function DatePicker({
       marginBottom: 16,
     },
     modalTitle: {
-      fontSize: 18,
+      fontSize: isSmallScreen ? 16 : 18,
       fontWeight: "600",
       color: colors.text,
     },

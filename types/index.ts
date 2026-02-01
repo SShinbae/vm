@@ -4,7 +4,5 @@
  */
 
 // Re-export everything from the new types location
+// Note: Database is already exported from src/types/index.ts
 export * from "../src/types";
-
-// Keep Database import for backward compatibility
-export { Database } from "./database";

@@ -4,11 +4,10 @@ import {
   TouchableOpacity,
   RefreshControl,
   ScrollView,
-  ActivityIndicator,
   useWindowDimensions,
 } from "react-native";
 import { Image } from "expo-image";
-import { router, useLocalSearchParams } from "expo-router";
+import { router, useLocalSearchParams, useRouter } from "expo-router";
 import {
   GroupService,
   GroupInvitationService,
@@ -16,6 +15,7 @@ import {
 import { VehicleService } from "@/lib/services/vehicleService";
 import { GroupWithMembers, GroupInvitationWithDetails } from "@/types";
 import { IconSymbol } from "@/components/ui/icon-symbol";
+import { SkeletonGroupDetail } from "@/components/ui/Skeleton";
 import { useAuth } from "@/lib/contexts/AuthContext";
 import { useDialog } from "@/lib/contexts/DialogContext";
 import { formatDateWithPrefix } from "@/lib/utils/dateUtils";
@@ -30,6 +30,15 @@ export default function GroupDetailScreen() {
   const { theme } = useStyles();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { width } = useWindowDimensions();
+  const navigation = useRouter();
+
+  const handleGoBack = () => {
+    if (navigation.canGoBack()) {
+      router.back();
+    } else {
+      router.replace("/groups");
+    }
+  };
 
   // Clamp font size: min 10, preferred based on width, max 14
   const tabFontSize = Math.min(Math.max(width * 0.03, 10), 14);
@@ -55,7 +64,7 @@ export default function GroupDetailScreen() {
 
     if (groupResult.error) {
       dialog.showError("Error", "Failed to load group details");
-      router.back();
+      handleGoBack();
     } else if (groupResult.data) {
       setGroup(groupResult.data);
     }
@@ -69,6 +78,7 @@ export default function GroupDetailScreen() {
     }
 
     setLoading(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, dialog]);
 
   const onRefresh = useCallback(async () => {
@@ -151,7 +161,7 @@ export default function GroupDetailScreen() {
               dialog.showError("Error", error);
             } else {
               dialog.showSuccess("Success", "You have left the group", () =>
-                router.back(),
+                handleGoBack(),
               );
             }
             dialog.hideConfirm();
@@ -178,7 +188,7 @@ export default function GroupDetailScreen() {
               dialog.showError("Error", error);
             } else {
               dialog.showSuccess("Success", "Group deleted successfully", () =>
-                router.back(),
+                handleGoBack(),
               );
             }
             dialog.hideConfirm();
@@ -198,11 +208,7 @@ export default function GroupDetailScreen() {
         style={{ flex: 1, backgroundColor: theme.colors.background }}
       >
         <PageHeader title="Loading..." showBack />
-        <View
-          style={{ flex: 1, alignItems: "center", justifyContent: "center" }}
-        >
-          <ActivityIndicator size="large" color={theme.colors.primary} />
-        </View>
+        <SkeletonGroupDetail />
       </SafeAreaView>
     );
   }

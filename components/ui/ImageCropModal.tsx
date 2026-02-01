@@ -224,7 +224,7 @@ export const ImageCropModal: React.FC<ImageCropModalProps> = ({
       title={title}
       description={description}
       aspectRatio={aspectRatio}
-      colors={colors}
+      colors={colors as typeof Colors.light}
       processing={processing}
       setProcessing={setProcessing}
     />

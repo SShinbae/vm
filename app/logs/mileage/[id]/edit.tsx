@@ -4,6 +4,7 @@ import { DatePicker } from "@/components/ui/DatePicker";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { Input } from "@/components/ui/Input";
 import { ConfirmModal } from "@/components/ui/Modal";
+import { SkeletonMileageLogEdit } from "@/components/ui/Skeleton";
 import { useToast } from "@/hooks/useToast";
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
@@ -14,7 +15,6 @@ import { MileageLog, MileageLogFormData } from "@/types";
 import { router, useLocalSearchParams } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
-  ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -334,9 +334,9 @@ export default function EditMileageLogScreen() {
             <ActionMenu items={actionMenuItems} />
           </View>
         )}
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={colors.tint} />
-        </View>
+        <ScrollView contentContainerStyle={styles.scrollContent}>
+          <SkeletonMileageLogEdit />
+        </ScrollView>
       </SafeAreaView>
     );
   }

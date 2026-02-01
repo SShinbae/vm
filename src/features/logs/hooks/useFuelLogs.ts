@@ -10,7 +10,7 @@ import {
   fuelLogRepository,
   vehicleRepository,
 } from "@/src/services/repositories";
-import type { FuelLog, FuelLogInsert, FuelLogUpdate } from "@/src/types";
+import type { FuelLogInsert, FuelLogUpdate } from "@/src/types";
 
 // ============================================================================
 // Query Hooks

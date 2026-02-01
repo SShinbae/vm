@@ -1,3 +1,4 @@
+import { SkeletonLanding } from "@/components/ui/Skeleton";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { useAuth } from "@/lib/contexts/AuthContext";
 import { Ionicons } from "@expo/vector-icons";
@@ -5,7 +6,6 @@ import { Image } from "expo-image";
 import { Redirect, useRouter } from "expo-router";
 import React, { useEffect, useRef, useState } from "react";
 import {
-  ActivityIndicator,
   Animated,
   Dimensions,
   Platform,
@@ -324,19 +324,10 @@ export default function Index() {
       <View
         style={{
           flex: 1,
-          justifyContent: "center",
-          alignItems: "center",
           backgroundColor: theme.colors.background,
         }}
       >
-        <Image
-          source={require("@/assets/images/vm_logo.png")}
-          placeholder={require("@/assets/images/vm_logo_tiny.png")}
-          style={{ width: 120, height: 120, marginBottom: 20 }}
-          contentFit="contain"
-          priority="high"
-        />
-        <ActivityIndicator size="large" color={theme.colors.primary} />
+        <SkeletonLanding />
       </View>
     );
   }

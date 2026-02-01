@@ -1,6 +1,6 @@
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { MaxWidthContainer } from "@/components/layout/MaxWidthContainer";
-import { router } from "expo-router";
+import { router, useRouter } from "expo-router";
 import React, { useState } from "react";
 import { ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -11,6 +11,15 @@ type SectionType = "privacy" | "terms";
 export default function PrivacyScreen() {
   const { theme } = useStyles();
   const [activeSection, setActiveSection] = useState<SectionType>("privacy");
+  const navigation = useRouter();
+
+  const handleGoBack = () => {
+    if (navigation.canGoBack()) {
+      router.back();
+    } else {
+      router.replace("/(tabs)");
+    }
+  };
 
   const SectionTab = ({
     section,
@@ -506,7 +515,7 @@ export default function PrivacyScreen() {
           }}
         >
           <TouchableOpacity
-            onPress={() => router.back()}
+            onPress={handleGoBack}
             style={{
               width: 40,
               height: 40,

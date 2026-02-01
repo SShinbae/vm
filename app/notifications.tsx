@@ -9,7 +9,7 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { router } from "expo-router";
+import { router, useRouter } from "expo-router";
 import { createStyleSheet, useStyles } from "react-native-unistyles";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { NotificationList } from "@/components/ui/NotificationList";
@@ -25,6 +25,15 @@ export default function NotificationsScreen() {
   const { unreadCount, refreshNotifications } = useNotifications();
   const { showSuccess, showError, showInfo } = useToast();
   const [refreshing, setRefreshing] = React.useState(false);
+  const navigation = useRouter();
+
+  const handleGoBack = () => {
+    if (navigation.canGoBack()) {
+      router.back();
+    } else {
+      router.replace("/(tabs)");
+    }
+  };
 
   const handleAcceptInvitation = async (
     invitationId: string,
@@ -153,7 +162,7 @@ export default function NotificationsScreen() {
       <View style={styles.header}>
         <View style={styles.headerLeft}>
           <TouchableOpacity
-            onPress={() => router.back()}
+            onPress={handleGoBack}
             style={styles.backButton}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >

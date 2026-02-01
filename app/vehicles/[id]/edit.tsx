@@ -3,6 +3,7 @@ import { IconSymbol } from "@/components/ui/icon-symbol";
 import { ImageUpload } from "@/components/ui/ImageUpload";
 import { Input } from "@/components/ui/Input";
 import { YearPicker } from "@/components/ui/YearPicker";
+import { SkeletonVehicleEdit } from "@/components/ui/Skeleton";
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useToast } from "@/hooks/useToast";
@@ -12,7 +13,6 @@ import { Vehicle } from "@/types/database-v2";
 import { router, useLocalSearchParams } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
-  ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -318,9 +318,9 @@ export default function EditVehicleScreen() {
             <Text style={styles.headerTitle}>Edit Vehicle</Text>
           </View>
         )}
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={colors.tint} />
-        </View>
+        <ScrollView contentContainerStyle={styles.scrollContent}>
+          <SkeletonVehicleEdit />
+        </ScrollView>
       </SafeAreaView>
     );
   }

@@ -23,27 +23,27 @@
         </h1>
         <div class="clearfix">
           <div class="fl pad1y space-right2">
-            <span class="strong">0% </span>
+            <span class="strong">100% </span>
             <span class="quiet">Statements</span>
-            <span class="fraction">0/13</span>
+            <span class="fraction">13/13</span>
           </div>
 
           <div class="fl pad1y space-right2">
-            <span class="strong">0% </span>
+            <span class="strong">100% </span>
             <span class="quiet">Branches</span>
-            <span class="fraction">0/20</span>
+            <span class="fraction">20/20</span>
           </div>
 
           <div class="fl pad1y space-right2">
-            <span class="strong">0% </span>
+            <span class="strong">100% </span>
             <span class="quiet">Functions</span>
-            <span class="fraction">0/5</span>
+            <span class="fraction">5/5</span>
           </div>
 
           <div class="fl pad1y space-right2">
-            <span class="strong">0% </span>
+            <span class="strong">100% </span>
             <span class="quiet">Lines</span>
-            <span class="fraction">0/11</span>
+            <span class="fraction">11/11</span>
           </div>
         </div>
         <p class="quiet">
@@ -57,7 +57,7 @@
           </div>
         </template>
       </div>
-      <div class="status-line low"></div>
+      <div class="status-line high"></div>
       <pre><table class="coverage">
 <tr><td class="line-count quiet"><a name='L1'></a><a href='#L1'>1</a>
 <a name='L2'></a><a href='#L2'>2</a>
@@ -147,8 +147,8 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">65x</span>
+<span class="cline-any cline-yes">65x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -163,8 +163,8 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">37x</span>
+<span class="cline-any cline-yes">37x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -179,9 +179,9 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">19x</span>
+<span class="cline-any cline-yes">14x</span>
+<span class="cline-any cline-yes">14x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -196,12 +196,12 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">20x</span>
+<span class="cline-any cline-yes">4x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">27x</span>
+<span class="cline-any cline-yes">16x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">/**
  * Utility functions for safe number and currency formatting
@@ -214,13 +214,13 @@
  * @param fallback Fallback value if input is invalid (default: 0)
  * @returns Formatted number string
  */
-export function <span class="fstat-no" title="function not covered" >safeToFixed(</span>
+export function safeToFixed(
   value: number | null | undefined,
-  decimals: number = <span class="branch-0 cbranch-no" title="branch not covered" >2,</span>
-  fallback: number = <span class="branch-0 cbranch-no" title="branch not covered" >0,</span>
+  decimals: number = 2,
+  fallback: number = 0,
 ): string {
-  const safeValue = <span class="cstat-no" title="statement not covered" >value != null &amp;&amp; !isNaN(value) ? value : fallback;</span>
-<span class="cstat-no" title="statement not covered" >  return safeValue.toFixed(decimals);</span>
+  const safeValue = value != null &amp;&amp; !isNaN(value) ? value : fallback;
+  return safeValue.toFixed(decimals);
 }
 &nbsp;
 /**
@@ -230,13 +230,13 @@ export function <span class="fstat-no" title="function not covered" >safeToFixed
  * @param fallback Fallback value if input is invalid (default: 0)
  * @returns Formatted currency string with RM prefix
  */
-export function <span class="fstat-no" title="function not covered" >safeFormatCurrency(</span>
+export function safeFormatCurrency(
   value: number | null | undefined,
-  decimals: number = <span class="branch-0 cbranch-no" title="branch not covered" >2,</span>
-  fallback: number = <span class="branch-0 cbranch-no" title="branch not covered" >0,</span>
+  decimals: number = 2,
+  fallback: number = 0,
 ): string {
-  const formattedValue = <span class="cstat-no" title="statement not covered" >safeToFixed(value, decimals, fallback);</span>
-<span class="cstat-no" title="statement not covered" >  return `RM${formattedValue}`;</span>
+  const formattedValue = safeToFixed(value, decimals, fallback);
+  return `RM${formattedValue}`;
 }
 &nbsp;
 /**
@@ -246,14 +246,14 @@ export function <span class="fstat-no" title="function not covered" >safeFormatC
  * @param fallback Fallback value if property is missing/invalid (default: 0)
  * @returns Safe numeric value
  */
-export function <span class="fstat-no" title="function not covered" >safeNumericValue&lt;</span>T extends Record&lt;string, any&gt;&gt;(
+export function safeNumericValue&lt;T extends Record&lt;string, any&gt;&gt;(
   obj: T | null | undefined,
   key: keyof T,
-  fallback: number = <span class="branch-0 cbranch-no" title="branch not covered" >0,</span>
+  fallback: number = 0,
 ): number {
-<span class="cstat-no" title="statement not covered" >  if (!obj || !(key in obj)) <span class="cstat-no" title="statement not covered" >return fallback;</span></span>
-  const value = <span class="cstat-no" title="statement not covered" >obj[key];</span>
-<span class="cstat-no" title="statement not covered" >  return typeof value === "number" &amp;&amp; !isNaN(value) ? value : fallback;</span>
+  if (!obj || !(key in obj)) return fallback;
+  const value = obj[key];
+  return typeof value === "number" &amp;&amp; !isNaN(value) ? value : fallback;
 }
 &nbsp;
 /**
@@ -263,17 +263,17 @@ export function <span class="fstat-no" title="function not covered" >safeNumeric
  * @param decimals Number of decimal places (default: 2)
  * @returns Formatted currency string
  */
-export function <span class="fstat-no" title="function not covered" >safeGetExpenseAmount(</span>
+export function safeGetExpenseAmount(
   expenseBreakdown: { category: string; amount: number }[] | null | undefined,
   category: string,
-  decimals: number = <span class="branch-0 cbranch-no" title="branch not covered" >2,</span>
+  decimals: number = 2,
 ): string {
-<span class="cstat-no" title="statement not covered" >  if (!Array.isArray(expenseBreakdown)) {</span>
-<span class="cstat-no" title="statement not covered" >    return safeFormatCurrency(0, decimals);</span>
+  if (!Array.isArray(expenseBreakdown)) {
+    return safeFormatCurrency(0, decimals);
   }
 &nbsp;
-  const item = <span class="cstat-no" title="statement not covered" >expenseBreakdown.find(<span class="fstat-no" title="function not covered" >(e</span>) =&gt; <span class="cstat-no" title="statement not covered" >e.category === category)</span>;</span>
-<span class="cstat-no" title="statement not covered" >  return safeFormatCurrency(item?.amount, decimals);</span>
+  const item = expenseBreakdown.find((e) =&gt; e.category === category);
+  return safeFormatCurrency(item?.amount, decimals);
 }
 &nbsp;</pre></td></tr></table></pre>
 
@@ -289,7 +289,7 @@ export function <span class="fstat-no" title="function not covered" >safeGetExpe
         rel="noopener noreferrer"
         >istanbul</a
       >
-      at 2026-02-01T13:12:59.999Z
+      at 2026-02-01T15:48:57.551Z
     </div>
     <script src="../../prettify.js"></script>
     <script>

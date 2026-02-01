@@ -9,7 +9,7 @@ import {
   StyleSheet,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { router, useLocalSearchParams } from "expo-router";
+import { router, useLocalSearchParams, useRouter } from "expo-router";
 import { GroupInvitationService } from "@/lib/services/groupService";
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
@@ -29,6 +29,15 @@ export default function InviteToGroupScreen() {
   const [lastSentEmail, setLastSentEmail] = useState("");
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? "light"];
+  const navigation = useRouter();
+
+  const handleGoBack = () => {
+    if (navigation.canGoBack()) {
+      router.back();
+    } else {
+      router.replace(`/groups/${id}`);
+    }
+  };
 
   const validateEmail = (email: string) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -78,7 +87,7 @@ export default function InviteToGroupScreen() {
 
   const handleDone = () => {
     setShowSendAnotherConfirm(false);
-    router.back();
+    handleGoBack();
   };
 
   const getEmailValidationError = () => {
@@ -167,10 +176,7 @@ export default function InviteToGroupScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => router.back()}
-        >
+        <TouchableOpacity style={styles.backButton} onPress={handleGoBack}>
           <IconSymbol name="chevron.left" size={24} color={colors.text} />
         </TouchableOpacity>
         <Text style={styles.title}>Invite Member</Text>
