@@ -8,6 +8,8 @@
   EXPO_PLATFORM = "web"
   EXPO_USE_FAST_RESOLVER = "1"
   USE_SIMPLE_CSS_MINIFIER = "1"
+  # Exclude EXPO_PUBLIC_ vars from secrets scanning - they're intentionally exposed to client
+  SECRETS_SCAN_OMIT_KEYS = "EXPO_PUBLIC_ONESIGNAL_APP_ID"
 
 [functions]
   node_bundler = "esbuild"
