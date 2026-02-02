@@ -140,7 +140,6 @@ function RootLayoutContent() {
               <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
               <Stack.Screen name="(auth)" options={{ headerShown: false }} />
               <Stack.Screen name="auth" options={{ headerShown: false }} />
-              <Stack.Screen name="demo" options={{ headerShown: false }} />
               <Stack.Screen name="vehicles" options={{ headerShown: false }} />
               <Stack.Screen name="logs" options={{ headerShown: false }} />
               <Stack.Screen name="groups" options={{ headerShown: false }} />
