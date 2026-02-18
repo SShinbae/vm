@@ -152,7 +152,8 @@ export default function EditFuelLogScreen() {
     };
 
     fetchFuelLog();
-  }, [id, showError]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id]);
 
   const handleSave = async () => {
     // Validation

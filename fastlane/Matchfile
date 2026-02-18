@@ -1,0 +1,27 @@
+# Match Configuration
+# https://docs.fastlane.tools/actions/match/
+
+# Git repo where certificates and profiles will be stored
+git_url(ENV["MATCH_GIT_URL"])
+
+# Storage mode - git is recommended for teams
+storage_mode("git")
+
+# App identifier(s)
+app_identifier(["com.vehiclesmanagement.app"])
+
+# Your Apple Developer Portal username
+username(ENV["APPLE_ID"])
+
+# Team ID
+team_id(ENV["TEAM_ID"])
+
+# Type of signing - use "appstore" for App Store and TestFlight
+# type("appstore")
+
+# Set to true on CI to avoid prompts
+readonly(is_ci)
+
+# Keychain for CI
+keychain_name(ENV["MATCH_KEYCHAIN_NAME"] || "login.keychain")
+keychain_password(ENV["MATCH_KEYCHAIN_PASSWORD"])

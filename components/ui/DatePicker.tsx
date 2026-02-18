@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
 import {
   View,
   Text,
@@ -13,6 +13,91 @@ import dayjs from "dayjs";
 import { IconSymbol } from "./icon-symbol";
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
+
+// Wrapper component that manages its own state to prevent parent re-renders from resetting month
+function StableDateTimePicker({
+  initialDate,
+  onDateSelect,
+  colors,
+}: {
+  initialDate: Date;
+  onDateSelect: (date: Date) => void;
+  colors: (typeof Colors)["light"] | (typeof Colors)["dark"];
+}) {
+  const [selectedDate, setSelectedDate] = useState<Date>(initialDate);
+
+  const handleChange = (params: any) => {
+    if (params.date) {
+      // Ensure we have a proper Date object
+      const dateValue =
+        params.date instanceof Date ? params.date : new Date(params.date);
+      setSelectedDate(dateValue);
+      onDateSelect(dateValue);
+    }
+  };
+
+  return (
+    <DateTimePicker
+      mode="single"
+      date={selectedDate}
+      onChange={handleChange}
+      styles={{
+        // Selected day styling
+        selected: {
+          backgroundColor: colors.tint,
+          borderRadius: 20,
+        },
+        selected_label: {
+          color: "#fff",
+          fontWeight: "bold",
+        },
+        // Today styling
+        today: {
+          borderWidth: 1,
+          borderColor: colors.tint,
+          borderRadius: 20,
+        },
+        today_label: {
+          color: colors.tint,
+        },
+        // Day cells
+        day: {
+          borderRadius: 20,
+        },
+        day_label: {
+          color: colors.text,
+        },
+        // Outside days (previous/next month)
+        outside_label: {
+          color: colors.icon + "50",
+        },
+        // Header styling
+        header: {
+          marginBottom: 8,
+        },
+        month_selector_label: {
+          color: colors.text,
+          fontWeight: "600",
+        },
+        year_selector_label: {
+          color: colors.text,
+          fontWeight: "600",
+        },
+        // Weekday header
+        weekday_label: {
+          color: colors.icon,
+        },
+        // Navigation buttons
+        button_prev_image: {
+          tintColor: colors.text,
+        },
+        button_next_image: {
+          tintColor: colors.text,
+        },
+      }}
+    />
+  );
+}
 
 interface DatePickerProps {
   label: string;
@@ -32,6 +117,12 @@ export function DatePicker({
   style,
 }: DatePickerProps) {
   const [showPicker, setShowPicker] = useState(false);
+  // Track the temporarily selected date (before confirmation)
+  const [tempSelectedDate, setTempSelectedDate] = useState<dayjs.Dayjs | null>(
+    null,
+  );
+  // Key to reset DateTimePicker only when modal opens (prevents re-render resets)
+  const [pickerKey, setPickerKey] = useState(0);
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? "light"];
   const { width: screenWidth } = useWindowDimensions();
@@ -65,16 +156,34 @@ export function DatePicker({
     return date.format("DD/MM/YYYY");
   };
 
-  const handleDateChange = (params: any) => {
-    const selectedDate = params.date;
-    if (selectedDate) {
-      const formattedDate = formatDate(dayjs(selectedDate));
+  // Handle date selection from the stable picker
+  const handleDateSelect = useCallback((date: Date) => {
+    setTempSelectedDate(dayjs(date));
+  }, []);
+
+  // Confirm the selected date and close picker
+  const handleConfirm = () => {
+    if (tempSelectedDate) {
+      const formattedDate = formatDate(tempSelectedDate);
       onDateChange(formattedDate);
-      setShowPicker(false);
     }
+    setShowPicker(false);
   };
 
-  const currentDate = value ? parseDate(value) : dayjs();
+  // Cancel and close picker without saving
+  const handleCancel = () => {
+    setTempSelectedDate(null);
+    setShowPicker(false);
+  };
+
+  // Initialize temp date when picker opens
+  const handleOpenPicker = () => {
+    const initialDate = value ? parseDate(value) : dayjs();
+    setTempSelectedDate(initialDate);
+    setPickerKey((prev) => prev + 1); // New key = fresh DateTimePicker instance
+    setShowPicker(true);
+  };
+
   const displayValue = value
     ? formatDisplayDate(parseDate(value))
     : placeholder;
@@ -155,6 +264,37 @@ export function DatePicker({
       fontSize: 24,
       color: colors.icon,
     },
+    buttonRow: {
+      flexDirection: "row",
+      justifyContent: "flex-end",
+      gap: 12,
+      marginTop: 16,
+      paddingTop: 16,
+      borderTopWidth: 1,
+      borderTopColor: colors.icon + "20",
+    },
+    cancelButton: {
+      paddingVertical: 10,
+      paddingHorizontal: 20,
+      borderRadius: 8,
+      backgroundColor: colors.icon + "15",
+    },
+    cancelButtonText: {
+      fontSize: 14,
+      fontWeight: "600",
+      color: colors.text,
+    },
+    confirmButton: {
+      paddingVertical: 10,
+      paddingHorizontal: 20,
+      borderRadius: 8,
+      backgroundColor: colors.tint,
+    },
+    confirmButtonText: {
+      fontSize: 14,
+      fontWeight: "600",
+      color: "#fff",
+    },
   });
 
   return (
@@ -165,7 +305,7 @@ export function DatePicker({
 
       <TouchableOpacity
         style={styles.dateButton}
-        onPress={() => setShowPicker(true)}
+        onPress={handleOpenPicker}
         activeOpacity={0.7}
       >
         <Text style={styles.dateText}>{displayValue}</Text>
@@ -178,12 +318,12 @@ export function DatePicker({
         visible={showPicker}
         transparent={true}
         animationType="fade"
-        onRequestClose={() => setShowPicker(false)}
+        onRequestClose={handleCancel}
       >
         <TouchableOpacity
           style={styles.modalOverlay}
           activeOpacity={1}
-          onPress={() => setShowPicker(false)}
+          onPress={handleCancel}
         >
           <TouchableOpacity
             activeOpacity={1}
@@ -194,17 +334,33 @@ export function DatePicker({
                 <Text style={styles.modalTitle}>Select Date</Text>
                 <TouchableOpacity
                   style={styles.closeButton}
-                  onPress={() => setShowPicker(false)}
+                  onPress={handleCancel}
                 >
                   <Text style={styles.closeButtonText}>×</Text>
                 </TouchableOpacity>
               </View>
 
-              <DateTimePicker
-                mode="single"
-                date={currentDate.toDate()}
-                onChange={handleDateChange}
+              <StableDateTimePicker
+                key={pickerKey}
+                initialDate={tempSelectedDate?.toDate() ?? dayjs().toDate()}
+                onDateSelect={handleDateSelect}
+                colors={colors}
               />
+
+              <View style={styles.buttonRow}>
+                <TouchableOpacity
+                  style={styles.cancelButton}
+                  onPress={handleCancel}
+                >
+                  <Text style={styles.cancelButtonText}>Cancel</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.confirmButton}
+                  onPress={handleConfirm}
+                >
+                  <Text style={styles.confirmButtonText}>Confirm</Text>
+                </TouchableOpacity>
+              </View>
             </View>
           </TouchableOpacity>
         </TouchableOpacity>

@@ -1,0 +1,266 @@
+# Customise this file, documentation can be found here:
+# https://docs.fastlane.tools/actions
+
+# Update fastlane automatically if a new version is available
+update_fastlane
+
+# Constants
+APP_IDENTIFIER = "com.vehiclesmanagement.app"
+IOS_WORKSPACE = "ios/VehiclesManagement.xcworkspace"
+IOS_SCHEME = "VehiclesManagement"
+ANDROID_APP_DIR = "android/app"
+
+before_all do
+  ensure_git_status_clean unless ENV["SKIP_GIT_CHECK"]
+end
+
+# ==================== iOS ====================
+platform :ios do
+  desc "Install CocoaPods dependencies"
+  lane :install_pods do
+    cocoapods(
+      podfile: "ios/Podfile",
+      use_bundle_exec: true
+    )
+  end
+
+  desc "Sync certificates and provisioning profiles using match"
+  lane :sync_certs do |options|
+    type = options[:type] || "appstore"
+
+    match(
+      type: type,
+      app_identifier: APP_IDENTIFIER,
+      readonly: is_ci
+    )
+  end
+
+  desc "Build iOS app for development"
+  lane :build_dev do
+    sync_certs(type: "development")
+
+    build_app(
+      workspace: IOS_WORKSPACE,
+      scheme: IOS_SCHEME,
+      configuration: "Debug",
+      export_method: "development",
+      output_directory: "./build/ios",
+      output_name: "VehiclesManagement-dev.ipa"
+    )
+  end
+
+  desc "Build and upload to TestFlight"
+  lane :beta do
+    sync_certs(type: "appstore")
+
+    # Increment build number
+    increment_build_number(
+      xcodeproj: "ios/VehiclesManagement.xcodeproj",
+      build_number: ENV["BUILD_NUMBER"] || (latest_testflight_build_number + 1)
+    )
+
+    build_app(
+      workspace: IOS_WORKSPACE,
+      scheme: IOS_SCHEME,
+      configuration: "Release",
+      export_method: "app-store",
+      output_directory: "./build/ios",
+      output_name: "VehiclesManagement.ipa"
+    )
+
+    upload_to_testflight(
+      skip_waiting_for_build_processing: true,
+      distribute_external: false
+    )
+
+    # Clean up
+    clean_build_artifacts
+  end
+
+  desc "Deploy to App Store"
+  lane :release do
+    sync_certs(type: "appstore")
+
+    # Increment build number
+    increment_build_number(
+      xcodeproj: "ios/VehiclesManagement.xcodeproj",
+      build_number: ENV["BUILD_NUMBER"] || (latest_testflight_build_number + 1)
+    )
+
+    build_app(
+      workspace: IOS_WORKSPACE,
+      scheme: IOS_SCHEME,
+      configuration: "Release",
+      export_method: "app-store",
+      output_directory: "./build/ios",
+      output_name: "VehiclesManagement.ipa"
+    )
+
+    upload_to_app_store(
+      submit_for_review: false,
+      automatic_release: false,
+      skip_metadata: true,
+      skip_screenshots: true,
+      precheck_include_in_app_purchases: false
+    )
+
+    clean_build_artifacts
+  end
+
+  desc "Build only (no upload) - useful for CI validation"
+  lane :build_release do
+    sync_certs(type: "appstore")
+
+    build_app(
+      workspace: IOS_WORKSPACE,
+      scheme: IOS_SCHEME,
+      configuration: "Release",
+      export_method: "app-store",
+      output_directory: "./build/ios",
+      output_name: "VehiclesManagement.ipa"
+    )
+  end
+
+  # Error handling
+  error do |lane, exception|
+    # Slack notification on failure (optional)
+    # slack(
+    #   message: "iOS #{lane} failed: #{exception.message}",
+    #   success: false
+    # )
+  end
+end
+
+# ==================== Android ====================
+platform :android do
+  desc "Build Android debug APK"
+  lane :build_dev do
+    gradle(
+      project_dir: "android",
+      task: "assemble",
+      build_type: "Debug"
+    )
+
+    # Copy APK to build directory
+    sh("mkdir -p ../build/android")
+    sh("cp ../android/app/build/outputs/apk/debug/app-debug.apk ../build/android/VehiclesManagement-dev.apk")
+  end
+
+  desc "Build release APK"
+  lane :build_apk do
+    gradle(
+      project_dir: "android",
+      task: "assemble",
+      build_type: "Release"
+    )
+
+    sh("mkdir -p ../build/android")
+    sh("cp ../android/app/build/outputs/apk/release/app-release.apk ../build/android/VehiclesManagement.apk")
+  end
+
+  desc "Build release AAB (Android App Bundle)"
+  lane :build_aab do
+    gradle(
+      project_dir: "android",
+      task: "bundle",
+      build_type: "Release"
+    )
+
+    sh("mkdir -p ../build/android")
+    sh("cp ../android/app/build/outputs/bundle/release/app-release.aab ../build/android/VehiclesManagement.aab")
+  end
+
+  desc "Build and upload to Play Store internal track"
+  lane :beta do
+    # Increment version code
+    increment_version_code(
+      gradle_file_path: "android/app/build.gradle",
+      version_code: ENV["BUILD_NUMBER"]
+    )
+
+    build_aab
+
+    upload_to_play_store(
+      track: "internal",
+      aab: "build/android/VehiclesManagement.aab",
+      skip_upload_metadata: true,
+      skip_upload_images: true,
+      skip_upload_screenshots: true
+    )
+  end
+
+  desc "Deploy to Play Store production"
+  lane :release do
+    # Increment version code
+    increment_version_code(
+      gradle_file_path: "android/app/build.gradle",
+      version_code: ENV["BUILD_NUMBER"]
+    )
+
+    build_aab
+
+    upload_to_play_store(
+      track: "production",
+      aab: "build/android/VehiclesManagement.aab",
+      skip_upload_metadata: true,
+      skip_upload_images: true,
+      skip_upload_screenshots: true
+    )
+  end
+
+  desc "Promote internal track to production"
+  lane :promote_to_production do
+    upload_to_play_store(
+      track: "internal",
+      track_promote_to: "production",
+      skip_upload_aab: true,
+      skip_upload_metadata: true,
+      skip_upload_images: true,
+      skip_upload_screenshots: true
+    )
+  end
+
+  # Error handling
+  error do |lane, exception|
+    # Slack notification on failure (optional)
+    # slack(
+    #   message: "Android #{lane} failed: #{exception.message}",
+    #   success: false
+    # )
+  end
+end
+
+# ==================== Cross-platform ====================
+desc "Run tests"
+lane :test do
+  sh("cd .. && npm run test:ci")
+end
+
+desc "Lint and type check"
+lane :lint do
+  sh("cd .. && npm run lint")
+  sh("cd .. && npx tsc --noEmit")
+end
+
+desc "Install all dependencies (npm + pods)"
+lane :install_deps do
+  sh("cd .. && npm install")
+  cocoapods(
+    podfile: "ios/Podfile",
+    use_bundle_exec: true
+  )
+end
+
+desc "Bump version (major, minor, patch)"
+lane :bump_version do |options|
+  type = options[:type] || "patch"
+
+  # Bump version in package.json
+  version = sh("cd .. && npm version #{type} --no-git-tag-version").strip
+  new_version = version.gsub("v", "")
+
+  UI.success("Bumped version to #{new_version}")
+
+  # Return new version for potential commit
+  new_version
+end

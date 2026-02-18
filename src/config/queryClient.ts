@@ -40,7 +40,7 @@ const queryClientConfig: QueryClientConfig = {
       // Background refetching for fresh data
       refetchOnWindowFocus: true, // Refetch when user returns to app
       refetchOnReconnect: true, // Refetch when internet reconnects
-      refetchOnMount: "always", // Always refetch on mount for fresh data
+      refetchOnMount: true, // Use cached data immediately, refetch in background if stale
 
       // Network mode
       networkMode: "online", // Only fetch when online
