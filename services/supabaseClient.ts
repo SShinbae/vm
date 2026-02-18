@@ -131,8 +131,8 @@ try {
       // This prevents logout loops on normal page refreshes while still
       // handling password reset and email confirmation flows
       detectSessionInUrl: shouldDetectSessionInUrl(),
-      // Enable debug mode in development to see what's happening
-      debug: __DEV__,
+      // Debug mode disabled - enable temporarily if debugging auth issues
+      // debug: __DEV__,
       // Increase storage key to avoid conflicts
       storageKey: "sb-auth-token",
       // Flow type for better compatibility
