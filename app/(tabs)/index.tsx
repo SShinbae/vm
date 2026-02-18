@@ -46,17 +46,30 @@ export default function DashboardScreen() {
   if (error && vehicles.length === 0 && !isInitialLoading) {
     return (
       <SafeAreaView style={styles.container}>
-        <View style={styles.errorContainer}>
-          <IconSymbol
-            name="exclamationmark.triangle"
-            size={48}
-            color={theme.colors.error}
-          />
-          <Text style={styles.errorText}>{error}</Text>
-          <TouchableOpacity style={styles.retryButton} onPress={onRefresh}>
-            <Text style={styles.retryButtonText}>Retry</Text>
-          </TouchableOpacity>
-        </View>
+        <MaxWidthContainer>
+          {/* Header - rendered immediately for fast LCP */}
+          <View style={styles.header}>
+            <Text style={styles.greeting}>
+              Welcome
+              {user?.profile?.full_name
+                ? `, ${user.profile.full_name.split(" ")[0]}`
+                : ""}
+              !
+            </Text>
+            <Text style={styles.subtitle}>Track and manage your vehicles</Text>
+          </View>
+          <View style={styles.errorContainer}>
+            <IconSymbol
+              name="exclamationmark.triangle"
+              size={48}
+              color={theme.colors.error}
+            />
+            <Text style={styles.errorText}>{error}</Text>
+            <TouchableOpacity style={styles.retryButton} onPress={onRefresh}>
+              <Text style={styles.retryButtonText}>Retry</Text>
+            </TouchableOpacity>
+          </View>
+        </MaxWidthContainer>
       </SafeAreaView>
     );
   }
@@ -64,6 +77,18 @@ export default function DashboardScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <MaxWidthContainer>
+        {/* Header - rendered immediately for fast LCP */}
+        <View style={styles.header}>
+          <Text style={styles.greeting}>
+            Welcome
+            {user?.profile?.full_name
+              ? `, ${user.profile.full_name.split(" ")[0]}`
+              : ""}
+            !
+          </Text>
+          <Text style={styles.subtitle}>Track and manage your vehicles</Text>
+        </View>
+
         {isInitialLoading ? (
           <SkeletonDashboard />
         ) : (
@@ -79,20 +104,6 @@ export default function DashboardScreen() {
             }
             showsVerticalScrollIndicator={false}
           >
-            {/* Header */}
-            <View style={styles.header}>
-              <Text style={styles.greeting}>
-                Welcome
-                {user?.profile?.full_name
-                  ? `, ${user.profile.full_name.split(" ")[0]}`
-                  : ""}
-                !
-              </Text>
-              <Text style={styles.subtitle}>
-                Track and manage your vehicles
-              </Text>
-            </View>
-
             {/* Stats Grid Section */}
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Overview</Text>

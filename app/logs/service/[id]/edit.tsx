@@ -148,7 +148,8 @@ export default function EditServiceLogScreen() {
     };
 
     fetchServiceLog();
-  }, [id, showError]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id]);
 
   const handleSave = async () => {
     // Validation

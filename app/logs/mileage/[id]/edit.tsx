@@ -104,7 +104,8 @@ export default function EditMileageLogScreen() {
     };
 
     fetchMileageLog();
-  }, [id, showError]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id]);
 
   const handleSave = async () => {
     if (formData.odometer_reading <= 0) {

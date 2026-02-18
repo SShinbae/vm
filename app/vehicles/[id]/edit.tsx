@@ -73,7 +73,8 @@ export default function EditVehicleScreen() {
     };
 
     fetchVehicle();
-  }, [id, showError]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id]);
 
   const handleSave = async () => {
     if (!vehicle) return;

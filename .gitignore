@@ -46,3 +46,15 @@ app-example
 
 # Local Netlify folder
 .netlify
+
+# Fastlane
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots
+fastlane/test_output
+fastlane/.env
+fastlane/google-play-key.json
+build/
+
+# Fastlane - Keep README but ignore generated files
+!fastlane/README.md
