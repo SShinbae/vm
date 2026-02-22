@@ -7,6 +7,7 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { sentryService } from "@/lib/services/sentryService";
 
 interface Props {
   children: ReactNode;
@@ -44,8 +45,9 @@ export class ErrorBoundary extends Component<Props, State> {
       errorInfo,
     });
 
-    // You can also log the error to an error reporting service here
-    // Example: Sentry.captureException(error);
+    sentryService.captureException(error, {
+      componentStack: errorInfo.componentStack,
+    });
   }
 
   handleReset = () => {

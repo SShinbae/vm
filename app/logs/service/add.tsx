@@ -24,6 +24,7 @@ import { ServiceLogFormData, ServiceType } from "@/types";
 import { VehicleWithDetails } from "@/types/database-v2";
 import { Image } from "expo-image";
 import { router, useLocalSearchParams } from "expo-router";
+import { usePostHog } from "posthog-react-native";
 import React, { useEffect, useState } from "react";
 import {
   KeyboardAvoidingView,
@@ -118,6 +119,7 @@ export default function AddServiceLogScreen() {
   const [loading, setLoading] = useState(false);
   const [vehiclesLoading, setVehiclesLoading] = useState(true);
   const { showSuccess, showError, showInfo } = useToast();
+  const posthog = usePostHog();
   const [ocrResult, setOcrResult] = useState<ReceiptProcessingResult | null>(
     null,
   );
@@ -221,6 +223,11 @@ export default function AddServiceLogScreen() {
     if (error) {
       showError(error);
     } else {
+      posthog.capture("service_log_created", {
+        service_type: logData.service_type,
+        cost: totalCost,
+        auto_filled: logData.auto_filled || false,
+      });
       showSuccess("Service log added successfully!");
       router.push("/(tabs)/logs");
     }
@@ -334,6 +341,7 @@ export default function AddServiceLogScreen() {
       }));
 
       setShowOcrResult(false);
+      posthog.capture("ocr_data_accepted");
       showInfo(
         "Service details auto-filled from receipt. Please review and adjust if needed.",
       );

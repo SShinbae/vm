@@ -9,6 +9,7 @@ import { VehicleService } from "@/lib/services/vehicleService";
 import { useToast } from "@/hooks/useToast";
 import { VehicleFormData } from "@/types";
 import { router } from "expo-router";
+import { usePostHog } from "posthog-react-native";
 import { useState } from "react";
 import {
   KeyboardAvoidingView,
@@ -32,6 +33,7 @@ export default function AddVehicleScreen() {
   const [imageUri, setImageUri] = useState<string>("");
   const [loading, setLoading] = useState(false);
   const { showSuccess, showError } = useToast();
+  const posthog = usePostHog();
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? "light"];
   const isWeb = Platform.OS === "web";
@@ -75,6 +77,11 @@ export default function AddVehicleScreen() {
     if (error) {
       showError(error);
     } else {
+      posthog.capture("vehicle_created", {
+        make: vehicleData.make,
+        model: vehicleData.model,
+        year: vehicleData.year,
+      });
       showSuccess("Vehicle added successfully!");
       router.push("/(tabs)/vehicles");
     }

@@ -22,6 +22,7 @@ import {
   ServiceType,
 } from "@/types";
 import { router, useLocalSearchParams } from "expo-router";
+import { usePostHog } from "posthog-react-native";
 import React, { useEffect, useState } from "react";
 import {
   KeyboardAvoidingView,
@@ -91,6 +92,7 @@ export default function EditServiceLogScreen() {
   const [loading, setLoading] = useState(false);
   const [dataLoading, setDataLoading] = useState(true);
   const { showSuccess, showError } = useToast();
+  const posthog = usePostHog();
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? "light"];
   const isWeb = Platform.OS === "web";
@@ -190,6 +192,7 @@ export default function EditServiceLogScreen() {
     if (error) {
       showError(error);
     } else {
+      posthog.capture("service_log_updated");
       showSuccess("Service log updated successfully!");
       router.push("/(tabs)/logs");
     }

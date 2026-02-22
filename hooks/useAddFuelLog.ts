@@ -3,6 +3,7 @@ import { VehicleService } from "@/lib/services/vehicleService";
 import { FuelLogFormData } from "@/types";
 import { VehicleWithDetails } from "@/types/database-v2";
 import { router, useLocalSearchParams } from "expo-router";
+import { usePostHog } from "posthog-react-native";
 import { useEffect, useState } from "react";
 import { Platform } from "react-native";
 import { useToast } from "./useToast";
@@ -13,6 +14,7 @@ export const useAddFuelLog = () => {
   const { vehicleId } = useLocalSearchParams<{ vehicleId?: string }>();
   const [vehicles, setVehicles] = useState<VehicleWithDetails[]>([]);
   const { showSuccess, showError } = useToast();
+  const posthog = usePostHog();
 
   const [formData, setFormData] = useState<FuelLogFormData>({
     vehicle_id: vehicleId || "",
@@ -179,6 +181,11 @@ export const useAddFuelLog = () => {
     if (error) {
       showError(error);
     } else {
+      posthog.capture("fuel_log_created", {
+        cost: formData.cost,
+        fuel_price: formData.fuel_price,
+        odometer_reading: formData.odometer_reading,
+      });
       showSuccess("Fuel log added successfully!");
       router.replace("/(tabs)/logs");
     }

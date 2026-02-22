@@ -1,7 +1,19 @@
 import * as ImagePicker from "expo-image-picker";
+import { Platform } from "react-native";
 import { supabase } from "../../services/supabaseClient";
 import { GoogleVisionService } from "./googleVisionService";
 import { OCRExtractedData, ApiResponse } from "../../types";
+
+// Import react-native-image-crop-picker for mobile
+let ImageCropPicker: any = null;
+if (Platform.OS !== "web") {
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    ImageCropPicker = require("react-native-image-crop-picker").default;
+  } catch (error) {
+    console.warn("react-native-image-crop-picker not available:", error);
+  }
+}
 
 export interface ReceiptProcessingResult {
   success: boolean;
@@ -118,6 +130,44 @@ export class OCRService {
   }
 
   /**
+   * Crop a receipt image using react-native-image-crop-picker on mobile.
+   * Returns the cropped URI, null if user cancelled, or original URI on failure/web.
+   */
+  private static async cropReceiptImage(uri: string): Promise<string | null> {
+    if (Platform.OS === "web" || !ImageCropPicker) {
+      return uri;
+    }
+
+    try {
+      const result = await ImageCropPicker.openCropper({
+        path: uri,
+        width: 1200,
+        height: 1800,
+        freeStyleCropEnabled: true,
+        compressImageQuality: 1.0,
+        enableRotationGesture: true,
+        mediaType: "photo",
+        cropperToolbarTitle: "Crop Receipt",
+        cropperCancelText: "Cancel",
+        cropperChooseText: "Done",
+      });
+
+      return result.path;
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      if (
+        errorMessage.includes("User cancelled") ||
+        errorMessage.includes("Cancel")
+      ) {
+        return null;
+      }
+      console.warn("Crop failed, using original image:", errorMessage);
+      return uri;
+    }
+  }
+
+  /**
    * Launch camera to capture receipt with optimized settings for OCR
    */
   static async captureReceiptFromCamera(): Promise<ImagePicker.ImagePickerResult | null> {
@@ -129,13 +179,24 @@ export class OCRService {
 
       const result = await ImagePicker.launchCameraAsync({
         mediaTypes: ["images"],
-        allowsEditing: true,
+        allowsEditing: Platform.OS === "web",
         aspect: [2, 3], // Better aspect ratio for receipts (taller)
         quality: 1.0, // Maximum quality for better OCR
         base64: false,
         exif: false, // Don't include EXIF data to reduce size
-        // Additional camera settings for better text capture
       });
+      if (result.canceled || !result.assets || result.assets.length === 0) {
+        return result;
+      }
+
+      const croppedUri = await this.cropReceiptImage(result.assets[0].uri);
+      if (croppedUri === null) {
+        return {
+          canceled: true,
+          assets: [],
+        } as unknown as ImagePicker.ImagePickerResult;
+      }
+      result.assets[0].uri = croppedUri;
 
       return result;
     } catch (error) {
@@ -156,13 +217,24 @@ export class OCRService {
 
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ["images"],
-        allowsEditing: true,
+        allowsEditing: Platform.OS === "web",
         aspect: [2, 3], // Better aspect ratio for receipts (taller)
         quality: 1.0, // Maximum quality for better OCR
         base64: false,
         exif: false, // Don't include EXIF data to reduce size
-        // Allow selection of high-quality images
       });
+      if (result.canceled || !result.assets || result.assets.length === 0) {
+        return result;
+      }
+
+      const croppedUri = await this.cropReceiptImage(result.assets[0].uri);
+      if (croppedUri === null) {
+        return {
+          canceled: true,
+          assets: [],
+        } as unknown as ImagePicker.ImagePickerResult;
+      }
+      result.assets[0].uri = croppedUri;
 
       return result;
     } catch (error) {

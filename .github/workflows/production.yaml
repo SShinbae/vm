@@ -165,6 +165,11 @@ jobs:
           echo "GOOGLE_VISION_API_KEY=${{ secrets.PROD_GOOGLE_VISION_API_KEY || secrets.GOOGLE_VISION_API_KEY }}" >> .env.production.build
           echo "SITE_URL=${{ secrets.PROD_SITE_URL || secrets.SITE_URL }}" >> .env.production.build
           echo "ONESIGNAL_APP_ID=${{ secrets.PROD_ONESIGNAL_APP_ID || secrets.ONESIGNAL_APP_ID }}" >> .env.production.build
+          echo "SENTRY_DSN=${{ secrets.PROD_SENTRY_DSN || secrets.SENTRY_DSN }}" >> .env.production.build
+          echo "SENTRY_ORG=${{ secrets.SENTRY_ORG }}" >> .env.production.build
+          echo "SENTRY_PROJECT=${{ secrets.SENTRY_PROJECT }}" >> .env.production.build
+          echo "POSTHOG_API_KEY=${{ secrets.PROD_POSTHOG_API_KEY || secrets.POSTHOG_API_KEY }}" >> .env.production.build
+          echo "POSTHOG_HOST=${{ secrets.PROD_POSTHOG_HOST || secrets.POSTHOG_HOST }}" >> .env.production.build
           echo "NODE_ENV=production" >> .env.production.build
 
           echo "✓ Created. Verifying contents..."
@@ -250,6 +255,11 @@ jobs:
           echo "GOOGLE_VISION_API_KEY=${{ secrets.PROD_GOOGLE_VISION_API_KEY || secrets.GOOGLE_VISION_API_KEY }}" >> .env.production.build
           echo "SITE_URL=${{ secrets.PROD_SITE_URL || secrets.SITE_URL }}" >> .env.production.build
           echo "ONESIGNAL_APP_ID=${{ secrets.PROD_ONESIGNAL_APP_ID || secrets.ONESIGNAL_APP_ID }}" >> .env.production.build
+          echo "SENTRY_DSN=${{ secrets.PROD_SENTRY_DSN || secrets.SENTRY_DSN }}" >> .env.production.build
+          echo "SENTRY_ORG=${{ secrets.SENTRY_ORG }}" >> .env.production.build
+          echo "SENTRY_PROJECT=${{ secrets.SENTRY_PROJECT }}" >> .env.production.build
+          echo "POSTHOG_API_KEY=${{ secrets.PROD_POSTHOG_API_KEY || secrets.POSTHOG_API_KEY }}" >> .env.production.build
+          echo "POSTHOG_HOST=${{ secrets.PROD_POSTHOG_HOST || secrets.POSTHOG_HOST }}" >> .env.production.build
           echo "NODE_ENV=production" >> .env.production.build
 
           echo "✓ Created. Verifying contents..."

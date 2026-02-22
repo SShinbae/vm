@@ -26,6 +26,7 @@ import { DemoProvider } from "@/lib/contexts/DemoContext";
 import { DialogProvider } from "@/lib/contexts/DialogContext";
 import { NotificationProvider } from "@/lib/contexts/NotificationContext";
 import { ThemeProvider } from "@/lib/contexts/ThemeContext";
+import { PostHogProvider } from "@/lib/providers/PostHogProvider";
 import { QueryProvider } from "@/lib/providers/QueryProvider";
 
 // Import reanimated - required for gesture handler and animations
@@ -50,17 +51,19 @@ export default function RootLayout() {
   return (
     <ErrorBoundary>
       <QueryProvider>
-        <ThemeProvider>
-          <DemoProvider>
-            <AuthProvider>
-              <NotificationProvider>
-                <DialogProvider>
-                  <RootLayoutContent />
-                </DialogProvider>
-              </NotificationProvider>
-            </AuthProvider>
-          </DemoProvider>
-        </ThemeProvider>
+        <PostHogProvider>
+          <ThemeProvider>
+            <DemoProvider>
+              <AuthProvider>
+                <NotificationProvider>
+                  <DialogProvider>
+                    <RootLayoutContent />
+                  </DialogProvider>
+                </NotificationProvider>
+              </AuthProvider>
+            </DemoProvider>
+          </ThemeProvider>
+        </PostHogProvider>
       </QueryProvider>
     </ErrorBoundary>
   );

@@ -142,7 +142,7 @@ export function createSupabaseMock(
       })),
       ...overrides.auth,
     },
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
     from: (overrides.from ??
       jest.fn((table: string) => getQueryBuilder(table))) as jest.Mock<any>,
     rpc:
