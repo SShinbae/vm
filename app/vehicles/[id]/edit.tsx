@@ -121,7 +121,7 @@ export default function EditVehicleScreen() {
       }
       showError(errorMsg);
     } else {
-      posthog.capture("vehicle_updated", {
+      posthog?.capture("vehicle_updated", {
         make: updates.make,
         model: updates.model,
         year: updates.year,

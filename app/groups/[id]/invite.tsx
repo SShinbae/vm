@@ -77,7 +77,7 @@ export default function InviteToGroupScreen() {
       setErrorMessage(error);
       setShowErrorModal(true);
     } else {
-      posthog.capture("group_invitation_sent");
+      posthog?.capture("group_invitation_sent");
       setLastSentEmail(email.trim());
       setShowSendAnotherConfirm(true);
     }

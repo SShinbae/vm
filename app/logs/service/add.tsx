@@ -223,7 +223,7 @@ export default function AddServiceLogScreen() {
     if (error) {
       showError(error);
     } else {
-      posthog.capture("service_log_created", {
+      posthog?.capture("service_log_created", {
         service_type: logData.service_type,
         cost: totalCost,
         auto_filled: logData.auto_filled || false,
@@ -341,7 +341,7 @@ export default function AddServiceLogScreen() {
       }));
 
       setShowOcrResult(false);
-      posthog.capture("ocr_data_accepted");
+      posthog?.capture("ocr_data_accepted");
       showInfo(
         "Service details auto-filled from receipt. Please review and adjust if needed.",
       );

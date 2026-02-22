@@ -192,7 +192,7 @@ export default function EditServiceLogScreen() {
     if (error) {
       showError(error);
     } else {
-      posthog.capture("service_log_updated");
+      posthog?.capture("service_log_updated");
       showSuccess("Service log updated successfully!");
       router.push("/(tabs)/logs");
     }
