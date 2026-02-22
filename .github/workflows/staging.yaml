@@ -164,6 +164,11 @@ jobs:
           GOOGLE_VISION_API_KEY=${{ secrets.STAGING_GOOGLE_VISION_API_KEY || secrets.GOOGLE_VISION_API_KEY }}
           SITE_URL=${{ secrets.STAGING_SITE_URL || secrets.SITE_URL }}
           ONESIGNAL_APP_ID=${{ secrets.STAGING_ONESIGNAL_APP_ID || secrets.ONESIGNAL_APP_ID }}
+          SENTRY_DSN=${{ secrets.STAGING_SENTRY_DSN || secrets.SENTRY_DSN }}
+          SENTRY_ORG=${{ secrets.SENTRY_ORG }}
+          SENTRY_PROJECT=${{ secrets.SENTRY_PROJECT }}
+          POSTHOG_API_KEY=${{ secrets.STAGING_POSTHOG_API_KEY || secrets.POSTHOG_API_KEY }}
+          POSTHOG_HOST=${{ secrets.STAGING_POSTHOG_HOST || secrets.POSTHOG_HOST }}
           NODE_ENV=development
           ENV_EOF
           # Remove leading whitespace from each line (caused by YAML heredoc indentation)
@@ -206,6 +211,11 @@ jobs:
           GOOGLE_VISION_API_KEY=${{ secrets.STAGING_GOOGLE_VISION_API_KEY || secrets.GOOGLE_VISION_API_KEY }}
           SITE_URL=${{ secrets.STAGING_SITE_URL || secrets.SITE_URL }}
           ONESIGNAL_APP_ID=${{ secrets.STAGING_ONESIGNAL_APP_ID || secrets.ONESIGNAL_APP_ID }}
+          SENTRY_DSN=${{ secrets.STAGING_SENTRY_DSN || secrets.SENTRY_DSN }}
+          SENTRY_ORG=${{ secrets.SENTRY_ORG }}
+          SENTRY_PROJECT=${{ secrets.SENTRY_PROJECT }}
+          POSTHOG_API_KEY=${{ secrets.STAGING_POSTHOG_API_KEY || secrets.POSTHOG_API_KEY }}
+          POSTHOG_HOST=${{ secrets.STAGING_POSTHOG_HOST || secrets.POSTHOG_HOST }}
           NODE_ENV=staging
           ENV_EOF
           # Remove leading whitespace from each line (caused by YAML heredoc indentation)

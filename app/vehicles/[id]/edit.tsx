@@ -11,6 +11,7 @@ import { VehicleService } from "@/lib/services/vehicleService";
 import { VehicleFormData } from "@/types";
 import { Vehicle } from "@/types/database-v2";
 import { router, useLocalSearchParams } from "expo-router";
+import { usePostHog } from "posthog-react-native";
 import React, { useEffect, useState } from "react";
 import {
   KeyboardAvoidingView,
@@ -38,6 +39,7 @@ export default function EditVehicleScreen() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const { showSuccess, showError } = useToast();
+  const posthog = usePostHog();
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? "light"];
   const isWeb = Platform.OS === "web";
@@ -119,6 +121,11 @@ export default function EditVehicleScreen() {
       }
       showError(errorMsg);
     } else {
+      posthog.capture("vehicle_updated", {
+        make: updates.make,
+        model: updates.model,
+        year: updates.year,
+      });
       showSuccess("Vehicle updated successfully!");
       router.push("/(tabs)/vehicles");
     }

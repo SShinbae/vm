@@ -5,6 +5,7 @@ import { GroupService } from "@/lib/services/groupService";
 import { useToast } from "@/hooks/useToast";
 import { GroupFormData } from "@/types";
 import { router, useRouter } from "expo-router";
+import { usePostHog } from "posthog-react-native";
 import React, { useState } from "react";
 
 export default function CreateGroupScreen() {
@@ -14,6 +15,7 @@ export default function CreateGroupScreen() {
   });
   const [loading, setLoading] = useState(false);
   const { showSuccess, showError } = useToast();
+  const posthog = usePostHog();
   const navigation = useRouter();
 
   const handleGoBack = () => {
@@ -43,6 +45,7 @@ export default function CreateGroupScreen() {
     if (error) {
       showError(error);
     } else {
+      posthog.capture("group_created");
       showSuccess("Group created successfully!");
       handleGoBack();
     }

@@ -10,6 +10,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router, useLocalSearchParams, useRouter } from "expo-router";
+import { usePostHog } from "posthog-react-native";
 import { GroupInvitationService } from "@/lib/services/groupService";
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
@@ -27,6 +28,7 @@ export default function InviteToGroupScreen() {
   const [errorMessage, setErrorMessage] = useState("");
   const [showSendAnotherConfirm, setShowSendAnotherConfirm] = useState(false);
   const [lastSentEmail, setLastSentEmail] = useState("");
+  const posthog = usePostHog();
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? "light"];
   const navigation = useRouter();
@@ -75,6 +77,7 @@ export default function InviteToGroupScreen() {
       setErrorMessage(error);
       setShowErrorModal(true);
     } else {
+      posthog.capture("group_invitation_sent");
       setLastSentEmail(email.trim());
       setShowSendAnotherConfirm(true);
     }

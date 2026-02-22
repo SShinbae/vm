@@ -1,5 +1,6 @@
 import { Session, User } from "@supabase/supabase-js";
 import Constants from "expo-constants";
+import { usePostHog } from "posthog-react-native";
 import React, {
   createContext,
   useCallback,
@@ -13,6 +14,7 @@ import { supabase } from "../../services/supabaseClient";
 import { AuthState, AuthUser, Profile } from "../../types";
 import { initializeOneSignalLazy } from "../services/oneSignalLazy";
 import { oneSignalService } from "../services/oneSignalService";
+import { sentryService } from "../services/sentryService";
 
 interface AuthContextType extends AuthState {
   signUp: (
@@ -49,6 +51,7 @@ interface AuthProviderProps {
 }
 
 export function AuthProvider({ children }: AuthProviderProps) {
+  const posthog = usePostHog();
   const [state, setState] = useState<AuthState>({
     user: null,
     loading: true,
@@ -76,7 +79,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
                 data: null,
                 error: { message: "Profile fetch timeout" },
               }),
-            3000,
+            10000,
           );
         });
 
@@ -211,6 +214,15 @@ export function AuthProvider({ children }: AuthProviderProps) {
               },
               loading: false,
             }));
+
+            // Identify user in Sentry and PostHog on session restore
+            sentryService.identifyUser(
+              session.user.id,
+              session.user.email || undefined,
+            );
+            posthog?.identify(session.user.id, {
+              email: session.user.email ?? null,
+            });
 
             // Fetch full profile in background and update when ready
             // This doesn't block the UI
@@ -383,6 +395,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
           "Signup successful, user should receive email confirmation",
         );
       }
+      posthog?.capture("user_signed_up");
       setState((prev) => ({ ...prev, loading: false }));
       return { error: null };
     } catch (error) {
@@ -425,6 +438,22 @@ export function AuthProvider({ children }: AuthProviderProps) {
         });
       }
 
+      // Identify user in Sentry and PostHog on sign-in
+      const {
+        data: { user: signedInUser },
+      } = await supabase.auth.getUser();
+      if (signedInUser) {
+        sentryService.identifyUser(
+          signedInUser.id,
+          signedInUser.email || undefined,
+        );
+        posthog?.identify(signedInUser.id, {
+          email: signedInUser.email ?? null,
+        });
+      }
+
+      posthog?.capture("user_signed_in");
+
       // Success - state will be updated by onAuthStateChange
       return { error: null };
     } catch (error) {
@@ -444,6 +473,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
       if (Platform.OS !== "web") {
         await oneSignalService.onLogout();
       }
+
+      posthog?.capture("user_signed_out");
+
+      // Clear Sentry and PostHog user on logout
+      sentryService.clearUser();
+      posthog?.reset();
 
       await supabase.auth.signOut();
     } catch (error) {
@@ -477,6 +512,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         return { error: error.message };
       }
 
+      posthog?.capture("password_reset_requested");
       return { error: null };
     } catch {
       return { error: "An unexpected error occurred during password reset" };
@@ -498,6 +534,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       return { error: result.error.message };
     }
 
+    posthog?.capture("password_updated");
     return { error: null };
   };
 
@@ -528,6 +565,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         await setUser(session.session);
       }
 
+      posthog?.capture("profile_updated");
       return { error: null };
     } catch {
       setState((prev) => ({ ...prev, loading: false }));

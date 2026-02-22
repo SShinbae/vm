@@ -45,15 +45,10 @@ module.exports = function (api) {
     "react-native-reanimated/plugin",
   ];
 
-  // Remove console.log and console.debug in production builds
-  // Keep console.error and console.warn for production debugging
+  // Remove ALL console statements in production builds
+  // Sentry handles error reporting - no need for console output in production
   if (isProduction) {
-    plugins.unshift([
-      "transform-remove-console",
-      {
-        exclude: ["error", "warn"],
-      },
-    ]);
+    plugins.unshift(["transform-remove-console"]);
   }
 
   return {

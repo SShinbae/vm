@@ -11,6 +11,7 @@ import { canUserAccessVehicle } from "@/lib/utils/serviceUtils";
 import { supabase } from "@/services/supabaseClient";
 import { FuelLog, FuelLogFormData, Vehicle } from "@/types";
 import { router, useLocalSearchParams, useNavigation } from "expo-router";
+import { usePostHog } from "posthog-react-native";
 import React, { useEffect, useState } from "react";
 import {
   KeyboardAvoidingView,
@@ -43,6 +44,7 @@ export default function EditFuelLogScreen() {
   const [loading, setLoading] = useState(false);
   const [dataLoading, setDataLoading] = useState(true);
   const { showSuccess, showError } = useToast();
+  const posthog = usePostHog();
   const [canModify, setCanModify] = useState(true);
   const [deleteModalVisible, setDeleteModalVisible] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
@@ -214,6 +216,7 @@ export default function EditFuelLogScreen() {
 
       showError(errorMsg);
     } else {
+      posthog.capture("fuel_log_updated");
       showSuccess("Fuel log updated successfully!");
       router.push("/(tabs)/logs");
     }
@@ -233,6 +236,7 @@ export default function EditFuelLogScreen() {
       if (error) {
         showError(error);
       } else {
+        posthog.capture("fuel_log_deleted");
         showSuccess("Fuel log deleted successfully!");
         router.push("/(tabs)/logs");
       }
