@@ -4,14 +4,15 @@ import {
   Text,
   TouchableOpacity,
   StyleSheet,
-  Alert,
   ActivityIndicator,
-  Modal,
+  Modal as RNModal,
 } from "react-native";
 import { Image } from "expo-image";
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { IconSymbol } from "@/components/ui/icon-symbol";
+import { Modal } from "@/components/ui/Modal";
+import { useDialog } from "@/lib/contexts/DialogContext";
 import { OCRService, ReceiptProcessingResult } from "@/lib/services/ocrService";
 import { OCRExtractedData } from "@/types";
 
@@ -31,29 +32,37 @@ export function ReceiptCapture({
   const [processing, setProcessing] = useState(false);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [showPreview, setShowPreview] = useState(false);
+  const [actionSheetVisible, setActionSheetVisible] = useState(false);
+  const [actionSheetTitle, setActionSheetTitle] = useState("");
+  const [actionSheetMessage, setActionSheetMessage] = useState("");
+  const [actionSheetOptions, setActionSheetOptions] = useState<
+    { text: string; onPress: () => void; style?: string }[]
+  >([]);
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? "light"];
+  const dialog = useDialog();
+
+  const showActionSheet = (
+    title: string,
+    message: string,
+    options: { text: string; onPress: () => void; style?: string }[],
+  ) => {
+    setActionSheetTitle(title);
+    setActionSheetMessage(message);
+    setActionSheetOptions(options);
+    setActionSheetVisible(true);
+  };
+  const hideActionSheet = () => setActionSheetVisible(false);
 
   const handleCameraCapture = async () => {
     try {
       setProcessing(true);
 
-      // Check permissions first
       const hasPermissions = await OCRService.requestPermissions();
       if (!hasPermissions) {
-        Alert.alert(
+        dialog.showError(
           "Permissions Required",
           "Camera and media library permissions are required to scan receipts. Please enable them in your device settings.",
-          [
-            { text: "Cancel", style: "cancel" },
-            {
-              text: "Open Settings",
-              onPress: () => {
-                // On React Native, you'd typically use Linking.openSettings()
-                console.log("User should open settings to enable permissions");
-              },
-            },
-          ],
         );
         return;
       }
@@ -65,12 +74,11 @@ export function ReceiptCapture({
         setShowPreview(true);
         onReceiptProcessed(result);
       } else {
-        // Provide more specific error messages
         let errorMessage =
           result.error || "Failed to process receipt from camera";
 
         if (errorMessage.includes("cancelled")) {
-          return; // Don't show error if user cancelled
+          return;
         } else if (errorMessage.includes("API key")) {
           errorMessage =
             "Google Vision API is not configured. Please contact support.";
@@ -79,11 +87,11 @@ export function ReceiptCapture({
             "Network error. Please check your internet connection and try again.";
         }
 
-        Alert.alert("Error", errorMessage);
+        dialog.showError("Error", errorMessage);
       }
     } catch (error) {
       console.error("Camera capture error:", error);
-      Alert.alert(
+      dialog.showError(
         "Error",
         "An unexpected error occurred while capturing the receipt. Please try again.",
       );
@@ -96,21 +104,11 @@ export function ReceiptCapture({
     try {
       setProcessing(true);
 
-      // Check permissions first
       const hasPermissions = await OCRService.requestPermissions();
       if (!hasPermissions) {
-        Alert.alert(
+        dialog.showError(
           "Permissions Required",
           "Media library permission is required to select receipt images. Please enable it in your device settings.",
-          [
-            { text: "Cancel", style: "cancel" },
-            {
-              text: "Open Settings",
-              onPress: () => {
-                console.log("User should open settings to enable permissions");
-              },
-            },
-          ],
         );
         return;
       }
@@ -122,12 +120,11 @@ export function ReceiptCapture({
         setShowPreview(true);
         onReceiptProcessed(result);
       } else {
-        // Provide more specific error messages
         let errorMessage =
           result.error || "Failed to process receipt from gallery";
 
         if (errorMessage.includes("cancelled")) {
-          return; // Don't show error if user cancelled
+          return;
         } else if (errorMessage.includes("API key")) {
           errorMessage =
             "Google Vision API is not configured. Please contact support.";
@@ -139,11 +136,11 @@ export function ReceiptCapture({
             "No text was found in the image. Please try a clearer photo of your receipt.";
         }
 
-        Alert.alert("Error", errorMessage);
+        dialog.showError("Error", errorMessage);
       }
     } catch (error) {
       console.error("Gallery pick error:", error);
-      Alert.alert(
+      dialog.showError(
         "Error",
         "An unexpected error occurred while processing the receipt. Please try again.",
       );
@@ -158,18 +155,9 @@ export function ReceiptCapture({
 
       const hasPermissions = await OCRService.requestPermissions();
       if (!hasPermissions) {
-        Alert.alert(
+        dialog.showError(
           "Permissions Required",
           "Camera permission is required to take pictures. Please enable it in your device settings.",
-          [
-            { text: "Cancel", style: "cancel" },
-            {
-              text: "Open Settings",
-              onPress: () => {
-                console.log("User should open settings to enable permissions");
-              },
-            },
-          ],
         );
         return;
       }
@@ -187,11 +175,11 @@ export function ReceiptCapture({
         if (errorMessage.includes("cancelled")) {
           return;
         }
-        Alert.alert("Error", errorMessage);
+        dialog.showError("Error", errorMessage);
       }
     } catch (error) {
       console.error("Picture only camera error:", error);
-      Alert.alert(
+      dialog.showError(
         "Error",
         "An unexpected error occurred while taking the picture. Please try again.",
       );
@@ -206,18 +194,9 @@ export function ReceiptCapture({
 
       const hasPermissions = await OCRService.requestPermissions();
       if (!hasPermissions) {
-        Alert.alert(
+        dialog.showError(
           "Permissions Required",
           "Media library permission is required to select pictures. Please enable it in your device settings.",
-          [
-            { text: "Cancel", style: "cancel" },
-            {
-              text: "Open Settings",
-              onPress: () => {
-                console.log("User should open settings to enable permissions");
-              },
-            },
-          ],
         );
         return;
       }
@@ -236,11 +215,11 @@ export function ReceiptCapture({
         if (errorMessage.includes("cancelled")) {
           return;
         }
-        Alert.alert("Error", errorMessage);
+        dialog.showError("Error", errorMessage);
       }
     } catch (error) {
       console.error("Picture only gallery error:", error);
-      Alert.alert(
+      dialog.showError(
         "Error",
         "An unexpected error occurred while selecting the picture. Please try again.",
       );
@@ -250,45 +229,89 @@ export function ReceiptCapture({
   };
 
   const handleOptionSelect = () => {
-    Alert.alert(
+    showActionSheet(
       "Add Receipt/Picture",
       "Choose how you want to add your service receipt or picture:",
       [
         {
           text: "Scan Receipt (OCR)",
           onPress: () => {
-            Alert.alert(
-              "Scan Receipt",
-              "Enhanced OCR will extract service type, cost, date, mileage, and business info. For best results, ensure good lighting and clear text.",
-              [
-                { text: "Take Photo", onPress: handleCameraCapture },
-                { text: "Choose from Gallery", onPress: handleGalleryPick },
-                { text: "Back", style: "cancel" },
-              ],
-            );
+            hideActionSheet();
+            setTimeout(() => {
+              showActionSheet(
+                "Scan Receipt",
+                "Enhanced OCR will extract service type, cost, date, mileage, and business info. For best results, ensure good lighting and clear text.",
+                [
+                  {
+                    text: "Take Photo",
+                    onPress: () => {
+                      hideActionSheet();
+                      handleCameraCapture();
+                    },
+                  },
+                  {
+                    text: "Choose from Gallery",
+                    onPress: () => {
+                      hideActionSheet();
+                      handleGalleryPick();
+                    },
+                  },
+                  {
+                    text: "Back",
+                    style: "cancel",
+                    onPress: () => {
+                      hideActionSheet();
+                      setTimeout(() => handleOptionSelect(), 100);
+                    },
+                  },
+                ],
+              );
+            }, 100);
           },
         },
         {
           text: "Save Picture Only",
           onPress: () => {
-            Alert.alert(
-              "Save Picture",
-              "This will save the picture without processing text. You can review it later with your service records.",
-              [
-                { text: "Take Photo", onPress: handlePictureOnlyCamera },
-                {
-                  text: "Choose from Gallery",
-                  onPress: handlePictureOnlyGallery,
-                },
-                { text: "Back", style: "cancel" },
-              ],
-            );
+            hideActionSheet();
+            setTimeout(() => {
+              showActionSheet(
+                "Save Picture",
+                "This will save the picture without processing text. You can review it later with your service records.",
+                [
+                  {
+                    text: "Take Photo",
+                    onPress: () => {
+                      hideActionSheet();
+                      handlePictureOnlyCamera();
+                    },
+                  },
+                  {
+                    text: "Choose from Gallery",
+                    onPress: () => {
+                      hideActionSheet();
+                      handlePictureOnlyGallery();
+                    },
+                  },
+                  {
+                    text: "Back",
+                    style: "cancel",
+                    onPress: () => {
+                      hideActionSheet();
+                      setTimeout(() => handleOptionSelect(), 100);
+                    },
+                  },
+                ],
+              );
+            }, 100);
           },
         },
         {
           text: "Cancel",
           style: "cancel",
-          onPress: onCancel,
+          onPress: () => {
+            hideActionSheet();
+            onCancel?.();
+          },
         },
       ],
     );
@@ -369,6 +392,30 @@ export function ReceiptCapture({
       fontSize: 16,
       fontWeight: "600",
     },
+    actionSheetMessage: {
+      fontSize: 14,
+      color: colors.icon,
+      textAlign: "center",
+      marginBottom: 16,
+      lineHeight: 20,
+    },
+    actionSheetOption: {
+      width: "100%",
+      paddingVertical: 14,
+      borderBottomWidth: StyleSheet.hairlineWidth,
+      borderBottomColor: colors.icon + "30",
+      alignItems: "center",
+    },
+    actionSheetOptionText: {
+      fontSize: 16,
+      fontWeight: "500",
+      color: colors.tint,
+    },
+    actionSheetCancelText: {
+      fontSize: 16,
+      fontWeight: "500",
+      color: colors.icon,
+    },
   });
 
   if (processing) {
@@ -402,7 +449,7 @@ export function ReceiptCapture({
         text is clear and readable
       </Text>
 
-      <Modal
+      <RNModal
         visible={showPreview}
         transparent={true}
         animationType="fade"
@@ -437,6 +484,34 @@ export function ReceiptCapture({
               </View>
             </>
           )}
+        </View>
+      </RNModal>
+
+      <Modal
+        visible={actionSheetVisible}
+        onClose={hideActionSheet}
+        title={actionSheetTitle}
+        size="small"
+      >
+        <View style={{ alignItems: "center" }}>
+          <Text style={styles.actionSheetMessage}>{actionSheetMessage}</Text>
+          {actionSheetOptions.map((option, index) => (
+            <TouchableOpacity
+              key={index}
+              style={styles.actionSheetOption}
+              onPress={option.onPress}
+            >
+              <Text
+                style={
+                  option.style === "cancel"
+                    ? styles.actionSheetCancelText
+                    : styles.actionSheetOptionText
+                }
+              >
+                {option.text}
+              </Text>
+            </TouchableOpacity>
+          ))}
         </View>
       </Modal>
     </View>

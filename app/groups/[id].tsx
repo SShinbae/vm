@@ -18,6 +18,7 @@ import { IconSymbol } from "@/components/ui/icon-symbol";
 import { SkeletonGroupDetail } from "@/components/ui/Skeleton";
 import { useAuth } from "@/lib/contexts/AuthContext";
 import { useDialog } from "@/lib/contexts/DialogContext";
+import { usePostHog } from "posthog-react-native";
 import { formatDateWithPrefix } from "@/lib/utils/dateUtils";
 import { PageHeader } from "@/lib/design-system/components/organisms/PageHeader";
 import { Text } from "@/lib/design-system/components/atoms/Text";
@@ -44,6 +45,7 @@ export default function GroupDetailScreen() {
   const tabFontSize = Math.min(Math.max(width * 0.03, 10), 14);
   const { user } = useAuth();
   const dialog = useDialog();
+  const posthog = usePostHog();
   const [activeTab, setActiveTab] = useState<TabType>("members");
   const [group, setGroup] = useState<GroupWithMembers | null>(null);
   const [invitations, setInvitations] = useState<GroupInvitationWithDetails[]>(
@@ -106,6 +108,7 @@ export default function GroupDetailScreen() {
             if (error) {
               dialog.showError("Error", error);
             } else {
+              posthog.capture("group_member_removed");
               await fetchGroupData();
               dialog.showSuccess("Success", "Member removed successfully");
             }
@@ -134,6 +137,7 @@ export default function GroupDetailScreen() {
             if (error) {
               dialog.showError("Error", error);
             } else {
+              posthog.capture("group_invitation_cancelled");
               await fetchGroupData();
               dialog.showSuccess("Success", "Invitation cancelled");
             }
@@ -160,6 +164,7 @@ export default function GroupDetailScreen() {
             if (error) {
               dialog.showError("Error", error);
             } else {
+              posthog.capture("group_left");
               dialog.showSuccess("Success", "You have left the group", () =>
                 handleGoBack(),
               );
@@ -187,6 +192,7 @@ export default function GroupDetailScreen() {
             if (error) {
               dialog.showError("Error", error);
             } else {
+              posthog.capture("group_deleted");
               dialog.showSuccess("Success", "Group deleted successfully", () =>
                 handleGoBack(),
               );

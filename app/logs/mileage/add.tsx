@@ -12,6 +12,7 @@ import { MileageLogFormData } from "@/types";
 import { VehicleWithDetails } from "@/types/database-v2";
 import { Image } from "expo-image";
 import { router, useLocalSearchParams } from "expo-router";
+import { usePostHog } from "posthog-react-native";
 import React, { useEffect, useState } from "react";
 import {
   KeyboardAvoidingView,
@@ -84,6 +85,7 @@ export default function AddMileageLogScreen() {
   const [loading, setLoading] = useState(false);
   const [vehiclesLoading, setVehiclesLoading] = useState(true);
   const { showSuccess, showError } = useToast();
+  const posthog = usePostHog();
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? "light"];
   const isWeb = Platform.OS === "web";
@@ -160,6 +162,9 @@ export default function AddMileageLogScreen() {
     if (error) {
       showError(error);
     } else {
+      posthog.capture("mileage_log_created", {
+        odometer_reading: logData.odometer_reading,
+      });
       showSuccess("Mileage log added successfully!");
       router.push("/(tabs)/logs");
     }

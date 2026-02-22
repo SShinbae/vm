@@ -21,7 +21,6 @@ export function useToast() {
   };
 
   const showError = (title: string, options?: ToastOptions) => {
-    console.log("[Toast] showError called with:", title);
     Toast.show({
       type: "error",
       text1: title,

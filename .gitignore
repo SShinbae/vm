@@ -58,3 +58,5 @@ build/
 
 # Fastlane - Keep README but ignore generated files
 !fastlane/README.md
+
+.env.local

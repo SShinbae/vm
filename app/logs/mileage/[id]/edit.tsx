@@ -13,6 +13,7 @@ import { MileageLogService } from "@/lib/services/loggingService";
 import { supabase } from "@/services/supabaseClient";
 import { MileageLog, MileageLogFormData } from "@/types";
 import { router, useLocalSearchParams } from "expo-router";
+import { usePostHog } from "posthog-react-native";
 import React, { useEffect, useState } from "react";
 import {
   KeyboardAvoidingView,
@@ -37,6 +38,7 @@ export default function EditMileageLogScreen() {
   const [loading, setLoading] = useState(false);
   const [dataLoading, setDataLoading] = useState(true);
   const { showSuccess, showError } = useToast();
+  const posthog = usePostHog();
   const [canModify, setCanModify] = useState(true);
   const [deleteModalVisible, setDeleteModalVisible] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
@@ -153,6 +155,7 @@ export default function EditMileageLogScreen() {
 
       showError(errorMsg);
     } else {
+      posthog.capture("mileage_log_updated");
       showSuccess("Mileage log updated successfully!");
       router.push("/(tabs)/logs");
     }
@@ -172,6 +175,7 @@ export default function EditMileageLogScreen() {
       if (error) {
         showError(error);
       } else {
+        posthog.capture("mileage_log_deleted");
         showSuccess("Mileage log deleted successfully!");
         router.push("/(tabs)/logs");
       }

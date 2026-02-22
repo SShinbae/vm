@@ -14,14 +14,6 @@ export function VehicleCard({ vehicle }: VehicleCardProps) {
   const { styles, theme } = useStyles(stylesheet);
   const [imageError, setImageError] = useState(false);
 
-  // Debug log to check vehicle data
-  console.log("VehicleCard data:", {
-    year: vehicle.year,
-    make: vehicle.make,
-    model: vehicle.model,
-    license_plate: vehicle.license_plate,
-  });
-
   const parts = [vehicle.year, vehicle.make, vehicle.model]
     .filter((val) => val != null && val !== "")
     .map(String);
