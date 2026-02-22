@@ -216,7 +216,7 @@ export default function EditFuelLogScreen() {
 
       showError(errorMsg);
     } else {
-      posthog.capture("fuel_log_updated");
+      posthog?.capture("fuel_log_updated");
       showSuccess("Fuel log updated successfully!");
       router.push("/(tabs)/logs");
     }
@@ -236,7 +236,7 @@ export default function EditFuelLogScreen() {
       if (error) {
         showError(error);
       } else {
-        posthog.capture("fuel_log_deleted");
+        posthog?.capture("fuel_log_deleted");
         showSuccess("Fuel log deleted successfully!");
         router.push("/(tabs)/logs");
       }

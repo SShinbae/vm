@@ -162,7 +162,7 @@ export default function AddMileageLogScreen() {
     if (error) {
       showError(error);
     } else {
-      posthog.capture("mileage_log_created", {
+      posthog?.capture("mileage_log_created", {
         odometer_reading: logData.odometer_reading,
       });
       showSuccess("Mileage log added successfully!");

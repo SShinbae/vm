@@ -181,7 +181,7 @@ export const useAddFuelLog = () => {
     if (error) {
       showError(error);
     } else {
-      posthog.capture("fuel_log_created", {
+      posthog?.capture("fuel_log_created", {
         cost: formData.cost,
         fuel_price: formData.fuel_price,
         odometer_reading: formData.odometer_reading,
