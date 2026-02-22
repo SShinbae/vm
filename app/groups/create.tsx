@@ -45,7 +45,7 @@ export default function CreateGroupScreen() {
     if (error) {
       showError(error);
     } else {
-      posthog.capture("group_created");
+      posthog?.capture("group_created");
       showSuccess("Group created successfully!");
       handleGoBack();
     }

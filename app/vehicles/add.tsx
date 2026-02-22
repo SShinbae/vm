@@ -77,7 +77,7 @@ export default function AddVehicleScreen() {
     if (error) {
       showError(error);
     } else {
-      posthog.capture("vehicle_created", {
+      posthog?.capture("vehicle_created", {
         make: vehicleData.make,
         model: vehicleData.model,
         year: vehicleData.year,

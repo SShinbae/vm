@@ -155,7 +155,7 @@ export default function EditMileageLogScreen() {
 
       showError(errorMsg);
     } else {
-      posthog.capture("mileage_log_updated");
+      posthog?.capture("mileage_log_updated");
       showSuccess("Mileage log updated successfully!");
       router.push("/(tabs)/logs");
     }
@@ -175,7 +175,7 @@ export default function EditMileageLogScreen() {
       if (error) {
         showError(error);
       } else {
-        posthog.capture("mileage_log_deleted");
+        posthog?.capture("mileage_log_deleted");
         showSuccess("Mileage log deleted successfully!");
         router.push("/(tabs)/logs");
       }

@@ -108,7 +108,7 @@ export default function GroupDetailScreen() {
             if (error) {
               dialog.showError("Error", error);
             } else {
-              posthog.capture("group_member_removed");
+              posthog?.capture("group_member_removed");
               await fetchGroupData();
               dialog.showSuccess("Success", "Member removed successfully");
             }
@@ -137,7 +137,7 @@ export default function GroupDetailScreen() {
             if (error) {
               dialog.showError("Error", error);
             } else {
-              posthog.capture("group_invitation_cancelled");
+              posthog?.capture("group_invitation_cancelled");
               await fetchGroupData();
               dialog.showSuccess("Success", "Invitation cancelled");
             }
@@ -164,7 +164,7 @@ export default function GroupDetailScreen() {
             if (error) {
               dialog.showError("Error", error);
             } else {
-              posthog.capture("group_left");
+              posthog?.capture("group_left");
               dialog.showSuccess("Success", "You have left the group", () =>
                 handleGoBack(),
               );
@@ -192,7 +192,7 @@ export default function GroupDetailScreen() {
             if (error) {
               dialog.showError("Error", error);
             } else {
-              posthog.capture("group_deleted");
+              posthog?.capture("group_deleted");
               dialog.showSuccess("Success", "Group deleted successfully", () =>
                 handleGoBack(),
               );
