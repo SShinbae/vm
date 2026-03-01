@@ -188,6 +188,18 @@ jobs:
             echo "⚠ WARNING: SUPABASE_URL may not be set correctly!"
           fi
 
+      - name: 🔧 Create Sentry properties files
+        run: |
+          echo "Creating sentry.properties for Android and iOS..."
+
+          for DIR in android ios; do
+            echo "auth.token=${{ secrets.SENTRY_AUTH_TOKEN }}" > "$DIR/sentry.properties"
+            echo "defaults.org=${{ secrets.SENTRY_ORG }}" >> "$DIR/sentry.properties"
+            echo "defaults.project=${{ secrets.SENTRY_PROJECT }}" >> "$DIR/sentry.properties"
+            echo "defaults.url=https://sentry.io/" >> "$DIR/sentry.properties"
+            echo "✓ Created $DIR/sentry.properties"
+          done
+
       - name: 📱 Build Production APK
         if: github.event.inputs.buildType == 'all' || github.event.inputs.buildType == 'prod-apk' || (github.event_name == 'push' && (github.event.inputs.buildType == '' || github.event.inputs.buildType == null))
         run: |
