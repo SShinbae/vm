@@ -191,6 +191,7 @@ jobs:
       - name: 🔧 Create Sentry properties files
         run: |
           echo "Creating sentry.properties for Android and iOS..."
+          mkdir -p android ios
 
           for DIR in android ios; do
             echo "auth.token=${{ secrets.SENTRY_AUTH_TOKEN }}" > "$DIR/sentry.properties"
