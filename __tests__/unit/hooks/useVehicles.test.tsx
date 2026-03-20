@@ -6,7 +6,7 @@
  */
 
 import { renderHook, waitFor } from "@testing-library/react-native";
-import React, { ReactNode, useEffect } from "react";
+import React, { ReactNode } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { NavigationContainer } from "@react-navigation/native";
 
@@ -33,7 +33,7 @@ jest.mock("@react-navigation/native", () => {
   return {
     ...actual,
     useFocusEffect: (callback: () => void) => {
-      useEffect(() => {
+      require("react").useEffect(() => {
         callback();
       }, [callback]);
     },
