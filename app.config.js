@@ -65,7 +65,7 @@ module.exports = {
     },
     web: {
       output: "static",
-      favicon: "./assets/images/vm_logo.webp",
+      favicon: "./assets/images/vm_logo.png",
       bundler: "metro",
       name: "Vehicle Management System",
       shortName: "Vehicle Manager",

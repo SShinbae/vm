@@ -437,11 +437,7 @@ export default function Index() {
                 }}
               >
                 <Image
-                  source={
-                    Platform.OS === "web"
-                      ? require("@/assets/images/vm_logo.webp")
-                      : require("@/assets/images/vm_logo.png")
-                  }
+                  source={require("@/assets/images/vm_logo.png")}
                   placeholder={require("@/assets/images/vm_logo_tiny.png")}
                   style={{
                     width: isMobile ? 60 : isTablet ? 70 : 80,
