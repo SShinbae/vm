@@ -1,11 +1,6 @@
 import Constants from "expo-constants";
+import { Platform } from "react-native";
 import { ApiResponse } from "../../types";
-
-// Google Vision API configuration
-interface GoogleVisionConfig {
-  apiKey: string;
-  endpoint: string;
-}
 
 interface GoogleVisionResponse {
   responses: {
@@ -31,16 +26,12 @@ interface GoogleVisionResponse {
 }
 
 export class GoogleVisionService {
-  private static config: GoogleVisionConfig = {
-    apiKey: Constants.expoConfig?.extra?.googleVisionApiKey || "",
-    endpoint: "https://vision.googleapis.com/v1/images:annotate",
-  };
-
-  /**
-   * Initialize Google Vision service with API key
-   */
-  static setApiKey(apiKey: string) {
-    this.config.apiKey = apiKey;
+  private static getProxyUrl(): string {
+    const siteUrl = Constants.expoConfig?.extra?.siteUrl || "";
+    if (Platform.OS === "web") {
+      return "/api/google-vision-proxy";
+    }
+    return `${siteUrl}/api/google-vision-proxy`;
   }
 
   /**
@@ -48,11 +39,9 @@ export class GoogleVisionService {
    */
   private static async imageToBase64(imageUri: string): Promise<string> {
     try {
-      // For React Native, we need to fetch the image and convert to base64
       const response = await fetch(imageUri);
       const arrayBuffer = await response.arrayBuffer();
 
-      // Convert ArrayBuffer to base64
       const bytes = new Uint8Array(arrayBuffer);
       let binary = "";
       for (let i = 0; i < bytes.byteLength; i++) {
@@ -74,7 +63,6 @@ export class GoogleVisionService {
     isValid: boolean;
     suggestion?: string;
   } {
-    // Basic validation - in a real app, you might want to analyze the actual image
     if (
       !imageUri ||
       (!imageUri.includes("file://") &&
@@ -84,12 +72,33 @@ export class GoogleVisionService {
       return { isValid: false, suggestion: "Invalid image format" };
     }
 
-    // For now, we'll assume the image is valid
-    // In the future, we could add:
-    // - Image size validation
-    // - Brightness/contrast analysis
-    // - Text region detection
     return { isValid: true };
+  }
+
+  /**
+   * Call the server-side Google Vision proxy
+   */
+  private static async callVisionProxy(
+    base64Image: string,
+    features: { type: string; maxResults?: number }[],
+  ): Promise<GoogleVisionResponse | null> {
+    const proxyUrl = this.getProxyUrl();
+
+    const response = await fetch(proxyUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        image: base64Image,
+        features,
+        languageHints: ["en"],
+      }),
+    });
+
+    if (!response.ok) return null;
+
+    return response.json();
   }
 
   /**
@@ -113,33 +122,9 @@ export class GoogleVisionService {
 
     for (const method of methods) {
       try {
-        const requestPayload = {
-          requests: [
-            {
-              image: { content: base64Image },
-              features: method.features,
-              imageContext: {
-                languageHints: ["en"],
-                textDetectionParams: {
-                  enableTextDetectionConfidenceScore: true,
-                },
-              },
-            },
-          ],
-        };
+        const result = await this.callVisionProxy(base64Image, method.features);
 
-        const response = await fetch(this.config.endpoint, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "X-Goog-Api-Key": this.config.apiKey,
-          },
-          body: JSON.stringify(requestPayload),
-        });
-
-        if (!response.ok) continue;
-
-        const result: GoogleVisionResponse = await response.json();
+        if (!result) continue;
         if (result.responses?.[0]?.error) continue;
 
         const responseData = result.responses[0];
@@ -152,7 +137,6 @@ export class GoogleVisionService {
         ) {
           extractedText = responseData.fullTextAnnotation.text || "";
           confidence = responseData.fullTextAnnotation.confidence || 0;
-          // For pages-based confidence
           if (responseData.fullTextAnnotation.pages?.length) {
             const pageConfidences = responseData.fullTextAnnotation.pages
               .map((p) => p.confidence || 0)
@@ -166,7 +150,6 @@ export class GoogleVisionService {
         } else if (responseData.textAnnotations?.length) {
           extractedText = responseData.textAnnotations[0].description || "";
           confidence = responseData.textAnnotations[0].confidence || 0;
-          // Calculate average confidence from all text annotations
           const confidenceScores = responseData.textAnnotations
             .map((ta) => ta.confidence || 0)
             .filter((c) => c > 0);
@@ -177,7 +160,6 @@ export class GoogleVisionService {
           }
         }
 
-        // Prefer results with higher confidence and longer text
         const score = confidence * 0.7 + (extractedText.length / 1000) * 0.3;
         if (
           score >
@@ -186,7 +168,9 @@ export class GoogleVisionService {
           bestResult = { text: extractedText, confidence: confidence * 100 };
         }
       } catch (error) {
-        console.log(`Method ${method.name} failed:`, error);
+        if (__DEV__) {
+          console.log(`Method ${method.name} failed:`, error);
+        }
         continue;
       }
     }
@@ -195,23 +179,12 @@ export class GoogleVisionService {
   }
 
   /**
-   * Extract text from image using Google Vision API
+   * Extract text from image using Google Vision API via server-side proxy
    */
   static async extractTextFromImage(
     imageUri: string,
   ): Promise<ApiResponse<string>> {
     try {
-      // Validate API key
-      if (!this.config.apiKey) {
-        return {
-          data: null,
-          error:
-            "Google Vision API key not configured. Please set GOOGLE_VISION_API_KEY in your environment variables.",
-          loading: false,
-        };
-      }
-
-      // Validate image URI
       if (!imageUri || typeof imageUri !== "string") {
         return {
           data: null,
@@ -220,7 +193,6 @@ export class GoogleVisionService {
         };
       }
 
-      // Validate image quality
       const validation = this.validateImageForOCR(imageUri);
       if (!validation.isValid) {
         return {
@@ -231,10 +203,8 @@ export class GoogleVisionService {
         };
       }
 
-      // Convert image to base64
       const base64Image = await this.imageToBase64(imageUri);
 
-      // Use enhanced multi-method text extraction
       const extractionResult =
         await this.extractTextWithMultipleMethods(base64Image);
 
@@ -247,13 +217,14 @@ export class GoogleVisionService {
         };
       }
 
-      // Log confidence for debugging
-      console.log(
-        `OCR completed with ${extractionResult.confidence.toFixed(1)}% confidence`,
-      );
-      console.log(
-        `Extracted text length: ${extractionResult.text.length} characters`,
-      );
+      if (__DEV__) {
+        console.log(
+          `OCR completed with ${extractionResult.confidence.toFixed(1)}% confidence`,
+        );
+        console.log(
+          `Extracted text length: ${extractionResult.text.length} characters`,
+        );
+      }
 
       return {
         data: extractionResult.text,
@@ -262,9 +233,10 @@ export class GoogleVisionService {
         confidence: extractionResult.confidence,
       };
     } catch (error) {
-      console.error("Error in Google Vision OCR:", error);
+      if (__DEV__) {
+        console.error("Error in Google Vision OCR:", error);
+      }
 
-      // Provide specific error messages for common issues
       let errorMessage = "Failed to extract text from image";
 
       if (error instanceof Error) {
@@ -291,49 +263,19 @@ export class GoogleVisionService {
   }
 
   /**
-   * Test Google Vision API connection
+   * Test Google Vision API connection via proxy
    */
   static async testConnection(): Promise<ApiResponse<boolean>> {
     try {
-      if (!this.config.apiKey) {
+      const testResult = await this.callVisionProxy(
+        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==",
+        [{ type: "TEXT_DETECTION", maxResults: 1 }],
+      );
+
+      if (!testResult) {
         return {
           data: false,
-          error: "Google Vision API key not configured",
-          loading: false,
-        };
-      }
-
-      // Create a minimal test request
-      const testPayload = {
-        requests: [
-          {
-            image: {
-              content:
-                "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==", // 1x1 transparent PNG
-            },
-            features: [
-              {
-                type: "TEXT_DETECTION",
-                maxResults: 1,
-              },
-            ],
-          },
-        ],
-      };
-
-      const response = await fetch(this.config.endpoint, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "X-Goog-Api-Key": this.config.apiKey,
-        },
-        body: JSON.stringify(testPayload),
-      });
-
-      if (!response.ok) {
-        return {
-          data: false,
-          error: `API connection failed: ${response.status}`,
+          error: "API connection failed",
           loading: false,
         };
       }
@@ -344,7 +286,9 @@ export class GoogleVisionService {
         loading: false,
       };
     } catch (error) {
-      console.error("Error testing Google Vision API connection:", error);
+      if (__DEV__) {
+        console.error("Error testing Google Vision API connection:", error);
+      }
       return {
         data: false,
         error:
@@ -359,10 +303,10 @@ export class GoogleVisionService {
    */
   static getUsageInfo() {
     return {
-      apiKeyConfigured: !!this.config.apiKey,
-      endpoint: this.config.endpoint,
-      documentsPerMonth: 1000, // Free tier limit
-      costPer1000: 1.5, // USD
+      apiKeyConfigured: true, // Key is server-side now
+      endpoint: "server-proxy",
+      documentsPerMonth: 1000,
+      costPer1000: 1.5,
       features: [
         "Text Detection",
         "Document Text Detection",

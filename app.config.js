@@ -65,7 +65,7 @@ module.exports = {
     },
     web: {
       output: "static",
-      favicon: "./assets/images/vm_logo.png",
+      favicon: "./assets/images/vm_logo.webp",
       bundler: "metro",
       name: "Vehicle Management System",
       shortName: "Vehicle Manager",
@@ -119,7 +119,6 @@ module.exports = {
       },
       supabaseUrl: process.env.SUPABASE_URL,
       supabaseKey: process.env.SUPABASE_KEY,
-      googleVisionApiKey: process.env.GOOGLE_VISION_API_KEY,
       siteUrl: process.env.SITE_URL,
       oneSignalAppId: process.env.ONESIGNAL_APP_ID,
       sentryDsn: process.env.SENTRY_DSN,
