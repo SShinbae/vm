@@ -79,7 +79,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
                 data: null,
                 error: { message: "Profile fetch timeout" },
               }),
-            10000,
+            5000,
           );
         });
 

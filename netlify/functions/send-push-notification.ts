@@ -5,7 +5,8 @@ import { createClient } from "@supabase/supabase-js";
 const ONESIGNAL_REST_API_KEY = process.env.ONESIGNAL_REST_API_KEY!;
 const ONESIGNAL_APP_ID = process.env.EXPO_PUBLIC_ONESIGNAL_APP_ID!;
 const SUPABASE_URL = process.env.SUPABASE_URL!;
-const SUPABASE_SERVICE_KEY = process.env.SUPABASE_KEY!;
+const SUPABASE_SERVICE_KEY =
+  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_KEY!;
 
 // Webhook payload types
 interface WebhookPayload {
@@ -423,11 +424,17 @@ export const handler: Handler = async (event: HandlerEvent) => {
     };
   }
 
-  // Log incoming request
-  console.log("Received webhook:", {
-    headers: event.headers,
-    bodyLength: event.body?.length,
-  });
+  // Verify webhook secret if configured
+  const webhookSecret = process.env.SUPABASE_WEBHOOK_SECRET;
+  if (webhookSecret) {
+    const authHeader = event.headers["authorization"];
+    if (authHeader !== `Bearer ${webhookSecret}`) {
+      return {
+        statusCode: 401,
+        body: JSON.stringify({ error: "Unauthorized" }),
+      };
+    }
+  }
 
   try {
     const payload: WebhookPayload = JSON.parse(event.body || "{}");
@@ -492,7 +499,6 @@ export const handler: Handler = async (event: HandlerEvent) => {
       statusCode: 500,
       body: JSON.stringify({
         error: "Internal server error",
-        message: String(error),
       }),
     };
   }

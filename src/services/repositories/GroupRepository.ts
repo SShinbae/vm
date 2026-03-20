@@ -126,8 +126,8 @@ export class GroupRepository extends BaseRepository<
         `
         *,
         group_members (
-          *,
-          profiles (*)
+          id, user_id, group_id, role, joined_at,
+          profiles (id, full_name, email, avatar_url)
         )
       `,
       )
@@ -163,7 +163,9 @@ export class GroupRepository extends BaseRepository<
   ): Promise<Result<(GroupMember & { profiles: Profile })[], RepositoryError>> {
     const { data, error } = await supabase
       .from("group_members")
-      .select("*, profiles (*)")
+      .select(
+        "id, user_id, group_id, role, joined_at, profiles (id, full_name, email, avatar_url)",
+      )
       .eq("group_id", groupId);
 
     if (error) {

@@ -403,7 +403,7 @@ export default function Index() {
           [{ nativeEvent: { contentOffset: { y: scrollY } } }],
           { useNativeDriver: true },
         )}
-        scrollEventThrottle={16}
+        scrollEventThrottle={Platform.OS === "web" ? 100 : 16}
       >
         {/* Hero Section - Improved contrast */}
         <View
@@ -437,7 +437,11 @@ export default function Index() {
                 }}
               >
                 <Image
-                  source={require("@/assets/images/vm_logo.png")}
+                  source={
+                    Platform.OS === "web"
+                      ? require("@/assets/images/vm_logo.webp")
+                      : require("@/assets/images/vm_logo.png")
+                  }
                   placeholder={require("@/assets/images/vm_logo_tiny.png")}
                   style={{
                     width: isMobile ? 60 : isTablet ? 70 : 80,

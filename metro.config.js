@@ -46,19 +46,20 @@ config.resolver = {
 config.transformer = {
   ...config.transformer,
   minifierConfig: {
-    keep_classnames: true,
-    keep_fnames: true,
     mangle: {
-      keep_classnames: true,
-      keep_fnames: true,
+      keep_classnames: false,
+      keep_fnames: false,
+    },
+    compress: {
+      drop_console: true,
+      dead_code: true,
+      unused: true,
     },
   },
-  // Disable eager bundling for production builds
-  // DISABLED inlineRequires: Can cause issues with circular dependencies and module loading order
   getTransformOptions: async () => ({
     transform: {
       experimentalImportSupport: false,
-      inlineRequires: false,
+      inlineRequires: true,
     },
   }),
 };
