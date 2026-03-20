@@ -6,6 +6,8 @@ const config = getSentryExpoConfig(__dirname);
 // Enhanced resolver configuration for better module resolution
 config.resolver = {
   ...config.resolver,
+  // Exclude server-only directories from client bundling
+  blockList: [/netlify\/functions\/.*/],
   assetExts: [...config.resolver.assetExts, "webp"],
   // Enable case-sensitive file resolution
   platforms: ["ios", "android", "web"],
