@@ -48,7 +48,8 @@
       "Bash(grep:*)",
       "Bash(xargs -I {} sh -c 'echo \"\"\"\"=== {} ===\"\"\"\" && head -30 {}')",
       "Bash(head:*)",
-      "Bash(tree:*)"
+      "Bash(tree:*)",
+      "Bash(gh run:*)"
     ],
     "deny": [],
     "ask": []
