@@ -204,7 +204,7 @@ jobs:
       - name: 📱 Build Production APK
         if: github.event.inputs.buildType == 'all' || github.event.inputs.buildType == 'prod-apk' || (github.event_name == 'push' && (github.event.inputs.buildType == '' || github.event.inputs.buildType == null))
         run: |
-          export NODE_OPTIONS="--max-old-space-size=8192"
+          export NODE_OPTIONS="--max-old-space-size=4096"
           export EXPO_NO_METRO_LAZY=1
           export EAS_SKIP_AUTO_FINGERPRINT=1
 
@@ -289,7 +289,7 @@ jobs:
       - name: 📱 Build Production AAB
         if: github.event.inputs.buildType == 'all' || github.event.inputs.buildType == 'prod-aab'
         run: |
-          export NODE_OPTIONS="--max-old-space-size=8192"
+          export NODE_OPTIONS="--max-old-space-size=4096"
           export EXPO_NO_METRO_LAZY=1
           export EAS_SKIP_AUTO_FINGERPRINT=1
 
