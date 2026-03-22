@@ -19,6 +19,17 @@
   --surface-color: #393e46;
 }
 
+/* Pre-JS dark mode: apply dark theme immediately based on system preference.
+   Once ThemeContext hydrates and adds .light or .dark class, those rules take over. */
+@media (prefers-color-scheme: dark) {
+  :root:not(.light) {
+    --background-color: #1e292e;
+    --text-color: #f3f8f8;
+    --border-color: #4b5563;
+    --surface-color: #393e46;
+  }
+}
+
 /* Global theme support */
 html,
 body {
