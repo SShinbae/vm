@@ -16,10 +16,10 @@ config.resolver = {
   // Keep default sourceExts order - Metro automatically handles platform-specific extensions
   // (.android.ts, .ios.ts, .native.ts, .web.ts based on target platform)
   sourceExts: config.resolver.sourceExts,
-  // Add resolver alias for web-specific polyfills
+  // Add resolver alias for web-specific polyfills and exclude native-only modules
   resolveRequest: (context, moduleName, platform) => {
-    // For web platform, redirect native animation libraries to polyfills
     if (platform === "web") {
+      // Redirect native animation libraries to lightweight polyfills
       if (moduleName === "react-native-worklets") {
         return {
           filePath: path.resolve(
@@ -35,6 +35,24 @@ config.resolver = {
             __dirname,
             "polyfills/react-native-reanimated.web.js",
           ),
+          type: "sourceFile",
+        };
+      }
+      // Stub out native-only packages that have .web.tsx alternatives or aren't needed on web
+      const nativeOnlyPackages = [
+        "react-native-chart-kit",
+        "victory-native",
+        "@shopify/react-native-skia",
+        "react-image-crop",
+        "sharp",
+      ];
+      if (
+        nativeOnlyPackages.some(
+          (pkg) => moduleName === pkg || moduleName.startsWith(pkg + "/"),
+        )
+      ) {
+        return {
+          filePath: path.resolve(__dirname, "polyfills/empty-module.web.js"),
           type: "sourceFile",
         };
       }

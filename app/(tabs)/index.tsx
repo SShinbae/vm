@@ -12,21 +12,19 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { createStyleSheet, useStyles } from "react-native-unistyles";
 
-// Import the new hook and components
 import { ActivityTimelineItem } from "@/components/dashboard/ActivityTimelineItem";
 import { QuickActionButton } from "@/components/dashboard/QuickActionButton";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { VehicleCard } from "@/components/dashboard/VehicleCard";
+import { VehicleTable } from "@/components/dashboard/VehicleTable";
 import { useDashboardDataQuery } from "@/hooks/useDashboardDataQuery";
+import { useResponsiveLayout } from "@/hooks/use-responsive-layout";
 import { MaxWidthContainer } from "@/components/layout/MaxWidthContainer";
 import { ResponsiveGrid } from "@/components/layout/ResponsiveGrid";
-// Assume you also created these helper components:
-// import { LoadingState } from "@/components/ui/LoadingState";
-// import { ErrorState } from "@/components/ui/ErrorState";
-// import { EmptyVehiclesState } from "@/components/dashboard/EmptyVehiclesState";
 
 export default function DashboardScreen() {
   const { styles, theme } = useStyles(stylesheet);
+  const layout = useResponsiveLayout();
   const {
     stats,
     vehicles,
@@ -50,13 +48,13 @@ export default function DashboardScreen() {
           {/* Header - rendered immediately for fast LCP */}
           <View style={styles.header}>
             <Text style={styles.greeting}>
-              Welcome
-              {user?.profile?.full_name
-                ? `, ${user.profile.full_name.split(" ")[0]}`
-                : ""}
-              !
+              Hi, Welcome {user?.profile?.full_name?.split(" ")[0] || "back"}
             </Text>
-            <Text style={styles.subtitle}>Track and manage your vehicles</Text>
+            <Text style={styles.subtitle}>
+              {user?.lastSignInAt
+                ? `Last login: ${new Date(user.lastSignInAt).toLocaleString("en-GB")}`
+                : "Welcome to your dashboard"}
+            </Text>
           </View>
           <View style={styles.errorContainer}>
             <IconSymbol
@@ -80,13 +78,13 @@ export default function DashboardScreen() {
         {/* Header - rendered immediately for fast LCP */}
         <View style={styles.header}>
           <Text style={styles.greeting}>
-            Welcome
-            {user?.profile?.full_name
-              ? `, ${user.profile.full_name.split(" ")[0]}`
-              : ""}
-            !
+            Hi, Welcome {user?.profile?.full_name?.split(" ")[0] || "back"}
           </Text>
-          <Text style={styles.subtitle}>Track and manage your vehicles</Text>
+          <Text style={styles.subtitle}>
+            {user?.lastSignInAt
+              ? `Last login: ${new Date(user.lastSignInAt).toLocaleString("en-GB")}`
+              : "Welcome to your dashboard"}
+          </Text>
         </View>
 
         {isInitialLoading ? (
@@ -106,22 +104,41 @@ export default function DashboardScreen() {
           >
             {/* Stats Grid Section */}
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Overview</Text>
               <ResponsiveGrid
-                columns={{ mobile: 2, tablet: 2, desktop: 2, largeDesktop: 4 }}
+                columns={{ mobile: 2, tablet: 2, desktop: 4, largeDesktop: 4 }}
                 spacing={16}
               >
                 <StatCard
-                  title="Total Vehicles"
+                  title="Active Vehicles"
                   value={stats.totalVehicles}
-                  icon="🚗"
+                  icon="car.fill"
+                  iconColor={theme.colors.error}
                   trend={stats.totalVehiclesTrend}
                 />
                 <StatCard
-                  title="Monthly Fuel"
+                  title="Monthly Fuel Cost"
                   value={`RM${stats.monthlyFuelCost.toFixed(2)}`}
-                  icon="⛽"
+                  icon="fuelpump.fill"
+                  iconColor={theme.colors.error}
                   trend={stats.monthlyFuelCostTrend}
+                />
+                <StatCard
+                  title="Pending Services"
+                  value={stats.upcomingServices}
+                  icon="wrench.fill"
+                  iconColor={theme.colors.error}
+                  alertCount={
+                    stats.upcomingServices > 0
+                      ? stats.upcomingServices
+                      : undefined
+                  }
+                />
+                <StatCard
+                  title="Total Distance"
+                  value={`${stats.totalMileage.toLocaleString()} km`}
+                  icon="exclamationmark.triangle.fill"
+                  iconColor={theme.colors.warning}
+                  trend={stats.totalMileageTrend}
                 />
               </ResponsiveGrid>
             </View>
@@ -160,58 +177,65 @@ export default function DashboardScreen() {
               </ResponsiveGrid>
             </View>
 
-            {/* Vehicles Section */}
-            <View style={styles.section}>
-              <View style={styles.sectionHeader}>
-                <Text style={styles.sectionTitle}>My Vehicles</Text>
-                {vehicles.length > 0 && (
-                  <TouchableOpacity
-                    onPress={() => router.push("/vehicles" as any)}
-                  >
-                    <Text style={styles.viewAllText}>View All</Text>
-                  </TouchableOpacity>
+            {/* Two-Column Layout: Vehicles + Activity */}
+            <View style={styles.twoColumnContainer}>
+              {/* Vehicles Section */}
+              <View style={[styles.section, styles.vehiclesColumn]}>
+                <View style={styles.sectionHeader}>
+                  <Text style={styles.sectionTitle}>My Vehicles</Text>
+                  {vehicles.length > 0 && (
+                    <TouchableOpacity
+                      onPress={() => router.push("/vehicles" as any)}
+                    >
+                      <Text style={styles.viewAllText}>View All</Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
+
+                {vehicles.length === 0 ? (
+                  <View style={styles.emptyState}>
+                    <Text style={styles.emptyIcon}>🚗</Text>
+                    <Text style={styles.emptyTitle}>No vehicles yet</Text>
+                    <Text style={styles.emptyDescription}>
+                      Add your first vehicle to start tracking
+                    </Text>
+                    <TouchableOpacity
+                      style={styles.emptyButton}
+                      onPress={() => router.push("/vehicles/add" as any)}
+                    >
+                      <IconSymbol
+                        name="plus"
+                        size={18}
+                        color={theme.colors.white}
+                      />
+                      <Text style={styles.emptyButtonText}>Add Vehicle</Text>
+                    </TouchableOpacity>
+                  </View>
+                ) : layout.isDesktop ? (
+                  <VehicleTable vehicles={vehicles} />
+                ) : (
+                  <View style={styles.vehiclesList}>
+                    {vehicles.slice(0, 3).map((vehicle) => (
+                      <VehicleCard key={vehicle.id} vehicle={vehicle} />
+                    ))}
+                  </View>
                 )}
               </View>
 
-              {vehicles.length === 0 ? (
-                <View style={styles.emptyState}>
-                  <Text style={styles.emptyIcon}>🚗</Text>
-                  <Text style={styles.emptyTitle}>No vehicles yet</Text>
-                  <Text style={styles.emptyDescription}>
-                    Add your first vehicle to start tracking
-                  </Text>
-                  <TouchableOpacity
-                    style={styles.emptyButton}
-                    onPress={() => router.push("/vehicles/add" as any)}
-                  >
-                    <IconSymbol
-                      name="plus"
-                      size={18}
-                      color={theme.colors.white}
-                    />
-                    <Text style={styles.emptyButtonText}>Add Vehicle</Text>
-                  </TouchableOpacity>
-                </View>
-              ) : (
-                <View style={styles.vehiclesList}>
-                  {vehicles.slice(0, 3).map((vehicle) => (
-                    <VehicleCard key={vehicle.id} vehicle={vehicle} />
-                  ))}
+              {/* Recent Activity */}
+              {recentActivity.length > 0 && (
+                <View style={[styles.section, styles.activityColumn]}>
+                  <View style={styles.activityCard}>
+                    <Text style={styles.sectionTitle}>Recent Activity</Text>
+                    <View style={styles.activityTimeline}>
+                      {recentActivity.slice(0, 4).map((item) => (
+                        <ActivityTimelineItem key={item.id} item={item} />
+                      ))}
+                    </View>
+                  </View>
                 </View>
               )}
             </View>
-
-            {/* Recent Activity Timeline */}
-            {recentActivity.length > 0 && (
-              <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Recent Activity</Text>
-                <View style={styles.activityTimeline}>
-                  {recentActivity.slice(0, 4).map((item) => (
-                    <ActivityTimelineItem key={item.id} item={item} />
-                  ))}
-                </View>
-              </View>
-            )}
           </ScrollView>
         )}
       </MaxWidthContainer>
@@ -310,6 +334,33 @@ const stylesheet = createStyleSheet((theme) => ({
     flexDirection: "row",
     flexWrap: "wrap",
     gap: theme.spacing.md,
+  },
+  twoColumnContainer: {
+    flexDirection: {
+      xs: "column" as const,
+      lg: "row" as const,
+    },
+    gap: theme.spacing.xl,
+    paddingHorizontal: theme.spacing.xl,
+  },
+  vehiclesColumn: {
+    flex: {
+      xs: undefined,
+      lg: 2,
+    },
+    paddingHorizontal: 0,
+  },
+  activityColumn: {
+    flex: {
+      xs: undefined,
+      lg: 1,
+    },
+    paddingHorizontal: 0,
+  },
+  activityCard: {
+    backgroundColor: theme.colors.surface,
+    borderRadius: theme.borderRadius.xl,
+    padding: theme.spacing.lg,
   },
   vehiclesList: {
     gap: theme.spacing.md,

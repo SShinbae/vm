@@ -246,6 +246,7 @@ export interface AuthUser {
   email: string;
   profile?: Profile;
   username: string | null;
+  lastSignInAt?: string | null;
 }
 
 export interface AuthState {

@@ -1,5 +1,5 @@
 import { IconSymbol } from "@/components/ui/icon-symbol";
-import { VehicleWithShares } from "@/hooks/useDashboardData"; // Import the type
+import { VehicleWithShares } from "@/hooks/useDashboardDataQuery";
 import { Image } from "expo-image";
 import { router } from "expo-router";
 import React, { useState } from "react";
@@ -46,13 +46,25 @@ export function VehicleCard({ vehicle }: VehicleCardProps) {
         <Text style={styles.vehicleDetail}>
           {vehicle.license_plate ? String(vehicle.license_plate) : "N/A"}
         </Text>
+        {vehicle.isSharedWithMe && vehicle.ownerName && (
+          <Text style={styles.vehicleDetail}>Owner: {vehicle.ownerName}</Text>
+        )}
         <Text style={styles.vehicleDetail}>
           {vehicle.current_mileage != null
             ? `${Number(vehicle.current_mileage).toLocaleString()} km`
             : "0 km"}
         </Text>
       </View>
-      {vehicle.shareCount > 0 && (
+      {vehicle.isSharedWithMe ? (
+        <View style={styles.sharedWithMeBadge}>
+          <IconSymbol
+            name="person.2.fill"
+            size={12}
+            color={theme.colors.white}
+          />
+          <Text style={styles.sharedBadgeText}>Shared with me</Text>
+        </View>
+      ) : vehicle.shareCount > 0 ? (
         <View style={styles.sharedBadge}>
           <IconSymbol
             name="person.2.fill"
@@ -61,7 +73,7 @@ export function VehicleCard({ vehicle }: VehicleCardProps) {
           />
           <Text style={styles.sharedBadgeText}>Shared</Text>
         </View>
-      )}
+      ) : null}
     </TouchableOpacity>
   );
 }
@@ -115,7 +127,17 @@ const stylesheet = createStyleSheet((theme) => ({
     paddingHorizontal: theme.spacing.sm,
     paddingVertical: theme.spacing.xs,
     borderRadius: theme.borderRadius.sm,
-    alignSelf: "flex-start", // Align to top
+    alignSelf: "flex-start",
+  },
+  sharedWithMeBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: theme.spacing.xs,
+    backgroundColor: theme.colors.warning,
+    paddingHorizontal: theme.spacing.sm,
+    paddingVertical: theme.spacing.xs,
+    borderRadius: theme.borderRadius.sm,
+    alignSelf: "flex-start",
   },
   sharedBadgeText: {
     fontSize: theme.fontSize.xs,

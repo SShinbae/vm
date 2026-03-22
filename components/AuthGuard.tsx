@@ -214,6 +214,9 @@ export function AuthGuard({ children }: AuthGuardProps) {
   // Force initialization after timeout to prevent infinite loading
   const [forceInitialized, setForceInitialized] = useState(false);
 
+  // Safety net: force show content if user is null on tabs for too long (race condition fallback)
+  const [forceShowContent, setForceShowContent] = useState(false);
+
   const routeState = useRouteState(segments);
   const wasRecentlyOnAuthPage = useAuthPageTracking(routeState.isOnAuthPage);
   const { navigate } = useSecureNavigation();
@@ -260,6 +263,23 @@ export function AuthGuard({ children }: AuthGuardProps) {
 
     return () => clearTimeout(timeout);
   }, [initialized]);
+
+  // Safety net timeout for the !user && inTabs spinner (no other timeout covers this case)
+  useEffect(() => {
+    if (!user && inTabs && !wasRecentlyOnAuthPage) {
+      const timeout = setTimeout(() => {
+        if (__DEV__) {
+          console.warn(
+            "[AuthGuard] Force showing content after tabs loading timeout",
+          );
+        }
+        setForceShowContent(true);
+      }, 3000);
+      return () => clearTimeout(timeout);
+    }
+    // Reset when user becomes available
+    setForceShowContent(false);
+  }, [user, inTabs, wasRecentlyOnAuthPage]);
 
   // ============================================================================
   // Effect: Track Previous Path
@@ -434,8 +454,9 @@ export function AuthGuard({ children }: AuthGuardProps) {
   /**
    * Don't render (tabs) content if user is not authenticated
    * But skip this check if we were recently on auth page (prevents flicker during login error)
+   * Also skip after forceShowContent timeout to prevent infinite loading from race conditions
    */
-  if (!user && inTabs && !wasRecentlyOnAuthPage) {
+  if (!user && inTabs && !wasRecentlyOnAuthPage && !forceShowContent) {
     return (
       <View
         style={[

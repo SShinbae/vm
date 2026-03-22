@@ -1,15 +1,26 @@
 import React from "react";
 import { Text, View } from "react-native";
 import { createStyleSheet, useStyles } from "react-native-unistyles";
+import { IconSymbol } from "@/components/ui/icon-symbol";
+import type { ComponentProps } from "react";
 
 type StatCardProps = {
   title: string;
   value: string | number;
-  icon: string;
+  icon: ComponentProps<typeof IconSymbol>["name"];
+  iconColor?: string;
   trend?: number;
+  alertCount?: number;
 };
 
-export function StatCard({ title, value, icon, trend }: StatCardProps) {
+export function StatCard({
+  title,
+  value,
+  icon,
+  iconColor,
+  trend,
+  alertCount,
+}: StatCardProps) {
   const { styles, theme } = useStyles(stylesheet);
 
   const trendColor =
@@ -19,10 +30,24 @@ export function StatCard({ title, value, icon, trend }: StatCardProps) {
       ? theme.colors.success + "20"
       : theme.colors.error + "20";
 
+  const resolvedIconColor = iconColor ?? theme.colors.primary;
+
   return (
     <View style={styles.statCard}>
+      {alertCount !== undefined && alertCount > 0 && (
+        <View style={styles.alertBadge}>
+          <Text style={styles.alertBadgeText}>+{alertCount}</Text>
+        </View>
+      )}
       <View style={styles.statHeader}>
-        <Text style={styles.statIcon}>{icon}</Text>
+        <View
+          style={[
+            styles.iconContainer,
+            { backgroundColor: resolvedIconColor + "15" },
+          ]}
+        >
+          <IconSymbol name={icon} size={18} color={resolvedIconColor} />
+        </View>
         {trend !== undefined && trend !== 0 && (
           <View style={[styles.trendBadge, { backgroundColor: trendBg }]}>
             <Text style={[styles.trendText, { color: trendColor }]}>
@@ -55,6 +80,7 @@ const stylesheet = createStyleSheet((theme) => ({
     shadowOpacity: 0.1,
     shadowRadius: 8,
     elevation: 4,
+    position: "relative",
   },
   statHeader: {
     flexDirection: "row",
@@ -65,11 +91,18 @@ const stylesheet = createStyleSheet((theme) => ({
       sm: theme.spacing.sm,
     },
   },
-  statIcon: {
-    fontSize: {
-      xs: 20,
-      sm: 24,
+  iconContainer: {
+    width: {
+      xs: 36,
+      sm: 40,
     },
+    height: {
+      xs: 36,
+      sm: 40,
+    },
+    borderRadius: 999,
+    justifyContent: "center",
+    alignItems: "center",
   },
   trendBadge: {
     paddingHorizontal: {
@@ -101,5 +134,24 @@ const stylesheet = createStyleSheet((theme) => ({
       sm: theme.fontSize.sm,
     },
     color: theme.colors.textSecondary,
+  },
+  alertBadge: {
+    position: "absolute",
+    top: -6,
+    right: -6,
+    backgroundColor: theme.colors.error,
+    borderRadius: 999,
+    minWidth: 22,
+    height: 22,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 6,
+    zIndex: 1,
+  },
+  alertBadgeText: {
+    color: "#FFFFFF",
+    fontSize: 11,
+    fontWeight: theme.fontWeight.bold,
+    textAlign: "center",
   },
 }));
