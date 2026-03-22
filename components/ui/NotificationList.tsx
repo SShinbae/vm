@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Alert, Text, TouchableOpacity, View } from "react-native";
 import { createStyleSheet, useStyles } from "react-native-unistyles";
 import { useNotifications } from "../../lib/contexts/NotificationContext";
@@ -277,12 +277,32 @@ interface NotificationListProps {
   onNotificationPress?: (notification: NotificationData) => void;
 }
 
+const ITEMS_PER_PAGE = 5;
+
 export function NotificationList({
   onNotificationPress,
 }: NotificationListProps) {
   const { styles, theme } = useStyles(listStylesheet);
   const { notifications, isInitialized, markAllAsRead, clearAllNotifications } =
     useNotifications();
+
+  const [currentPage, setCurrentPage] = useState(1);
+
+  const totalPages = Math.ceil(notifications.length / ITEMS_PER_PAGE);
+
+  const paginatedNotifications = useMemo(() => {
+    const start = (currentPage - 1) * ITEMS_PER_PAGE;
+    return notifications.slice(start, start + ITEMS_PER_PAGE);
+  }, [notifications, currentPage]);
+
+  // Clamp currentPage when notifications shrink (e.g. deletions, clear all)
+  useEffect(() => {
+    if (currentPage > totalPages && totalPages > 0) {
+      setCurrentPage(totalPages);
+    } else if (totalPages === 0) {
+      setCurrentPage(1);
+    }
+  }, [currentPage, totalPages]);
 
   const hasUnreadNotifications = notifications.some((n) => !n.read);
 
@@ -335,8 +355,9 @@ export function NotificationList({
       <View style={styles.actionsBar}>
         <View style={styles.countContainer}>
           <Text style={styles.countText}>
-            {notifications.length} notification
-            {notifications.length !== 1 ? "s" : ""}
+            {totalPages > 1
+              ? `Showing ${(currentPage - 1) * ITEMS_PER_PAGE + 1}\u2013${Math.min(currentPage * ITEMS_PER_PAGE, notifications.length)} of ${notifications.length}`
+              : `${notifications.length} notification${notifications.length !== 1 ? "s" : ""}`}
           </Text>
           {hasUnreadNotifications && (
             <Text style={styles.unreadCountText}>
@@ -376,7 +397,7 @@ export function NotificationList({
 
       {/* Notifications List */}
       <View style={styles.listContainer}>
-        {notifications.map((notification) => (
+        {paginatedNotifications.map((notification) => (
           <NotificationItem
             key={notification.id}
             notification={notification}
@@ -384,6 +405,121 @@ export function NotificationList({
           />
         ))}
       </View>
+
+      {/* Pagination Controls */}
+      {totalPages > 1 && (
+        <PaginationControls
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={setCurrentPage}
+        />
+      )}
+    </View>
+  );
+}
+
+interface PaginationControlsProps {
+  currentPage: number;
+  totalPages: number;
+  onPageChange: (page: number) => void;
+}
+
+function PaginationControls({
+  currentPage,
+  totalPages,
+  onPageChange,
+}: PaginationControlsProps) {
+  const { styles, theme } = useStyles(listStylesheet);
+
+  const getPageNumbers = (): (number | "ellipsis-start" | "ellipsis-end")[] => {
+    if (totalPages <= 7) {
+      return Array.from({ length: totalPages }, (_, i) => i + 1);
+    }
+    const pages: (number | "ellipsis-start" | "ellipsis-end")[] = [1];
+    if (currentPage > 3) {
+      pages.push("ellipsis-start");
+    }
+    const start = Math.max(2, currentPage - 1);
+    const end = Math.min(totalPages - 1, currentPage + 1);
+    for (let i = start; i <= end; i++) {
+      pages.push(i);
+    }
+    if (currentPage < totalPages - 2) {
+      pages.push("ellipsis-end");
+    }
+    pages.push(totalPages);
+    return pages;
+  };
+
+  return (
+    <View style={styles.paginationContainer}>
+      {/* Prev Button */}
+      <TouchableOpacity
+        onPress={() => onPageChange(currentPage - 1)}
+        disabled={currentPage === 1}
+        style={[
+          styles.navButton,
+          currentPage === 1 && styles.pageButtonDisabled,
+        ]}
+        activeOpacity={0.7}
+      >
+        <IconSymbol
+          name="chevron.left"
+          size={16}
+          color={
+            currentPage === 1 ? theme.colors.textSecondary : theme.colors.text
+          }
+        />
+      </TouchableOpacity>
+
+      {/* Page Numbers */}
+      {getPageNumbers().map((page, index) =>
+        typeof page === "string" ? (
+          <Text key={page} style={styles.ellipsisText}>
+            ...
+          </Text>
+        ) : (
+          <TouchableOpacity
+            key={`page-${page}`}
+            onPress={() => onPageChange(page)}
+            style={[
+              styles.pageButton,
+              currentPage === page && styles.pageButtonActive,
+            ]}
+            activeOpacity={0.7}
+          >
+            <Text
+              style={[
+                styles.pageButtonText,
+                currentPage === page && styles.pageButtonTextActive,
+              ]}
+            >
+              {page}
+            </Text>
+          </TouchableOpacity>
+        ),
+      )}
+
+      {/* Next Button */}
+      <TouchableOpacity
+        onPress={() => onPageChange(currentPage + 1)}
+        disabled={currentPage === totalPages}
+        style={[
+          styles.navButton,
+          currentPage === totalPages && styles.pageButtonDisabled,
+        ]}
+        activeOpacity={0.7}
+      >
+        <IconSymbol
+          name="chevron.right"
+          size={16}
+          color={
+            currentPage === totalPages
+              ? theme.colors.textSecondary
+              : theme.colors.text
+          }
+        />
+      </TouchableOpacity>
     </View>
   );
 }
@@ -494,5 +630,54 @@ const listStylesheet = createStyleSheet((theme) => ({
     textAlign: "center",
     maxWidth: 300,
     lineHeight: 24,
+  },
+  paginationContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: theme.spacing.lg,
+    paddingHorizontal: theme.spacing.md,
+    gap: theme.spacing.xs,
+  },
+  pageButton: {
+    width: 36,
+    height: 36,
+    borderRadius: theme.borderRadius.md,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: theme.colors.surface,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
+  pageButtonActive: {
+    backgroundColor: theme.colors.primary,
+    borderColor: theme.colors.primary,
+  },
+  pageButtonText: {
+    fontSize: theme.fontSize.sm,
+    fontWeight: theme.fontWeight.medium,
+    color: theme.colors.text,
+  },
+  pageButtonTextActive: {
+    color: theme.colors.white,
+    fontWeight: theme.fontWeight.semibold,
+  },
+  pageButtonDisabled: {
+    opacity: 0.4,
+  },
+  navButton: {
+    width: 36,
+    height: 36,
+    borderRadius: theme.borderRadius.md,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: theme.colors.surface,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
+  ellipsisText: {
+    fontSize: theme.fontSize.sm,
+    color: theme.colors.textSecondary,
+    paddingHorizontal: theme.spacing.xs,
   },
 }));

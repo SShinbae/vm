@@ -76,7 +76,15 @@ module.exports = {
       backgroundColor: "#ffffff",
     },
     plugins: [
-      "expo-router",
+      [
+        "expo-router",
+        {
+          asyncRoutes: {
+            web: true,
+            default: false,
+          },
+        },
+      ],
       "expo-web-browser",
       [
         "expo-splash-screen",

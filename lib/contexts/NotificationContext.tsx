@@ -352,7 +352,10 @@ export function NotificationProvider({ children }: NotificationProviderProps) {
             notificationService.removeCallback(notificationCallback);
             notificationCallback = null;
           }
-          await initialize();
+          // Defer initialize to run AFTER the callback returns and the auth lock is released.
+          // Calling getUser()/getSession() inside onAuthStateChange causes a deadlock
+          // because _notifyAllSubscribers waits for callbacks while holding the lock.
+          setTimeout(() => initialize(), 0);
         } else if (event === "SIGNED_OUT") {
           // Cleanup
           if (notificationCallback) {

@@ -42,6 +42,7 @@ const MAPPING = {
   calendar: "event",
   number: "tag",
   barcode: "qr-code",
+  "exclamationmark.triangle": "warning",
   "exclamationmark.triangle.fill": "warning",
   "checkmark.circle.fill": "check-circle",
   "xmark.circle.fill": "cancel",
@@ -81,6 +82,7 @@ const MAPPING = {
 
   // Profile Quick Action Icons
   "person.2": "people",
+  "person.2.fill": "people",
   "lock.shield": "security",
 } as IconMapping;
 

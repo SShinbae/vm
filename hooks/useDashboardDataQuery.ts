@@ -7,6 +7,8 @@ import { Database } from "@/types/database";
 type Vehicle = Database["public"]["Tables"]["vehicles"]["Row"];
 export interface VehicleWithShares extends Vehicle {
   shareCount: number;
+  isSharedWithMe: boolean;
+  ownerName: string | null;
 }
 
 export interface DashboardStats {
@@ -26,7 +28,8 @@ export interface ActivityItem {
   date: string;
   vehicleName: string;
   primaryValue: string;
-  icon: string;
+  icon: "speedometer" | "fuelpump.fill" | "wrench.and.screwdriver.fill";
+  addedBy: string;
 }
 
 // Default stats
@@ -58,7 +61,8 @@ const processActivityLogs = (
       date: log.date,
       vehicleName: `${log.vehicles?.year} ${log.vehicles?.make} ${log.vehicles?.model}`,
       primaryValue: `${log.odometer_reading.toLocaleString()} km`,
-      icon: "speedometer-outline",
+      icon: "speedometer",
+      addedBy: log.profiles?.full_name ?? "Unknown",
     });
   });
 
@@ -69,7 +73,8 @@ const processActivityLogs = (
       date: log.date,
       vehicleName: `${log.vehicles?.year} ${log.vehicles?.make} ${log.vehicles?.model}`,
       primaryValue: `RM${log.cost.toFixed(2)}`,
-      icon: "water-outline",
+      icon: "fuelpump.fill",
+      addedBy: log.profiles?.full_name ?? "Unknown",
     });
   });
 
@@ -80,7 +85,8 @@ const processActivityLogs = (
       date: log.service_date,
       vehicleName: `${log.vehicles?.year} ${log.vehicles?.make} ${log.vehicles?.model}`,
       primaryValue: `RM${log.cost.toFixed(2)}`,
-      icon: "build-outline",
+      icon: "wrench.and.screwdriver.fill",
+      addedBy: log.profiles?.full_name ?? "Unknown",
     });
   });
 
@@ -101,19 +107,20 @@ async function fetchStats(userId: string): Promise<DashboardStats> {
 
   const vehicleIds = allVehiclesData?.map((v: any) => v.vehicle_id) || [];
   const totalVehicles = vehicleIds.length;
-  const totalMileage =
-    allVehiclesData?.reduce(
-      (sum: number, v: any) => sum + (v.current_mileage || 0),
-      0,
-    ) || 0;
 
   const now = new Date();
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
   startOfMonth.setHours(0, 0, 0, 0);
   const thirtyDaysLater = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
 
-  // Fetch fuel and service data in parallel
-  const [fuelResult, servicesResult] = await Promise.all([
+  // Fetch mileage logs, fuel, and service data in parallel
+  const [mileageResult, fuelResult, servicesResult] = await Promise.all([
+    vehicleIds.length > 0
+      ? supabase
+          .from("mileage_logs")
+          .select("vehicle_id, odometer_reading")
+          .in("vehicle_id", vehicleIds)
+      : Promise.resolve({ data: [] }),
     supabase
       .from("fuel_logs")
       .select("cost, date")
@@ -126,6 +133,22 @@ async function fetchStats(userId: string): Promise<DashboardStats> {
       .gte("next_service_due", now.toISOString())
       .lte("next_service_due", thirtyDaysLater.toISOString()),
   ]);
+
+  // Build a map of vehicle_id -> max odometer reading
+  const maxMileageByVehicle: Record<string, number> = {};
+  mileageResult.data?.forEach((log: any) => {
+    const current = maxMileageByVehicle[log.vehicle_id] || 0;
+    if (log.odometer_reading > current) {
+      maxMileageByVehicle[log.vehicle_id] = log.odometer_reading;
+    }
+  });
+
+  // Calculate totalMileage using max(current_mileage, maxLogMileage) per vehicle
+  const totalMileage =
+    allVehiclesData?.reduce((sum: number, v: any) => {
+      const logMileage = maxMileageByVehicle[v.vehicle_id] || 0;
+      return sum + Math.max(v.current_mileage || 0, logMileage);
+    }, 0) || 0;
 
   const monthlyFuelCost =
     fuelResult.data?.reduce((sum, f: any) => sum + (f.cost || 0), 0) || 0;
@@ -144,60 +167,91 @@ async function fetchStats(userId: string): Promise<DashboardStats> {
 }
 
 /**
- * Fetch vehicles with share counts and accurate mileage
+ * Fetch vehicles with share counts and accurate mileage (owned + shared)
  */
 async function fetchVehicles(userId: string): Promise<VehicleWithShares[]> {
-  // Fetch vehicles directly with mileage logs to get accurate mileage
-  // This approach is more reliable than the RPC function
-  const { data: vehiclesData, error: vehiclesError } = await supabase
-    .from("vehicles")
-    .select("*, vehicle_group_shares(count), mileage_logs(odometer_reading)")
-    .eq("user_id", userId)
-    .order("created_at", { ascending: false });
+  // Use the same RPC as stats to get both owned and shared vehicles
+  const { data: allVehiclesData, error: rpcError } = await (
+    supabase as any
+  ).rpc("get_user_vehicles_with_sharing", { user_uuid: userId });
 
-  if (vehiclesError) throw vehiclesError;
+  if (rpcError) throw rpcError;
+  if (!allVehiclesData || allVehiclesData.length === 0) return [];
 
-  return (vehiclesData || []).map((v: any) => {
-    // Find maximum mileage from logs if available
-    const maxLogMileage =
-      v.mileage_logs?.reduce(
-        (max: number, log: any) =>
-          log.odometer_reading > max ? log.odometer_reading : max,
-        0,
-      ) || 0;
+  const vehicleIds = allVehiclesData.map((v: any) => v.vehicle_id);
 
-    // Use the greater of current_mileage or maxLogMileage
-    const effectiveMileage = Math.max(v.current_mileage || 0, maxLogMileage);
+  // Fetch mileage logs for accurate mileage readings
+  const { data: mileageLogs } = await supabase
+    .from("mileage_logs")
+    .select("vehicle_id, odometer_reading")
+    .in("vehicle_id", vehicleIds);
+
+  // Build a map of vehicle_id -> max odometer reading
+  const maxMileageByVehicle: Record<string, number> = {};
+  mileageLogs?.forEach((log: any) => {
+    const current = maxMileageByVehicle[log.vehicle_id] || 0;
+    if (log.odometer_reading > current) {
+      maxMileageByVehicle[log.vehicle_id] = log.odometer_reading;
+    }
+  });
+
+  return allVehiclesData.map((v: any) => {
+    const logMileage = maxMileageByVehicle[v.vehicle_id] || 0;
+    const effectiveMileage = Math.max(v.current_mileage || 0, logMileage);
+    const isOwn = v.is_own_vehicle === true;
 
     return {
-      ...v,
+      id: v.vehicle_id,
+      user_id: v.owner_id,
+      make: v.make,
+      model: v.model,
+      year: v.year,
+      license_plate: v.license_plate,
       current_mileage: effectiveMileage,
-      shareCount: v.vehicle_group_shares?.[0]?.count || 0,
-    };
+      main_image_url: v.main_image_url,
+      created_at: v.created_at,
+      updated_at: v.updated_at ?? v.created_at,
+      vin: v.vin ?? null,
+      color: v.color ?? null,
+      shared_with_groups: (v.shared_groups?.length || 0) > 0,
+      shareCount: isOwn ? v.shared_groups?.length || 0 : 0,
+      isSharedWithMe: !isOwn,
+      ownerName: v.owner_name ?? null,
+    } as VehicleWithShares;
   });
 }
 
 /**
- * Fetch recent activity
+ * Fetch recent activity (owned + shared vehicles)
  */
 async function fetchRecentActivity(userId: string): Promise<ActivityItem[]> {
+  // Get all accessible vehicle IDs (owned + shared)
+  const { data: vehicleIdsData } = await (supabase as any).rpc(
+    "get_accessible_vehicle_ids",
+    { user_uuid: userId },
+  );
+
+  const vehicleIds: string[] =
+    vehicleIdsData?.map((row: any) => row.vehicle_id) || [];
+  if (vehicleIds.length === 0) return [];
+
   const [mileagePromise, fuelPromise, servicePromise] = await Promise.all([
     supabase
       .from("mileage_logs")
-      .select("*, vehicles(year, make, model)")
-      .eq("user_id", userId)
+      .select("*, vehicles(year, make, model), profiles(full_name)")
+      .in("vehicle_id", vehicleIds)
       .order("date", { ascending: false })
       .limit(10),
     supabase
       .from("fuel_logs")
-      .select("*, vehicles(year, make, model)")
-      .eq("user_id", userId)
+      .select("*, vehicles(year, make, model), profiles(full_name)")
+      .in("vehicle_id", vehicleIds)
       .order("date", { ascending: false })
       .limit(10),
     supabase
       .from("service_logs")
-      .select("*, vehicles(year, make, model)")
-      .eq("user_id", userId)
+      .select("*, vehicles(year, make, model), profiles(full_name)")
+      .in("vehicle_id", vehicleIds)
       .order("date", { ascending: false })
       .limit(10),
   ]);
