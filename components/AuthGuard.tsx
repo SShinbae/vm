@@ -1,10 +1,12 @@
+import { Skeleton, SkeletonDashboard } from "@/components/ui/Skeleton";
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
+import { useResponsiveLayout } from "@/hooks/use-responsive-layout";
 import { useAuth } from "@/lib/contexts/AuthContext";
 import { useDemoMode } from "@/lib/contexts/DemoContext";
 import { router, useSegments } from "expo-router";
 import React, { useEffect, useMemo, useState } from "react";
-import { ActivityIndicator, StyleSheet, View } from "react-native";
+import { Platform, StyleSheet, View } from "react-native";
 
 // ============================================================================
 // Constants
@@ -203,7 +205,7 @@ export function AuthGuard({ children }: AuthGuardProps) {
   const { isDemoMode } = useDemoMode();
   const segments = useSegments();
   const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? "light"];
+  const colors = Colors[colorScheme];
 
   const [redirectState, setRedirectState] = useState<RedirectState>({
     hasRedirected: false,
@@ -216,6 +218,8 @@ export function AuthGuard({ children }: AuthGuardProps) {
 
   // Safety net: force show content if user is null on tabs for too long (race condition fallback)
   const [forceShowContent, setForceShowContent] = useState(false);
+
+  const layout = useResponsiveLayout();
 
   const routeState = useRouteState(segments);
   const wasRecentlyOnAuthPage = useAuthPageTracking(routeState.isOnAuthPage);
@@ -439,6 +443,40 @@ export function AuthGuard({ children }: AuthGuardProps) {
    * Force stop loading after timeout to prevent infinite loading
    */
   if (shouldShowLoading) {
+    if (Platform.OS === "web" && !layout.isMobile) {
+      return (
+        <View
+          style={[styles.skeletonRoot, { backgroundColor: colors.background }]}
+        >
+          <View
+            style={[
+              styles.skeletonSidebar,
+              {
+                backgroundColor: colors.background,
+                borderRightColor: colors.icon + "20",
+              },
+            ]}
+          >
+            <Skeleton width={24} height={24} borderRadius={12} />
+            <View style={{ flex: 1, justifyContent: "center", gap: 20 }}>
+              {[1, 2, 3, 4, 5].map((i) => (
+                <Skeleton
+                  key={i}
+                  width={20}
+                  height={20}
+                  borderRadius={10}
+                  style={{ alignSelf: "center" }}
+                />
+              ))}
+            </View>
+            <Skeleton width={32} height={32} borderRadius={16} />
+          </View>
+          <View style={styles.skeletonContent}>
+            <SkeletonDashboard />
+          </View>
+        </View>
+      );
+    }
     return (
       <View
         style={[
@@ -446,7 +484,7 @@ export function AuthGuard({ children }: AuthGuardProps) {
           { backgroundColor: colors.background },
         ]}
       >
-        <ActivityIndicator size="large" color={colors.tint} />
+        <SkeletonDashboard />
       </View>
     );
   }
@@ -457,6 +495,40 @@ export function AuthGuard({ children }: AuthGuardProps) {
    * Also skip after forceShowContent timeout to prevent infinite loading from race conditions
    */
   if (!user && inTabs && !wasRecentlyOnAuthPage && !forceShowContent) {
+    if (Platform.OS === "web" && !layout.isMobile) {
+      return (
+        <View
+          style={[styles.skeletonRoot, { backgroundColor: colors.background }]}
+        >
+          <View
+            style={[
+              styles.skeletonSidebar,
+              {
+                backgroundColor: colors.background,
+                borderRightColor: colors.icon + "20",
+              },
+            ]}
+          >
+            <Skeleton width={24} height={24} borderRadius={12} />
+            <View style={{ flex: 1, justifyContent: "center", gap: 20 }}>
+              {[1, 2, 3, 4, 5].map((i) => (
+                <Skeleton
+                  key={i}
+                  width={20}
+                  height={20}
+                  borderRadius={10}
+                  style={{ alignSelf: "center" }}
+                />
+              ))}
+            </View>
+            <Skeleton width={32} height={32} borderRadius={16} />
+          </View>
+          <View style={styles.skeletonContent}>
+            <SkeletonDashboard />
+          </View>
+        </View>
+      );
+    }
     return (
       <View
         style={[
@@ -464,7 +536,7 @@ export function AuthGuard({ children }: AuthGuardProps) {
           { backgroundColor: colors.background },
         ]}
       >
-        <ActivityIndicator size="large" color={colors.tint} />
+        <SkeletonDashboard />
       </View>
     );
   }
@@ -479,7 +551,28 @@ export function AuthGuard({ children }: AuthGuardProps) {
 const styles = StyleSheet.create({
   loadingContainer: {
     flex: 1,
-    justifyContent: "center",
+  },
+  skeletonRoot: {
+    flex: 1,
+    flexDirection: "row",
+  },
+  skeletonSidebar: {
+    width: 60,
     alignItems: "center",
+    paddingVertical: 16,
+    borderRightWidth: 1,
+    ...(Platform.OS === "web"
+      ? ({
+          position: "fixed",
+          left: 0,
+          top: 0,
+          height: "100%",
+          zIndex: 100,
+        } as any)
+      : {}),
+  },
+  skeletonContent: {
+    flex: 1,
+    marginLeft: 60,
   },
 });

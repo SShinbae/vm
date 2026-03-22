@@ -178,12 +178,9 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
 }
 
 // Custom hook to replace the native useColorScheme
-export function useColorScheme(): ColorScheme | null {
-  const { colorScheme, isLoading } = useTheme();
-
-  if (isLoading) {
-    return null;
-  }
-
+// Returns system-based colorScheme immediately (even during loading) so
+// skeleton loaders and other early UI match the user's system preference.
+export function useColorScheme(): ColorScheme {
+  const { colorScheme } = useTheme();
   return colorScheme;
 }
