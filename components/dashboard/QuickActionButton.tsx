@@ -19,36 +19,34 @@ export function QuickActionButton({
   const { styles } = useStyles(stylesheet);
 
   return (
-    <TouchableOpacity
-      style={styles.quickAction}
-      onPress={onPress}
-      accessibilityLabel={title}
-      accessibilityRole="button"
-    >
-      <View style={[styles.quickActionIcon, { backgroundColor: color + "15" }]}>
-        <IconSymbol name={icon as any} size={24} color={color} />
-      </View>
-      <Text style={styles.quickActionTitle} numberOfLines={2}>
-        {title}
-      </Text>
-    </TouchableOpacity>
+    <View style={styles.container}>
+      <TouchableOpacity
+        style={styles.circle}
+        onPress={onPress}
+        accessibilityLabel={title}
+        accessibilityRole="button"
+      >
+        <IconSymbol name={icon as any} size={28} color={color} />
+      </TouchableOpacity>
+      <Text style={styles.title}>{title}</Text>
+    </View>
   );
 }
 
 const stylesheet = createStyleSheet((theme) => ({
-  quickAction: {
-    flex: 1,
+  container: {
     alignItems: "center",
-    gap: theme.spacing.md,
+    gap: theme.spacing.sm,
   },
-  quickActionIcon: {
-    width: 56,
-    height: 56,
-    borderRadius: theme.borderRadius.full,
+  circle: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: theme.colors.surface,
     alignItems: "center",
     justifyContent: "center",
   },
-  quickActionTitle: {
+  title: {
     fontSize: theme.fontSize.sm,
     fontWeight: theme.fontWeight.semibold,
     color: theme.colors.text,

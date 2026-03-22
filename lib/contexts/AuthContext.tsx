@@ -59,6 +59,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   });
   const [isPasswordRecovery, setIsPasswordRecovery] = useState(false);
   const isPasswordRecoveryRef = useRef(false);
+  const profileFetchInFlightRef = useRef(false);
 
   const clearPasswordRecovery = () => {
     isPasswordRecoveryRef.current = false;
@@ -67,38 +68,34 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   const fetchUserProfile = useCallback(
     async (user: User): Promise<AuthUser | null> => {
-      try {
-        // Add timeout to prevent hanging on slow database queries
-        const timeoutPromise = new Promise<{
-          data: Profile | null;
-          error: any;
-        }>((resolve) => {
-          setTimeout(
-            () =>
-              resolve({
-                data: null,
-                error: { message: "Profile fetch timeout" },
-              }),
-            5000,
-          );
-        });
+      if (profileFetchInFlightRef.current) {
+        return null;
+      }
+      profileFetchInFlightRef.current = true;
 
-        const profilePromise = supabase
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000);
+
+      try {
+        const { data: profile, error } = (await supabase
           .from("profiles")
           .select("*")
           .eq("id", user.id)
-          .single();
+          .abortSignal(controller.signal)
+          .single()) as { data: Profile | null; error: any };
 
-        const { data: profile, error } = await Promise.race([
-          profilePromise,
-          timeoutPromise,
-        ]);
+        clearTimeout(timeoutId);
 
         if (error && error.code !== "PGRST116") {
           if (__DEV__) {
             console.error("Error fetching user profile:", error);
           }
-          return { id: user.id, email: user.email || "", username: null };
+          return {
+            id: user.id,
+            email: user.email || "",
+            username: null,
+            lastSignInAt: user.last_sign_in_at,
+          };
         }
 
         return {
@@ -106,12 +103,34 @@ export function AuthProvider({ children }: AuthProviderProps) {
           email: user.email || "",
           profile: profile || undefined,
           username: profile?.username || null,
+          lastSignInAt: user.last_sign_in_at,
         };
       } catch (error) {
+        clearTimeout(timeoutId);
+        if (error instanceof DOMException && error.name === "AbortError") {
+          if (__DEV__) {
+            console.error("Error fetching user profile:", {
+              message: "Profile fetch timeout",
+            });
+          }
+          return {
+            id: user.id,
+            email: user.email || "",
+            username: null,
+            lastSignInAt: user.last_sign_in_at,
+          };
+        }
         if (__DEV__) {
           console.error("Error in fetchUserProfile:", error);
         }
-        return { id: user.id, email: user.email || "", username: null };
+        return {
+          id: user.id,
+          email: user.email || "",
+          username: null,
+          lastSignInAt: user.last_sign_in_at,
+        };
+      } finally {
+        profileFetchInFlightRef.current = false;
       }
     },
     [],
@@ -135,7 +154,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
           }
 
           const authUser = await fetchUserProfile(session.user);
-          setState((prev) => ({ ...prev, user: authUser, loading: false }));
+          if (authUser) {
+            setState((prev) => ({ ...prev, user: authUser, loading: false }));
+          } else {
+            // fetchUserProfile returned null (another fetch is in-flight)
+            // Keep existing user state, just clear loading
+            setState((prev) => ({ ...prev, loading: false }));
+          }
         } else {
           setState((prev) => ({ ...prev, user: null, loading: false }));
         }
@@ -172,103 +197,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
   useEffect(() => {
     let mounted = true;
 
-    // Initialize immediately - optimized for web performance
-    (async () => {
-      try {
-        // Mark as initialized early to prevent loading screen flash
-        // We'll update with real data as it comes in
-        setState((prev) => ({ ...prev, initialized: true }));
-
-        const {
-          data: { session },
-          error,
-        } = await supabase.auth.getSession();
-
-        if (!mounted) return;
-
-        if (error && __DEV__) {
-          console.error("Error getting session:", error);
-        }
-
-        if (__DEV__ && session) {
-          console.log("Session restored successfully:", {
-            userId: session.user.id,
-            email: session.user.email,
-            expiresAt: session.expires_at,
-          });
-        }
-
-        // If we have a session, set basic user info immediately
-        // Then fetch full profile in background
-        if (session?.user) {
-          const isEmailConfirmed = session.user.email_confirmed_at != null;
-
-          if (isEmailConfirmed) {
-            // Set basic user info immediately to prevent redirect
-            setState((prev) => ({
-              ...prev,
-              user: {
-                id: session.user.id,
-                email: session.user.email || "",
-                username: null,
-              },
-              loading: false,
-            }));
-
-            // Identify user in Sentry and PostHog on session restore
-            sentryService.identifyUser(
-              session.user.id,
-              session.user.email || undefined,
-            );
-            posthog?.identify(session.user.id, {
-              email: session.user.email ?? null,
-            });
-
-            // Fetch full profile in background and update when ready
-            // This doesn't block the UI
-            fetchUserProfile(session.user)
-              .then((authUser) => {
-                if (mounted && authUser) {
-                  setState((prev) => ({
-                    ...prev,
-                    user: authUser,
-                  }));
-                }
-              })
-              .catch((err) => {
-                if (__DEV__) {
-                  console.error("Error fetching profile in background:", err);
-                }
-              });
-          } else {
-            // Email not confirmed, no user
-            setState((prev) => ({
-              ...prev,
-              user: null,
-              loading: false,
-            }));
-          }
-        } else {
-          // No session
-          setState((prev) => ({
-            ...prev,
-            user: null,
-            loading: false,
-          }));
-        }
-      } catch (err) {
-        if (__DEV__) {
-          console.error("Failed to get session:", err);
-        }
-        if (mounted) {
-          setState((prev) => ({
-            ...prev,
-            user: null,
-            loading: false,
-          }));
-        }
-      }
-    })();
+    // Mark as initialized early to prevent loading screen flash.
+    // Session restoration is handled entirely by onAuthStateChange below
+    // to avoid deadlocking with Supabase auth-js's internal lock.
+    // DO NOT call getSession() here — it competes for the same lock that
+    // _initialize() holds while calling _notifyAllSubscribers, causing a deadlock.
+    setState((prev) => ({ ...prev, initialized: true }));
 
     // Listen for auth changes
     const {
@@ -314,9 +248,56 @@ export function AuthProvider({ children }: AuthProviderProps) {
           if (__DEV__) {
             console.log("User updated event, skipping profile refetch");
           }
-        } else if (session && !isPasswordRecoveryRef.current) {
-          // Only set full user if not in password recovery mode
-          await setUser(session);
+        } else if (event === "TOKEN_REFRESHED") {
+          // Token refreshed by Supabase (~every 60s). Profile hasn't changed — skip refetch.
+          if (__DEV__) {
+            console.log("Token refreshed, skipping profile refetch");
+          }
+        } else if (
+          event === "INITIAL_SESSION" ||
+          (session && !isPasswordRecoveryRef.current)
+        ) {
+          if (session?.user) {
+            const isEmailConfirmed = session.user.email_confirmed_at != null;
+            if (isEmailConfirmed) {
+              // Set basic user immediately — no network calls inside the auth lock
+              setState((prev) => ({
+                ...prev,
+                user: {
+                  id: session.user.id,
+                  email: session.user.email || "",
+                  username: null,
+                },
+                loading: false,
+              }));
+              // Identify user in Sentry and PostHog
+              sentryService.identifyUser(
+                session.user.id,
+                session.user.email || undefined,
+              );
+              posthog?.identify(session.user.id, {
+                email: session.user.email ?? null,
+              });
+              // Defer profile fetch to run AFTER callback returns and lock is released
+              setTimeout(() => {
+                fetchUserProfile(session.user)
+                  .then((authUser) => {
+                    if (mounted && authUser) {
+                      setState((prev) => ({ ...prev, user: authUser }));
+                    }
+                  })
+                  .catch((err) => {
+                    if (__DEV__)
+                      console.error("Background profile fetch error:", err);
+                  });
+              }, 0);
+            } else {
+              setState((prev) => ({ ...prev, user: null, loading: false }));
+            }
+          } else if (event === "INITIAL_SESSION") {
+            // No session on initial load — definitively not signed in
+            setState((prev) => ({ ...prev, user: null, loading: false }));
+          }
         }
       }
     });

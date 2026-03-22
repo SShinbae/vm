@@ -1,7 +1,5 @@
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { ConfirmModal } from "@/components/ui/Modal";
-import { NotificationBell } from "@/components/ui/NotificationBell";
-import { NotificationPopup } from "@/components/ui/NotificationPopup";
 import { Tooltip } from "@/components/ui/Tooltip";
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
@@ -47,7 +45,6 @@ export function WebSidebar() {
   const { user, signOut } = useAuth();
   const { isOpen, toggle } = useSidebar();
   const [showLogoutModal, setShowLogoutModal] = useState(false);
-  const [showNotificationPopup, setShowNotificationPopup] = useState(false);
 
   // Hide sidebar on auth pages (login, register)
   const isAuthPage =
@@ -482,7 +479,7 @@ export function WebSidebar() {
           </Tooltip>
         </View>
 
-        {/* User Info with Notification Bell */}
+        {/* User Info */}
         <View style={styles.userInfoRow}>
           <Tooltip content="Profile" position="right" disabled={isOpen}>
             <TouchableOpacity
@@ -529,20 +526,6 @@ export function WebSidebar() {
               </View>
             </TouchableOpacity>
           </Tooltip>
-
-          {/* Notification Bell */}
-          <Tooltip content="Notifications" position="right" disabled={isOpen}>
-            <NotificationBell
-              onPress={() => setShowNotificationPopup(true)}
-              size={isOpen ? 20 : 18}
-            />
-          </Tooltip>
-
-          {/* Notification Popup */}
-          <NotificationPopup
-            visible={showNotificationPopup}
-            onClose={() => setShowNotificationPopup(false)}
-          />
         </View>
       </View>
 
