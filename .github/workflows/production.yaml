@@ -204,21 +204,27 @@ jobs:
       - name: 📱 Build Production APK
         if: github.event.inputs.buildType == 'all' || github.event.inputs.buildType == 'prod-apk' || (github.event_name == 'push' && (github.event.inputs.buildType == '' || github.event.inputs.buildType == null))
         run: |
-          export NODE_OPTIONS="--max-old-space-size=4096"
+          export NODE_OPTIONS="--max-old-space-size=2048"
           export EXPO_NO_METRO_LAZY=1
           export EAS_SKIP_AUTO_FINGERPRINT=1
+          export SENTRY_DISABLE_AUTO_UPLOAD=true
 
           echo "Starting production APK build..."
           echo "Node version: $(node --version)"
           echo "NPM version: $(npm --version)"
           echo "EAS CLI version: $(eas --version)"
+          echo "Available memory:" && free -h || true
+          echo "Available disk:" && df -h . || true
 
           eas build --platform android --profile production-apk --local --non-interactive --output=./app-prod.apk 2>&1 | tee build.log
 
           # Check if build failed
           if [ ${PIPESTATUS[0]} -ne 0 ]; then
-            echo "❌ Build failed. Last 100 lines of output:"
-            tail -100 build.log
+            echo "❌ Build failed. Full Gradle output:"
+            echo "--- Last 500 lines ---"
+            tail -500 build.log
+            echo "--- Searching for ERROR lines ---"
+            grep -i "error\|exception\|failure\|FAILED\|OOM\|OutOfMemory" build.log | tail -50 || true
             exit 1
           fi
 
@@ -289,9 +295,10 @@ jobs:
       - name: 📱 Build Production AAB
         if: github.event.inputs.buildType == 'all' || github.event.inputs.buildType == 'prod-aab'
         run: |
-          export NODE_OPTIONS="--max-old-space-size=4096"
+          export NODE_OPTIONS="--max-old-space-size=2048"
           export EXPO_NO_METRO_LAZY=1
           export EAS_SKIP_AUTO_FINGERPRINT=1
+          export SENTRY_DISABLE_AUTO_UPLOAD=true
 
           echo "Starting production AAB build..."
           echo "Node version: $(node --version)"
@@ -302,8 +309,11 @@ jobs:
 
           # Check if build failed
           if [ ${PIPESTATUS[0]} -ne 0 ]; then
-            echo "❌ Build failed. Last 100 lines of output:"
-            tail -100 build-aab.log
+            echo "❌ Build failed. Full Gradle output:"
+            echo "--- Last 500 lines ---"
+            tail -500 build-aab.log
+            echo "--- Searching for ERROR lines ---"
+            grep -i "error\|exception\|failure\|FAILED\|OOM\|OutOfMemory" build-aab.log | tail -50 || true
             exit 1
           fi
 
