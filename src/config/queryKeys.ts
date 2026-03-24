@@ -141,6 +141,15 @@ export const queryKeys = {
   },
 
   // ============================================================================
+  // Notification Preferences
+  // ============================================================================
+  notificationPreferences: {
+    all: ["notificationPreferences"] as const,
+    detail: (userId: string) =>
+      [...queryKeys.notificationPreferences.all, userId] as const,
+  },
+
+  // ============================================================================
   // Analytics
   // ============================================================================
   analytics: {

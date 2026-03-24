@@ -587,6 +587,7 @@ const WebCropModal: React.FC<WebCropModalProps> = ({
   );
 
   // Throttled version for performance
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const throttledPointerMove = useCallback(
     throttle((clientX: number, clientY: number) => {
       handlePointerMove(clientX, clientY);

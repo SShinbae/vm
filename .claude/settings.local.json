@@ -49,7 +49,15 @@
       "Bash(xargs -I {} sh -c 'echo \"\"\"\"=== {} ===\"\"\"\" && head -30 {}')",
       "Bash(head:*)",
       "Bash(tree:*)",
-      "Bash(gh run:*)"
+      "Bash(gh run:*)",
+      "Bash(git:*)",
+      "Bash(npm audit:*)",
+      "Bash(xargs cat:*)",
+      "Bash(pnpm build:*)",
+      "Bash(npx expo:*)",
+      "mcp__notion__notion-update-page",
+      "mcp__notion__notion-search",
+      "Bash(npx eslint:*)"
     ],
     "deny": [],
     "ask": []

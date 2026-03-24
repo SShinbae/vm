@@ -43,7 +43,7 @@ const showAlert = (
     }
   } else {
     // Dynamic import for native Alert to avoid web issues
-    const { Alert } = require("react-native");
+    const { Alert } = require("react-native"); // eslint-disable-line @typescript-eslint/no-require-imports
     Alert.alert(title, message, buttons as any);
   }
 };
