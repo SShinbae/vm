@@ -27,3 +27,9 @@ export {
 
 // Groups
 export { GroupRepository, groupRepository } from "./GroupRepository";
+
+// Notification Preferences
+export {
+  NotificationPreferencesRepository,
+  notificationPreferencesRepository,
+} from "./NotificationPreferencesRepository";

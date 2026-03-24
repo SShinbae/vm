@@ -1,5 +1,9 @@
 import type { Handler, HandlerEvent } from "@netlify/functions";
 import { createClient } from "@supabase/supabase-js";
+import {
+  getUserPreferences,
+  shouldDeliverNotification,
+} from "./_shared/notifications";
 
 // Environment variables
 const ONESIGNAL_REST_API_KEY = process.env.ONESIGNAL_REST_API_KEY!;
@@ -153,22 +157,7 @@ async function handleGroupInvitation(record: any): Promise<boolean> {
     const title = "Group Invitation";
     const body = `${inviterName} invited you to join ${groupName}`;
 
-    // Send push notification
-    const pushSuccess = await sendOneSignalNotification({
-      app_id: ONESIGNAL_APP_ID,
-      include_external_user_ids: [invitedUser.id],
-      headings: { en: title },
-      contents: { en: body },
-      data: {
-        type: "group_invite",
-        groupId: record.group_id,
-        invitationId: record.id,
-      },
-      web_url: `${process.env.SITE_URL}/notifications`,
-      app_url: "yourapp://notifications",
-    });
-
-    // Create notification record in database
+    // Always create notification record in database (visible in-app)
     await createNotificationRecord(
       invitedUser.id,
       "group_invite",
@@ -183,6 +172,33 @@ async function handleGroupInvitation(record: any): Promise<boolean> {
       record.group_id,
       `${process.env.SITE_URL}/notifications`,
     );
+
+    // Check user preferences before sending push
+    const prefs = await getUserPreferences(invitedUser.id);
+    const { deliver, reason } = shouldDeliverNotification(
+      prefs,
+      "group_invite",
+    );
+
+    if (!deliver) {
+      console.log(`Push skipped for ${invitedUser.id}: ${reason}`);
+      return true; // Record created, push skipped
+    }
+
+    // Send push notification
+    const pushSuccess = await sendOneSignalNotification({
+      app_id: ONESIGNAL_APP_ID,
+      include_external_user_ids: [invitedUser.id],
+      headings: { en: title },
+      contents: { en: body },
+      data: {
+        type: "group_invite",
+        groupId: record.group_id,
+        invitationId: record.id,
+      },
+      web_url: `${process.env.SITE_URL}/notifications`,
+      app_url: "yourapp://notifications",
+    });
 
     return pushSuccess;
   } catch (error) {
@@ -265,24 +281,11 @@ async function handleLogChange(
       | "fuel_log"
       | "service_log";
 
-    // Send push notification
-    const pushSuccess = await sendOneSignalNotification({
-      app_id: ONESIGNAL_APP_ID,
-      include_external_user_ids: recipientIds,
-      headings: { en: title },
-      contents: { en: body },
-      data: {
-        type: "log_update",
-        logType: table.replace("_logs", ""),
-        vehicleId: record.vehicle_id,
-        logId: record.id,
-      },
-      web_url: `${process.env.SITE_URL}/vehicles/${record.vehicle_id}`,
-      app_url: `yourapp://vehicles/${record.vehicle_id}`,
-    });
+    // Create notification records + filter push recipients by preferences
+    const pushRecipientIds: string[] = [];
 
-    // Create notification records in database for each recipient
     for (const recipientId of recipientIds) {
+      // Always create in-app notification record
       await createNotificationRecord(
         recipientId,
         notificationType,
@@ -298,10 +301,36 @@ async function handleLogChange(
         null,
         `${process.env.SITE_URL}/vehicles/${record.vehicle_id}`,
       );
+
+      // Check preferences for push delivery
+      const prefs = await getUserPreferences(recipientId);
+      const { deliver } = shouldDeliverNotification(prefs, notificationType);
+      if (deliver) {
+        pushRecipientIds.push(recipientId);
+      }
+    }
+
+    // Send push only to users who have it enabled
+    let pushSuccess = false;
+    if (pushRecipientIds.length > 0) {
+      pushSuccess = await sendOneSignalNotification({
+        app_id: ONESIGNAL_APP_ID,
+        include_external_user_ids: pushRecipientIds,
+        headings: { en: title },
+        contents: { en: body },
+        data: {
+          type: "log_update",
+          logType: table.replace("_logs", ""),
+          vehicleId: record.vehicle_id,
+          logId: record.id,
+        },
+        web_url: `${process.env.SITE_URL}/vehicles/${record.vehicle_id}`,
+        app_url: `yourapp://vehicles/${record.vehicle_id}`,
+      });
     }
 
     console.log(
-      `Notification sent to ${recipientIds.length} recipient(s): ${pushSuccess}`,
+      `Notification: ${recipientIds.length} records created, ${pushRecipientIds.length} pushes sent: ${pushSuccess}`,
     );
     return pushSuccess;
   } catch (error) {
@@ -369,22 +398,9 @@ async function handleGroupMemberChange(
       return false; // Don't notify on updates
     }
 
-    // Send push notification
-    const pushSuccess = await sendOneSignalNotification({
-      app_id: ONESIGNAL_APP_ID,
-      include_external_user_ids: recipientIds,
-      headings: { en: title },
-      contents: { en: body },
-      data: {
-        type: "group_member",
-        groupId: record.group_id,
-        userId: record.user_id,
-      },
-      web_url: `${process.env.SITE_URL}/groups/${record.group_id}`,
-      app_url: `yourapp://groups/${record.group_id}`,
-    });
+    // Create notification records + filter push recipients by preferences
+    const pushRecipientIds: string[] = [];
 
-    // Create notification records in database for each recipient
     for (const recipientId of recipientIds) {
       await createNotificationRecord(
         recipientId,
@@ -400,10 +416,33 @@ async function handleGroupMemberChange(
         record.group_id,
         `${process.env.SITE_URL}/groups/${record.group_id}`,
       );
+
+      const prefs = await getUserPreferences(recipientId);
+      const { deliver } = shouldDeliverNotification(prefs, "group_member");
+      if (deliver) {
+        pushRecipientIds.push(recipientId);
+      }
+    }
+
+    let pushSuccess = false;
+    if (pushRecipientIds.length > 0) {
+      pushSuccess = await sendOneSignalNotification({
+        app_id: ONESIGNAL_APP_ID,
+        include_external_user_ids: pushRecipientIds,
+        headings: { en: title },
+        contents: { en: body },
+        data: {
+          type: "group_member",
+          groupId: record.group_id,
+          userId: record.user_id,
+        },
+        web_url: `${process.env.SITE_URL}/groups/${record.group_id}`,
+        app_url: `yourapp://groups/${record.group_id}`,
+      });
     }
 
     console.log(
-      `Notification sent to ${recipientIds.length} recipient(s): ${pushSuccess}`,
+      `Notification: ${recipientIds.length} records created, ${pushRecipientIds.length} pushes sent: ${pushSuccess}`,
     );
     return pushSuccess;
   } catch (error) {

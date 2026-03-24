@@ -437,7 +437,9 @@ export default function Index() {
                 }}
               >
                 <Image
-                  source={require("@/assets/images/vm_logo.png")}
+                  accessible={true}
+                  accessibilityLabel="Vehicle Management logo"
+                  source={require("@/assets/images/vm_logo.webp")}
                   placeholder={require("@/assets/images/vm_logo_tiny.png")}
                   style={{
                     width: isMobile ? 60 : isTablet ? 70 : 80,

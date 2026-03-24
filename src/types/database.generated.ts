@@ -378,7 +378,11 @@ export interface Database {
             | "fuel_log"
             | "service_log"
             | "group_member"
-            | "group_invite";
+            | "group_invite"
+            | "service_reminder"
+            | "mileage_reminder"
+            | "cost_alert"
+            | "analytics_insight";
           title: string;
           body: string;
           data: unknown | null;
@@ -386,6 +390,7 @@ export interface Database {
           related_vehicle_id: string | null;
           related_group_id: string | null;
           action_url: string | null;
+          snoozed_until: string | null;
           created_at: string;
         };
         Insert: {
@@ -396,7 +401,11 @@ export interface Database {
             | "fuel_log"
             | "service_log"
             | "group_member"
-            | "group_invite";
+            | "group_invite"
+            | "service_reminder"
+            | "mileage_reminder"
+            | "cost_alert"
+            | "analytics_insight";
           title: string;
           body: string;
           data?: unknown | null;
@@ -404,10 +413,107 @@ export interface Database {
           related_vehicle_id?: string | null;
           related_group_id?: string | null;
           action_url?: string | null;
+          snoozed_until?: string | null;
         };
         Update: {
           read?: boolean;
           data?: unknown | null;
+          snoozed_until?: string | null;
+        };
+      };
+      notification_preferences: {
+        Row: {
+          id: string;
+          user_id: string;
+          service_reminders_enabled: boolean;
+          mileage_reminders_enabled: boolean;
+          cost_alerts_enabled: boolean;
+          analytics_insights_enabled: boolean;
+          log_updates_enabled: boolean;
+          group_members_enabled: boolean;
+          invitations_enabled: boolean;
+          push_notifications_enabled: boolean;
+          in_app_toasts_enabled: boolean;
+          service_reminder_days: number[];
+          mileage_reminder_thresholds: number[];
+          monthly_spending_threshold: number | null;
+          fuel_price_alert_percentage: number;
+          analytics_frequency: "weekly" | "monthly" | "never";
+          quiet_hours_enabled: boolean;
+          quiet_hours_start: string;
+          quiet_hours_end: string;
+          quiet_days: number[];
+          timezone: string;
+          max_per_type_per_day: number;
+          snoozed_types: Record<string, string>;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          service_reminders_enabled?: boolean;
+          mileage_reminders_enabled?: boolean;
+          cost_alerts_enabled?: boolean;
+          analytics_insights_enabled?: boolean;
+          log_updates_enabled?: boolean;
+          group_members_enabled?: boolean;
+          invitations_enabled?: boolean;
+          push_notifications_enabled?: boolean;
+          in_app_toasts_enabled?: boolean;
+          service_reminder_days?: number[];
+          mileage_reminder_thresholds?: number[];
+          monthly_spending_threshold?: number | null;
+          fuel_price_alert_percentage?: number;
+          analytics_frequency?: "weekly" | "monthly" | "never";
+          quiet_hours_enabled?: boolean;
+          quiet_hours_start?: string;
+          quiet_hours_end?: string;
+          quiet_days?: number[];
+          timezone?: string;
+          max_per_type_per_day?: number;
+          snoozed_types?: Record<string, string>;
+        };
+        Update: {
+          service_reminders_enabled?: boolean;
+          mileage_reminders_enabled?: boolean;
+          cost_alerts_enabled?: boolean;
+          analytics_insights_enabled?: boolean;
+          log_updates_enabled?: boolean;
+          group_members_enabled?: boolean;
+          invitations_enabled?: boolean;
+          push_notifications_enabled?: boolean;
+          in_app_toasts_enabled?: boolean;
+          service_reminder_days?: number[];
+          mileage_reminder_thresholds?: number[];
+          monthly_spending_threshold?: number | null;
+          fuel_price_alert_percentage?: number;
+          analytics_frequency?: "weekly" | "monthly" | "never";
+          quiet_hours_enabled?: boolean;
+          quiet_hours_start?: string;
+          quiet_hours_end?: string;
+          quiet_days?: number[];
+          timezone?: string;
+          max_per_type_per_day?: number;
+          snoozed_types?: Record<string, string>;
+          updated_at?: string;
+        };
+      };
+      notification_dedup: {
+        Row: {
+          id: string;
+          user_id: string;
+          notification_key: string;
+          sent_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          notification_key: string;
+          sent_at?: string;
+        };
+        Update: {
+          sent_at?: string;
         };
       };
       service_templates: {
@@ -499,7 +605,11 @@ export interface Database {
         | "fuel_log"
         | "service_log"
         | "group_member"
-        | "group_invite";
+        | "group_invite"
+        | "service_reminder"
+        | "mileage_reminder"
+        | "cost_alert"
+        | "analytics_insight";
       platform_type: "ios" | "android" | "web" | "windows" | "macos";
     };
   };

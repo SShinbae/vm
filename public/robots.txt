@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+Disallow: /(tabs)/
+Disallow: /(auth)/
+
+Sitemap: https://vm.wanahnaf.dev/sitemap.xml

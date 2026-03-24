@@ -2,20 +2,19 @@ import { IconSymbol } from "@/components/ui/icon-symbol";
 import { ImageUpload } from "@/components/ui/ImageUpload";
 import { Modal } from "@/components/ui/Modal";
 import { NotificationList } from "@/components/ui/NotificationList";
+import { NotificationPreferencesForm } from "@/components/notifications/NotificationPreferencesForm";
 import { useResponsiveLayout } from "@/hooks/use-responsive-layout";
 import { useProfileStats } from "@/hooks/useProfileStats";
 import { useAuth } from "@/lib/contexts/AuthContext";
 import { useDialog } from "@/lib/contexts/DialogContext";
 import { useTheme } from "@/lib/contexts/ThemeContext";
 import { MaxWidthContainer } from "@/components/layout/MaxWidthContainer";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
   ScrollView,
-  Switch,
   Text,
   TextInput,
   TouchableOpacity,
@@ -41,56 +40,10 @@ export default function ProfileScreen() {
   const [showEditModal, setShowEditModal] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [activeTab, setActiveTab] = useState<TabName>("Profile");
-  const [notificationPrefs, setNotificationPrefs] = useState({
-    logUpdates: true,
-    groupMembers: true,
-    invitations: true,
-    inAppToasts: true,
-    pushNotifications: true,
-  });
 
   useEffect(() => {
     setAvatarUrl(user?.profile?.avatar_url || null);
   }, [user?.profile?.avatar_url]);
-
-  useEffect(() => {
-    loadNotificationPreferences();
-  }, []);
-
-  const loadNotificationPreferences = async () => {
-    try {
-      const stored = await AsyncStorage.getItem("notification_preferences");
-      if (stored) {
-        const prefs = JSON.parse(stored);
-        setNotificationPrefs(prefs);
-      }
-    } catch (error) {
-      console.error("Error loading notification preferences:", error);
-    }
-  };
-
-  const saveNotificationPreferences = async (
-    prefs: typeof notificationPrefs,
-  ) => {
-    try {
-      await AsyncStorage.setItem(
-        "notification_preferences",
-        JSON.stringify(prefs),
-      );
-      setNotificationPrefs(prefs);
-    } catch (error) {
-      console.error("Error saving notification preferences:", error);
-      Alert.alert("Error", "Failed to save notification preferences");
-    }
-  };
-
-  const updateNotificationPref = (
-    key: keyof typeof notificationPrefs,
-    value: boolean,
-  ) => {
-    const newPrefs = { ...notificationPrefs, [key]: value };
-    saveNotificationPreferences(newPrefs);
-  };
 
   const handleEditPress = () => {
     if (isWeb && !isMobile) {
@@ -743,47 +696,6 @@ export default function ProfileScreen() {
 
   // Notifications tab content
   const renderNotificationsTab = () => {
-    const NotificationSwitch = ({
-      label,
-      value,
-      onToggle,
-    }: {
-      label: string;
-      value: boolean;
-      onToggle: (val: boolean) => void;
-    }) => (
-      <View
-        style={{
-          flexDirection: "row",
-          justifyContent: "space-between",
-          alignItems: "center",
-          paddingVertical: theme.spacing.md,
-          borderBottomWidth: 1,
-          borderBottomColor: theme.colors.border,
-        }}
-      >
-        <Text
-          style={{
-            fontSize: theme.fontSize.base,
-            color: theme.colors.text,
-            fontWeight: theme.fontWeight.medium,
-            flex: 1,
-          }}
-        >
-          {label}
-        </Text>
-        <Switch
-          value={value}
-          onValueChange={onToggle}
-          trackColor={{
-            false: theme.colors.border,
-            true: theme.colors.primary,
-          }}
-          thumbColor={value ? "white" : theme.colors.textSecondary}
-        />
-      </View>
-    );
-
     return (
       <>
         {/* Embedded Notification History for all platforms */}
@@ -799,74 +711,8 @@ export default function ProfileScreen() {
           <NotificationList />
         </View>
 
-        <View
-          style={{
-            padding: theme.spacing.xl,
-            backgroundColor: theme.colors.surface,
-            marginTop: theme.spacing.md,
-            borderRadius: theme.borderRadius.xl,
-            marginHorizontal: theme.spacing.lg,
-          }}
-        >
-          <Text
-            style={{
-              fontSize: theme.fontSize.lg,
-              fontWeight: theme.fontWeight.bold,
-              color: theme.colors.text,
-              marginBottom: theme.spacing.lg,
-            }}
-          >
-            Activity Notifications
-          </Text>
-          <NotificationSwitch
-            label="Log Updates"
-            value={notificationPrefs.logUpdates}
-            onToggle={(value) => updateNotificationPref("logUpdates", value)}
-          />
-          <NotificationSwitch
-            label="Group Members"
-            value={notificationPrefs.groupMembers}
-            onToggle={(value) => updateNotificationPref("groupMembers", value)}
-          />
-        </View>
-
-        <View
-          style={{
-            padding: theme.spacing.xl,
-            backgroundColor: theme.colors.surface,
-            marginTop: theme.spacing.md,
-            borderRadius: theme.borderRadius.xl,
-            marginHorizontal: theme.spacing.lg,
-          }}
-        >
-          <Text
-            style={{
-              fontSize: theme.fontSize.lg,
-              fontWeight: theme.fontWeight.bold,
-              color: theme.colors.text,
-              marginBottom: theme.spacing.lg,
-            }}
-          >
-            System Notifications
-          </Text>
-          <NotificationSwitch
-            label="Invitations"
-            value={notificationPrefs.invitations}
-            onToggle={(value) => updateNotificationPref("invitations", value)}
-          />
-          <NotificationSwitch
-            label="In-App Toasts"
-            value={notificationPrefs.inAppToasts}
-            onToggle={(value) => updateNotificationPref("inAppToasts", value)}
-          />
-          <NotificationSwitch
-            label="Push Notifications"
-            value={notificationPrefs.pushNotifications}
-            onToggle={(value) =>
-              updateNotificationPref("pushNotifications", value)
-            }
-          />
-        </View>
+        {/* DB-backed notification preferences */}
+        <NotificationPreferencesForm />
       </>
     );
   };

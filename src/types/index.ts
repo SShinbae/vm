@@ -29,6 +29,14 @@ export type VehicleGroupShare =
   Database["public"]["Tables"]["vehicle_group_shares"]["Row"];
 export type PushToken = Database["public"]["Tables"]["push_tokens"]["Row"];
 export type Notification = Database["public"]["Tables"]["notifications"]["Row"];
+export type NotificationPreferences =
+  Database["public"]["Tables"]["notification_preferences"]["Row"];
+export type NotificationPreferencesInsert =
+  Database["public"]["Tables"]["notification_preferences"]["Insert"];
+export type NotificationPreferencesUpdate =
+  Database["public"]["Tables"]["notification_preferences"]["Update"];
+export type NotificationDedup =
+  Database["public"]["Tables"]["notification_dedup"]["Row"];
 export type ServiceTemplate =
   Database["public"]["Tables"]["service_templates"]["Row"];
 export type ServiceTemplateItem =

@@ -61,6 +61,15 @@ export {
   type GroupInviteFormData,
 } from "./groupSchema";
 
+// Notification Preferences
+export {
+  notificationPreferencesSchema,
+  notificationPreferencesUpdateSchema,
+  notificationPreferencesDefaultValues,
+  type NotificationPreferencesFormData,
+  type NotificationPreferencesUpdateFormData,
+} from "./notificationPreferencesSchema";
+
 // Auth
 export {
   loginSchema,

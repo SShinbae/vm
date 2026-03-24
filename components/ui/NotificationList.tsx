@@ -1,10 +1,17 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Alert, Text, TouchableOpacity, View } from "react-native";
+import {
+  Alert,
+  Modal as RNModal,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { createStyleSheet, useStyles } from "react-native-unistyles";
 import { useNotifications } from "../../lib/contexts/NotificationContext";
 import { NotificationData } from "../../lib/services/notificationService";
 import { formatDistanceToNow } from "../../lib/utils/dateUtils";
 import { IconSymbol } from "./icon-symbol";
+import { SnoozeMenu } from "../notifications/SnoozeMenu";
 
 interface NotificationItemProps {
   notification: NotificationData;
@@ -14,6 +21,7 @@ interface NotificationItemProps {
 function NotificationItem({ notification, onPress }: NotificationItemProps) {
   const { styles, theme } = useStyles(itemStylesheet);
   const { markAsRead, clearNotification } = useNotifications();
+  const [showSnooze, setShowSnooze] = useState(false);
 
   const handlePress = () => {
     if (!notification.read) {
@@ -49,6 +57,14 @@ function NotificationItem({ notification, onPress }: NotificationItemProps) {
         return "person.2.fill";
       case "group_invite":
         return "envelope.fill";
+      case "service_reminder":
+        return "calendar.badge.clock";
+      case "mileage_reminder":
+        return "gauge.open.with.lines.needle.33percent";
+      case "cost_alert":
+        return "dollarsign.circle.fill";
+      case "analytics_insight":
+        return "chart.bar.fill";
       default:
         return "bell.fill";
     }
@@ -65,6 +81,14 @@ function NotificationItem({ notification, onPress }: NotificationItemProps) {
       case "group_member":
         return theme.colors.success;
       case "group_invite":
+        return theme.colors.info;
+      case "service_reminder":
+        return theme.colors.warning;
+      case "mileage_reminder":
+        return theme.colors.primary;
+      case "cost_alert":
+        return theme.colors.error;
+      case "analytics_insight":
         return theme.colors.info;
       default:
         return theme.colors.primary;
@@ -160,19 +184,61 @@ function NotificationItem({ notification, onPress }: NotificationItemProps) {
             </Text>
           </View>
 
-          <TouchableOpacity
-            onPress={handleDelete}
-            style={styles.deleteButton}
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-          >
-            <IconSymbol
-              name="xmark"
-              size={14}
-              color={theme.colors.textSecondary}
-            />
-          </TouchableOpacity>
+          <View style={{ flexDirection: "row", gap: theme.spacing.xs }}>
+            <TouchableOpacity
+              onPress={() => setShowSnooze(true)}
+              style={styles.deleteButton}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
+              <IconSymbol
+                name="clock"
+                size={14}
+                color={theme.colors.textSecondary}
+              />
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={handleDelete}
+              style={styles.deleteButton}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
+              <IconSymbol
+                name="xmark"
+                size={14}
+                color={theme.colors.textSecondary}
+              />
+            </TouchableOpacity>
+          </View>
         </View>
       </View>
+
+      {/* Snooze Menu Modal */}
+      <RNModal
+        visible={showSnooze}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowSnooze(false)}
+      >
+        <TouchableOpacity
+          style={{
+            flex: 1,
+            backgroundColor: "rgba(0,0,0,0.4)",
+            justifyContent: "center",
+            padding: 24,
+          }}
+          activeOpacity={1}
+          onPress={() => setShowSnooze(false)}
+        >
+          <TouchableOpacity activeOpacity={1}>
+            <SnoozeMenu
+              notificationId={notification.id}
+              notificationType={notification.notification_type}
+              title={notification.title}
+              body={notification.body}
+              onClose={() => setShowSnooze(false)}
+            />
+          </TouchableOpacity>
+        </TouchableOpacity>
+      </RNModal>
     </TouchableOpacity>
   );
 }
