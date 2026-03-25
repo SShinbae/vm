@@ -17,6 +17,8 @@ import {
   migrateNotificationsFromStorage,
   hasMigratedNotifications,
 } from "../utils/notificationMigration";
+import { requestLocalNotificationPermissions } from "../services/localNotificationService";
+import { migratePreferencesFromAsyncStorage } from "../services/notificationPreferencesService";
 import {
   useNotifications as useNotificationsQuery,
   useMarkNotificationAsRead as useMarkAsReadMutation,
@@ -248,6 +250,12 @@ export function NotificationProvider({ children }: NotificationProviderProps) {
                 console.log("✅ Notification service initialized");
               }
             })(),
+
+            // Migrate notification preferences from AsyncStorage to Supabase
+            migratePreferencesFromAsyncStorage(user.id),
+
+            // Request local notification permissions on mobile
+            requestLocalNotificationPermissions(),
           ]);
 
           if (__DEV__) {

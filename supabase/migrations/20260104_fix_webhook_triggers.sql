@@ -31,8 +31,8 @@ DROP TRIGGER IF EXISTS group_members_insert_webhook ON public.group_members;
 DROP TRIGGER IF EXISTS group_members_delete_webhook ON public.group_members;
 DROP TRIGGER IF EXISTS group_invitations_insert_webhook ON public.group_invitations;
 
--- Drop old function if exists
-DROP FUNCTION IF EXISTS public.notify_webhook();
+-- Drop old function if exists (CASCADE to drop dependent triggers — they are recreated below)
+DROP FUNCTION IF EXISTS public.notify_webhook() CASCADE;
 
 -- ============================================
 -- STEP 3: Create webhook function using pg_net

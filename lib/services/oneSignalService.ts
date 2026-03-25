@@ -547,6 +547,37 @@ class OneSignalService {
   }
 
   /**
+   * Sync notification preference toggles as OneSignal tags for server-side filtering
+   */
+  async syncPreferenceTags(prefs: {
+    push_notifications_enabled?: boolean;
+    log_updates_enabled?: boolean;
+    group_members_enabled?: boolean;
+    invitations_enabled?: boolean;
+    service_reminders_enabled?: boolean;
+    mileage_reminders_enabled?: boolean;
+    cost_alerts_enabled?: boolean;
+    analytics_insights_enabled?: boolean;
+    quiet_hours_enabled?: boolean;
+  }): Promise<void> {
+    if (!this.initialized) return;
+
+    const tags: Record<string, string> = {
+      push_enabled: String(prefs.push_notifications_enabled ?? true),
+      log_updates: String(prefs.log_updates_enabled ?? true),
+      group_members: String(prefs.group_members_enabled ?? true),
+      invitations: String(prefs.invitations_enabled ?? true),
+      service_reminders: String(prefs.service_reminders_enabled ?? true),
+      mileage_reminders: String(prefs.mileage_reminders_enabled ?? true),
+      cost_alerts: String(prefs.cost_alerts_enabled ?? true),
+      analytics_insights: String(prefs.analytics_insights_enabled ?? true),
+      quiet_hours: String(prefs.quiet_hours_enabled ?? false),
+    };
+
+    await this.addTags(tags);
+  }
+
+  /**
    * Clean up on logout
    */
   async onLogout(): Promise<void> {

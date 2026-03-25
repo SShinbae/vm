@@ -9,7 +9,11 @@ export interface NotificationData {
     | "fuel_log"
     | "service_log"
     | "group_member"
-    | "group_invite";
+    | "group_invite"
+    | "service_reminder"
+    | "mileage_reminder"
+    | "cost_alert"
+    | "analytics_insight";
   title: string;
   body: string;
   data: any | null;
@@ -17,6 +21,7 @@ export interface NotificationData {
   related_vehicle_id?: string | null;
   related_group_id?: string | null;
   action_url?: string | null;
+  snoozed_until?: string | null;
   created_at: string;
 }
 

@@ -5,7 +5,7 @@ const expoConfig = require("eslint-config-expo/flat");
 module.exports = defineConfig([
   expoConfig,
   {
-    ignores: ["dist/*"],
+    ignores: ["dist/*", ".expo/*"],
   },
   {
     // Disable import plugin rules that require native bindings incompatible with Node 18
@@ -33,6 +33,9 @@ module.exports = defineConfig([
         afterAll: "readonly",
         test: "readonly",
       },
+    },
+    rules: {
+      "@typescript-eslint/no-require-imports": "off",
     },
   },
 ]);

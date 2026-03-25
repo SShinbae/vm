@@ -100,6 +100,13 @@ module.exports = {
         },
       ],
       [
+        "expo-notifications",
+        {
+          icon: "./assets/images/vm_logo.png",
+          color: "#517c89",
+        },
+      ],
+      [
         "onesignal-expo-plugin",
         {
           mode:
