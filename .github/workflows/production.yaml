@@ -208,6 +208,9 @@ jobs:
           export EXPO_NO_METRO_LAZY=1
           export EAS_SKIP_AUTO_FINGERPRINT=1
           export SENTRY_DISABLE_AUTO_UPLOAD=true
+          # Override .npmrc optional=false so EAS's internal `npx eas-cli-local-build-plugin`
+          # installs platform-specific binaries (e.g. @ngrok/ngrok-linux-x64-gnu, required by EAS CLI v20+).
+          export npm_config_optional=true
 
           echo "Starting production APK build..."
           echo "Node version: $(node --version)"
@@ -299,6 +302,9 @@ jobs:
           export EXPO_NO_METRO_LAZY=1
           export EAS_SKIP_AUTO_FINGERPRINT=1
           export SENTRY_DISABLE_AUTO_UPLOAD=true
+          # Override .npmrc optional=false so EAS's internal `npx eas-cli-local-build-plugin`
+          # installs platform-specific binaries (e.g. @ngrok/ngrok-linux-x64-gnu, required by EAS CLI v20+).
+          export npm_config_optional=true
 
           echo "Starting production AAB build..."
           echo "Node version: $(node --version)"
