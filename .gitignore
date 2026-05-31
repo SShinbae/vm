@@ -60,3 +60,7 @@ build/
 !fastlane/README.md
 
 .env.local
+
+# iOS signing assets (decoded at CI runtime, never commit)
+credentials.json
+ios/certs/
