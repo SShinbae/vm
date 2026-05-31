@@ -198,6 +198,9 @@ jobs:
           export NODE_OPTIONS="--max-old-space-size=6144"
           export EXPO_NO_METRO_LAZY=1
           export EAS_SKIP_AUTO_FINGERPRINT=1
+          # Override .npmrc optional=false so EAS's internal `npx eas-cli-local-build-plugin`
+          # installs platform-specific binaries (e.g. @ngrok/ngrok-linux-x64-gnu, required by EAS CLI v20+).
+          export npm_config_optional=true
           eas build --platform android --profile development --local --non-interactive --output=./app-staging-dev.apk
 
       - name: 🧹 Remove environment file after dev build
@@ -244,6 +247,9 @@ jobs:
           export NODE_OPTIONS="--max-old-space-size=6144"
           export EXPO_NO_METRO_LAZY=1
           export EAS_SKIP_AUTO_FINGERPRINT=1
+          # Override .npmrc optional=false so EAS's internal `npx eas-cli-local-build-plugin`
+          # installs platform-specific binaries (e.g. @ngrok/ngrok-linux-x64-gnu, required by EAS CLI v20+).
+          export npm_config_optional=true
           eas build --platform android --profile preview --local --non-interactive --output=./app-staging-preview.apk
 
       - name: 🧹 Remove environment file after preview build
