@@ -468,27 +468,6 @@ export const handler: Handler = async (event: HandlerEvent) => {
   if (webhookSecret) {
     const authHeader = event.headers["authorization"];
     if (authHeader !== `Bearer ${webhookSecret}`) {
-      // DEBUG_AUTH_MISMATCH — remove after diagnosing 401 issue
-      // Logs SHA-256 prefixes so we can compare without leaking the secret
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
-      const crypto = require("crypto");
-      const sha = (s: string | undefined) =>
-        s
-          ? crypto.createHash("sha256").update(s).digest("hex").slice(0, 12)
-          : "<empty>";
-      const expected = `Bearer ${webhookSecret}`;
-      console.error("DEBUG_AUTH_MISMATCH", {
-        env_secret_len: webhookSecret.length,
-        env_secret_sha12: sha(webhookSecret),
-        env_secret_first2: webhookSecret.slice(0, 2),
-        env_secret_last2: webhookSecret.slice(-2),
-        env_has_lead_ws: /^\s/.test(webhookSecret),
-        env_has_trail_ws: /\s$/.test(webhookSecret),
-        auth_header_present: !!authHeader,
-        auth_header_len: authHeader?.length ?? 0,
-        auth_header_sha12: sha(authHeader),
-        expected_sha12: sha(expected),
-      });
       return {
         statusCode: 401,
         body: JSON.stringify({ error: "Unauthorized" }),
