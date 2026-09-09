@@ -1,3 +1,6 @@
+import { withOpacity, spacing } from "@/src/design-system";
+import { useColorScheme } from "@/hooks/use-color-scheme";
+import { useStyles } from "react-native-unistyles";
 import { ActionMenu, ActionMenuItem } from "@/components/ui/ActionMenu";
 import { Button } from "@/components/ui/Button";
 import { DatePicker } from "@/components/ui/DatePicker";
@@ -6,8 +9,6 @@ import { Input } from "@/components/ui/Input";
 import { ConfirmModal } from "@/components/ui/Modal";
 import { SkeletonMileageLogEdit } from "@/components/ui/Skeleton";
 import { useToast } from "@/hooks/useToast";
-import { Colors } from "@/constants/theme";
-import { useColorScheme } from "@/hooks/use-color-scheme";
 import { canUserAccessVehicle } from "@/lib/utils/serviceUtils";
 import { MileageLogService } from "@/lib/services/loggingService";
 import { supabase } from "@/services/supabaseClient";
@@ -42,8 +43,9 @@ export default function EditMileageLogScreen() {
   const [canModify, setCanModify] = useState(true);
   const [deleteModalVisible, setDeleteModalVisible] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
+  const { theme } = useStyles();
   const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? "light"];
+  const colors = theme.colors;
   const isWeb = Platform.OS === "web";
 
   useEffect(() => {
@@ -215,15 +217,15 @@ export default function EditMileageLogScreen() {
     header: {
       flexDirection: "row",
       alignItems: "center",
-      paddingHorizontal: 20,
-      paddingVertical: 16,
+      paddingHorizontal: spacing.xl,
+      paddingVertical: spacing.lg,
       borderBottomWidth: 1,
-      borderBottomColor: colors.icon + "20",
+      borderBottomColor: withOpacity(colors.textSecondary, 0.12),
       backgroundColor: colors.background,
     },
     backButton: {
-      marginRight: 16,
-      padding: 4,
+      marginRight: spacing.lg,
+      padding: spacing.xs,
     },
     headerTitle: {
       fontSize: 24,
@@ -236,7 +238,7 @@ export default function EditMileageLogScreen() {
     },
     scrollContent: {
       padding: isWeb ? 40 : 20,
-      paddingBottom: 100,
+      paddingBottom: spacing.xxxl,
       ...(isWeb && {
         maxWidth: 600,
         width: "100%",
@@ -247,13 +249,13 @@ export default function EditMileageLogScreen() {
       fontSize: 32,
       fontWeight: "bold",
       color: colors.text,
-      marginBottom: 8,
+      marginBottom: spacing.sm,
       textAlign: isWeb ? "center" : "left",
     },
     subtitle: {
       fontSize: 16,
-      color: colors.icon,
-      marginBottom: 32,
+      color: colors.textSecondary,
+      marginBottom: spacing.xxl,
       textAlign: isWeb ? "center" : "left",
     },
     card: {
@@ -261,7 +263,8 @@ export default function EditMileageLogScreen() {
       borderRadius: isWeb ? 16 : 12,
       padding: isWeb ? 32 : 20,
       ...(isWeb && {
-        shadowColor: colorScheme === "dark" ? "#ffffff" : "#000000",
+        shadowColor:
+          colorScheme === "dark" ? theme.colors.white : theme.colors.black,
         shadowOffset: {
           width: 0,
           height: 4,
@@ -273,8 +276,8 @@ export default function EditMileageLogScreen() {
     },
     buttonContainer: {
       flexDirection: "row",
-      gap: 12,
-      marginTop: 32,
+      gap: spacing.md,
+      marginTop: spacing.xxl,
     },
     cancelButton: {
       flex: 1,
@@ -288,27 +291,27 @@ export default function EditMileageLogScreen() {
       alignItems: "center",
     },
     inputContainer: {
-      marginBottom: 20,
+      marginBottom: spacing.xl,
     },
     label: {
       fontSize: 16,
       fontWeight: "500",
       color: colors.text,
-      marginBottom: 8,
+      marginBottom: spacing.sm,
     },
     vehicleInfo: {
-      backgroundColor: colors.icon + "10",
+      backgroundColor: withOpacity(colors.textSecondary, 0.06),
       borderRadius: 8,
-      padding: 12,
+      padding: spacing.md,
       flexDirection: "row",
       alignItems: "center",
-      gap: 12,
+      gap: spacing.md,
     },
     vehicleIcon: {
       width: 32,
       height: 32,
       borderRadius: 16,
-      backgroundColor: colors.tint,
+      backgroundColor: colors.primary,
       alignItems: "center",
       justifyContent: "center",
     },
@@ -319,8 +322,8 @@ export default function EditMileageLogScreen() {
     },
     vehiclePlate: {
       fontSize: 14,
-      color: colors.icon,
-      marginTop: 2,
+      color: colors.textSecondary,
+      marginTop: spacing.xs,
     },
   });
 

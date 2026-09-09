@@ -1,3 +1,4 @@
+import { withOpacity } from "@/src/design-system";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { VehicleWithDetails } from "@/types/database-v2";
 import { Image } from "expo-image";
@@ -23,7 +24,7 @@ export function VehicleOption({
   // Use the 'primary' color as the tint
   const selectedStyles = isSelected && {
     borderColor: theme.colors.primary,
-    backgroundColor: theme.colors.primary + "15",
+    backgroundColor: withOpacity(theme.colors.primary, 0.08),
   };
 
   return (
@@ -74,7 +75,7 @@ const stylesheet = createStyleSheet((theme) => ({
     borderRadius: theme.borderRadius.full,
   },
   vehicleIconPlaceholder: {
-    backgroundColor: theme.colors.primary + "15",
+    backgroundColor: withOpacity(theme.colors.primary, 0.08),
     alignItems: "center",
     justifyContent: "center",
   },

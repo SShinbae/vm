@@ -59,6 +59,8 @@ const MAPPING = {
   fuelpump: "local-gas-station",
   wrench: "build",
   "chart.line.uptrend.xyaxis": "trending-up",
+  "chart.bar.fill": "bar-chart",
+  "person.badge.plus": "person-add",
 
   // Financial & Action Icons
   "dollarsign.circle.fill": "attach-money",
@@ -79,6 +81,11 @@ const MAPPING = {
 
   // Menu Icons
   ellipsis: "more-vert",
+
+  // Notifications
+  "bell.fill": "notifications",
+  bell: "notifications-none",
+  clock: "access-time",
 
   // Profile Quick Action Icons
   "person.2": "people",

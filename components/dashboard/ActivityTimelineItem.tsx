@@ -1,3 +1,4 @@
+import { withOpacity } from "@/src/design-system";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { ActivityItem } from "@/hooks/useDashboardDataQuery";
 import { formatRelativeTime, getActivityColor } from "@/utils/format";
@@ -29,7 +30,12 @@ export function ActivityTimelineItem({ item }: ActivityTimelineItemProps) {
 
   return (
     <View style={styles.activityItem}>
-      <View style={[styles.activityIcon, { backgroundColor: color + "15" }]}>
+      <View
+        style={[
+          styles.activityIcon,
+          { backgroundColor: withOpacity(color, 0.08) },
+        ]}
+      >
         <IconSymbol name={item.icon} size={20} color={color} />
       </View>
       <View style={styles.activityContent}>

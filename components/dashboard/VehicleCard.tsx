@@ -1,3 +1,4 @@
+import { withOpacity } from "@/src/design-system";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { VehicleWithShares } from "@/hooks/useDashboardDataQuery";
 import { Image } from "expo-image";
@@ -102,7 +103,7 @@ const stylesheet = createStyleSheet((theme) => ({
     width: 60,
     height: 60,
     borderRadius: theme.borderRadius.md,
-    backgroundColor: theme.colors.primary + "15",
+    backgroundColor: withOpacity(theme.colors.primary, 0.08),
     alignItems: "center",
     justifyContent: "center",
   },

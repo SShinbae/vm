@@ -1,5 +1,6 @@
-import { Colors } from "@/constants/theme";
-import { useColorScheme } from "@/hooks/use-color-scheme";
+import { spacing } from "@/src/design-system";
+import { useReducedMotion } from "@/hooks/useReducedMotion";
+import { useStyles } from "react-native-unistyles";
 import { Ionicons } from "@expo/vector-icons";
 import React, { ReactNode, useRef, useState } from "react";
 import {
@@ -53,10 +54,11 @@ export function AuthInput({
   helperText,
   children,
 }: AuthInputProps) {
-  const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? "light"];
+  const { theme } = useStyles();
+  const colors = theme.colors;
   const [isFocused, setIsFocused] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const reduceMotion = useReducedMotion();
 
   // Animated values for smooth focus transition
   const focusAnim = useRef(new Animated.Value(0)).current;
@@ -65,7 +67,7 @@ export function AuthInput({
     setIsFocused(true);
     Animated.timing(focusAnim, {
       toValue: 1,
-      duration: 200,
+      duration: reduceMotion ? 0 : 200,
       useNativeDriver: false,
     }).start();
   };
@@ -74,7 +76,7 @@ export function AuthInput({
     setIsFocused(false);
     Animated.timing(focusAnim, {
       toValue: 0,
-      duration: 200,
+      duration: reduceMotion ? 0 : 200,
       useNativeDriver: false,
     }).start();
   };
@@ -87,7 +89,7 @@ export function AuthInput({
 
   const backgroundColor = focusAnim.interpolate({
     inputRange: [0, 1],
-    outputRange: [colors.background, colors.card],
+    outputRange: [colors.background, colors.surface],
   });
 
   const borderWidth = focusAnim.interpolate({
@@ -107,13 +109,13 @@ export function AuthInput({
 
   const styles = StyleSheet.create({
     container: {
-      marginBottom: 20,
+      marginBottom: spacing.xl,
     },
     label: {
       fontSize: 14,
       fontWeight: "600",
       color: colors.text,
-      marginBottom: 8,
+      marginBottom: spacing.sm,
     },
     inputWrapper: {
       position: "relative",
@@ -130,27 +132,31 @@ export function AuthInput({
       borderRadius: 8,
       paddingHorizontal: leftIcon ? 48 : 16,
       paddingRight: isPassword ? 48 : 16,
-      paddingVertical: 14,
+      paddingVertical: spacing.lg,
       fontSize: 16,
       color: colors.text,
       minHeight: 52,
     },
     eyeIcon: {
       position: "absolute",
-      right: 16,
+      right: 0,
       zIndex: 1,
+      width: 48,
+      height: 48,
+      alignItems: "center",
+      justifyContent: "center",
     },
     helperText: {
       fontSize: 12,
       color: colors.textSecondary,
-      marginTop: 6,
-      marginLeft: 4,
+      marginTop: spacing.sm,
+      marginLeft: spacing.xs,
     },
     errorText: {
       fontSize: 12,
-      color: colors.error || "#EF4444",
-      marginTop: 6,
-      marginLeft: 4,
+      color: colors.error || theme.colors.error,
+      marginTop: spacing.sm,
+      marginLeft: spacing.xs,
     },
   });
 
@@ -171,7 +177,9 @@ export function AuthInput({
           style={{
             flex: 1,
             borderWidth: borderWidth,
-            borderColor: error ? colors.error || "#EF4444" : borderColor,
+            borderColor: error
+              ? colors.error || theme.colors.error
+              : borderColor,
             backgroundColor: backgroundColor,
             borderRadius: 8,
           }}
@@ -181,7 +189,7 @@ export function AuthInput({
             value={value}
             onChangeText={onChangeText}
             placeholder={placeholder}
-            placeholderTextColor={colors.textTertiary}
+            placeholderTextColor={colors.gray[400]}
             keyboardType={getKeyboardType()}
             autoCapitalize={autoCapitalize}
             autoCorrect={autoCorrect}
@@ -194,6 +202,10 @@ export function AuthInput({
           <TouchableOpacity
             style={styles.eyeIcon}
             onPress={() => setShowPassword(!showPassword)}
+            accessibilityRole="button"
+            accessibilityLabel={
+              showPassword ? "Hide password" : "Show password"
+            }
           >
             <Ionicons
               name={showPassword ? "eye-outline" : "eye-off-outline"}

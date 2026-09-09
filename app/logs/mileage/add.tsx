@@ -1,10 +1,11 @@
+import { withOpacity, spacing } from "@/src/design-system";
+import { useColorScheme } from "@/hooks/use-color-scheme";
+import { useStyles } from "react-native-unistyles";
 import { Button } from "@/components/ui/Button";
 import { DatePicker } from "@/components/ui/DatePicker";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { Input } from "@/components/ui/Input";
 import { SkeletonMileageLogForm } from "@/components/ui/Skeleton";
-import { Colors } from "@/constants/theme";
-import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useToast } from "@/hooks/useToast";
 import { MileageLogService } from "@/lib/services/loggingService";
 import { VehicleService } from "@/lib/services/vehicleService";
@@ -86,8 +87,9 @@ export default function AddMileageLogScreen() {
   const [vehiclesLoading, setVehiclesLoading] = useState(true);
   const { showSuccess, showError } = useToast();
   const posthog = usePostHog();
+  const { theme } = useStyles();
   const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? "light"];
+  const colors = theme.colors;
   const isWeb = Platform.OS === "web";
 
   // --- Custom Header (standardized across all log forms) ---
@@ -219,7 +221,11 @@ export default function AddMileageLogScreen() {
                 </Text>
               </View>
               <View style={styles.lockIcon}>
-                <IconSymbol name="lock.fill" size={14} color={colors.icon} />
+                <IconSymbol
+                  name="lock.fill"
+                  size={14}
+                  color={colors.textSecondary}
+                />
               </View>
             </View>
             <Text style={styles.lockedHelpText}>
@@ -266,15 +272,15 @@ export default function AddMileageLogScreen() {
     customHeader: {
       flexDirection: "row",
       alignItems: "center",
-      paddingHorizontal: 20,
-      paddingVertical: 16,
+      paddingHorizontal: spacing.xl,
+      paddingVertical: spacing.lg,
       backgroundColor: colors.background,
       borderBottomWidth: 1,
-      borderBottomColor: colors.icon + "20",
+      borderBottomColor: withOpacity(colors.textSecondary, 0.12),
     },
     customBackButton: {
-      marginRight: 16,
-      padding: 4,
+      marginRight: spacing.lg,
+      padding: spacing.xs,
     },
     titleContainer: {
       flex: 1,
@@ -286,15 +292,15 @@ export default function AddMileageLogScreen() {
     },
     headerSubtitle: {
       fontSize: 14,
-      color: colors.icon,
-      marginTop: 2,
+      color: colors.textSecondary,
+      marginTop: spacing.xs,
     },
     content: {
       flex: 1,
     },
     scrollContent: {
       padding: isWeb ? 40 : 20,
-      paddingBottom: 100,
+      paddingBottom: spacing.xxxl,
       ...(isWeb && {
         maxWidth: 600,
         width: "100%",
@@ -302,20 +308,21 @@ export default function AddMileageLogScreen() {
       }),
     },
     section: {
-      marginBottom: 24,
+      marginBottom: spacing.xl,
     },
     sectionTitle: {
       fontSize: 18,
       fontWeight: "600",
       color: colors.text,
-      marginBottom: 16,
+      marginBottom: spacing.lg,
     },
     card: {
       backgroundColor: colors.background,
       borderRadius: isWeb ? 16 : 12,
       padding: isWeb ? 32 : 20,
       ...(isWeb && {
-        shadowColor: colorScheme === "dark" ? "#ffffff" : "#000000",
+        shadowColor:
+          colorScheme === "dark" ? theme.colors.white : theme.colors.black,
         shadowOffset: {
           width: 0,
           height: 4,
@@ -327,8 +334,8 @@ export default function AddMileageLogScreen() {
     },
     buttonContainer: {
       flexDirection: "row",
-      gap: 12,
-      marginTop: 32,
+      gap: spacing.md,
+      marginTop: spacing.xxl,
     },
     cancelButton: {
       flex: 1,
@@ -342,42 +349,42 @@ export default function AddMileageLogScreen() {
       alignItems: "center",
     },
     inputContainer: {
-      marginBottom: 20,
+      marginBottom: spacing.xl,
     },
     label: {
       fontSize: 16,
       fontWeight: "500",
       color: colors.text,
-      marginBottom: 8,
+      marginBottom: spacing.sm,
     },
     requiredLabel: {
-      color: "#ff4444",
+      color: theme.colors.error,
     },
     vehicleSelector: {
       maxHeight: 120,
     },
     vehicleSelectorContent: {
-      gap: 12,
+      gap: spacing.md,
     },
     vehicleOption: {
       backgroundColor: colors.background,
       borderWidth: 1,
-      borderColor: colors.icon + "30",
+      borderColor: withOpacity(colors.textSecondary, 0.19),
       borderRadius: 8,
-      padding: 12,
+      padding: spacing.md,
       minWidth: 120,
       alignItems: "center",
-      gap: 8,
+      gap: spacing.sm,
     },
     vehicleOptionSelected: {
-      borderColor: colors.tint,
-      backgroundColor: colors.tint + "10",
+      borderColor: colors.primary,
+      backgroundColor: withOpacity(colors.primary, 0.06),
     },
     vehicleIcon: {
       width: 32,
       height: 32,
       borderRadius: 16,
-      backgroundColor: colors.tint,
+      backgroundColor: colors.primary,
       alignItems: "center",
       justifyContent: "center",
     },
@@ -388,28 +395,28 @@ export default function AddMileageLogScreen() {
       textAlign: "center",
     },
     vehicleOptionTextSelected: {
-      color: colors.tint,
+      color: colors.primary,
     },
     vehiclePlateText: {
       fontSize: 12,
-      color: colors.icon,
+      color: colors.textSecondary,
       textAlign: "center",
     },
     vehiclePlateTextSelected: {
-      color: colors.tint,
+      color: colors.primary,
     },
     lockedVehicleContainer: {
-      gap: 8,
+      gap: spacing.sm,
     },
     lockedVehicle: {
       backgroundColor: colors.background,
       borderWidth: 1,
-      borderColor: colors.tint,
+      borderColor: colors.primary,
       borderRadius: 8,
-      padding: 16,
+      padding: spacing.lg,
       flexDirection: "row",
       alignItems: "center",
-      gap: 12,
+      gap: spacing.md,
     },
     lockedVehicleInfo: {
       flex: 1,
@@ -421,15 +428,15 @@ export default function AddMileageLogScreen() {
     },
     lockedVehiclePlate: {
       fontSize: 14,
-      color: colors.icon,
-      marginTop: 2,
+      color: colors.textSecondary,
+      marginTop: spacing.xs,
     },
     lockIcon: {
-      padding: 4,
+      padding: spacing.xs,
     },
     lockedHelpText: {
       fontSize: 12,
-      color: colors.icon,
+      color: colors.textSecondary,
       fontStyle: "italic",
     },
   });
@@ -457,7 +464,7 @@ export default function AddMileageLogScreen() {
             title="Add Vehicle"
             onPress={() => router.push("/vehicles/add" as any)}
             icon="plus"
-            style={{ marginTop: 20 }}
+            style={{ marginTop: spacing.xl }}
           />
         </View>
       </SafeAreaView>

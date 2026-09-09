@@ -9,8 +9,6 @@ export * from "./tokens";
 
 // Themes
 export { lightTheme, darkTheme } from "./themes";
-export type { LightTheme, DarkTheme, Theme } from "./themes";
+export type { LightTheme, DarkTheme, Theme, ThemeColors } from "./themes";
 
-// Unistyles configuration
-export { initializeUnistyles } from "./unistyles.config";
-export type { AppBreakpoints, AppThemes } from "./unistyles.config";
+export { withOpacity } from "./color";

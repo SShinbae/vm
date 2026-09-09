@@ -1,3 +1,5 @@
+import { withOpacity, spacing } from "@/src/design-system";
+import { useStyles } from "react-native-unistyles";
 import React, { useState } from "react";
 import {
   View,
@@ -12,8 +14,6 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { router, useLocalSearchParams, useRouter } from "expo-router";
 import { usePostHog } from "posthog-react-native";
 import { GroupInvitationService } from "@/lib/services/groupService";
-import { Colors } from "@/constants/theme";
-import { useColorScheme } from "@/hooks/use-color-scheme";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
@@ -29,8 +29,8 @@ export default function InviteToGroupScreen() {
   const [showSendAnotherConfirm, setShowSendAnotherConfirm] = useState(false);
   const [lastSentEmail, setLastSentEmail] = useState("");
   const posthog = usePostHog();
-  const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? "light"];
+  const { theme } = useStyles();
+  const colors = theme.colors;
   const navigation = useRouter();
 
   const handleGoBack = () => {
@@ -112,14 +112,14 @@ export default function InviteToGroupScreen() {
     header: {
       flexDirection: "row",
       alignItems: "center",
-      paddingHorizontal: 20,
-      paddingVertical: 16,
+      paddingHorizontal: spacing.xl,
+      paddingVertical: spacing.lg,
       borderBottomWidth: 1,
-      borderBottomColor: colors.icon + "20",
+      borderBottomColor: withOpacity(colors.textSecondary, 0.12),
     },
     backButton: {
-      marginRight: 16,
-      padding: 4,
+      marginRight: spacing.lg,
+      padding: spacing.xs,
     },
     title: {
       fontSize: 24,
@@ -131,31 +131,31 @@ export default function InviteToGroupScreen() {
       flex: 1,
     },
     scrollContent: {
-      padding: 20,
+      padding: spacing.xl,
     },
     section: {
-      marginBottom: 32,
+      marginBottom: spacing.xxl,
     },
     sectionTitle: {
       fontSize: 18,
       fontWeight: "600",
       color: colors.text,
-      marginBottom: 16,
+      marginBottom: spacing.lg,
     },
     infoIcon: {
       width: 40,
       height: 40,
       borderRadius: 20,
-      backgroundColor: colors.tint + "20",
+      backgroundColor: withOpacity(colors.primary, 0.12),
       alignItems: "center",
       justifyContent: "center",
-      marginBottom: 12,
+      marginBottom: spacing.md,
     },
     infoTitle: {
       fontSize: 16,
       fontWeight: "600",
       color: colors.text,
-      marginBottom: 8,
+      marginBottom: spacing.sm,
     },
     infoText: {
       fontSize: 14,
@@ -165,13 +165,13 @@ export default function InviteToGroupScreen() {
     bulletPoint: {
       flexDirection: "row",
       alignItems: "flex-start",
-      marginTop: 8,
+      marginTop: spacing.sm,
     },
     bulletText: {
       fontSize: 14,
       color: colors.text,
       lineHeight: 20,
-      marginLeft: 8,
+      marginLeft: spacing.sm,
       flex: 1,
     },
   });
@@ -237,7 +237,11 @@ export default function InviteToGroupScreen() {
           <Card variant="filled" padding="medium">
             <CardContent>
               <View style={styles.infoIcon}>
-                <IconSymbol name="info.circle" size={20} color={colors.tint} />
+                <IconSymbol
+                  name="info.circle"
+                  size={20}
+                  color={colors.primary}
+                />
               </View>
               <Text style={styles.infoTitle}>How Invitations Work</Text>
               <Text style={styles.infoText}>When you send an invitation:</Text>

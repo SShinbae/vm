@@ -1,3 +1,4 @@
+import { baseColors, withOpacity } from "@/src/design-system";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import * as Haptics from "expo-haptics";
 import React, { useState } from "react";
@@ -82,7 +83,7 @@ export function ActionMenu({ items, disabled = false }: ActionMenuProps) {
         <Pressable
           style={{
             flex: 1,
-            backgroundColor: "rgba(0, 0, 0, 0.5)",
+            backgroundColor: withOpacity(baseColors.black, 0.5),
           }}
           onPress={handleClose}
         >

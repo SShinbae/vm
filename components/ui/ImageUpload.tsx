@@ -1,5 +1,5 @@
-import { Colors } from "@/constants/theme";
-import { useColorScheme } from "@/hooks/use-color-scheme";
+import { baseColors, withOpacity, spacing } from "@/src/design-system";
+import { useStyles } from "react-native-unistyles";
 import { ImageUploadService } from "@/lib/services/imageUploadService";
 import { Image } from "expo-image";
 import * as ImagePicker from "expo-image-picker";
@@ -49,8 +49,8 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
   const [showCropModal, setShowCropModal] = useState(false);
   const [selectedImageUri, setSelectedImageUri] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? "light"];
+  const { theme } = useStyles();
+  const colors = theme.colors;
 
   const handleImageSelect = () => {
     if (disabled || uploading) return;
@@ -331,7 +331,7 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
         if (!vehicleId) {
           throw new Error("Vehicle ID is required for vehicle images");
         }
-        console.log("🚗 Uploading vehicle image...");
+        console.log("Uploading vehicle image...");
         result = await ImageUploadService.uploadVehicleImage(
           vehicleId,
           finalFile,
@@ -451,7 +451,7 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
       ...imageSize,
       backgroundColor: colors.background,
       borderWidth: 2,
-      borderColor: colors.icon + "30",
+      borderColor: withOpacity(colors.textSecondary, 0.19),
       borderStyle: "dashed",
       justifyContent: "center",
       alignItems: "center",
@@ -468,11 +468,11 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
       flex: 1,
     },
     placeholderIcon: {
-      marginBottom: 8,
+      marginBottom: spacing.sm,
     },
     placeholderText: {
       fontSize: 12,
-      color: colors.icon,
+      color: colors.textSecondary,
       textAlign: "center",
       fontWeight: "500",
     },
@@ -482,7 +482,7 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
       left: 0,
       right: 0,
       bottom: 0,
-      backgroundColor: "rgba(0,0,0,0.5)",
+      backgroundColor: withOpacity(baseColors.black, 0.5),
       justifyContent: "center",
       alignItems: "center",
     },
@@ -490,7 +490,7 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
       position: "absolute",
       top: -8,
       right: -8,
-      backgroundColor: "#ff4444",
+      backgroundColor: theme.colors.error,
       borderRadius: 12,
       width: 24,
       height: 24,
@@ -502,7 +502,7 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
       fontSize: 12,
       color: "white",
       fontWeight: "500",
-      marginTop: 4,
+      marginTop: spacing.xs,
     },
     hiddenInput: {
       position: "absolute",
@@ -517,7 +517,7 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
         style={[
           styles.imageContainer,
           disabled && { opacity: 0.5 },
-          imageSource && { borderStyle: "solid", borderColor: colors.tint },
+          imageSource && { borderStyle: "solid", borderColor: colors.primary },
         ]}
         onPress={handleImageSelect}
         disabled={disabled || uploading}
@@ -546,7 +546,7 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
               <IconSymbol
                 name={type === "avatar" ? "person.circle" : "camera"}
                 size={type === "avatar" ? 40 : 32}
-                color={colors.icon}
+                color={colors.textSecondary}
               />
             </View>
             <Text style={styles.placeholderText}>{getPlaceholderText()}</Text>
@@ -602,8 +602,8 @@ export const ImageGallery: React.FC<ImageGalleryProps> = ({
   onImageDeleted,
   editable = true,
 }) => {
-  const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? "light"];
+  const { theme } = useStyles();
+  const colors = theme.colors;
 
   const handleImageUpload = (imageUrl: string) => {
     onImageAdded?.();
@@ -615,28 +615,28 @@ export const ImageGallery: React.FC<ImageGalleryProps> = ({
 
   const styles = StyleSheet.create({
     container: {
-      marginVertical: 16,
+      marginVertical: spacing.lg,
     },
     title: {
       fontSize: 18,
       fontWeight: "600",
       color: colors.text,
-      marginBottom: 12,
+      marginBottom: spacing.md,
     },
     gallery: {
       flexDirection: "row",
       flexWrap: "wrap",
-      gap: 12,
+      gap: spacing.md,
     },
     imageItem: {
       position: "relative",
     },
     emptyText: {
       fontSize: 14,
-      color: colors.icon,
+      color: colors.textSecondary,
       textAlign: "center",
       fontStyle: "italic",
-      marginVertical: 20,
+      marginVertical: spacing.xl,
     },
   });
 
@@ -671,7 +671,7 @@ export const ImageGallery: React.FC<ImageGalleryProps> = ({
                   position: "absolute",
                   top: 4,
                   right: 4,
-                  backgroundColor: "#ff4444",
+                  backgroundColor: theme.colors.error,
                   borderRadius: 12,
                   width: 24,
                   height: 24,

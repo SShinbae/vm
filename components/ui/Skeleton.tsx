@@ -1,7 +1,8 @@
-import { Colors } from "@/constants/theme";
-import { useColorScheme } from "@/hooks/use-color-scheme";
+import { useStyles } from "react-native-unistyles";
+import { useReducedMotion } from "@/hooks/useReducedMotion";
 import React, { useEffect, useRef } from "react";
 import { Animated, Easing, StyleSheet, View, ViewStyle } from "react-native";
+import { grayLight, withOpacity, spacing } from "@/src/design-system";
 
 interface SkeletonProps {
   width?: number | string;
@@ -18,12 +19,13 @@ export function Skeleton({
   style,
   animated = true,
 }: SkeletonProps) {
-  const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? "light"];
+  const { theme } = useStyles();
+  const colors = theme.colors;
   const animatedValue = useRef(new Animated.Value(0)).current;
+  const reduceMotion = useReducedMotion();
 
   useEffect(() => {
-    if (!animated) return;
+    if (!animated || reduceMotion) return;
 
     const animation = Animated.loop(
       Animated.sequence([
@@ -45,14 +47,18 @@ export function Skeleton({
     animation.start();
 
     return () => animation.stop();
-  }, [animatedValue, animated]);
+  }, [animatedValue, animated, reduceMotion]);
 
-  const backgroundColor = animated
-    ? animatedValue.interpolate({
-        inputRange: [0, 1],
-        outputRange: [colors.icon + "20", colors.icon + "40"],
-      })
-    : colors.icon + "20";
+  const backgroundColor =
+    animated && !reduceMotion
+      ? animatedValue.interpolate({
+          inputRange: [0, 1],
+          outputRange: [
+            withOpacity(colors.textSecondary, 0.12),
+            withOpacity(colors.textSecondary, 0.25),
+          ],
+        })
+      : withOpacity(colors.textSecondary, 0.12);
 
   return (
     <Animated.View
@@ -87,7 +93,11 @@ export function SkeletonCard({
             <Skeleton width={40} height={40} borderRadius={20} />
             <View style={styles.avatarText}>
               <Skeleton width="60%" height={16} />
-              <Skeleton width="40%" height={12} style={{ marginTop: 4 }} />
+              <Skeleton
+                width="40%"
+                height={12}
+                style={{ marginTop: spacing.xs }}
+              />
             </View>
           </View>
         )}
@@ -98,7 +108,7 @@ export function SkeletonCard({
               key={index}
               width={index === lines - 1 ? "70%" : "100%"}
               height={14}
-              style={{ marginBottom: 8 }}
+              style={{ marginBottom: spacing.sm }}
             />
           ))}
         </View>
@@ -123,7 +133,7 @@ export function SkeletonList({
           key={index}
           showAvatar={showAvatar}
           lines={lines}
-          style={{ marginBottom: 12 }}
+          style={{ marginBottom: spacing.md }}
         />
       ))}
     </View>
@@ -182,7 +192,11 @@ export function SkeletonStats({
     <View style={[styles.stats, style]}>
       {Array.from({ length: count }).map((_, index) => (
         <View key={index} style={styles.statItem}>
-          <Skeleton width={40} height={20} style={{ marginBottom: 4 }} />
+          <Skeleton
+            width={40}
+            height={20}
+            style={{ marginBottom: spacing.xs }}
+          />
           <Skeleton width={60} height={12} />
         </View>
       ))}
@@ -196,7 +210,11 @@ export function SkeletonDashboard({ style }: { style?: ViewStyle }) {
     <View style={[styles.dashboardContainer, style]}>
       {/* Header */}
       <View style={styles.dashboardHeader}>
-        <Skeleton width="50%" height={28} style={{ marginBottom: 8 }} />
+        <Skeleton
+          width="50%"
+          height={28}
+          style={{ marginBottom: spacing.sm }}
+        />
         <Skeleton width="70%" height={16} />
       </View>
 
@@ -205,21 +223,41 @@ export function SkeletonDashboard({ style }: { style?: ViewStyle }) {
         {[1, 2, 3, 4].map((i) => (
           <View key={i} style={styles.statCard}>
             <Skeleton width={32} height={32} borderRadius={16} />
-            <Skeleton width="60%" height={20} style={{ marginTop: 12 }} />
-            <Skeleton width="40%" height={14} style={{ marginTop: 4 }} />
+            <Skeleton
+              width="60%"
+              height={20}
+              style={{ marginTop: spacing.md }}
+            />
+            <Skeleton
+              width="40%"
+              height={14}
+              style={{ marginTop: spacing.xs }}
+            />
           </View>
         ))}
       </View>
 
       {/* Vehicle Cards */}
       <View style={styles.section}>
-        <Skeleton width="40%" height={20} style={{ marginBottom: 16 }} />
+        <Skeleton
+          width="40%"
+          height={20}
+          style={{ marginBottom: spacing.lg }}
+        />
         {[1, 2].map((i) => (
           <View key={i} style={styles.vehicleCard}>
             <Skeleton width={80} height={80} borderRadius={12} />
             <View style={styles.vehicleCardContent}>
-              <Skeleton width="70%" height={18} style={{ marginBottom: 8 }} />
-              <Skeleton width="50%" height={14} style={{ marginBottom: 8 }} />
+              <Skeleton
+                width="70%"
+                height={18}
+                style={{ marginBottom: spacing.sm }}
+              />
+              <Skeleton
+                width="50%"
+                height={14}
+                style={{ marginBottom: spacing.sm }}
+              />
               <Skeleton width="40%" height={14} />
             </View>
           </View>
@@ -243,8 +281,16 @@ export function SkeletonVehicleList({
         <View key={index} style={styles.vehicleCard}>
           <Skeleton width={80} height={80} borderRadius={12} />
           <View style={styles.vehicleCardContent}>
-            <Skeleton width="70%" height={18} style={{ marginBottom: 8 }} />
-            <Skeleton width="50%" height={14} style={{ marginBottom: 8 }} />
+            <Skeleton
+              width="70%"
+              height={18}
+              style={{ marginBottom: spacing.sm }}
+            />
+            <Skeleton
+              width="50%"
+              height={14}
+              style={{ marginBottom: spacing.sm }}
+            />
             <Skeleton width="40%" height={14} />
           </View>
         </View>
@@ -267,8 +313,16 @@ export function SkeletonAnalytics({ style }: { style?: ViewStyle }) {
       <View style={styles.metricsGrid}>
         {[1, 2, 3].map((i) => (
           <View key={i} style={styles.metricCard}>
-            <Skeleton width="60%" height={16} style={{ marginBottom: 8 }} />
-            <Skeleton width="80%" height={24} style={{ marginBottom: 4 }} />
+            <Skeleton
+              width="60%"
+              height={16}
+              style={{ marginBottom: spacing.sm }}
+            />
+            <Skeleton
+              width="80%"
+              height={24}
+              style={{ marginBottom: spacing.xs }}
+            />
             <Skeleton width="40%" height={14} />
           </View>
         ))}
@@ -276,7 +330,11 @@ export function SkeletonAnalytics({ style }: { style?: ViewStyle }) {
 
       {/* Chart Section */}
       <View style={styles.chartSection}>
-        <Skeleton width="50%" height={20} style={{ marginBottom: 16 }} />
+        <Skeleton
+          width="50%"
+          height={20}
+          style={{ marginBottom: spacing.lg }}
+        />
         <Skeleton width="100%" height={200} borderRadius={12} />
       </View>
     </View>
@@ -293,7 +351,7 @@ export function SkeletonProfile({ style }: { style?: ViewStyle }) {
         <Skeleton
           width="60%"
           height={24}
-          style={{ marginTop: 16, marginBottom: 8 }}
+          style={{ marginTop: spacing.lg, marginBottom: spacing.sm }}
         />
         <Skeleton width="40%" height={16} />
       </View>
@@ -302,7 +360,11 @@ export function SkeletonProfile({ style }: { style?: ViewStyle }) {
       <View style={styles.profileStats}>
         {[1, 2, 3].map((i) => (
           <View key={i} style={styles.profileStatItem}>
-            <Skeleton width={60} height={28} style={{ marginBottom: 4 }} />
+            <Skeleton
+              width={60}
+              height={28}
+              style={{ marginBottom: spacing.xs }}
+            />
             <Skeleton width={80} height={14} />
           </View>
         ))}
@@ -314,7 +376,11 @@ export function SkeletonProfile({ style }: { style?: ViewStyle }) {
           <View key={i} style={styles.settingsItem}>
             <View style={styles.settingsItemLeft}>
               <Skeleton width={24} height={24} borderRadius={6} />
-              <Skeleton width={120} height={16} style={{ marginLeft: 12 }} />
+              <Skeleton
+                width={120}
+                height={16}
+                style={{ marginLeft: spacing.md }}
+              />
             </View>
             <Skeleton width={40} height={20} borderRadius={10} />
           </View>
@@ -339,8 +405,16 @@ export function SkeletonLogList({
           <View style={styles.logItemHeader}>
             <Skeleton width={60} height={60} borderRadius={8} />
             <View style={styles.logItemContent}>
-              <Skeleton width="70%" height={16} style={{ marginBottom: 8 }} />
-              <Skeleton width="50%" height={14} style={{ marginBottom: 6 }} />
+              <Skeleton
+                width="70%"
+                height={16}
+                style={{ marginBottom: spacing.sm }}
+              />
+              <Skeleton
+                width="50%"
+                height={14}
+                style={{ marginBottom: spacing.sm }}
+              />
               <Skeleton width="40%" height={12} />
             </View>
           </View>
@@ -359,14 +433,26 @@ export function SkeletonVehicleDetail({ style }: { style?: ViewStyle }) {
 
       {/* Vehicle Info */}
       <View style={styles.vehicleDetailInfo}>
-        <Skeleton width="80%" height={28} style={{ marginBottom: 12 }} />
-        <Skeleton width="60%" height={18} style={{ marginBottom: 20 }} />
+        <Skeleton
+          width="80%"
+          height={28}
+          style={{ marginBottom: spacing.md }}
+        />
+        <Skeleton
+          width="60%"
+          height={18}
+          style={{ marginBottom: spacing.xl }}
+        />
 
         {/* Quick Stats */}
         <View style={styles.quickStats}>
           {[1, 2, 3].map((i) => (
             <View key={i} style={styles.quickStatItem}>
-              <Skeleton width={60} height={20} style={{ marginBottom: 4 }} />
+              <Skeleton
+                width={60}
+                height={20}
+                style={{ marginBottom: spacing.xs }}
+              />
               <Skeleton width={40} height={14} />
             </View>
           ))}
@@ -380,7 +466,7 @@ export function SkeletonVehicleDetail({ style }: { style?: ViewStyle }) {
               width={80}
               height={40}
               borderRadius={8}
-              style={{ marginRight: 12 }}
+              style={{ marginRight: spacing.md }}
             />
           ))}
         </View>
@@ -407,9 +493,13 @@ export function SkeletonFormField({
   style?: ViewStyle;
 }) {
   return (
-    <View style={[{ marginBottom: 16 }, style]}>
+    <View style={[{ marginBottom: spacing.lg }, style]}>
       {showLabel && (
-        <Skeleton width="30%" height={16} style={{ marginBottom: 8 }} />
+        <Skeleton
+          width="30%"
+          height={16}
+          style={{ marginBottom: spacing.sm }}
+        />
       )}
       <Skeleton width="100%" height={height} borderRadius={8} />
     </View>
@@ -426,7 +516,7 @@ export function SkeletonVehicleSelector({
 }) {
   return (
     <View style={[formStyles.vehicleSelectorContainer, style]}>
-      <Skeleton width="20%" height={16} style={{ marginBottom: 8 }} />
+      <Skeleton width="20%" height={16} style={{ marginBottom: spacing.sm }} />
       <View style={formStyles.vehicleSelectorRow}>
         {Array.from({ length: itemCount }).map((_, index) => (
           <View key={index} style={formStyles.vehicleCard}>
@@ -434,12 +524,12 @@ export function SkeletonVehicleSelector({
             <Skeleton
               width="80%"
               height={14}
-              style={{ marginTop: 8, alignSelf: "center" }}
+              style={{ marginTop: spacing.sm, alignSelf: "center" }}
             />
             <Skeleton
               width="60%"
               height={12}
-              style={{ marginTop: 4, alignSelf: "center" }}
+              style={{ marginTop: spacing.xs, alignSelf: "center" }}
             />
           </View>
         ))}
@@ -451,12 +541,16 @@ export function SkeletonVehicleSelector({
 // Locked vehicle display skeleton (for edit forms)
 export function SkeletonLockedVehicle({ style }: { style?: ViewStyle }) {
   return (
-    <View style={[{ marginBottom: 16 }, style]}>
-      <Skeleton width="20%" height={16} style={{ marginBottom: 8 }} />
+    <View style={[{ marginBottom: spacing.lg }, style]}>
+      <Skeleton width="20%" height={16} style={{ marginBottom: spacing.sm }} />
       <View style={formStyles.lockedVehicleCard}>
         <Skeleton width={32} height={32} borderRadius={16} />
-        <View style={{ flex: 1, marginLeft: 12 }}>
-          <Skeleton width="60%" height={16} style={{ marginBottom: 4 }} />
+        <View style={{ flex: 1, marginLeft: spacing.md }}>
+          <Skeleton
+            width="60%"
+            height={16}
+            style={{ marginBottom: spacing.xs }}
+          />
           <Skeleton width="40%" height={12} />
         </View>
       </View>
@@ -473,7 +567,11 @@ export function SkeletonFuelLogForm({ style }: { style?: ViewStyle }) {
 
       {/* Fuel Price Chips */}
       <View style={formStyles.inputContainer}>
-        <Skeleton width="40%" height={16} style={{ marginBottom: 8 }} />
+        <Skeleton
+          width="40%"
+          height={16}
+          style={{ marginBottom: spacing.sm }}
+        />
         <View style={formStyles.chipsRow}>
           {[1, 2, 3, 4].map((i) => (
             <Skeleton
@@ -481,7 +579,7 @@ export function SkeletonFuelLogForm({ style }: { style?: ViewStyle }) {
               width={70}
               height={36}
               borderRadius={8}
-              style={{ marginRight: 8 }}
+              style={{ marginRight: spacing.sm }}
             />
           ))}
         </View>
@@ -492,7 +590,7 @@ export function SkeletonFuelLogForm({ style }: { style?: ViewStyle }) {
         <View style={{ flex: 1 }}>
           <SkeletonFormField height={48} />
         </View>
-        <View style={{ flex: 1, marginLeft: 12 }}>
+        <View style={{ flex: 1, marginLeft: spacing.md }}>
           <SkeletonFormField height={48} />
         </View>
       </View>
@@ -512,7 +610,7 @@ export function SkeletonFuelLogForm({ style }: { style?: ViewStyle }) {
           width="30%"
           height={48}
           borderRadius={8}
-          style={{ marginRight: 12 }}
+          style={{ marginRight: spacing.md }}
         />
         <Skeleton width="65%" height={48} borderRadius={8} />
       </View>
@@ -529,7 +627,11 @@ export function SkeletonFuelLogEdit({ style }: { style?: ViewStyle }) {
 
       {/* Fuel Price Chips */}
       <View style={formStyles.inputContainer}>
-        <Skeleton width="40%" height={16} style={{ marginBottom: 8 }} />
+        <Skeleton
+          width="40%"
+          height={16}
+          style={{ marginBottom: spacing.sm }}
+        />
         <View style={formStyles.chipsRow}>
           {[1, 2, 3, 4].map((i) => (
             <Skeleton
@@ -537,7 +639,7 @@ export function SkeletonFuelLogEdit({ style }: { style?: ViewStyle }) {
               width={70}
               height={36}
               borderRadius={8}
-              style={{ marginRight: 8 }}
+              style={{ marginRight: spacing.sm }}
             />
           ))}
         </View>
@@ -548,7 +650,7 @@ export function SkeletonFuelLogEdit({ style }: { style?: ViewStyle }) {
         <View style={{ flex: 1 }}>
           <SkeletonFormField height={48} />
         </View>
-        <View style={{ flex: 1, marginLeft: 12 }}>
+        <View style={{ flex: 1, marginLeft: spacing.md }}>
           <SkeletonFormField height={48} />
         </View>
       </View>
@@ -558,7 +660,7 @@ export function SkeletonFuelLogEdit({ style }: { style?: ViewStyle }) {
         <View style={{ flex: 1 }}>
           <SkeletonFormField height={48} />
         </View>
-        <View style={{ flex: 1, marginLeft: 12 }}>
+        <View style={{ flex: 1, marginLeft: spacing.md }}>
           <SkeletonFormField height={48} />
         </View>
       </View>
@@ -572,7 +674,7 @@ export function SkeletonFuelLogEdit({ style }: { style?: ViewStyle }) {
           width="30%"
           height={48}
           borderRadius={8}
-          style={{ marginRight: 12 }}
+          style={{ marginRight: spacing.md }}
         />
         <Skeleton width="65%" height={48} borderRadius={8} />
       </View>
@@ -602,7 +704,7 @@ export function SkeletonMileageLogForm({ style }: { style?: ViewStyle }) {
           width="30%"
           height={48}
           borderRadius={8}
-          style={{ marginRight: 12 }}
+          style={{ marginRight: spacing.md }}
         />
         <Skeleton width="65%" height={48} borderRadius={8} />
       </View>
@@ -632,7 +734,7 @@ export function SkeletonMileageLogEdit({ style }: { style?: ViewStyle }) {
           width="30%"
           height={48}
           borderRadius={8}
-          style={{ marginRight: 12 }}
+          style={{ marginRight: spacing.md }}
         />
         <Skeleton width="65%" height={48} borderRadius={8} />
       </View>
@@ -649,13 +751,21 @@ export function SkeletonServiceLogForm({ style }: { style?: ViewStyle }) {
 
       {/* Receipt/Photo Placeholder */}
       <View style={formStyles.inputContainer}>
-        <Skeleton width="30%" height={16} style={{ marginBottom: 8 }} />
+        <Skeleton
+          width="30%"
+          height={16}
+          style={{ marginBottom: spacing.sm }}
+        />
         <Skeleton width="100%" height={80} borderRadius={12} />
       </View>
 
       {/* Service Type Grid */}
       <View style={formStyles.inputContainer}>
-        <Skeleton width="30%" height={16} style={{ marginBottom: 8 }} />
+        <Skeleton
+          width="30%"
+          height={16}
+          style={{ marginBottom: spacing.sm }}
+        />
         <View style={formStyles.serviceTypeGrid}>
           {[1, 2, 3, 4, 5, 6].map((i) => (
             <Skeleton
@@ -663,7 +773,7 @@ export function SkeletonServiceLogForm({ style }: { style?: ViewStyle }) {
               width="45%"
               height={40}
               borderRadius={8}
-              style={{ marginBottom: 8 }}
+              style={{ marginBottom: spacing.sm }}
             />
           ))}
         </View>
@@ -671,12 +781,16 @@ export function SkeletonServiceLogForm({ style }: { style?: ViewStyle }) {
 
       {/* Service Items Section */}
       <View style={formStyles.inputContainer}>
-        <Skeleton width="30%" height={16} style={{ marginBottom: 8 }} />
+        <Skeleton
+          width="30%"
+          height={16}
+          style={{ marginBottom: spacing.sm }}
+        />
         <Skeleton
           width="100%"
           height={60}
           borderRadius={8}
-          style={{ marginBottom: 8 }}
+          style={{ marginBottom: spacing.sm }}
         />
         <Skeleton width="100%" height={60} borderRadius={8} />
       </View>
@@ -689,7 +803,7 @@ export function SkeletonServiceLogForm({ style }: { style?: ViewStyle }) {
         <View style={{ flex: 1 }}>
           <SkeletonFormField height={48} />
         </View>
-        <View style={{ flex: 1, marginLeft: 12 }}>
+        <View style={{ flex: 1, marginLeft: spacing.md }}>
           <SkeletonFormField height={48} />
         </View>
       </View>
@@ -700,7 +814,7 @@ export function SkeletonServiceLogForm({ style }: { style?: ViewStyle }) {
           width="30%"
           height={48}
           borderRadius={8}
-          style={{ marginRight: 12 }}
+          style={{ marginRight: spacing.md }}
         />
         <Skeleton width="65%" height={48} borderRadius={8} />
       </View>
@@ -717,7 +831,11 @@ export function SkeletonServiceLogEdit({ style }: { style?: ViewStyle }) {
 
       {/* Service Type Grid */}
       <View style={formStyles.inputContainer}>
-        <Skeleton width="30%" height={16} style={{ marginBottom: 8 }} />
+        <Skeleton
+          width="30%"
+          height={16}
+          style={{ marginBottom: spacing.sm }}
+        />
         <View style={formStyles.serviceTypeGrid}>
           {[1, 2, 3, 4, 5, 6].map((i) => (
             <Skeleton
@@ -725,7 +843,7 @@ export function SkeletonServiceLogEdit({ style }: { style?: ViewStyle }) {
               width="45%"
               height={40}
               borderRadius={8}
-              style={{ marginBottom: 8 }}
+              style={{ marginBottom: spacing.sm }}
             />
           ))}
         </View>
@@ -733,12 +851,16 @@ export function SkeletonServiceLogEdit({ style }: { style?: ViewStyle }) {
 
       {/* Service Items Section */}
       <View style={formStyles.inputContainer}>
-        <Skeleton width="30%" height={16} style={{ marginBottom: 8 }} />
+        <Skeleton
+          width="30%"
+          height={16}
+          style={{ marginBottom: spacing.sm }}
+        />
         <Skeleton
           width="100%"
           height={60}
           borderRadius={8}
-          style={{ marginBottom: 8 }}
+          style={{ marginBottom: spacing.sm }}
         />
         <Skeleton width="100%" height={60} borderRadius={8} />
       </View>
@@ -751,7 +873,7 @@ export function SkeletonServiceLogEdit({ style }: { style?: ViewStyle }) {
         <View style={{ flex: 1 }}>
           <SkeletonFormField height={48} />
         </View>
-        <View style={{ flex: 1, marginLeft: 12 }}>
+        <View style={{ flex: 1, marginLeft: spacing.md }}>
           <SkeletonFormField height={48} />
         </View>
       </View>
@@ -762,7 +884,7 @@ export function SkeletonServiceLogEdit({ style }: { style?: ViewStyle }) {
           width="30%"
           height={48}
           borderRadius={8}
-          style={{ marginRight: 12 }}
+          style={{ marginRight: spacing.md }}
         />
         <Skeleton width="65%" height={48} borderRadius={8} />
       </View>
@@ -777,7 +899,7 @@ export function SkeletonVehicleEdit({ style }: { style?: ViewStyle }) {
       {/* Large Circular Photo Placeholder */}
       <View style={formStyles.avatarContainer}>
         <Skeleton width={120} height={120} borderRadius={60} />
-        <Skeleton width="40%" height={14} style={{ marginTop: 12 }} />
+        <Skeleton width="40%" height={14} style={{ marginTop: spacing.md }} />
       </View>
 
       {/* Make + Model Row */}
@@ -785,7 +907,7 @@ export function SkeletonVehicleEdit({ style }: { style?: ViewStyle }) {
         <View style={{ flex: 1 }}>
           <SkeletonFormField height={48} />
         </View>
-        <View style={{ flex: 1, marginLeft: 12 }}>
+        <View style={{ flex: 1, marginLeft: spacing.md }}>
           <SkeletonFormField height={48} />
         </View>
       </View>
@@ -805,7 +927,7 @@ export function SkeletonVehicleEdit({ style }: { style?: ViewStyle }) {
           width="30%"
           height={48}
           borderRadius={8}
-          style={{ marginRight: 12 }}
+          style={{ marginRight: spacing.md }}
         />
         <Skeleton width="65%" height={48} borderRadius={8} />
       </View>
@@ -820,7 +942,7 @@ export function SkeletonVehicleEdit({ style }: { style?: ViewStyle }) {
 // Group detail page skeleton
 export function SkeletonGroupDetail({ style }: { style?: ViewStyle }) {
   return (
-    <View style={[{ flex: 1, padding: 16 }, style]}>
+    <View style={[{ flex: 1, padding: spacing.lg }, style]}>
       {/* Tabs */}
       <View style={formStyles.tabsRow}>
         <Skeleton width="30%" height={40} borderRadius={8} />
@@ -828,13 +950,13 @@ export function SkeletonGroupDetail({ style }: { style?: ViewStyle }) {
           width="30%"
           height={40}
           borderRadius={8}
-          style={{ marginLeft: 8 }}
+          style={{ marginLeft: spacing.sm }}
         />
         <Skeleton
           width="30%"
           height={40}
           borderRadius={8}
-          style={{ marginLeft: 8 }}
+          style={{ marginLeft: spacing.sm }}
         />
       </View>
 
@@ -842,9 +964,17 @@ export function SkeletonGroupDetail({ style }: { style?: ViewStyle }) {
       {[1, 2, 3, 4].map((i) => (
         <View key={i} style={formStyles.memberCard}>
           <Skeleton width={40} height={40} borderRadius={20} />
-          <View style={{ flex: 1, marginLeft: 12 }}>
-            <Skeleton width="60%" height={16} style={{ marginBottom: 4 }} />
-            <Skeleton width="80%" height={14} style={{ marginBottom: 4 }} />
+          <View style={{ flex: 1, marginLeft: spacing.md }}>
+            <Skeleton
+              width="60%"
+              height={16}
+              style={{ marginBottom: spacing.xs }}
+            />
+            <Skeleton
+              width="80%"
+              height={14}
+              style={{ marginBottom: spacing.xs }}
+            />
             <Skeleton width="40%" height={12} />
           </View>
         </View>
@@ -864,31 +994,31 @@ export function SkeletonLanding({ style }: { style?: ViewStyle }) {
           width={80}
           height={80}
           borderRadius={12}
-          style={{ marginBottom: 24 }}
+          style={{ marginBottom: spacing.xl }}
         />
 
         {/* Title */}
         <Skeleton
           width="70%"
           height={48}
-          style={{ marginBottom: 12, alignSelf: "flex-start" }}
+          style={{ marginBottom: spacing.md, alignSelf: "flex-start" }}
         />
         <Skeleton
           width="50%"
           height={48}
-          style={{ marginBottom: 20, alignSelf: "flex-start" }}
+          style={{ marginBottom: spacing.xl, alignSelf: "flex-start" }}
         />
 
         {/* Subtitle */}
         <Skeleton
           width="90%"
           height={20}
-          style={{ marginBottom: 8, alignSelf: "flex-start" }}
+          style={{ marginBottom: spacing.sm, alignSelf: "flex-start" }}
         />
         <Skeleton
           width="70%"
           height={20}
-          style={{ marginBottom: 32, alignSelf: "flex-start" }}
+          style={{ marginBottom: spacing.xxl, alignSelf: "flex-start" }}
         />
 
         {/* CTA Buttons */}
@@ -898,7 +1028,7 @@ export function SkeletonLanding({ style }: { style?: ViewStyle }) {
             width="45%"
             height={56}
             borderRadius={12}
-            style={{ marginLeft: 12 }}
+            style={{ marginLeft: spacing.md }}
           />
         </View>
 
@@ -910,7 +1040,7 @@ export function SkeletonLanding({ style }: { style?: ViewStyle }) {
               width="23%"
               height={100}
               borderRadius={16}
-              style={{ marginRight: 8 }}
+              style={{ marginRight: spacing.sm }}
             />
           ))}
         </View>
@@ -921,12 +1051,12 @@ export function SkeletonLanding({ style }: { style?: ViewStyle }) {
         <Skeleton
           width="40%"
           height={28}
-          style={{ marginBottom: 16, alignSelf: "center" }}
+          style={{ marginBottom: spacing.lg, alignSelf: "center" }}
         />
         <Skeleton
           width="70%"
           height={16}
-          style={{ marginBottom: 32, alignSelf: "center" }}
+          style={{ marginBottom: spacing.xxl, alignSelf: "center" }}
         />
 
         {/* Feature Cards */}
@@ -936,10 +1066,18 @@ export function SkeletonLanding({ style }: { style?: ViewStyle }) {
               width={56}
               height={56}
               borderRadius={12}
-              style={{ marginBottom: 16 }}
+              style={{ marginBottom: spacing.lg }}
             />
-            <Skeleton width="60%" height={20} style={{ marginBottom: 8 }} />
-            <Skeleton width="90%" height={14} style={{ marginBottom: 4 }} />
+            <Skeleton
+              width="60%"
+              height={20}
+              style={{ marginBottom: spacing.sm }}
+            />
+            <Skeleton
+              width="90%"
+              height={14}
+              style={{ marginBottom: spacing.xs }}
+            />
             <Skeleton width="80%" height={14} />
           </View>
         ))}
@@ -951,39 +1089,39 @@ export function SkeletonLanding({ style }: { style?: ViewStyle }) {
 // Form-specific styles
 const formStyles = StyleSheet.create({
   formContainer: {
-    padding: 20,
+    padding: spacing.xl,
   },
   inputContainer: {
-    marginBottom: 16,
+    marginBottom: spacing.lg,
   },
   row: {
     flexDirection: "row",
   },
   buttonRow: {
     flexDirection: "row",
-    marginTop: 24,
+    marginTop: spacing.xl,
   },
   chipsRow: {
     flexDirection: "row",
     flexWrap: "wrap",
   },
   vehicleSelectorContainer: {
-    marginBottom: 20,
+    marginBottom: spacing.xl,
   },
   vehicleSelectorRow: {
     flexDirection: "row",
-    gap: 12,
+    gap: spacing.md,
   },
   vehicleCard: {
     width: 100,
-    padding: 12,
+    padding: spacing.md,
     alignItems: "center",
     borderRadius: 8,
   },
   lockedVehicleCard: {
     flexDirection: "row",
     alignItems: "center",
-    padding: 12,
+    padding: spacing.md,
     borderRadius: 8,
   },
   serviceTypeGrid: {
@@ -993,38 +1131,38 @@ const formStyles = StyleSheet.create({
   },
   avatarContainer: {
     alignItems: "center",
-    marginBottom: 24,
+    marginBottom: spacing.xl,
   },
   tabsRow: {
     flexDirection: "row",
-    marginBottom: 16,
+    marginBottom: spacing.lg,
   },
   memberCard: {
     flexDirection: "row",
     alignItems: "center",
-    padding: 12,
-    marginBottom: 8,
+    padding: spacing.md,
+    marginBottom: spacing.sm,
     borderRadius: 8,
   },
   heroSection: {
-    padding: 20,
-    paddingTop: 60,
+    padding: spacing.xl,
+    paddingTop: spacing.xxxl,
   },
   ctaRow: {
     flexDirection: "row",
-    marginBottom: 24,
+    marginBottom: spacing.xl,
   },
   statsRow: {
     flexDirection: "row",
     flexWrap: "wrap",
-    marginTop: 16,
+    marginTop: spacing.lg,
   },
   featuresSection: {
-    padding: 20,
+    padding: spacing.xl,
   },
   featureCard: {
-    padding: 20,
-    marginBottom: 16,
+    padding: spacing.xl,
+    marginBottom: spacing.lg,
     borderRadius: 16,
   },
 });
@@ -1035,7 +1173,7 @@ const styles = StyleSheet.create({
   },
   card: {
     borderRadius: 12,
-    padding: 16,
+    padding: spacing.lg,
     backgroundColor: "transparent",
   },
   cardContent: {
@@ -1044,136 +1182,136 @@ const styles = StyleSheet.create({
   avatarRow: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 12,
+    marginBottom: spacing.md,
   },
   avatarText: {
     flex: 1,
-    marginLeft: 12,
+    marginLeft: spacing.md,
   },
   textLines: {
     // Text lines container
   },
   list: {
-    padding: 16,
+    padding: spacing.lg,
   },
   header: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 20,
-    paddingVertical: 16,
+    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.lg,
   },
   spacer: {
     flex: 1,
   },
   headerActions: {
     flexDirection: "row",
-    gap: 8,
+    gap: spacing.sm,
   },
   stats: {
     flexDirection: "row",
     justifyContent: "space-around",
-    paddingVertical: 16,
+    paddingVertical: spacing.lg,
   },
   statItem: {
     alignItems: "center",
   },
   dashboardContainer: {
     flex: 1,
-    padding: 20,
+    padding: spacing.xl,
   },
   dashboardHeader: {
-    marginBottom: 24,
+    marginBottom: spacing.xl,
   },
   statsGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 12,
-    marginBottom: 24,
+    gap: spacing.md,
+    marginBottom: spacing.xl,
   },
   statCard: {
     flex: 1,
     minWidth: 150,
-    padding: 16,
+    padding: spacing.lg,
     borderRadius: 12,
     alignItems: "center",
   },
   section: {
-    marginBottom: 24,
+    marginBottom: spacing.xl,
   },
   vehicleCard: {
     flexDirection: "row",
-    padding: 16,
+    padding: spacing.lg,
     borderRadius: 12,
-    marginBottom: 12,
+    marginBottom: spacing.md,
   },
   vehicleCardContent: {
     flex: 1,
-    marginLeft: 16,
+    marginLeft: spacing.lg,
     justifyContent: "center",
   },
   analyticsContainer: {
     flex: 1,
-    padding: 20,
+    padding: spacing.xl,
   },
   filterSection: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginBottom: 20,
+    marginBottom: spacing.xl,
   },
   metricsGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 12,
-    marginBottom: 24,
+    gap: spacing.md,
+    marginBottom: spacing.xl,
   },
   metricCard: {
     flex: 1,
     minWidth: 150,
-    padding: 16,
+    padding: spacing.lg,
     borderRadius: 12,
   },
   chartSection: {
-    marginBottom: 24,
+    marginBottom: spacing.xl,
   },
   profileContainer: {
     flex: 1,
   },
   profileHeader: {
     alignItems: "center",
-    padding: 24,
+    padding: spacing.xl,
   },
   profileStats: {
     flexDirection: "row",
     justifyContent: "space-around",
-    paddingVertical: 20,
+    paddingVertical: spacing.xl,
     borderTopWidth: 1,
     borderBottomWidth: 1,
-    borderColor: "#e0e0e0",
+    borderColor: grayLight[300],
   },
   profileStatItem: {
     alignItems: "center",
   },
   settingsList: {
-    padding: 20,
+    padding: spacing.xl,
   },
   settingsItem: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingVertical: 16,
+    paddingVertical: spacing.lg,
     borderBottomWidth: 1,
-    borderBottomColor: "#f0f0f0",
+    borderBottomColor: grayLight[100],
   },
   settingsItemLeft: {
     flexDirection: "row",
     alignItems: "center",
   },
   logList: {
-    padding: 16,
+    padding: spacing.lg,
   },
   logItem: {
-    marginBottom: 12,
-    padding: 16,
+    marginBottom: spacing.md,
+    padding: spacing.lg,
     borderRadius: 12,
   },
   logItemHeader: {
@@ -1181,25 +1319,25 @@ const styles = StyleSheet.create({
   },
   logItemContent: {
     flex: 1,
-    marginLeft: 16,
+    marginLeft: spacing.lg,
     justifyContent: "center",
   },
   vehicleDetailContainer: {
     flex: 1,
   },
   vehicleDetailInfo: {
-    padding: 20,
+    padding: spacing.xl,
   },
   quickStats: {
     flexDirection: "row",
     justifyContent: "space-around",
-    marginBottom: 24,
+    marginBottom: spacing.xl,
   },
   quickStatItem: {
     alignItems: "center",
   },
   tabsContainer: {
     flexDirection: "row",
-    marginBottom: 20,
+    marginBottom: spacing.xl,
   },
 });

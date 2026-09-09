@@ -1,3 +1,5 @@
+import { baseColors, withOpacity, spacing } from "@/src/design-system";
+import { useStyles } from "react-native-unistyles";
 import React, { useState } from "react";
 import {
   View,
@@ -8,8 +10,6 @@ import {
   Modal as RNModal,
 } from "react-native";
 import { Image } from "expo-image";
-import { Colors } from "@/constants/theme";
-import { useColorScheme } from "@/hooks/use-color-scheme";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { Modal } from "@/components/ui/Modal";
 import { useDialog } from "@/lib/contexts/DialogContext";
@@ -38,8 +38,8 @@ export function ReceiptCapture({
   const [actionSheetOptions, setActionSheetOptions] = useState<
     { text: string; onPress: () => void; style?: string }[]
   >([]);
-  const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? "light"];
+  const { theme } = useStyles();
+  const colors = theme.colors;
   const dialog = useDialog();
 
   const showActionSheet = (
@@ -320,22 +320,22 @@ export function ReceiptCapture({
   const styles = StyleSheet.create({
     container: {
       alignItems: "center",
-      gap: 12,
+      gap: spacing.md,
     },
     captureButton: {
       flexDirection: "row",
       alignItems: "center",
-      backgroundColor: colors.tint,
-      paddingHorizontal: 20,
-      paddingVertical: 12,
+      backgroundColor: colors.primary,
+      paddingHorizontal: spacing.xl,
+      paddingVertical: spacing.md,
       borderRadius: 8,
-      gap: 8,
+      gap: spacing.sm,
       opacity: disabled ? 0.6 : 1,
     },
     captureButtonSecondary: {
       backgroundColor: "transparent",
       borderWidth: 1,
-      borderColor: colors.tint,
+      borderColor: colors.primary,
     },
     captureButtonText: {
       color: "white",
@@ -343,11 +343,11 @@ export function ReceiptCapture({
       fontWeight: "600",
     },
     captureButtonTextSecondary: {
-      color: colors.tint,
+      color: colors.primary,
     },
     helpText: {
       fontSize: 14,
-      color: colors.icon,
+      color: colors.textSecondary,
       textAlign: "center",
       maxWidth: 280,
       lineHeight: 20,
@@ -355,7 +355,7 @@ export function ReceiptCapture({
     processingContainer: {
       flexDirection: "row",
       alignItems: "center",
-      gap: 8,
+      gap: spacing.sm,
     },
     processingText: {
       fontSize: 16,
@@ -364,7 +364,7 @@ export function ReceiptCapture({
     },
     previewModal: {
       flex: 1,
-      backgroundColor: "rgba(0, 0, 0, 0.9)",
+      backgroundColor: withOpacity(baseColors.black, 0.9),
       justifyContent: "center",
       alignItems: "center",
     },
@@ -375,17 +375,17 @@ export function ReceiptCapture({
     },
     previewControls: {
       flexDirection: "row",
-      marginTop: 20,
-      gap: 15,
+      marginTop: spacing.xl,
+      gap: spacing.lg,
     },
     previewButton: {
-      backgroundColor: colors.tint,
-      paddingHorizontal: 20,
-      paddingVertical: 10,
+      backgroundColor: colors.primary,
+      paddingHorizontal: spacing.xl,
+      paddingVertical: spacing.md,
       borderRadius: 8,
     },
     previewButtonSecondary: {
-      backgroundColor: "rgba(255, 255, 255, 0.2)",
+      backgroundColor: withOpacity(baseColors.white, 0.2),
     },
     previewButtonText: {
       color: "white",
@@ -394,27 +394,27 @@ export function ReceiptCapture({
     },
     actionSheetMessage: {
       fontSize: 14,
-      color: colors.icon,
+      color: colors.textSecondary,
       textAlign: "center",
-      marginBottom: 16,
+      marginBottom: spacing.lg,
       lineHeight: 20,
     },
     actionSheetOption: {
       width: "100%",
-      paddingVertical: 14,
+      paddingVertical: spacing.lg,
       borderBottomWidth: StyleSheet.hairlineWidth,
-      borderBottomColor: colors.icon + "30",
+      borderBottomColor: withOpacity(colors.textSecondary, 0.19),
       alignItems: "center",
     },
     actionSheetOptionText: {
       fontSize: 16,
       fontWeight: "500",
-      color: colors.tint,
+      color: colors.primary,
     },
     actionSheetCancelText: {
       fontSize: 16,
       fontWeight: "500",
-      color: colors.icon,
+      color: colors.textSecondary,
     },
   });
 
@@ -422,12 +422,12 @@ export function ReceiptCapture({
     return (
       <View style={styles.container}>
         <View style={styles.processingContainer}>
-          <ActivityIndicator size="small" color={colors.tint} />
+          <ActivityIndicator size="small" color={colors.primary} />
           <Text style={styles.processingText}>Processing receipt...</Text>
         </View>
         <Text style={styles.helpText}>
-          🔍 Using enhanced OCR to extract service details, cost, date, and
-          mileage from your receipt
+          Using enhanced OCR to extract service details, cost, date, and mileage
+          from your receipt
         </Text>
       </View>
     );
@@ -445,8 +445,8 @@ export function ReceiptCapture({
       </TouchableOpacity>
 
       <Text style={styles.helpText}>
-        📱 For best OCR results: Use good lighting, keep receipt flat, ensure
-        text is clear and readable
+        For best OCR results: Use good lighting, keep receipt flat, ensure text
+        is clear and readable
       </Text>
 
       <RNModal
@@ -529,27 +529,31 @@ export function OCRResultDisplay({
   onAccept,
   onReject,
 }: OCRResultDisplayProps) {
-  const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? "light"];
+  const { theme } = useStyles();
+  const colors = theme.colors;
 
   const { extracted_fields: fields, confidence } = ocrData;
   const confidenceColor =
-    confidence > 70 ? "#4CAF50" : confidence > 50 ? "#FF9800" : "#F44336";
+    confidence > 70
+      ? theme.colors.success
+      : confidence > 50
+        ? theme.colors.warning
+        : theme.colors.error;
 
   const styles = StyleSheet.create({
     container: {
       backgroundColor: colors.background,
       borderRadius: 12,
-      padding: 16,
+      padding: spacing.lg,
       borderWidth: 1,
-      borderColor: colors.icon + "20",
-      marginVertical: 10,
+      borderColor: withOpacity(colors.textSecondary, 0.12),
+      marginVertical: spacing.md,
     },
     header: {
       flexDirection: "row",
       alignItems: "center",
       justifyContent: "space-between",
-      marginBottom: 12,
+      marginBottom: spacing.md,
     },
     title: {
       fontSize: 18,
@@ -562,11 +566,11 @@ export function OCRResultDisplay({
       color: confidenceColor,
     },
     fieldContainer: {
-      marginBottom: 8,
+      marginBottom: spacing.sm,
     },
     fieldLabel: {
       fontSize: 12,
-      color: colors.icon,
+      color: colors.textSecondary,
       fontWeight: "500",
       textTransform: "uppercase",
       letterSpacing: 0.5,
@@ -575,38 +579,38 @@ export function OCRResultDisplay({
       fontSize: 16,
       color: colors.text,
       fontWeight: "500",
-      marginTop: 2,
+      marginTop: spacing.xs,
     },
     fieldValueMissing: {
-      color: colors.icon,
+      color: colors.textSecondary,
       fontStyle: "italic",
     },
     separator: {
       height: 1,
-      backgroundColor: colors.icon + "20",
-      marginVertical: 12,
+      backgroundColor: withOpacity(colors.textSecondary, 0.12),
+      marginVertical: spacing.md,
     },
     buttons: {
       flexDirection: "row",
-      gap: 12,
-      marginTop: 16,
+      gap: spacing.md,
+      marginTop: spacing.lg,
     },
     button: {
       flex: 1,
       flexDirection: "row",
       alignItems: "center",
       justifyContent: "center",
-      paddingVertical: 12,
+      paddingVertical: spacing.md,
       borderRadius: 8,
-      gap: 6,
+      gap: spacing.sm,
     },
     acceptButton: {
-      backgroundColor: colors.tint,
+      backgroundColor: colors.primary,
     },
     rejectButton: {
       backgroundColor: "transparent",
       borderWidth: 1,
-      borderColor: colors.icon,
+      borderColor: colors.textSecondary,
     },
     buttonText: {
       fontSize: 16,

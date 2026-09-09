@@ -1,3 +1,4 @@
+import { withOpacity, spacing } from "@/src/design-system";
 import React from "react";
 import { Text, View } from "react-native";
 import { createStyleSheet, useStyles } from "react-native-unistyles";
@@ -27,8 +28,8 @@ export function StatCard({
     trend && trend > 0 ? theme.colors.success : theme.colors.error;
   const trendBg =
     trend && trend > 0
-      ? theme.colors.success + "20"
-      : theme.colors.error + "20";
+      ? withOpacity(theme.colors.success, 0.12)
+      : withOpacity(theme.colors.error, 0.12);
 
   const resolvedIconColor = iconColor ?? theme.colors.primary;
 
@@ -43,7 +44,7 @@ export function StatCard({
         <View
           style={[
             styles.iconContainer,
-            { backgroundColor: resolvedIconColor + "15" },
+            { backgroundColor: withOpacity(resolvedIconColor, 0.08) },
           ]}
         >
           <IconSymbol name={icon} size={18} color={resolvedIconColor} />
@@ -145,11 +146,11 @@ const stylesheet = createStyleSheet((theme) => ({
     height: 22,
     justifyContent: "center",
     alignItems: "center",
-    paddingHorizontal: 6,
+    paddingHorizontal: spacing.sm,
     zIndex: 1,
   },
   alertBadgeText: {
-    color: "#FFFFFF",
+    color: theme.colors.white,
     fontSize: 11,
     fontWeight: theme.fontWeight.bold,
     textAlign: "center",

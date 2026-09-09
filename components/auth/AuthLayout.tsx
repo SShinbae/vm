@@ -1,5 +1,5 @@
-import { Colors } from "@/constants/theme";
-import { useColorScheme } from "@/hooks/use-color-scheme";
+import { spacing } from "@/src/design-system";
+import { useStyles } from "react-native-unistyles";
 import React, { ReactNode } from "react";
 import {
   Dimensions,
@@ -29,8 +29,8 @@ interface AuthLayoutProps {
  * - Consistent padding
  */
 export function AuthLayout({ children, scrollable = true }: AuthLayoutProps) {
-  const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? "light"];
+  const { theme } = useStyles();
+  const colors = theme.colors;
 
   const styles = StyleSheet.create({
     safeArea: {
@@ -45,12 +45,12 @@ export function AuthLayout({ children, scrollable = true }: AuthLayoutProps) {
     },
     content: {
       flex: 1,
-      paddingHorizontal: 24,
+      paddingHorizontal: spacing.xl,
       justifyContent: "center",
       maxWidth: screenWidth > 768 ? 450 : ("100%" as any),
       alignSelf: "center",
       width: "100%",
-      paddingVertical: 40,
+      paddingVertical: spacing.xxxl,
     },
   });
 

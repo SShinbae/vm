@@ -1,3 +1,4 @@
+import { withOpacity, spacing } from "@/src/design-system";
 import { Button } from "@/components/ui/Button";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { ServiceReceiptIndicator } from "@/components/ui/ReceiptViewer";
@@ -240,7 +241,7 @@ export const LogDetailsBottomSheet = forwardRef<
             <View
               style={[
                 styles.iconCircle,
-                { backgroundColor: logDetails.iconColor + "15" },
+                { backgroundColor: withOpacity(logDetails.iconColor, 0.08) },
               ]}
             >
               <IconSymbol
@@ -429,21 +430,21 @@ const stylesheet = createStyleSheet((theme) => ({
     height: 4,
   },
   bottomSheetContent: {
-    paddingHorizontal: 20,
-    paddingBottom: 40,
+    paddingHorizontal: spacing.xl,
+    paddingBottom: spacing.xxxl,
   },
   bottomSheetHeader: {
     flexDirection: "row",
     alignItems: "flex-start",
     justifyContent: "space-between",
-    marginBottom: 24,
-    paddingTop: 8,
+    marginBottom: spacing.xl,
+    paddingTop: spacing.sm,
   },
   bottomSheetTitleContainer: {
     flex: 1,
     flexDirection: "row",
     alignItems: "center",
-    gap: 16,
+    gap: spacing.lg,
   },
   iconCircle: {
     width: 64,
@@ -459,7 +460,7 @@ const stylesheet = createStyleSheet((theme) => ({
     fontSize: 20,
     fontWeight: "700",
     color: theme.colors.text,
-    marginBottom: 4,
+    marginBottom: spacing.xs,
     letterSpacing: -0.3,
   },
   bottomSheetSubtitle: {
@@ -480,14 +481,14 @@ const stylesheet = createStyleSheet((theme) => ({
   receiptBadgeContainer: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
-    backgroundColor: theme.colors.success + "10",
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    gap: spacing.sm,
+    backgroundColor: withOpacity(theme.colors.success, 0.06),
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
     borderRadius: 8,
-    marginBottom: 20,
+    marginBottom: spacing.xl,
     borderWidth: 1,
-    borderColor: theme.colors.success + "30",
+    borderColor: withOpacity(theme.colors.success, 0.19),
   },
   receiptBadgeText: {
     fontSize: 14,
@@ -495,27 +496,27 @@ const stylesheet = createStyleSheet((theme) => ({
     color: theme.colors.success,
   },
   bottomSheetSection: {
-    marginBottom: 24,
+    marginBottom: spacing.xl,
   },
   bottomSheetSectionTitle: {
     fontSize: 16,
     fontWeight: "700",
     color: theme.colors.text,
-    marginBottom: 12,
+    marginBottom: spacing.md,
     letterSpacing: -0.2,
   },
   detailsCard: {
     backgroundColor: theme.colors.background,
     borderRadius: 12,
-    padding: 16,
+    padding: spacing.lg,
     borderWidth: 1,
     borderColor: theme.colors.border,
-    gap: 16,
+    gap: spacing.lg,
   },
   detailItem: {
     flexDirection: "row",
     alignItems: "flex-start",
-    gap: 12,
+    gap: spacing.md,
   },
   detailIconContainer: {
     width: 32,
@@ -532,7 +533,7 @@ const stylesheet = createStyleSheet((theme) => ({
     fontSize: 13,
     color: theme.colors.textSecondary,
     fontWeight: "500",
-    marginBottom: 4,
+    marginBottom: spacing.xs,
   },
   detailValue: {
     fontSize: 15,
@@ -543,14 +544,14 @@ const stylesheet = createStyleSheet((theme) => ({
   vehicleCard: {
     backgroundColor: theme.colors.background,
     borderRadius: 12,
-    padding: 16,
+    padding: spacing.lg,
     borderWidth: 1,
     borderColor: theme.colors.border,
   },
   vehicleCardContent: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 12,
+    gap: spacing.md,
   },
   vehicleImage: {
     width: 56,
@@ -572,7 +573,7 @@ const stylesheet = createStyleSheet((theme) => ({
     fontSize: 16,
     fontWeight: "700",
     color: theme.colors.text,
-    marginBottom: 4,
+    marginBottom: spacing.xs,
     letterSpacing: -0.3,
   },
   vehiclePlate: {
@@ -584,8 +585,8 @@ const stylesheet = createStyleSheet((theme) => ({
   sharedBadge: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 4,
-    marginTop: 6,
+    gap: spacing.xs,
+    marginTop: spacing.sm,
   },
   sharedBadgeText: {
     fontSize: 11,
@@ -597,7 +598,7 @@ const stylesheet = createStyleSheet((theme) => ({
   metadataCard: {
     backgroundColor: theme.colors.background,
     borderRadius: 12,
-    padding: 16,
+    padding: spacing.lg,
     borderWidth: 1,
     borderColor: theme.colors.border,
     flexDirection: "row",
@@ -610,7 +611,7 @@ const stylesheet = createStyleSheet((theme) => ({
     fontSize: 12,
     color: theme.colors.textSecondary,
     fontWeight: "500",
-    marginBottom: 6,
+    marginBottom: spacing.sm,
   },
   metadataValue: {
     fontSize: 14,
@@ -625,11 +626,11 @@ const stylesheet = createStyleSheet((theme) => ({
     width: 1,
     height: "100%",
     backgroundColor: theme.colors.border,
-    marginHorizontal: 16,
+    marginHorizontal: spacing.lg,
   },
   actionButtonsContainer: {
-    gap: 12,
-    marginTop: 8,
+    gap: spacing.md,
+    marginTop: spacing.sm,
   },
   actionButton: {
     width: "100%",
@@ -639,7 +640,7 @@ const stylesheet = createStyleSheet((theme) => ({
     color: theme.colors.error,
     textAlign: "center",
     fontStyle: "italic",
-    marginTop: 4,
+    marginTop: spacing.xs,
   },
   bottomPadding: {
     height: 20,

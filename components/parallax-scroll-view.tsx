@@ -1,3 +1,5 @@
+import { spacing } from "@/src/design-system";
+import { useReducedMotion } from "@/hooks/useReducedMotion";
 import type { PropsWithChildren, ReactElement } from "react";
 import { useColorScheme, View } from "react-native";
 import Animated, {
@@ -24,7 +26,9 @@ export default function ParallaxScrollView({
   const { styles } = useStyles(stylesheet);
   const scrollRef = useAnimatedRef<Animated.ScrollView>();
   const scrollOffset = useScrollViewOffset(scrollRef);
+  const reduceMotion = useReducedMotion();
   const headerAnimatedStyle = useAnimatedStyle(() => {
+    if (reduceMotion) return {};
     return {
       transform: [
         {
@@ -76,8 +80,8 @@ const stylesheet = createStyleSheet((theme) => ({
   },
   content: {
     flex: 1,
-    padding: 32,
-    gap: 16,
+    padding: spacing.xxl,
+    gap: spacing.lg,
     overflow: "hidden" as const,
   },
 }));

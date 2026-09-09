@@ -8,6 +8,7 @@ export {
   grayLight,
   grayDark,
   semanticColors,
+  darkSemanticColors,
   analyticsColors,
   baseColors,
 } from "./colors";

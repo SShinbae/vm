@@ -1,6 +1,7 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { Platform, useColorScheme as useNativeColorScheme } from "react-native";
+import { darkTheme, lightTheme } from "@/src/design-system";
 
 // Safely import UnistylesRuntime to prevent production crashes
 let UnistylesRuntime:
@@ -125,18 +126,13 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
 
       // Set CSS custom properties for theme colors
       const isDark = colorScheme === "dark";
-      root.style.setProperty(
-        "--background-color",
-        isDark ? "#1e292e" : "#FFFFFF", // Blue Bayoux 950 for dark
-      );
-      root.style.setProperty(
-        "--text-color",
-        isDark ? "#f3f8f8" : "#1e292e", // Blue Bayoux 50/950
-      );
+      const theme = isDark ? darkTheme : lightTheme;
+      root.style.setProperty("--background-color", theme.colors.background);
+      root.style.setProperty("--text-color", theme.colors.text);
 
       // Also update the body background for consistency
-      document.body.style.backgroundColor = isDark ? "#1e292e" : "#FFFFFF";
-      document.body.style.color = isDark ? "#f3f8f8" : "#1e292e";
+      document.body.style.backgroundColor = theme.colors.background;
+      document.body.style.color = theme.colors.text;
 
       // Debug log for web
       if (__DEV__) {

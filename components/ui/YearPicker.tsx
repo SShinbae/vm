@@ -1,5 +1,5 @@
-import { Colors } from "@/constants/theme";
-import { useColorScheme } from "@/hooks/use-color-scheme";
+import { baseColors, withOpacity, spacing } from "@/src/design-system";
+import { useStyles } from "react-native-unistyles";
 import dayjs from "dayjs";
 import React, { useState } from "react";
 import {
@@ -31,8 +31,8 @@ export function YearPicker({
   style,
 }: YearPickerProps) {
   const [showPicker, setShowPicker] = useState(false);
-  const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? "light"];
+  const { theme } = useStyles();
+  const colors = theme.colors;
 
   const handleDateChange = (params: any) => {
     const selectedDate = params.date;
@@ -48,50 +48,50 @@ export function YearPicker({
 
   const styles = StyleSheet.create({
     container: {
-      marginBottom: 20,
+      marginBottom: spacing.xl,
     },
     label: {
       fontSize: 16,
       fontWeight: "500",
       color: colors.text,
-      marginBottom: 8,
+      marginBottom: spacing.sm,
     },
     requiredLabel: {
-      color: "#ff4444",
+      color: theme.colors.error,
     },
     yearButton: {
       backgroundColor: colors.background,
       borderWidth: 1,
-      borderColor: colors.icon,
+      borderColor: colors.textSecondary,
       borderRadius: 8,
-      paddingHorizontal: 16,
-      paddingVertical: 12,
+      paddingHorizontal: spacing.lg,
+      paddingVertical: spacing.md,
       flexDirection: "row",
       alignItems: "center",
       justifyContent: "space-between",
     },
     yearText: {
       fontSize: 16,
-      color: value ? colors.text : colors.icon,
+      color: value ? colors.text : colors.textSecondary,
     },
     iconContainer: {
-      marginLeft: 12,
+      marginLeft: spacing.md,
     },
     modalOverlay: {
       flex: 1,
-      backgroundColor: "rgba(0, 0, 0, 0.5)",
+      backgroundColor: withOpacity(baseColors.black, 0.5),
       justifyContent: "center",
       alignItems: "center",
     },
     modalContent: {
       backgroundColor: colors.background,
       borderRadius: 16,
-      padding: 20,
+      padding: spacing.xl,
       width: "90%",
       maxWidth: 400,
       ...Platform.select({
         ios: {
-          shadowColor: "#000",
+          shadowColor: theme.colors.black,
           shadowOffset: { width: 0, height: 2 },
           shadowOpacity: 0.25,
           shadowRadius: 3.84,
@@ -105,7 +105,7 @@ export function YearPicker({
       flexDirection: "row",
       justifyContent: "space-between",
       alignItems: "center",
-      marginBottom: 16,
+      marginBottom: spacing.lg,
     },
     modalTitle: {
       fontSize: 18,
@@ -113,11 +113,11 @@ export function YearPicker({
       color: colors.text,
     },
     closeButton: {
-      padding: 4,
+      padding: spacing.xs,
     },
     closeButtonText: {
       fontSize: 24,
-      color: colors.icon,
+      color: colors.textSecondary,
     },
   });
 
@@ -134,7 +134,7 @@ export function YearPicker({
       >
         <Text style={styles.yearText}>{displayValue}</Text>
         <View style={styles.iconContainer}>
-          <IconSymbol name="calendar" size={20} color={colors.icon} />
+          <IconSymbol name="calendar" size={20} color={colors.textSecondary} />
         </View>
       </TouchableOpacity>
 

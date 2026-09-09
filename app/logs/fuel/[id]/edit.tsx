@@ -1,3 +1,4 @@
+import { withOpacity, spacing } from "@/src/design-system";
 import { ActionMenu, ActionMenuItem } from "@/components/ui/ActionMenu";
 import { Button } from "@/components/ui/Button";
 import { DatePicker } from "@/components/ui/DatePicker";
@@ -678,7 +679,7 @@ const stylesheet = createStyleSheet((theme) => ({
   },
   scrollContent: (isWeb: boolean) => ({
     padding: isWeb ? theme.spacing.xxl : theme.spacing.lg,
-    paddingBottom: 100,
+    paddingBottom: spacing.xxxl,
     ...(isWeb && {
       maxWidth: 600,
       width: "100%",
@@ -703,7 +704,7 @@ const stylesheet = createStyleSheet((theme) => ({
     borderRadius: isWeb ? theme.borderRadius.xl : theme.borderRadius.lg,
     padding: isWeb ? theme.spacing.xxl : theme.spacing.lg,
     ...(isWeb && {
-      shadowColor: "#000000",
+      shadowColor: theme.colors.black,
       shadowOffset: {
         width: 0,
         height: 4,
@@ -770,7 +771,7 @@ const stylesheet = createStyleSheet((theme) => ({
   vehiclePlate: {
     fontSize: theme.fontSize.sm,
     color: theme.colors.textSecondary,
-    marginTop: 2,
+    marginTop: spacing.xs,
   },
   fuelPriceSelector: {
     flexDirection: "row",
@@ -788,7 +789,7 @@ const stylesheet = createStyleSheet((theme) => ({
   },
   fuelPriceOptionSelected: {
     borderColor: theme.colors.primary,
-    backgroundColor: theme.colors.primary + "15",
+    backgroundColor: withOpacity(theme.colors.primary, 0.08),
   },
   fuelPriceOptionText: {
     fontSize: theme.fontSize.base,

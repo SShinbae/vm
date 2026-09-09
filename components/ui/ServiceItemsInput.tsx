@@ -1,5 +1,5 @@
-import { Colors } from "@/constants/theme";
-import { useColorScheme } from "@/hooks/use-color-scheme";
+import { withOpacity, spacing } from "@/src/design-system";
+import { useStyles } from "react-native-unistyles";
 import { ServiceLogItem } from "@/types";
 import React from "react";
 import {
@@ -23,8 +23,8 @@ export function ServiceItemsInput({
   onItemsChange,
   readonly = false,
 }: ServiceItemsInputProps) {
-  const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? "light"];
+  const { theme } = useStyles();
+  const colors = theme.colors;
   const { width: screenWidth } = useWindowDimensions();
 
   // Responsive breakpoints
@@ -65,7 +65,7 @@ export function ServiceItemsInput({
       marginBottom: isSmallScreen ? 8 : 12,
     },
     requiredLabel: {
-      color: "#ff4444",
+      color: theme.colors.error,
     },
     itemRow: {
       flexDirection: "row",
@@ -78,7 +78,7 @@ export function ServiceItemsInput({
       minWidth: 0, // Allow shrinking below content size
       backgroundColor: colors.background,
       borderWidth: 1,
-      borderColor: colors.icon,
+      borderColor: colors.textSecondary,
       borderRadius: 8,
       paddingHorizontal: isSmallScreen ? 8 : 12,
       paddingVertical: isSmallScreen ? 8 : 10,
@@ -91,7 +91,7 @@ export function ServiceItemsInput({
       maxWidth: isSmallScreen ? 80 : 120,
       backgroundColor: colors.background,
       borderWidth: 1,
-      borderColor: colors.icon,
+      borderColor: colors.textSecondary,
       borderRadius: 8,
       paddingHorizontal: isSmallScreen ? 6 : 12,
       paddingVertical: isSmallScreen ? 8 : 10,
@@ -113,17 +113,17 @@ export function ServiceItemsInput({
       flexDirection: "row",
       alignItems: "center",
       justifyContent: "center",
-      backgroundColor: colors.tint + "10",
+      backgroundColor: withOpacity(colors.primary, 0.06),
       borderWidth: 1,
-      borderColor: colors.tint,
+      borderColor: colors.primary,
       borderStyle: "dashed",
       borderRadius: 8,
       paddingVertical: isSmallScreen ? 10 : 12,
-      gap: 8,
-      marginTop: 8,
+      gap: spacing.sm,
+      marginTop: spacing.sm,
     },
     addButtonText: {
-      color: colors.tint,
+      color: colors.primary,
       fontSize: isSmallScreen ? 13 : 14,
       fontWeight: "500",
     },
@@ -131,7 +131,7 @@ export function ServiceItemsInput({
       marginTop: isSmallScreen ? 12 : 16,
       paddingTop: isSmallScreen ? 12 : 16,
       borderTopWidth: 1,
-      borderTopColor: colors.icon + "20",
+      borderTopColor: withOpacity(colors.textSecondary, 0.12),
     },
     totalRow: {
       flexDirection: "row",
@@ -146,18 +146,18 @@ export function ServiceItemsInput({
     totalAmount: {
       fontSize: isSmallScreen ? 16 : 18,
       fontWeight: "bold",
-      color: colors.tint,
+      color: colors.primary,
     },
     headerRow: {
       flexDirection: "row",
-      marginBottom: 8,
-      paddingHorizontal: 4,
+      marginBottom: spacing.sm,
+      paddingHorizontal: spacing.xs,
       gap: isSmallScreen ? 4 : 8,
     },
     columnHeader: {
       fontSize: isSmallScreen ? 10 : 12,
       fontWeight: "600",
-      color: colors.icon,
+      color: colors.textSecondary,
       textTransform: "uppercase",
     },
     descriptionHeader: {
@@ -188,7 +188,7 @@ export function ServiceItemsInput({
             <View
               style={[
                 styles.descriptionInput,
-                { backgroundColor: colors.icon + "10" },
+                { backgroundColor: withOpacity(colors.textSecondary, 0.06) },
               ]}
             >
               <Text style={{ color: colors.text }}>
@@ -198,7 +198,7 @@ export function ServiceItemsInput({
             <View
               style={[
                 styles.priceInput,
-                { backgroundColor: colors.icon + "10" },
+                { backgroundColor: withOpacity(colors.textSecondary, 0.06) },
               ]}
             >
               <Text style={{ color: colors.text, textAlign: "right" }}>
@@ -238,7 +238,7 @@ export function ServiceItemsInput({
             value={item.description}
             onChangeText={(text) => updateItem(index, "description", text)}
             placeholder="Service description..."
-            placeholderTextColor={colors.icon}
+            placeholderTextColor={colors.textSecondary}
           />
           <TextInput
             style={styles.priceInput}
@@ -248,7 +248,7 @@ export function ServiceItemsInput({
               updateItem(index, "price", price);
             }}
             placeholder="0.00"
-            placeholderTextColor={colors.icon}
+            placeholderTextColor={colors.textSecondary}
             keyboardType="numeric"
           />
           <TouchableOpacity
@@ -262,14 +262,16 @@ export function ServiceItemsInput({
             <IconSymbol
               name="minus.circle.fill"
               size={isSmallScreen ? 22 : 24}
-              color={items.length <= 1 ? colors.icon : "#ff4444"}
+              color={
+                items.length <= 1 ? colors.textSecondary : theme.colors.error
+              }
             />
           </TouchableOpacity>
         </View>
       ))}
 
       <TouchableOpacity style={styles.addButton} onPress={addItem}>
-        <IconSymbol name="plus.circle" size={16} color={colors.tint} />
+        <IconSymbol name="plus.circle" size={16} color={colors.primary} />
         <Text style={styles.addButtonText}>Add Item</Text>
       </TouchableOpacity>
 

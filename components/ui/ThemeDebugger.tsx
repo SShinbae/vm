@@ -1,13 +1,15 @@
-import { Colors } from "@/constants/theme";
+import { spacing } from "@/src/design-system";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useTheme } from "@/lib/contexts/ThemeContext";
 import React from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { useStyles } from "react-native-unistyles";
 
 export function ThemeDebugger() {
   const { themeMode, colorScheme, setThemeMode } = useTheme();
   const hookColorScheme = useColorScheme();
-  const colors = Colors[hookColorScheme ?? "light"];
+  const { theme } = useStyles();
+  const colors = theme.colors;
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -27,21 +29,23 @@ export function ThemeDebugger() {
 
       <View style={styles.buttons}>
         <TouchableOpacity
-          style={[styles.button, { backgroundColor: colors.buttonPrimary }]}
+          style={[styles.button, { backgroundColor: colors.primary }]}
           onPress={() => setThemeMode("light")}
         >
-          <Text style={[styles.buttonText, { color: "white" }]}>Light</Text>
+          <Text style={[styles.buttonText, { color: colors.white }]}>
+            Light
+          </Text>
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={[styles.button, { backgroundColor: colors.buttonPrimary }]}
+          style={[styles.button, { backgroundColor: colors.primary }]}
           onPress={() => setThemeMode("dark")}
         >
           <Text style={[styles.buttonText, { color: "white" }]}>Dark</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={[styles.button, { backgroundColor: colors.buttonPrimary }]}
+          style={[styles.button, { backgroundColor: colors.primary }]}
           onPress={() => setThemeMode("system")}
         >
           <Text style={[styles.buttonText, { color: "white" }]}>System</Text>
@@ -53,27 +57,27 @@ export function ThemeDebugger() {
 
 const styles = StyleSheet.create({
   container: {
-    padding: 20,
-    margin: 20,
+    padding: spacing.xl,
+    margin: spacing.xl,
     borderRadius: 10,
     borderWidth: 1,
   },
   title: {
     fontSize: 18,
     fontWeight: "bold",
-    marginBottom: 10,
+    marginBottom: spacing.md,
   },
   info: {
     fontSize: 14,
-    marginBottom: 5,
+    marginBottom: spacing.xs,
   },
   buttons: {
     flexDirection: "row",
-    marginTop: 15,
-    gap: 10,
+    marginTop: spacing.lg,
+    gap: spacing.md,
   },
   button: {
-    padding: 10,
+    padding: spacing.md,
     borderRadius: 5,
     minWidth: 60,
     alignItems: "center",

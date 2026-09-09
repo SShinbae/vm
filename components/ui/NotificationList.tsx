@@ -1,16 +1,13 @@
+import { baseColors, withOpacity, spacing } from "@/src/design-system";
 import React, { useEffect, useMemo, useState } from "react";
-import {
-  Alert,
-  Modal as RNModal,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { Modal as RNModal, Text, TouchableOpacity, View } from "react-native";
+import { router } from "expo-router";
 import { createStyleSheet, useStyles } from "react-native-unistyles";
 import { useNotifications } from "../../lib/contexts/NotificationContext";
 import { NotificationData } from "../../lib/services/notificationService";
 import { formatDistanceToNow } from "../../lib/utils/dateUtils";
 import { IconSymbol } from "./icon-symbol";
+import { Pagination } from "./Pagination";
 import { SnoozeMenu } from "../notifications/SnoozeMenu";
 
 interface NotificationItemProps {
@@ -20,7 +17,7 @@ interface NotificationItemProps {
 
 function NotificationItem({ notification, onPress }: NotificationItemProps) {
   const { styles, theme } = useStyles(itemStylesheet);
-  const { markAsRead, clearNotification } = useNotifications();
+  const { markAsRead } = useNotifications();
   const [showSnooze, setShowSnooze] = useState(false);
 
   const handlePress = () => {
@@ -28,21 +25,6 @@ function NotificationItem({ notification, onPress }: NotificationItemProps) {
       markAsRead(notification.id);
     }
     onPress?.(notification);
-  };
-
-  const handleDelete = () => {
-    Alert.alert(
-      "Delete Notification",
-      "Are you sure you want to delete this notification?",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Delete",
-          style: "destructive",
-          onPress: () => clearNotification(notification.id),
-        },
-      ],
-    );
   };
 
   const getIcon = (): string => {
@@ -129,17 +111,15 @@ function NotificationItem({ notification, onPress }: NotificationItemProps) {
       style={[styles.container, !notification.read && styles.unreadContainer]}
       activeOpacity={0.7}
     >
-      {/* Icon */}
       <View
         style={[
           styles.iconContainer,
-          { backgroundColor: getIconColor() + "15" },
+          { backgroundColor: withOpacity(getIconColor(), 0.08) },
         ]}
       >
         <IconSymbol name={getIcon() as any} size={20} color={getIconColor()} />
       </View>
 
-      {/* Content */}
       <View style={styles.content}>
         <View style={styles.titleRow}>
           <View style={styles.titleContainer}>
@@ -155,7 +135,7 @@ function NotificationItem({ notification, onPress }: NotificationItemProps) {
             <View
               style={[
                 styles.actionBadge,
-                { backgroundColor: getActionColor() + "15" },
+                { backgroundColor: withOpacity(getActionColor(), 0.08) },
               ]}
             >
               <Text style={[styles.actionText, { color: getActionColor() }]}>
@@ -184,34 +164,18 @@ function NotificationItem({ notification, onPress }: NotificationItemProps) {
             </Text>
           </View>
 
-          <View style={{ flexDirection: "row", gap: theme.spacing.xs }}>
-            <TouchableOpacity
-              onPress={() => setShowSnooze(true)}
-              style={styles.deleteButton}
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            >
-              <IconSymbol
-                name="clock"
-                size={14}
-                color={theme.colors.textSecondary}
-              />
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={handleDelete}
-              style={styles.deleteButton}
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            >
-              <IconSymbol
-                name="xmark"
-                size={14}
-                color={theme.colors.textSecondary}
-              />
-            </TouchableOpacity>
-          </View>
+          <TouchableOpacity
+            onPress={() => setShowSnooze(true)}
+            style={styles.snoozeButton}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            accessibilityRole="button"
+            accessibilityLabel="Snooze this notification type"
+          >
+            <IconSymbol name="clock" size={14} color={theme.colors.info} />
+          </TouchableOpacity>
         </View>
       </View>
 
-      {/* Snooze Menu Modal */}
       <RNModal
         visible={showSnooze}
         transparent
@@ -221,9 +185,9 @@ function NotificationItem({ notification, onPress }: NotificationItemProps) {
         <TouchableOpacity
           style={{
             flex: 1,
-            backgroundColor: "rgba(0,0,0,0.4)",
+            backgroundColor: withOpacity(baseColors.black, 0.4),
             justifyContent: "center",
-            padding: 24,
+            padding: spacing.xl,
           }}
           activeOpacity={1}
           onPress={() => setShowSnooze(false)}
@@ -256,7 +220,7 @@ const itemStylesheet = createStyleSheet((theme) => ({
   },
   unreadContainer: {
     backgroundColor: theme.colors.primary + "08",
-    borderColor: theme.colors.primary + "30",
+    borderColor: withOpacity(theme.colors.primary, 0.19),
   },
   iconContainer: {
     width: 44,
@@ -299,7 +263,7 @@ const itemStylesheet = createStyleSheet((theme) => ({
   },
   actionBadge: {
     paddingHorizontal: theme.spacing.sm,
-    paddingVertical: 2,
+    paddingVertical: spacing.xs,
     borderRadius: theme.borderRadius.sm,
   },
   actionText: {
@@ -329,11 +293,11 @@ const itemStylesheet = createStyleSheet((theme) => ({
     fontSize: theme.fontSize.xs,
     color: theme.colors.textSecondary,
   },
-  deleteButton: {
+  snoozeButton: {
     width: 28,
     height: 28,
     borderRadius: theme.borderRadius.md,
-    backgroundColor: theme.colors.background,
+    backgroundColor: withOpacity(theme.colors.info, 0.08),
     alignItems: "center",
     justifyContent: "center",
   },
@@ -349,8 +313,7 @@ export function NotificationList({
   onNotificationPress,
 }: NotificationListProps) {
   const { styles, theme } = useStyles(listStylesheet);
-  const { notifications, isInitialized, markAllAsRead, clearAllNotifications } =
-    useNotifications();
+  const { notifications, isInitialized } = useNotifications();
 
   const [currentPage, setCurrentPage] = useState(1);
 
@@ -361,7 +324,7 @@ export function NotificationList({
     return notifications.slice(start, start + ITEMS_PER_PAGE);
   }, [notifications, currentPage]);
 
-  // Clamp currentPage when notifications shrink (e.g. deletions, clear all)
+  // Clamp currentPage when notifications shrink (e.g. mark-all-read shifts state, realtime deletions)
   useEffect(() => {
     if (currentPage > totalPages && totalPages > 0) {
       setCurrentPage(totalPages);
@@ -369,23 +332,6 @@ export function NotificationList({
       setCurrentPage(1);
     }
   }, [currentPage, totalPages]);
-
-  const hasUnreadNotifications = notifications.some((n) => !n.read);
-
-  const handleClearAll = () => {
-    Alert.alert(
-      "Clear All Notifications",
-      "Are you sure you want to clear all notifications?",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Clear All",
-          style: "destructive",
-          onPress: clearAllNotifications,
-        },
-      ],
-    );
-  };
 
   if (!isInitialized) {
     return (
@@ -406,62 +352,27 @@ export function NotificationList({
             color={theme.colors.textSecondary}
           />
         </View>
-        <Text style={styles.emptyTitle}>No notifications</Text>
+        <Text style={styles.emptyTitle}>You&apos;re all caught up</Text>
         <Text style={styles.emptyDescription}>
-          You&apos;ll see notifications here when group members update logs or
-          when you receive invitations.
+          Updates from your shared vehicles will show up here. Adjust how often
+          you get pinged in your notification preferences.
         </Text>
+        <TouchableOpacity
+          onPress={() => router.push("/profile?tab=Settings" as any)}
+          style={styles.emptyCta}
+          activeOpacity={0.8}
+          accessibilityRole="button"
+          accessibilityLabel="Manage notification preferences"
+        >
+          <IconSymbol name="lock.shield" size={16} color={theme.colors.white} />
+          <Text style={styles.emptyCtaText}>Manage preferences</Text>
+        </TouchableOpacity>
       </View>
     );
   }
 
   return (
     <View style={styles.container}>
-      {/* Actions Bar */}
-      <View style={styles.actionsBar}>
-        <View style={styles.countContainer}>
-          <Text style={styles.countText}>
-            {totalPages > 1
-              ? `Showing ${(currentPage - 1) * ITEMS_PER_PAGE + 1}\u2013${Math.min(currentPage * ITEMS_PER_PAGE, notifications.length)} of ${notifications.length}`
-              : `${notifications.length} notification${notifications.length !== 1 ? "s" : ""}`}
-          </Text>
-          {hasUnreadNotifications && (
-            <Text style={styles.unreadCountText}>
-              ({notifications.filter((n) => !n.read).length} unread)
-            </Text>
-          )}
-        </View>
-
-        <View style={styles.actionsContainer}>
-          {hasUnreadNotifications && (
-            <TouchableOpacity
-              onPress={markAllAsRead}
-              style={styles.markAllButton}
-              activeOpacity={0.7}
-            >
-              <IconSymbol
-                name="checkmark.circle"
-                size={16}
-                color={theme.colors.white}
-              />
-              <Text style={styles.markAllButtonText}>Mark all read</Text>
-            </TouchableOpacity>
-          )}
-          <TouchableOpacity
-            onPress={handleClearAll}
-            style={styles.clearAllButton}
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-          >
-            <IconSymbol
-              name="trash"
-              size={18}
-              color={theme.colors.textSecondary}
-            />
-          </TouchableOpacity>
-        </View>
-      </View>
-
-      {/* Notifications List */}
       <View style={styles.listContainer}>
         {paginatedNotifications.map((notification) => (
           <NotificationItem
@@ -472,120 +383,13 @@ export function NotificationList({
         ))}
       </View>
 
-      {/* Pagination Controls */}
-      {totalPages > 1 && (
-        <PaginationControls
-          currentPage={currentPage}
-          totalPages={totalPages}
-          onPageChange={setCurrentPage}
-        />
-      )}
-    </View>
-  );
-}
-
-interface PaginationControlsProps {
-  currentPage: number;
-  totalPages: number;
-  onPageChange: (page: number) => void;
-}
-
-function PaginationControls({
-  currentPage,
-  totalPages,
-  onPageChange,
-}: PaginationControlsProps) {
-  const { styles, theme } = useStyles(listStylesheet);
-
-  const getPageNumbers = (): (number | "ellipsis-start" | "ellipsis-end")[] => {
-    if (totalPages <= 7) {
-      return Array.from({ length: totalPages }, (_, i) => i + 1);
-    }
-    const pages: (number | "ellipsis-start" | "ellipsis-end")[] = [1];
-    if (currentPage > 3) {
-      pages.push("ellipsis-start");
-    }
-    const start = Math.max(2, currentPage - 1);
-    const end = Math.min(totalPages - 1, currentPage + 1);
-    for (let i = start; i <= end; i++) {
-      pages.push(i);
-    }
-    if (currentPage < totalPages - 2) {
-      pages.push("ellipsis-end");
-    }
-    pages.push(totalPages);
-    return pages;
-  };
-
-  return (
-    <View style={styles.paginationContainer}>
-      {/* Prev Button */}
-      <TouchableOpacity
-        onPress={() => onPageChange(currentPage - 1)}
-        disabled={currentPage === 1}
-        style={[
-          styles.navButton,
-          currentPage === 1 && styles.pageButtonDisabled,
-        ]}
-        activeOpacity={0.7}
-      >
-        <IconSymbol
-          name="chevron.left"
-          size={16}
-          color={
-            currentPage === 1 ? theme.colors.textSecondary : theme.colors.text
-          }
-        />
-      </TouchableOpacity>
-
-      {/* Page Numbers */}
-      {getPageNumbers().map((page, index) =>
-        typeof page === "string" ? (
-          <Text key={page} style={styles.ellipsisText}>
-            ...
-          </Text>
-        ) : (
-          <TouchableOpacity
-            key={`page-${page}`}
-            onPress={() => onPageChange(page)}
-            style={[
-              styles.pageButton,
-              currentPage === page && styles.pageButtonActive,
-            ]}
-            activeOpacity={0.7}
-          >
-            <Text
-              style={[
-                styles.pageButtonText,
-                currentPage === page && styles.pageButtonTextActive,
-              ]}
-            >
-              {page}
-            </Text>
-          </TouchableOpacity>
-        ),
-      )}
-
-      {/* Next Button */}
-      <TouchableOpacity
-        onPress={() => onPageChange(currentPage + 1)}
-        disabled={currentPage === totalPages}
-        style={[
-          styles.navButton,
-          currentPage === totalPages && styles.pageButtonDisabled,
-        ]}
-        activeOpacity={0.7}
-      >
-        <IconSymbol
-          name="chevron.right"
-          size={16}
-          color={
-            currentPage === totalPages
-              ? theme.colors.textSecondary
-              : theme.colors.text
-          }
-        />
-      </TouchableOpacity>
+      <Pagination
+        currentPage={currentPage}
+        totalPages={totalPages}
+        totalItems={notifications.length}
+        pageSize={ITEMS_PER_PAGE}
+        onPageChange={setCurrentPage}
+      />
     </View>
   );
 }
@@ -593,58 +397,6 @@ function PaginationControls({
 const listStylesheet = createStyleSheet((theme) => ({
   container: {
     flex: 1,
-  },
-  actionsBar: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: theme.spacing.xl,
-    paddingVertical: theme.spacing.lg,
-    borderBottomWidth: 1,
-    borderBottomColor: theme.colors.border,
-    backgroundColor: theme.colors.surface,
-  },
-  countContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: theme.spacing.sm,
-  },
-  countText: {
-    fontSize: theme.fontSize.base,
-    fontWeight: theme.fontWeight.semibold,
-    color: theme.colors.text,
-  },
-  unreadCountText: {
-    fontSize: theme.fontSize.sm,
-    color: theme.colors.primary,
-    fontWeight: theme.fontWeight.medium,
-  },
-  actionsContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: theme.spacing.md,
-  },
-  markAllButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: theme.spacing.xs,
-    backgroundColor: theme.colors.primary,
-    paddingHorizontal: theme.spacing.md,
-    paddingVertical: theme.spacing.sm,
-    borderRadius: theme.borderRadius.md,
-  },
-  markAllButtonText: {
-    fontSize: theme.fontSize.sm,
-    fontWeight: theme.fontWeight.medium,
-    color: theme.colors.white,
-  },
-  clearAllButton: {
-    width: 36,
-    height: 36,
-    borderRadius: theme.borderRadius.md,
-    backgroundColor: theme.colors.background,
-    alignItems: "center",
-    justifyContent: "center",
   },
   listContainer: {
     paddingVertical: theme.spacing.md,
@@ -697,53 +449,19 @@ const listStylesheet = createStyleSheet((theme) => ({
     maxWidth: 300,
     lineHeight: 24,
   },
-  paginationContainer: {
+  emptyCta: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: theme.spacing.lg,
-    paddingHorizontal: theme.spacing.md,
     gap: theme.spacing.xs,
-  },
-  pageButton: {
-    width: 36,
-    height: 36,
+    marginTop: theme.spacing.md,
+    paddingVertical: theme.spacing.md,
+    paddingHorizontal: theme.spacing.lg,
     borderRadius: theme.borderRadius.md,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: theme.colors.surface,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-  },
-  pageButtonActive: {
     backgroundColor: theme.colors.primary,
-    borderColor: theme.colors.primary,
   },
-  pageButtonText: {
-    fontSize: theme.fontSize.sm,
-    fontWeight: theme.fontWeight.medium,
-    color: theme.colors.text,
-  },
-  pageButtonTextActive: {
+  emptyCtaText: {
     color: theme.colors.white,
-    fontWeight: theme.fontWeight.semibold,
-  },
-  pageButtonDisabled: {
-    opacity: 0.4,
-  },
-  navButton: {
-    width: 36,
-    height: 36,
-    borderRadius: theme.borderRadius.md,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: theme.colors.surface,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-  },
-  ellipsisText: {
     fontSize: theme.fontSize.sm,
-    color: theme.colors.textSecondary,
-    paddingHorizontal: theme.spacing.xs,
+    fontWeight: theme.fontWeight.semibold,
   },
 }));

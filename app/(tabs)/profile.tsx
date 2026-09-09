@@ -1,7 +1,7 @@
+import { withOpacity } from "@/src/design-system";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { ImageUpload } from "@/components/ui/ImageUpload";
 import { Modal } from "@/components/ui/Modal";
-import { NotificationList } from "@/components/ui/NotificationList";
 import { NotificationPreferencesForm } from "@/components/notifications/NotificationPreferencesForm";
 import { useResponsiveLayout } from "@/hooks/use-responsive-layout";
 import { useProfileStats } from "@/hooks/useProfileStats";
@@ -9,7 +9,7 @@ import { useAuth } from "@/lib/contexts/AuthContext";
 import { useDialog } from "@/lib/contexts/DialogContext";
 import { useTheme } from "@/lib/contexts/ThemeContext";
 import { MaxWidthContainer } from "@/components/layout/MaxWidthContainer";
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
@@ -23,7 +23,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useStyles } from "react-native-unistyles";
 
-type TabName = "Profile" | "Settings" | "Notifications";
+type TabName = "Profile" | "Settings";
 
 export default function ProfileScreen() {
   const { user, updateProfile, signOut } = useAuth();
@@ -40,6 +40,14 @@ export default function ProfileScreen() {
   const [showEditModal, setShowEditModal] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [activeTab, setActiveTab] = useState<TabName>("Profile");
+
+  // Deeplink support: `/profile?tab=Settings` opens directly to the Settings tab
+  const { tab: tabParam } = useLocalSearchParams<{ tab?: string }>();
+  useEffect(() => {
+    if (tabParam === "Settings" || tabParam === "Profile") {
+      setActiveTab(tabParam);
+    }
+  }, [tabParam]);
 
   useEffect(() => {
     setAvatarUrl(user?.profile?.avatar_url || null);
@@ -268,7 +276,7 @@ export default function ProfileScreen() {
           width: 40,
           height: 40,
           borderRadius: 20,
-          backgroundColor: theme.colors.primary + "15",
+          backgroundColor: withOpacity(theme.colors.primary, 0.08),
           alignItems: "center",
           justifyContent: "center",
           marginRight: theme.spacing.md,
@@ -657,6 +665,8 @@ export default function ProfileScreen() {
         />
       </View>
 
+      <NotificationPreferencesForm />
+
       {!isMobile && (
         <View
           style={{
@@ -694,29 +704,6 @@ export default function ProfileScreen() {
     </>
   );
 
-  // Notifications tab content
-  const renderNotificationsTab = () => {
-    return (
-      <>
-        {/* Embedded Notification History for all platforms */}
-        <View
-          style={{
-            marginTop: theme.spacing.md,
-            marginHorizontal: theme.spacing.lg,
-            backgroundColor: theme.colors.surface,
-            borderRadius: theme.borderRadius.xl,
-            overflow: "hidden",
-          }}
-        >
-          <NotificationList />
-        </View>
-
-        {/* DB-backed notification preferences */}
-        <NotificationPreferencesForm />
-      </>
-    );
-  };
-
   if (!user) return null;
 
   return (
@@ -734,13 +721,11 @@ export default function ProfileScreen() {
         >
           <TabButton tab="Profile" />
           <TabButton tab="Settings" />
-          <TabButton tab="Notifications" />
         </View>
 
         <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false}>
           {activeTab === "Profile" && renderProfileTab()}
           {activeTab === "Settings" && renderSettingsTab()}
-          {activeTab === "Notifications" && renderNotificationsTab()}
 
           {isMobile && (
             <View

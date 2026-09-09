@@ -1,3 +1,4 @@
+import { spacing } from "@/src/design-system";
 import { Ionicons } from "@expo/vector-icons";
 import React from "react";
 import { Text, View } from "react-native";
@@ -88,7 +89,7 @@ const stylesheet = createStyleSheet((theme) => ({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    shadowColor: "#000",
+    shadowColor: theme.colors.black,
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
     shadowRadius: 2,
@@ -102,7 +103,7 @@ const stylesheet = createStyleSheet((theme) => ({
   },
   iconContainer: {
     padding: theme.spacing.sm,
-    backgroundColor: theme.colors.gray?.[100] || "#f3f4f6",
+    backgroundColor: theme.colors.gray[100],
     borderRadius: theme.borderRadius.full,
     alignItems: "center",
     justifyContent: "center",
@@ -114,7 +115,7 @@ const stylesheet = createStyleSheet((theme) => ({
     fontSize: theme.fontSize.base,
     fontWeight: theme.fontWeight.medium,
     color: theme.colors.text,
-    marginBottom: 2,
+    marginBottom: spacing.xs,
   },
   vehicleName: {
     fontSize: theme.fontSize.sm,
@@ -123,12 +124,12 @@ const stylesheet = createStyleSheet((theme) => ({
   otherServices: {
     fontSize: theme.fontSize.sm,
     color: theme.colors.textSecondary,
-    marginTop: 2,
+    marginTop: spacing.xs,
   },
   odometer: {
     fontSize: theme.fontSize.sm,
     color: theme.colors.textSecondary,
-    marginTop: 2,
+    marginTop: spacing.xs,
   },
   dueDate: {
     fontSize: theme.fontSize.sm,

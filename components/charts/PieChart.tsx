@@ -1,8 +1,8 @@
+import { spacing, withOpacity } from "@/src/design-system";
+import { useStyles } from "react-native-unistyles";
 import React from "react";
 import { View, Text, StyleSheet, Dimensions } from "react-native";
 import { PieChart as RNPieChart } from "react-native-chart-kit";
-import { useColorScheme } from "@/hooks/use-color-scheme";
-import { Colors } from "@/constants/theme";
 import { ChartDataPoint } from "@/lib/services/analyticsService";
 
 interface PieChartProps {
@@ -20,31 +20,31 @@ export function PieChart({
   colors: customColors,
   showLegend = true,
 }: PieChartProps) {
-  const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? "light"];
+  const { theme } = useStyles();
+  const colors = theme.colors;
   const screenWidth = Dimensions.get("window").width;
 
   const defaultColors = [
-    colors.chart.fuel,
-    colors.chart.service,
-    colors.chart.mileage,
-    colors.chart.primary,
+    colors.analytics.fuel,
+    colors.analytics.service,
+    colors.info,
+    colors.primary,
   ];
 
   const styles = StyleSheet.create({
     container: {
-      backgroundColor: colors.card,
+      backgroundColor: colors.surface,
       borderRadius: 12,
-      padding: 16,
-      marginBottom: 16,
+      padding: spacing.lg,
+      marginBottom: spacing.lg,
       borderWidth: 1,
-      borderColor: colors.cardBorder,
+      borderColor: colors.border,
     },
     title: {
       fontSize: 18,
       fontWeight: "600",
       color: colors.text,
-      marginBottom: 16,
+      marginBottom: spacing.lg,
       textAlign: "center",
     },
     chartContainer: {
@@ -60,16 +60,16 @@ export function PieChart({
       color: colors.textSecondary,
     },
     legendContainer: {
-      marginTop: 16,
+      marginTop: spacing.lg,
       flexDirection: "row",
       flexWrap: "wrap",
       justifyContent: "center",
-      gap: 16,
+      gap: spacing.lg,
     },
     legendItem: {
       flexDirection: "row",
       alignItems: "center",
-      gap: 8,
+      gap: spacing.sm,
     },
     legendColor: {
       width: 12,
@@ -106,19 +106,11 @@ export function PieChart({
   });
 
   const chartConfig = {
-    backgroundColor: colors.card,
-    backgroundGradientFrom: colors.card,
-    backgroundGradientTo: colors.card,
-    color: (opacity = 1) =>
-      colors.text +
-      Math.floor(opacity * 255)
-        .toString(16)
-        .padStart(2, "0"),
-    labelColor: (opacity = 1) =>
-      colors.textSecondary +
-      Math.floor(opacity * 255)
-        .toString(16)
-        .padStart(2, "0"),
+    backgroundColor: colors.surface,
+    backgroundGradientFrom: colors.surface,
+    backgroundGradientTo: colors.surface,
+    color: (opacity = 1) => withOpacity(colors.text, opacity),
+    labelColor: (opacity = 1) => withOpacity(colors.textSecondary, opacity),
   };
 
   return (

@@ -1,3 +1,5 @@
+import { spacing } from "@/src/design-system";
+import { useStyles } from "react-native-unistyles";
 import {
   AuthButton,
   AuthHeader,
@@ -5,8 +7,6 @@ import {
   AuthLayout,
 } from "@/components/auth";
 import { useAlert, withWebAlert } from "@/components/ui";
-import { Colors } from "@/constants/theme";
-import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useAuth } from "@/lib/contexts/AuthContext";
 import { isValidEmail } from "@/utils/validation";
 import { Ionicons } from "@expo/vector-icons";
@@ -20,8 +20,8 @@ function ForgotPasswordScreen() {
   const [emailSent, setEmailSent] = useState(false);
   const { resetPassword } = useAuth();
   const { showError } = useAlert();
-  const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? "light"];
+  const { theme } = useStyles();
+  const colors = theme.colors;
   const navigation = useRouter();
 
   const handleGoBack = () => {
@@ -59,7 +59,7 @@ function ForgotPasswordScreen() {
       flexDirection: "row",
       alignItems: "center",
       justifyContent: "center",
-      gap: 8,
+      gap: spacing.sm,
     },
     backButtonText: {
       color: colors.textSecondary,
@@ -69,17 +69,17 @@ function ForgotPasswordScreen() {
     // Success state styles
     iconContainer: {
       alignItems: "center",
-      marginBottom: 32,
+      marginBottom: spacing.xxl,
     },
     successIcon: {
       width: 80,
       height: 80,
       borderRadius: 40,
-      backgroundColor: colors.success || "#10B981",
+      backgroundColor: colors.success || theme.colors.success,
       alignItems: "center",
       justifyContent: "center",
-      marginBottom: 24,
-      shadowColor: colors.success || "#10B981",
+      marginBottom: spacing.xl,
+      shadowColor: colors.success || theme.colors.success,
       shadowOffset: { width: 0, height: 4 },
       shadowOpacity: 0.3,
       shadowRadius: 8,
@@ -87,7 +87,7 @@ function ForgotPasswordScreen() {
     },
     checkIcon: {
       fontSize: 40,
-      color: "#FFFFFF",
+      color: theme.colors.white,
       fontWeight: "bold",
     },
     title: {
@@ -95,7 +95,7 @@ function ForgotPasswordScreen() {
       fontWeight: "700",
       color: colors.text,
       textAlign: "center",
-      marginBottom: 12,
+      marginBottom: spacing.md,
       letterSpacing: -0.5,
     },
     subtitle: {
@@ -103,40 +103,40 @@ function ForgotPasswordScreen() {
       color: colors.textSecondary,
       textAlign: "center",
       lineHeight: 24,
-      marginBottom: 8,
+      marginBottom: spacing.sm,
     },
     emailText: {
       fontSize: 16,
       color: colors.primary,
       textAlign: "center",
       fontWeight: "600",
-      marginBottom: 32,
+      marginBottom: spacing.xxl,
     },
     card: {
-      backgroundColor: colors.card || colors.background,
+      backgroundColor: colors.surface,
       borderRadius: 12,
-      padding: 24,
+      padding: spacing.xl,
       shadowColor: colors.text,
       shadowOffset: { width: 0, height: 2 },
       shadowOpacity: 0.1,
       shadowRadius: 8,
       elevation: 4,
-      marginBottom: 24,
+      marginBottom: spacing.xl,
     },
     instructionTitle: {
       fontSize: 18,
       fontWeight: "600",
       color: colors.text,
-      marginBottom: 16,
+      marginBottom: spacing.lg,
       textAlign: "center",
     },
     instructionList: {
-      marginBottom: 20,
+      marginBottom: spacing.xl,
     },
     instructionItem: {
       flexDirection: "row",
       alignItems: "flex-start",
-      marginBottom: 12,
+      marginBottom: spacing.md,
     },
     instructionNumber: {
       width: 24,
@@ -145,12 +145,12 @@ function ForgotPasswordScreen() {
       backgroundColor: colors.primary,
       alignItems: "center",
       justifyContent: "center",
-      marginRight: 12,
-      marginTop: 2,
+      marginRight: spacing.md,
+      marginTop: spacing.xs,
     },
     instructionNumberText: {
       fontSize: 12,
-      color: "#FFFFFF",
+      color: theme.colors.white,
       fontWeight: "bold",
     },
     instructionText: {
@@ -160,14 +160,14 @@ function ForgotPasswordScreen() {
       lineHeight: 20,
     },
     buttonContainer: {
-      gap: 12,
+      gap: spacing.md,
     },
     secondaryButton: {
       backgroundColor: "transparent",
       borderWidth: 1,
       borderColor: colors.border,
       borderRadius: 8,
-      paddingVertical: 14,
+      paddingVertical: spacing.lg,
       alignItems: "center",
       minHeight: 48,
     },
@@ -181,7 +181,7 @@ function ForgotPasswordScreen() {
       color: colors.textSecondary,
       textAlign: "center",
       lineHeight: 18,
-      marginTop: 20,
+      marginTop: spacing.xl,
     },
     linkText: {
       color: colors.primary,
@@ -196,7 +196,7 @@ function ForgotPasswordScreen() {
         {/* Success Icon */}
         <View style={styles.iconContainer}>
           <View style={styles.successIcon}>
-            <Text style={styles.checkIcon}>✓</Text>
+            <Ionicons name="checkmark" size={40} color={theme.colors.white} />
           </View>
           <Text style={styles.title}>Check your email</Text>
           <Text style={styles.subtitle}>
@@ -263,7 +263,7 @@ function ForgotPasswordScreen() {
       />
 
       {/* Email Input */}
-      <View style={{ marginBottom: 24 }}>
+      <View style={{ marginBottom: spacing.xl }}>
         <AuthInput
           label="Email Address"
           placeholder="Enter your email"

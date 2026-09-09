@@ -1,3 +1,4 @@
+import { withOpacity } from "@/src/design-system";
 import React from "react";
 import { View, Text, TouchableOpacity } from "react-native";
 import { router } from "expo-router";
@@ -127,7 +128,7 @@ const stylesheet = createStyleSheet((theme) => ({
     width: 96,
     height: 96,
     borderRadius: theme.borderRadius.full,
-    backgroundColor: theme.colors.primary + "15",
+    backgroundColor: withOpacity(theme.colors.primary, 0.08),
     alignItems: "center",
     justifyContent: "center",
     marginBottom: theme.spacing.md,

@@ -1,3 +1,5 @@
+import { spacing } from "@/src/design-system";
+import { useStyles } from "react-native-unistyles";
 import {
   AuthButton,
   AuthCheckbox,
@@ -7,8 +9,6 @@ import {
   AuthLink,
 } from "@/components/auth";
 import { PasswordStrengthIndicator, withWebAlert } from "@/components/ui";
-import { Colors } from "@/constants/theme";
-import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useAuth } from "@/lib/contexts/AuthContext";
 import { useToast } from "@/hooks/useToast";
 import { isValidEmail, validatePassword } from "@/utils/validation";
@@ -25,8 +25,8 @@ function RegisterScreen() {
   const [agreeToTerms, setAgreeToTerms] = useState(false);
   const { signUp } = useAuth();
   const { showError, showSuccess, showWarning } = useToast();
-  const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? "light"];
+  const { theme } = useStyles();
+  const colors = theme.colors;
 
   const validateForm = () => {
     if (!fullName.trim()) {
@@ -119,9 +119,9 @@ function RegisterScreen() {
     },
     passwordMismatch: {
       fontSize: 12,
-      color: colors.error || "#EF4444",
-      marginTop: 6,
-      marginLeft: 4,
+      color: colors.error || theme.colors.error,
+      marginTop: spacing.sm,
+      marginLeft: spacing.xs,
     },
   });
 

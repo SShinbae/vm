@@ -1,5 +1,6 @@
-import { Colors } from "@/constants/theme";
-import { useColorScheme } from "@/hooks/use-color-scheme";
+import { spacing } from "@/src/design-system";
+import { IconSymbol } from "@/components/ui/icon-symbol";
+import { useStyles } from "react-native-unistyles";
 import { router, useLocalSearchParams } from "expo-router";
 import React, { useState, useEffect } from "react";
 import {
@@ -25,8 +26,8 @@ export default function ConfirmEmailScreen() {
   const [confirmed, setConfirmed] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [redirecting, setRedirecting] = useState(false);
-  const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? "light"];
+  const { theme } = useStyles();
+  const colors = theme.colors;
 
   useEffect(() => {
     const confirmEmail = async () => {
@@ -88,15 +89,15 @@ export default function ConfirmEmailScreen() {
   const styles = StyleSheet.create({
     container: {
       flex: 1,
-      backgroundColor: colors.facebook?.background || colors.surface,
+      backgroundColor: colors.background,
     },
     scrollContent: {
       flexGrow: 1,
-      paddingVertical: 20,
+      paddingVertical: spacing.xl,
     },
     content: {
       flex: 1,
-      paddingHorizontal: 20,
+      paddingHorizontal: spacing.xl,
       justifyContent: "center",
       maxWidth: screenWidth > 600 ? 400 : "100%",
       alignSelf: "center",
@@ -104,26 +105,26 @@ export default function ConfirmEmailScreen() {
     },
     iconContainer: {
       alignItems: "center",
-      marginBottom: 32,
+      marginBottom: spacing.xxl,
     },
     loadingIcon: {
       width: 80,
       height: 80,
       borderRadius: 40,
-      backgroundColor: colors.facebook?.primary || colors.tint,
+      backgroundColor: colors.primary,
       alignItems: "center",
       justifyContent: "center",
-      marginBottom: 24,
+      marginBottom: spacing.xl,
     },
     successIcon: {
       width: 80,
       height: 80,
       borderRadius: 40,
-      backgroundColor: "#4CAF50",
+      backgroundColor: theme.colors.success,
       alignItems: "center",
       justifyContent: "center",
-      marginBottom: 24,
-      shadowColor: "#4CAF50",
+      marginBottom: spacing.xl,
+      shadowColor: theme.colors.success,
       shadowOffset: {
         width: 0,
         height: 4,
@@ -136,11 +137,11 @@ export default function ConfirmEmailScreen() {
       width: 80,
       height: 80,
       borderRadius: 40,
-      backgroundColor: "#F44336",
+      backgroundColor: theme.colors.error,
       alignItems: "center",
       justifyContent: "center",
-      marginBottom: 24,
-      shadowColor: "#F44336",
+      marginBottom: spacing.xl,
+      shadowColor: theme.colors.error,
       shadowOffset: {
         width: 0,
         height: 4,
@@ -151,7 +152,7 @@ export default function ConfirmEmailScreen() {
     },
     iconText: {
       fontSize: 40,
-      color: "#FFFFFF",
+      color: theme.colors.white,
       fontWeight: "bold",
     },
     title: {
@@ -159,20 +160,20 @@ export default function ConfirmEmailScreen() {
       fontWeight: "bold",
       color: colors.text,
       textAlign: "center",
-      marginBottom: 12,
+      marginBottom: spacing.md,
     },
     subtitle: {
       fontSize: 16,
-      color: colors.facebook?.gray || colors.icon,
+      color: colors.textSecondary,
       textAlign: "center",
       lineHeight: 24,
-      marginBottom: 32,
+      marginBottom: spacing.xxl,
     },
     card: {
-      backgroundColor: colors.facebook?.card || colors.background,
+      backgroundColor: colors.surface,
       borderRadius: 12,
-      padding: 24,
-      shadowColor: "#000",
+      padding: spacing.xl,
+      shadowColor: theme.colors.black,
       shadowOffset: {
         width: 0,
         height: 2,
@@ -180,15 +181,15 @@ export default function ConfirmEmailScreen() {
       shadowOpacity: 0.1,
       shadowRadius: 8,
       elevation: 4,
-      marginBottom: 24,
+      marginBottom: spacing.xl,
     },
     primaryButton: {
-      backgroundColor: colors.facebook?.primary || colors.tint,
+      backgroundColor: colors.primary,
       borderRadius: 8,
-      paddingVertical: 16,
+      paddingVertical: spacing.lg,
       alignItems: "center",
       minHeight: 52,
-      shadowColor: colors.facebook?.primary || colors.tint,
+      shadowColor: colors.primary,
       shadowOffset: {
         width: 0,
         height: 2,
@@ -203,15 +204,15 @@ export default function ConfirmEmailScreen() {
       elevation: 0,
     },
     primaryButtonText: {
-      color: "#FFFFFF",
+      color: theme.colors.white,
       fontSize: 16,
       fontWeight: "600",
     },
     redirectText: {
       fontSize: 14,
-      color: colors.facebook?.gray || colors.icon,
+      color: colors.textSecondary,
       textAlign: "center",
-      marginTop: 16,
+      marginTop: spacing.lg,
       fontStyle: "italic",
     },
   });
@@ -249,7 +250,7 @@ export default function ConfirmEmailScreen() {
           <View style={styles.content}>
             <View style={styles.iconContainer}>
               <View style={styles.errorIcon}>
-                <Text style={styles.iconText}>✕</Text>
+                <IconSymbol name="xmark" size={48} color={theme.colors.white} />
               </View>
               <Text style={styles.title}>Confirmation Failed</Text>
               <Text style={styles.subtitle}>{error}</Text>
@@ -279,7 +280,11 @@ export default function ConfirmEmailScreen() {
           <View style={styles.content}>
             <View style={styles.iconContainer}>
               <View style={styles.successIcon}>
-                <Text style={styles.iconText}>✓</Text>
+                <IconSymbol
+                  name="checkmark"
+                  size={48}
+                  color={theme.colors.white}
+                />
               </View>
               <Text style={styles.title}>Email Confirmed!</Text>
               <Text style={styles.subtitle}>

@@ -1,8 +1,8 @@
+import { spacing, withOpacity } from "@/src/design-system";
+import { useStyles } from "react-native-unistyles";
 import React from "react";
 import { View, Text, StyleSheet, Dimensions } from "react-native";
 import { BarChart as RNBarChart } from "react-native-chart-kit";
-import { useColorScheme } from "@/hooks/use-color-scheme";
-import { Colors } from "@/constants/theme";
 import { ChartDataPoint } from "@/lib/services/analyticsService";
 
 interface BarChartProps {
@@ -23,26 +23,26 @@ export function BarChart({
     `RM${typeof value === "number" && !isNaN(value) ? value.toFixed(0) : "0"}`,
   horizontal = false,
 }: BarChartProps) {
-  const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? "light"];
+  const { theme } = useStyles();
+  const colors = theme.colors;
   const screenWidth = Dimensions.get("window").width;
 
-  const chartColor = color || colors.chart.service;
+  const chartColor = color || colors.analytics.service;
 
   const styles = StyleSheet.create({
     container: {
-      backgroundColor: colors.card,
+      backgroundColor: colors.surface,
       borderRadius: 12,
-      padding: 16,
-      marginBottom: 16,
+      padding: spacing.lg,
+      marginBottom: spacing.lg,
       borderWidth: 1,
-      borderColor: colors.cardBorder,
+      borderColor: colors.border,
     },
     title: {
       fontSize: 18,
       fontWeight: "600",
       color: colors.text,
-      marginBottom: 16,
+      marginBottom: spacing.lg,
     },
     chartContainer: {
       alignItems: "center",
@@ -88,20 +88,12 @@ export function BarChart({
   };
 
   const chartConfig = {
-    backgroundColor: colors.card,
-    backgroundGradientFrom: colors.card,
-    backgroundGradientTo: colors.card,
+    backgroundColor: colors.surface,
+    backgroundGradientFrom: colors.surface,
+    backgroundGradientTo: colors.surface,
     decimalPlaces: 0,
-    color: (opacity = 1) =>
-      chartColor +
-      Math.floor(opacity * 255)
-        .toString(16)
-        .padStart(2, "0"),
-    labelColor: (opacity = 1) =>
-      colors.textSecondary +
-      Math.floor(opacity * 255)
-        .toString(16)
-        .padStart(2, "0"),
+    color: (opacity = 1) => withOpacity(chartColor, opacity),
+    labelColor: (opacity = 1) => withOpacity(colors.textSecondary, opacity),
     style: {
       borderRadius: 16,
     },
@@ -120,7 +112,7 @@ export function BarChart({
           yAxisSuffix=""
           chartConfig={chartConfig}
           style={{
-            marginVertical: 8,
+            marginVertical: spacing.sm,
             borderRadius: 16,
           }}
           showBarTops={false}

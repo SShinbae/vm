@@ -8,6 +8,7 @@ import { Dimensions, Text, View } from "react-native";
 import { BarChart } from "react-native-chart-kit";
 import { createStyleSheet, useStyles } from "react-native-unistyles";
 import { CostChartDataPoint } from "../../../types/analytics";
+import { withOpacity } from "@/src/design-system";
 
 interface CostBarChartProps {
   data: CostChartDataPoint[];
@@ -35,8 +36,6 @@ export function CostBarChart({
       </View>
     );
   }
-
-  const isDark = theme.colors.background === "#1e292e";
 
   const barColor =
     type === "fuel"
@@ -67,9 +66,7 @@ export function CostBarChart({
     decimalPlaces: 0,
     color: () => barColor,
     labelColor: (opacity = 1) =>
-      isDark
-        ? `rgba(255, 255, 255, ${opacity * 0.7})`
-        : `rgba(0, 0, 0, ${opacity * 0.7})`,
+      withOpacity(theme.colors.textSecondary, opacity),
     style: {
       borderRadius: theme.borderRadius.lg,
     },

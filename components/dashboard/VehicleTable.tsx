@@ -1,3 +1,4 @@
+import { withOpacity, spacing } from "@/src/design-system";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { VehicleWithShares } from "@/hooks/useDashboardDataQuery";
 import { Image } from "expo-image";
@@ -154,7 +155,7 @@ const stylesheet = createStyleSheet((theme) => ({
     paddingVertical: theme.spacing.md,
     paddingHorizontal: theme.spacing.lg,
     borderBottomWidth: 1,
-    borderBottomColor: theme.colors.textSecondary + "20",
+    borderBottomColor: withOpacity(theme.colors.textSecondary, 0.12),
   },
   vehicleColumn: {
     flex: 35,
@@ -189,13 +190,13 @@ const stylesheet = createStyleSheet((theme) => ({
     width: 40,
     height: 40,
     borderRadius: theme.borderRadius.md,
-    backgroundColor: theme.colors.primary + "15",
+    backgroundColor: withOpacity(theme.colors.primary, 0.08),
     alignItems: "center",
     justifyContent: "center",
   },
   vehicleNameContainer: {
     flex: 1,
-    gap: 2,
+    gap: spacing.xs,
   },
   vehicleNameText: {
     fontSize: theme.fontSize.sm,

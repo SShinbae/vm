@@ -1,8 +1,8 @@
+import { spacing, withOpacity } from "@/src/design-system";
+import { useStyles } from "react-native-unistyles";
 import React from "react";
 import { View, Text, StyleSheet, Dimensions } from "react-native";
 import { LineChart as RNLineChart } from "react-native-chart-kit";
-import { useColorScheme } from "@/hooks/use-color-scheme";
-import { Colors } from "@/constants/theme";
 import { ChartDataPoint } from "@/lib/services/analyticsService";
 
 interface LineChartProps {
@@ -22,26 +22,26 @@ export function LineChart({
   showArea = false,
   formatY = (value: number) => `RM${value.toFixed(0)}`,
 }: LineChartProps) {
-  const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? "light"];
+  const { theme } = useStyles();
+  const colors = theme.colors;
   const screenWidth = Dimensions.get("window").width;
 
-  const chartColor = color || colors.chart.fuel;
+  const chartColor = color || colors.analytics.fuel;
 
   const styles = StyleSheet.create({
     container: {
-      backgroundColor: colors.card,
+      backgroundColor: colors.surface,
       borderRadius: 12,
-      padding: 16,
-      marginBottom: 16,
+      padding: spacing.lg,
+      marginBottom: spacing.lg,
       borderWidth: 1,
-      borderColor: colors.cardBorder,
+      borderColor: colors.border,
     },
     title: {
       fontSize: 18,
       fontWeight: "600",
       color: colors.text,
-      marginBottom: 16,
+      marginBottom: spacing.lg,
     },
     chartContainer: {
       alignItems: "center",
@@ -74,31 +74,19 @@ export function LineChart({
     datasets: [
       {
         data: data.map((point) => point.y),
-        color: (opacity = 1) =>
-          chartColor +
-          Math.floor(opacity * 255)
-            .toString(16)
-            .padStart(2, "0"),
+        color: (opacity = 1) => withOpacity(chartColor, opacity),
         strokeWidth: 3,
       },
     ],
   };
 
   const chartConfig = {
-    backgroundColor: colors.card,
-    backgroundGradientFrom: colors.card,
-    backgroundGradientTo: colors.card,
+    backgroundColor: colors.surface,
+    backgroundGradientFrom: colors.surface,
+    backgroundGradientTo: colors.surface,
     decimalPlaces: 0,
-    color: (opacity = 1) =>
-      colors.text +
-      Math.floor(opacity * 255)
-        .toString(16)
-        .padStart(2, "0"),
-    labelColor: (opacity = 1) =>
-      colors.textSecondary +
-      Math.floor(opacity * 255)
-        .toString(16)
-        .padStart(2, "0"),
+    color: (opacity = 1) => withOpacity(colors.text, opacity),
+    labelColor: (opacity = 1) => withOpacity(colors.textSecondary, opacity),
     style: {
       borderRadius: 16,
     },
@@ -121,7 +109,7 @@ export function LineChart({
           chartConfig={chartConfig}
           bezier={!showArea}
           style={{
-            marginVertical: 8,
+            marginVertical: spacing.sm,
             borderRadius: 16,
           }}
         />

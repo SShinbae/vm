@@ -68,6 +68,13 @@ export const semanticColors = {
   infoDark: "#60A5FA", // Blue 400 (for dark mode)
 } as const;
 
+export const darkSemanticColors = {
+  success: "#34D399", // Emerald 400
+  warning: "#FBBF24", // Amber 400
+  error: "#F87171", // Red 400
+  info: semanticColors.infoDark,
+} as const;
+
 // ============================================================================
 // Analytics Colors
 // ============================================================================

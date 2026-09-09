@@ -1,5 +1,5 @@
-import { Colors } from "@/constants/theme";
-import { useColorScheme } from "@/hooks/use-color-scheme";
+import { withOpacity, spacing } from "@/src/design-system";
+import { useStyles } from "react-native-unistyles";
 import React from "react";
 import {
   StyleSheet,
@@ -31,8 +31,8 @@ export function Card({
   onPress,
   disabled = false,
 }: CardProps | TouchableCardProps) {
-  const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? "light"];
+  const { theme } = useStyles();
+  const colors = theme.colors;
 
   const getCardStyle = (): ViewStyle[] => {
     const baseStyle: ViewStyle[] = [styles.card];
@@ -41,9 +41,9 @@ export function Card({
     switch (variant) {
       case "elevated":
         baseStyle.push({
-          backgroundColor: colors.card,
+          backgroundColor: colors.surface,
           elevation: 4,
-          shadowColor: "#000",
+          shadowColor: theme.colors.black,
           shadowOffset: { width: 0, height: 2 },
           shadowOpacity: 0.1,
           shadowRadius: 4,
@@ -52,7 +52,7 @@ export function Card({
         break;
       case "outlined":
         baseStyle.push({
-          backgroundColor: colors.card,
+          backgroundColor: colors.surface,
           borderWidth: 1,
           borderColor: colors.border,
         });
@@ -66,7 +66,7 @@ export function Card({
         break;
       default:
         baseStyle.push({
-          backgroundColor: colors.card,
+          backgroundColor: colors.surface,
           borderWidth: 1,
           borderColor: colors.border,
         });
@@ -106,6 +106,8 @@ export function Card({
         onPress={onPress}
         disabled={disabled}
         activeOpacity={0.7}
+        accessibilityRole="button"
+        accessibilityState={{ disabled }}
       >
         {children}
       </TouchableOpacity>
@@ -145,12 +147,16 @@ export function CardFooter({
   children: React.ReactNode;
   style?: ViewStyle;
 }) {
-  const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? "light"];
+  const { theme } = useStyles();
+  const colors = theme.colors;
 
   return (
     <View
-      style={[styles.footer, { borderTopColor: colors.icon + "10" }, style]}
+      style={[
+        styles.footer,
+        { borderTopColor: withOpacity(colors.textSecondary, 0.06) },
+        style,
+      ]}
     >
       {children}
     </View>
@@ -161,28 +167,29 @@ const styles = StyleSheet.create({
   card: {
     borderRadius: 12,
     overflow: "hidden",
+    minHeight: 48,
   },
   paddingSmall: {
-    padding: 12,
+    padding: spacing.md,
   },
   paddingMedium: {
-    padding: 16,
+    padding: spacing.lg,
   },
   paddingLarge: {
-    padding: 20,
+    padding: spacing.xl,
   },
   disabled: {
     opacity: 0.6,
   },
   header: {
-    marginBottom: 12,
+    marginBottom: spacing.md,
   },
   content: {
     flex: 1,
   },
   footer: {
-    marginTop: 12,
-    paddingTop: 12,
+    marginTop: spacing.md,
+    paddingTop: spacing.md,
     borderTopWidth: 1,
   },
 });

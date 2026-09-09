@@ -1,17 +1,16 @@
-import { Colors } from "@/constants/theme";
-import { useColorScheme } from "@/hooks/use-color-scheme";
+import { useStyles } from "react-native-unistyles";
 import { Stack } from "expo-router";
 
 export default function AuthLayout() {
-  const colorScheme = useColorScheme();
+  const { theme } = useStyles();
 
   return (
     <Stack
       screenOptions={{
         headerStyle: {
-          backgroundColor: Colors[colorScheme ?? "light"].background,
+          backgroundColor: theme.colors.background,
         },
-        headerTintColor: Colors[colorScheme ?? "light"].text,
+        headerTintColor: theme.colors.text,
         headerTitleStyle: {
           fontWeight: "600",
         },

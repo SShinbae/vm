@@ -1,3 +1,4 @@
+import { withOpacity, spacing } from "@/src/design-system";
 import { LogDetailsBottomSheet } from "@/components/logs";
 import { MaxWidthContainer } from "@/components/layout/MaxWidthContainer";
 import { ActionMenu, ActionMenuItem } from "@/components/ui/ActionMenu";
@@ -583,7 +584,7 @@ export default function LogsScreen() {
               flexDirection: "row",
               alignItems: "center",
               justifyContent: "space-between",
-              marginBottom: 2,
+              marginBottom: spacing.xs,
             }}
           >
             <Text
@@ -601,7 +602,7 @@ export default function LogsScreen() {
                 style={{
                   flexDirection: "row",
                   alignItems: "center",
-                  backgroundColor: theme.colors.primary + "15",
+                  backgroundColor: withOpacity(theme.colors.primary, 0.08),
                   paddingHorizontal: theme.spacing.sm,
                   paddingVertical: theme.spacing.xs,
                   borderRadius: theme.borderRadius.sm,
@@ -645,7 +646,7 @@ export default function LogsScreen() {
             <Text
               style={{
                 fontSize: theme.fontSize.xs,
-                color: theme.colors.textSecondary + "40",
+                color: withOpacity(theme.colors.textSecondary, 0.25),
               }}
             >
               •
@@ -662,7 +663,7 @@ export default function LogsScreen() {
             <Text
               style={{
                 fontSize: theme.fontSize.xs,
-                color: theme.colors.textSecondary + "40",
+                color: withOpacity(theme.colors.textSecondary, 0.25),
               }}
             >
               •
@@ -787,7 +788,7 @@ export default function LogsScreen() {
             borderWidth: 1,
             borderColor: theme.colors.border,
             ...(log.is_shared_vehicle && {
-              borderColor: theme.colors.primary + "40",
+              borderColor: withOpacity(theme.colors.primary, 0.25),
               backgroundColor: theme.colors.surface,
             }),
           }}
@@ -800,7 +801,7 @@ export default function LogsScreen() {
                 width: 48,
                 height: 48,
                 borderRadius: 24,
-                backgroundColor: serviceDetails.color + "15",
+                backgroundColor: withOpacity(serviceDetails.color, 0.08),
                 alignItems: "center",
                 justifyContent: "center",
                 marginRight: theme.spacing.lg,
@@ -912,7 +913,7 @@ export default function LogsScreen() {
           borderWidth: 1,
           borderColor: theme.colors.border,
           ...(log.is_shared_vehicle && {
-            borderColor: theme.colors.primary + "40",
+            borderColor: withOpacity(theme.colors.primary, 0.25),
             backgroundColor: theme.colors.surface,
           }),
         }}
@@ -925,7 +926,7 @@ export default function LogsScreen() {
               width: 48,
               height: 48,
               borderRadius: 24,
-              backgroundColor: details.color + "15",
+              backgroundColor: withOpacity(details.color, 0.08),
               alignItems: "center",
               justifyContent: "center",
               marginRight: theme.spacing.lg,

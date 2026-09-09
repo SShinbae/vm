@@ -1,3 +1,5 @@
+import { baseColors, withOpacity, spacing } from "@/src/design-system";
+import { useStyles } from "react-native-unistyles";
 import React, { useState } from "react";
 import {
   View,
@@ -9,8 +11,6 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { Image } from "expo-image";
-import { Colors } from "@/constants/theme";
-import { useColorScheme } from "@/hooks/use-color-scheme";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { OCRExtractedData } from "@/types";
 
@@ -30,8 +30,8 @@ export function ReceiptViewer({
   const [showFullscreen, setShowFullscreen] = useState(false);
   const [imageLoading, setImageLoading] = useState(true);
   const [imageError, setImageError] = useState(false);
-  const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? "light"];
+  const { theme } = useStyles();
+  const colors = theme.colors;
 
   if (!receiptImageUrl) {
     return null;
@@ -62,20 +62,20 @@ export function ReceiptViewer({
       backgroundColor: colors.background,
       borderRadius: 12,
       borderWidth: 1,
-      borderColor: colors.icon + "20",
+      borderColor: withOpacity(colors.textSecondary, 0.12),
       overflow: "hidden",
     },
     header: {
       flexDirection: "row",
       alignItems: "center",
       justifyContent: "space-between",
-      padding: 12,
-      backgroundColor: colors.icon + "10",
+      padding: spacing.md,
+      backgroundColor: withOpacity(colors.textSecondary, 0.06),
     },
     headerLeft: {
       flexDirection: "row",
       alignItems: "center",
-      gap: 8,
+      gap: spacing.sm,
     },
     headerTitle: {
       fontSize: 14,
@@ -84,15 +84,15 @@ export function ReceiptViewer({
     },
     headerActions: {
       flexDirection: "row",
-      gap: 8,
+      gap: spacing.sm,
     },
     actionButton: {
-      padding: 4,
+      padding: spacing.xs,
     },
     imageContainer: {
       position: "relative",
       height: 120,
-      backgroundColor: colors.icon + "05",
+      backgroundColor: withOpacity(colors.textSecondary, 0.02),
     },
     receiptImage: {
       width: "100%",
@@ -102,10 +102,10 @@ export function ReceiptViewer({
       position: "absolute",
       bottom: 8,
       right: 8,
-      backgroundColor: "rgba(0, 0, 0, 0.7)",
+      backgroundColor: withOpacity(baseColors.black, 0.7),
       borderRadius: 6,
-      paddingHorizontal: 8,
-      paddingVertical: 4,
+      paddingHorizontal: spacing.sm,
+      paddingVertical: spacing.xs,
     },
     overlayText: {
       color: "white",
@@ -125,34 +125,34 @@ export function ReceiptViewer({
     errorContainer: {
       justifyContent: "center",
       alignItems: "center",
-      padding: 20,
+      padding: spacing.xl,
     },
     errorText: {
       fontSize: 14,
-      color: colors.icon,
+      color: colors.textSecondary,
       textAlign: "center",
-      marginTop: 8,
+      marginTop: spacing.sm,
     },
     ocrDataContainer: {
-      padding: 12,
+      padding: spacing.md,
       borderTopWidth: 1,
-      borderTopColor: colors.icon + "20",
+      borderTopColor: withOpacity(colors.textSecondary, 0.12),
     },
     ocrTitle: {
       fontSize: 14,
       fontWeight: "600",
       color: colors.text,
-      marginBottom: 8,
+      marginBottom: spacing.sm,
     },
     ocrField: {
       flexDirection: "row",
       justifyContent: "space-between",
       alignItems: "center",
-      marginBottom: 4,
+      marginBottom: spacing.xs,
     },
     ocrLabel: {
       fontSize: 12,
-      color: colors.icon,
+      color: colors.textSecondary,
       fontWeight: "500",
     },
     ocrValue: {
@@ -161,17 +161,17 @@ export function ReceiptViewer({
       fontWeight: "500",
     },
     confidenceHigh: {
-      color: "#4CAF50",
+      color: theme.colors.success,
     },
     confidenceMedium: {
-      color: "#FF9800",
+      color: theme.colors.warning,
     },
     confidenceLow: {
-      color: "#F44336",
+      color: theme.colors.error,
     },
     fullscreenModal: {
       flex: 1,
-      backgroundColor: "rgba(0, 0, 0, 0.95)",
+      backgroundColor: withOpacity(baseColors.black, 0.95),
       justifyContent: "center",
       alignItems: "center",
     },
@@ -184,12 +184,12 @@ export function ReceiptViewer({
       top: 50,
       right: 20,
       flexDirection: "row",
-      gap: 15,
+      gap: spacing.lg,
     },
     fullscreenButton: {
-      backgroundColor: "rgba(255, 255, 255, 0.2)",
+      backgroundColor: withOpacity(baseColors.white, 0.2),
       borderRadius: 8,
-      padding: 12,
+      padding: spacing.md,
     },
   });
 
@@ -204,7 +204,7 @@ export function ReceiptViewer({
     <View style={styles.container}>
       <View style={styles.header}>
         <View style={styles.headerLeft}>
-          <IconSymbol name="doc.fill" size={16} color={colors.icon} />
+          <IconSymbol name="doc.fill" size={16} color={colors.textSecondary} />
           <Text style={styles.headerTitle}>Receipt</Text>
         </View>
         <View style={styles.headerActions}>
@@ -215,7 +215,7 @@ export function ReceiptViewer({
             <IconSymbol
               name="arrow.up.left.and.arrow.down.right"
               size={16}
-              color={colors.icon}
+              color={colors.textSecondary}
             />
           </TouchableOpacity>
           {onDelete && (
@@ -223,7 +223,7 @@ export function ReceiptViewer({
               style={styles.actionButton}
               onPress={handleDeleteReceipt}
             >
-              <IconSymbol name="trash" size={16} color="#F44336" />
+              <IconSymbol name="trash" size={16} color={theme.colors.error} />
             </TouchableOpacity>
           )}
         </View>
@@ -236,7 +236,7 @@ export function ReceiptViewer({
       >
         {imageLoading && (
           <View style={styles.loadingContainer}>
-            <ActivityIndicator size="small" color={colors.tint} />
+            <ActivityIndicator size="small" color={colors.primary} />
           </View>
         )}
 
@@ -267,7 +267,7 @@ export function ReceiptViewer({
             <IconSymbol
               name="exclamationmark.triangle"
               size={24}
-              color={colors.icon}
+              color={colors.textSecondary}
             />
             <Text style={styles.errorText}>Unable to load receipt image</Text>
           </View>
@@ -361,29 +361,29 @@ export function ReceiptList({
   onReceiptPress,
   onReceiptDelete,
 }: ReceiptListProps) {
-  const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? "light"];
+  const { theme } = useStyles();
+  const colors = theme.colors;
 
   const styles = StyleSheet.create({
     container: {
-      gap: 12,
+      gap: spacing.md,
     },
     receiptItem: {
       flexDirection: "row",
       backgroundColor: colors.background,
       borderRadius: 8,
       borderWidth: 1,
-      borderColor: colors.icon + "20",
+      borderColor: withOpacity(colors.textSecondary, 0.12),
       overflow: "hidden",
     },
     thumbnail: {
       width: 60,
       height: 60,
-      backgroundColor: colors.icon + "10",
+      backgroundColor: withOpacity(colors.textSecondary, 0.06),
     },
     receiptInfo: {
       flex: 1,
-      padding: 12,
+      padding: spacing.md,
       justifyContent: "space-between",
     },
     receiptTitle: {
@@ -393,20 +393,26 @@ export function ReceiptList({
     },
     receiptMeta: {
       fontSize: 12,
-      color: colors.icon,
-      marginTop: 2,
+      color: colors.textSecondary,
+      marginTop: spacing.xs,
     },
     receiptActions: {
-      paddingRight: 12,
+      paddingRight: spacing.md,
       justifyContent: "center",
     },
   });
 
   if (receipts.length === 0) {
     return (
-      <View style={{ padding: 20, alignItems: "center" }}>
-        <IconSymbol name="doc" size={48} color={colors.icon} />
-        <Text style={{ fontSize: 16, color: colors.icon, marginTop: 8 }}>
+      <View style={{ padding: spacing.xl, alignItems: "center" }}>
+        <IconSymbol name="doc" size={48} color={colors.textSecondary} />
+        <Text
+          style={{
+            fontSize: 16,
+            color: colors.textSecondary,
+            marginTop: spacing.sm,
+          }}
+        >
           No receipts found
         </Text>
       </View>
@@ -440,7 +446,7 @@ export function ReceiptList({
           </View>
           <View style={styles.receiptActions}>
             <TouchableOpacity onPress={() => onReceiptDelete?.(receipt.id)}>
-              <IconSymbol name="trash" size={16} color="#F44336" />
+              <IconSymbol name="trash" size={16} color={theme.colors.error} />
             </TouchableOpacity>
           </View>
         </TouchableOpacity>
@@ -462,8 +468,8 @@ export function ServiceReceiptIndicator({
   onPress,
   size = 20,
 }: ServiceReceiptIndicatorProps) {
-  const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? "light"];
+  const { theme } = useStyles();
+  const colors = theme.colors;
 
   if (!hasReceipt || !receiptUrl) {
     return null;
@@ -471,9 +477,9 @@ export function ServiceReceiptIndicator({
 
   const indicatorStyles = StyleSheet.create({
     indicator: {
-      backgroundColor: colors.tint + "20",
+      backgroundColor: withOpacity(colors.primary, 0.12),
       borderRadius: size / 2,
-      padding: 4,
+      padding: spacing.xs,
       alignItems: "center",
       justifyContent: "center",
     },
@@ -481,7 +487,7 @@ export function ServiceReceiptIndicator({
 
   return (
     <TouchableOpacity style={indicatorStyles.indicator} onPress={onPress}>
-      <IconSymbol name="photo" size={size * 0.7} color={colors.tint} />
+      <IconSymbol name="photo" size={size * 0.7} color={colors.primary} />
     </TouchableOpacity>
   );
 }

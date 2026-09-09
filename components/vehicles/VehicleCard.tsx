@@ -1,3 +1,5 @@
+import { withOpacity } from "@/src/design-system";
+import { useReducedMotion } from "@/hooks/useReducedMotion";
 import React, { useState } from "react";
 import { Animated, Pressable, Text, View } from "react-native";
 import { Image } from "expo-image";
@@ -21,8 +23,10 @@ export const VehicleCard = React.memo(
     const { styles, theme } = useStyles(stylesheet);
     const [imageError, setImageError] = useState(false);
     const scaleAnim = useState(new Animated.Value(1))[0];
+    const reduceMotion = useReducedMotion();
 
     const handlePressIn = () => {
+      if (reduceMotion) return;
       Animated.spring(scaleAnim, {
         toValue: 0.98,
         useNativeDriver: true,
@@ -30,6 +34,7 @@ export const VehicleCard = React.memo(
     };
 
     const handlePressOut = () => {
+      if (reduceMotion) return;
       Animated.spring(scaleAnim, {
         toValue: 1,
         friction: 3,
@@ -148,7 +153,7 @@ const stylesheet = createStyleSheet((theme) => ({
   vehiclePlaceholder: {
     width: "100%",
     height: "100%",
-    backgroundColor: theme.colors.primary + "15",
+    backgroundColor: withOpacity(theme.colors.primary, 0.08),
     alignItems: "center",
     justifyContent: "center",
   },

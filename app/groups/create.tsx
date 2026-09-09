@@ -1,12 +1,22 @@
 import { Input } from "@/components/ui/Input";
-import { FormLayout } from "@/lib/design-system/components/templates/FormLayout";
-import { Spacer } from "@/lib/design-system/components/atoms/Spacer";
+import { Button } from "@/components/ui/Button";
+import { PageHeader } from "@/components/ui/PageHeader";
+import { spacing } from "@/src/design-system";
 import { GroupService } from "@/lib/services/groupService";
 import { useToast } from "@/hooks/useToast";
 import { GroupFormData } from "@/types";
 import { router, useRouter } from "expo-router";
 import { usePostHog } from "posthog-react-native";
 import React, { useState } from "react";
+import {
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
+import { useStyles } from "react-native-unistyles";
 
 export default function CreateGroupScreen() {
   const [formData, setFormData] = useState<GroupFormData>({
@@ -17,6 +27,7 @@ export default function CreateGroupScreen() {
   const { showSuccess, showError } = useToast();
   const posthog = usePostHog();
   const navigation = useRouter();
+  const { theme } = useStyles();
 
   const handleGoBack = () => {
     if (navigation.canGoBack()) {
@@ -59,20 +70,24 @@ export default function CreateGroupScreen() {
   };
 
   return (
-    <>
-      <FormLayout
-        header={{
-          title: "Create Group",
-          showBack: true,
-        }}
-        title="Create Group"
-        description="Create a new group to share vehicles and collaborate with family or team members"
-        submitLabel="Create Group"
-        cancelLabel="Cancel"
-        onSubmit={handleSave}
-        onCancel={handleGoBack}
-        loading={loading}
+    <KeyboardAvoidingView
+      style={[styles.container, { backgroundColor: theme.colors.background }]}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+    >
+      <PageHeader title="Create Group" showBack />
+      <ScrollView
+        contentContainerStyle={styles.content}
+        keyboardShouldPersistTaps="handled"
       >
+        <Text style={[styles.title, { color: theme.colors.text }]}>
+          Create Group
+        </Text>
+        <Text
+          style={[styles.description, { color: theme.colors.textSecondary }]}
+        >
+          Create a new group to share vehicles and collaborate with family or
+          team members
+        </Text>
         <Input
           label="Group Name"
           value={formData.name}
@@ -86,8 +101,6 @@ export default function CreateGroupScreen() {
           leftIcon="people"
         />
 
-        <Spacer size="md" />
-
         <Input
           label="Description (Optional)"
           value={formData.description || ""}
@@ -99,7 +112,44 @@ export default function CreateGroupScreen() {
           numberOfLines={3}
           helperText="Help members understand what this group is for"
         />
-      </FormLayout>
-    </>
+      </ScrollView>
+      <View
+        style={[
+          styles.actions,
+          {
+            borderTopColor: theme.colors.border,
+            backgroundColor: theme.colors.surface,
+          },
+        ]}
+      >
+        <Button
+          title="Cancel"
+          variant="outline"
+          onPress={handleGoBack}
+          disabled={loading}
+          style={styles.button}
+        />
+        <Button
+          title="Create Group"
+          onPress={handleSave}
+          loading={loading}
+          style={styles.button}
+        />
+      </View>
+    </KeyboardAvoidingView>
   );
 }
+
+const styles = StyleSheet.create({
+  container: { flex: 1 },
+  content: { padding: spacing.lg },
+  title: { fontSize: 24, fontWeight: "700", marginBottom: spacing.sm },
+  description: { fontSize: 16, lineHeight: 24, marginBottom: spacing.xl },
+  actions: {
+    flexDirection: "row",
+    gap: spacing.md,
+    padding: spacing.lg,
+    borderTopWidth: 1,
+  },
+  button: { flex: 1 },
+});

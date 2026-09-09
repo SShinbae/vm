@@ -1,5 +1,5 @@
-import { Colors } from "@/constants/theme";
-import { useColorScheme } from "@/hooks/use-color-scheme";
+import { withOpacity, spacing } from "@/src/design-system";
+import { useStyles } from "react-native-unistyles";
 import React, { forwardRef, useState } from "react";
 import {
   StyleSheet,
@@ -63,8 +63,8 @@ export const Input = forwardRef<TextInput, InputProps>(
     },
     ref,
   ) => {
-    const colorScheme = useColorScheme();
-    const colors = Colors[colorScheme ?? "light"];
+    const { theme } = useStyles();
+    const colors = theme.colors;
     const [isFocused, setIsFocused] = useState(false);
 
     const getContainerStyle = (): ViewStyle[] => {
@@ -98,21 +98,27 @@ export const Input = forwardRef<TextInput, InputProps>(
           baseStyle.push({
             backgroundColor: "transparent",
             borderWidth: 1,
-            borderColor: isFocused ? colors.tint : colors.icon + "40",
+            borderColor: isFocused
+              ? colors.primary
+              : withOpacity(colors.textSecondary, 0.25),
           });
           break;
         case "filled":
           baseStyle.push({
-            backgroundColor: colors.icon + "10",
+            backgroundColor: withOpacity(colors.textSecondary, 0.06),
             borderWidth: 1,
-            borderColor: isFocused ? colors.tint : colors.icon + "20",
+            borderColor: isFocused
+              ? colors.primary
+              : withOpacity(colors.textSecondary, 0.12),
           });
           break;
         default:
           baseStyle.push({
             backgroundColor: colors.background,
             borderWidth: 1,
-            borderColor: isFocused ? colors.tint : colors.icon + "40",
+            borderColor: isFocused
+              ? colors.primary
+              : withOpacity(colors.textSecondary, 0.25),
           });
       }
 
@@ -189,7 +195,7 @@ export const Input = forwardRef<TextInput, InputProps>(
       if (success) {
         return [styles.helperText, { color: colors.success }];
       }
-      return [styles.helperText, { color: colors.icon }];
+      return [styles.helperText, { color: colors.textSecondary }];
     };
 
     const getIconSize = () => {
@@ -206,7 +212,7 @@ export const Input = forwardRef<TextInput, InputProps>(
     const getIconColor = () => {
       if (error) return colors.error;
       if (success) return colors.success;
-      return colors.icon;
+      return colors.textSecondary;
     };
 
     const displayHelperText = error || success || helperText;
@@ -243,7 +249,7 @@ export const Input = forwardRef<TextInput, InputProps>(
             value={value}
             onChangeText={onChangeText}
             placeholder={placeholder}
-            placeholderTextColor={colors.icon}
+            placeholderTextColor={colors.textSecondary}
             onFocus={() => setIsFocused(true)}
             onBlur={() => setIsFocused(false)}
             editable={!disabled}
@@ -257,6 +263,8 @@ export const Input = forwardRef<TextInput, InputProps>(
               style={styles.rightIconContainer}
               onPress={onRightIconPress}
               disabled={!onRightIconPress}
+              accessibilityRole={onRightIconPress ? "button" : undefined}
+              accessibilityLabel={props.accessibilityLabel || rightIcon}
             >
               <IconSymbol
                 name={rightIcon as any}
@@ -275,7 +283,9 @@ export const Input = forwardRef<TextInput, InputProps>(
               </Text>
             )}
             {showCharacterCount && maxLength && (
-              <Text style={[styles.characterCount, { color: colors.icon }]}>
+              <Text
+                style={[styles.characterCount, { color: colors.textSecondary }]}
+              >
                 {characterCount}/{maxLength}
               </Text>
             )}
@@ -290,19 +300,17 @@ Input.displayName = "Input";
 
 const styles = StyleSheet.create({
   container: {
-    marginBottom: 16,
+    marginBottom: spacing.lg,
   },
   label: {
     fontSize: 14,
     fontWeight: "500",
-    marginBottom: 6,
+    marginBottom: spacing.sm,
   },
   requiredLabel: {
     // Additional styling for required labels if needed
   },
-  requiredAsterisk: {
-    color: "#ff4444",
-  },
+  requiredAsterisk: {},
   inputContainer: {
     flexDirection: "row",
     alignItems: "center",
@@ -310,20 +318,20 @@ const styles = StyleSheet.create({
     overflow: "hidden",
   },
   inputContainerSmall: {
-    minHeight: 36,
-    paddingHorizontal: 12,
+    minHeight: 48,
+    paddingHorizontal: spacing.md,
   },
   inputContainerMedium: {
-    minHeight: 44,
-    paddingHorizontal: 16,
+    minHeight: 48,
+    paddingHorizontal: spacing.lg,
   },
   inputContainerLarge: {
     minHeight: 52,
-    paddingHorizontal: 20,
+    paddingHorizontal: spacing.xl,
   },
   multiline: {
     minHeight: 80,
-    paddingVertical: 12,
+    paddingVertical: spacing.md,
     alignItems: "flex-start",
   },
   disabled: {
@@ -344,14 +352,14 @@ const styles = StyleSheet.create({
     fontSize: 18,
   },
   inputWithLeftIcon: {
-    marginLeft: 8,
+    marginLeft: spacing.sm,
   },
   inputWithRightIcon: {
-    marginRight: 8,
+    marginRight: spacing.sm,
   },
   inputMultiline: {
     textAlignVertical: "top",
-    paddingTop: 8,
+    paddingTop: spacing.sm,
   },
   leftIconContainer: {
     justifyContent: "center",
@@ -360,27 +368,25 @@ const styles = StyleSheet.create({
   rightIconContainer: {
     justifyContent: "center",
     alignItems: "center",
-    padding: 4,
+    padding: spacing.xs,
+    minWidth: 48,
+    minHeight: 48,
   },
   bottomRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginTop: 4,
+    marginTop: spacing.xs,
   },
   helperText: {
     fontSize: 12,
     lineHeight: 16,
     flex: 1,
   },
-  errorText: {
-    color: "#ff4444",
-  },
-  successText: {
-    color: "#4CAF50",
-  },
+  errorText: {},
+  successText: {},
   characterCount: {
     fontSize: 12,
-    marginLeft: 8,
+    marginLeft: spacing.sm,
   },
 });

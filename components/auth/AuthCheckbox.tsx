@@ -1,5 +1,5 @@
-import { Colors } from "@/constants/theme";
-import { useColorScheme } from "@/hooks/use-color-scheme";
+import { spacing } from "@/src/design-system";
+import { useStyles } from "react-native-unistyles";
 import { Ionicons } from "@expo/vector-icons";
 import React, { ReactNode } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
@@ -19,14 +19,14 @@ interface AuthCheckboxProps {
  * - Support for string or ReactNode label (for links)
  */
 export function AuthCheckbox({ checked, onToggle, label }: AuthCheckboxProps) {
-  const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? "light"];
+  const { theme } = useStyles();
+  const colors = theme.colors;
 
   const styles = StyleSheet.create({
     container: {
       flexDirection: "row",
       alignItems: "flex-start",
-      marginBottom: 24,
+      marginBottom: spacing.xl,
     },
     checkbox: {
       width: 20,
@@ -34,8 +34,8 @@ export function AuthCheckbox({ checked, onToggle, label }: AuthCheckboxProps) {
       borderWidth: 2,
       borderColor: checked ? colors.primary : colors.border,
       borderRadius: 4,
-      marginRight: 10,
-      marginTop: 2,
+      marginRight: spacing.md,
+      marginTop: spacing.xs,
       alignItems: "center",
       justifyContent: "center",
       backgroundColor: checked ? colors.primary : colors.background,
@@ -55,7 +55,9 @@ export function AuthCheckbox({ checked, onToggle, label }: AuthCheckboxProps) {
       activeOpacity={0.7}
     >
       <View style={styles.checkbox}>
-        {checked && <Ionicons name="checkmark" size={14} color="#FFFFFF" />}
+        {checked && (
+          <Ionicons name="checkmark" size={14} color={theme.colors.white} />
+        )}
       </View>
       {typeof label === "string" ? (
         <Text style={styles.label}>{label}</Text>

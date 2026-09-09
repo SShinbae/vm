@@ -1,3 +1,4 @@
+import { withOpacity, spacing } from "@/src/design-system";
 import { SkeletonLanding } from "@/components/ui/Skeleton";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { useAuth } from "@/lib/contexts/AuthContext";
@@ -112,7 +113,7 @@ const StatCard: React.FC<StatCardProps & { reduceMotion?: boolean }> =
             borderWidth: 1,
             borderColor:
               (theme.colors as any).border || theme.colors.background,
-            shadowColor: "#000",
+            shadowColor: theme.colors.black,
             shadowOffset: { width: 0, height: 4 },
             shadowOpacity: 0.08,
             shadowRadius: 12,
@@ -140,7 +141,7 @@ const StatCard: React.FC<StatCardProps & { reduceMotion?: boolean }> =
               fontSize: isMobile ? 32 : isTablet ? 36 : 40,
               fontWeight: "700",
               color: theme.colors.text,
-              marginBottom: 8,
+              marginBottom: spacing.sm,
               letterSpacing: -0.5,
             }}
           >
@@ -215,7 +216,7 @@ const FeatureCard: React.FC<FeatureCardProps & { reduceMotion?: boolean }> =
           style={{
             opacity: fadeAnim,
             transform: reduceMotion ? [] : [{ translateY: slideAnim }],
-            marginBottom: 20,
+            marginBottom: spacing.xl,
           }}
         >
           <View
@@ -227,7 +228,7 @@ const FeatureCard: React.FC<FeatureCardProps & { reduceMotion?: boolean }> =
               borderWidth: 1,
               borderColor:
                 (theme.colors as any).border || theme.colors.background,
-              shadowColor: "#000",
+              shadowColor: theme.colors.black,
               shadowOffset: { width: 0, height: 2 },
               shadowOpacity: 0.05,
               shadowRadius: 10,
@@ -240,7 +241,7 @@ const FeatureCard: React.FC<FeatureCardProps & { reduceMotion?: boolean }> =
                 width: isMobile ? 56 : 64,
                 height: isMobile ? 56 : 64,
                 borderRadius: isMobile ? 12 : 14,
-                backgroundColor: theme.colors.primary + "15",
+                backgroundColor: withOpacity(theme.colors.primary, 0.08),
                 justifyContent: "center",
                 alignItems: "center",
                 marginBottom: isMobile ? 20 : 24,
@@ -398,7 +399,7 @@ export default function Index() {
 
       <Animated.ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: 40 }}
+        contentContainerStyle={{ paddingBottom: spacing.xxxl }}
         onScroll={Animated.event(
           [{ nativeEvent: { contentOffset: { y: scrollY } } }],
           { useNativeDriver: true },
@@ -456,8 +457,8 @@ export default function Index() {
                 style={{
                   fontSize: isMobile ? 44 : isTablet ? 56 : 64,
                   fontWeight: "800",
-                  color: "#FFFFFF",
-                  marginBottom: 20,
+                  color: theme.colors.white,
+                  marginBottom: spacing.xl,
                   letterSpacing: -1.5,
                   lineHeight: isMobile ? 52 : isTablet ? 64 : 72,
                 }}
@@ -465,7 +466,7 @@ export default function Index() {
                 Manage Your{"\n"}
                 <Text
                   style={{
-                    color: "#FFFFFF",
+                    color: theme.colors.white,
                     textDecorationLine: "underline",
                     textDecorationColor: theme.colors.info,
                     textDecorationStyle: "solid",
@@ -479,11 +480,11 @@ export default function Index() {
                 accessible={true}
                 style={{
                   fontSize: isMobile ? 18 : isTablet ? 20 : 22,
-                  color: "#FFFFFF",
+                  color: theme.colors.white,
                   opacity: 0.9,
                   lineHeight: 32,
                   maxWidth: 580,
-                  marginBottom: 40,
+                  marginBottom: spacing.xxxl,
                   fontWeight: "400",
                 }}
               >
@@ -507,12 +508,12 @@ export default function Index() {
                   accessibilityLabel="Register Now"
                   accessibilityHint="Navigate to registration page"
                   style={{
-                    backgroundColor: "#FFFFFF",
+                    backgroundColor: theme.colors.white,
                     paddingVertical: isMobile ? 16 : isTablet ? 18 : 20,
                     paddingHorizontal: isMobile ? 32 : isTablet ? 38 : 44,
                     borderRadius: 12,
                     alignItems: "center",
-                    shadowColor: "#000",
+                    shadowColor: theme.colors.black,
                     shadowOffset: { width: 0, height: 4 },
                     shadowOpacity: 0.15,
                     shadowRadius: 12,
@@ -544,12 +545,12 @@ export default function Index() {
                     borderRadius: 12,
                     alignItems: "center",
                     borderWidth: 2,
-                    borderColor: "#FFFFFF",
+                    borderColor: theme.colors.white,
                   }}
                 >
                   <Text
                     style={{
-                      color: "#FFFFFF",
+                      color: theme.colors.white,
                       fontSize: 17,
                       fontWeight: "600",
                     }}
@@ -622,11 +623,11 @@ export default function Index() {
           >
             <View
               style={{
-                backgroundColor: theme.colors.primary + "15",
-                paddingHorizontal: 18,
-                paddingVertical: 8,
+                backgroundColor: withOpacity(theme.colors.primary, 0.08),
+                paddingHorizontal: spacing.lg,
+                paddingVertical: spacing.sm,
                 borderRadius: 20,
-                marginBottom: 20,
+                marginBottom: spacing.xl,
               }}
             >
               <Text
@@ -647,7 +648,7 @@ export default function Index() {
                 fontWeight: "800",
                 color: theme.colors.text,
                 textAlign: "center",
-                marginBottom: 18,
+                marginBottom: spacing.lg,
                 letterSpacing: -1,
               }}
             >
@@ -706,7 +707,7 @@ export default function Index() {
               borderRadius: isMobile ? 20 : 24,
               borderWidth: 0,
               borderColor: "transparent",
-              shadowColor: "#000",
+              shadowColor: theme.colors.black,
               shadowOffset: { width: 0, height: 8 },
               shadowOpacity: 0.1,
               shadowRadius: 20,
@@ -720,9 +721,9 @@ export default function Index() {
                 style={{
                   fontSize: isMobile ? 32 : isTablet ? 38 : 44,
                   fontWeight: "800",
-                  color: "#FFFFFF",
+                  color: theme.colors.white,
                   textAlign: "center",
-                  marginBottom: 18,
+                  marginBottom: spacing.lg,
                   letterSpacing: -1,
                 }}
               >
@@ -732,10 +733,10 @@ export default function Index() {
                 accessible={true}
                 style={{
                   fontSize: isMobile ? 18 : isTablet ? 19 : 21,
-                  color: "#FFFFFF",
+                  color: theme.colors.white,
                   opacity: 0.9,
                   textAlign: "center",
-                  marginBottom: 38,
+                  marginBottom: spacing.xxl,
                   lineHeight: 30,
                   maxWidth: 720,
                   alignSelf: "center",
@@ -756,11 +757,11 @@ export default function Index() {
               >
                 <View
                   style={{
-                    backgroundColor: "#FFFFFF",
-                    paddingVertical: 20,
-                    paddingHorizontal: 54,
+                    backgroundColor: theme.colors.white,
+                    paddingVertical: spacing.xl,
+                    paddingHorizontal: spacing.xxxl,
                     borderRadius: 12,
-                    shadowColor: "#000",
+                    shadowColor: theme.colors.black,
                     shadowOffset: { width: 0, height: 4 },
                     shadowOpacity: 0.15,
                     shadowRadius: 12,
@@ -785,11 +786,12 @@ export default function Index() {
         {/* Footer */}
         <View
           style={{
-            paddingHorizontal: 24,
-            paddingVertical: 40,
+            paddingHorizontal: spacing.xl,
+            paddingVertical: spacing.xxxl,
             borderTopWidth: 1,
             borderTopColor:
-              (theme.colors as any).border || theme.colors.textSecondary + "20",
+              (theme.colors as any).border ||
+              withOpacity(theme.colors.textSecondary, 0.12),
             alignItems: "center",
           }}
         >
@@ -807,7 +809,7 @@ export default function Index() {
               color: theme.colors.primary,
               fontSize: 14,
               textAlign: "center",
-              marginTop: 8,
+              marginTop: spacing.sm,
               fontWeight: "600",
             }}
           >
