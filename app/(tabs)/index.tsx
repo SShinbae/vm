@@ -194,7 +194,11 @@ export default function DashboardScreen() {
 
                 {vehicles.length === 0 ? (
                   <View style={styles.emptyState}>
-                    <Text style={styles.emptyIcon}>🚗</Text>
+                    <IconSymbol
+                      name="car.fill"
+                      size={48}
+                      color={theme.colors.primary}
+                    />
                     <Text style={styles.emptyTitle}>No vehicles yet</Text>
                     <Text style={styles.emptyDescription}>
                       Add your first vehicle to start tracking

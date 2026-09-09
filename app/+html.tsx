@@ -1,4 +1,5 @@
 import { ScrollViewStyleReset } from "expo-router/html";
+import { darkTheme, lightTheme } from "@/src/design-system";
 
 export default function Root({ children }: { children: React.ReactNode }) {
   return (
@@ -16,7 +17,7 @@ export default function Root({ children }: { children: React.ReactNode }) {
           content="Track expenses, monitor mileage, analyze fuel consumption, and generate comprehensive reports for your vehicles — all in one powerful platform."
         />
         <meta name="robots" content="index, follow" />
-        <meta name="theme-color" content="#517c89" />
+        <meta name="theme-color" content={lightTheme.colors.primary} />
         <link rel="canonical" href="https://vm.wanahnaf.dev" />
         {/* Open Graph */}
         <meta property="og:type" content="website" />
@@ -46,7 +47,7 @@ export default function Root({ children }: { children: React.ReactNode }) {
         {/* Inline dark-mode background so the page is never white/black before JS loads */}
         <style
           dangerouslySetInnerHTML={{
-            __html: `@media(prefers-color-scheme:dark){html,body{background-color:#1e292e;color:#f3f8f8}}`,
+            __html: `@media(prefers-color-scheme:dark){html,body{background-color:${darkTheme.colors.background};color:${darkTheme.colors.text}}`,
           }}
         />
       </head>

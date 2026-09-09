@@ -1,3 +1,4 @@
+import { baseColors, withOpacity } from "@/src/design-system";
 /**
  * Custom Date Range Picker Component
  * Allows users to select a custom start and end date for analytics
@@ -173,7 +174,7 @@ export function DateRangePicker({
 const stylesheet = createStyleSheet((theme) => ({
   modalOverlay: {
     flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    backgroundColor: withOpacity(baseColors.black, 0.5),
     justifyContent: "flex-end",
   },
   modalContent: {
@@ -226,7 +227,7 @@ const stylesheet = createStyleSheet((theme) => ({
     gap: theme.spacing.sm,
     paddingHorizontal: theme.spacing.lg,
     paddingVertical: theme.spacing.md,
-    backgroundColor: theme.colors.analytics.warning + "20",
+    backgroundColor: withOpacity(theme.colors.analytics.warning, 0.12),
     marginHorizontal: theme.spacing.lg,
     borderRadius: theme.borderRadius.md,
     marginBottom: theme.spacing.md,
@@ -276,6 +277,6 @@ const stylesheet = createStyleSheet((theme) => ({
   confirmButtonText: {
     fontSize: theme.fontSize.base,
     fontWeight: theme.fontWeight.semibold,
-    color: "#FFFFFF",
+    color: theme.colors.white,
   },
 }));

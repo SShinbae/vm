@@ -1,6 +1,6 @@
+import { withOpacity, spacing } from "@/src/design-system";
+import { useStyles } from "react-native-unistyles";
 import { IconSymbol } from "@/components/ui/icon-symbol";
-import { Colors } from "@/constants/theme";
-import { useColorScheme } from "@/hooks/use-color-scheme";
 import { VehicleService } from "@/lib/services/vehicleService";
 import { Group } from "@/types";
 import React, { useEffect, useState } from "react";
@@ -29,8 +29,8 @@ export const VehicleGroupSelector: React.FC<VehicleGroupSelectorProps> = ({
     currentSharedGroups.map((g) => g.id),
   );
   const [loading, setLoading] = useState(false);
-  const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? "light"];
+  const { theme } = useStyles();
+  const colors = theme.colors;
 
   useEffect(() => {
     fetchUserGroups();
@@ -82,55 +82,55 @@ export const VehicleGroupSelector: React.FC<VehicleGroupSelectorProps> = ({
 
   const styles = StyleSheet.create({
     container: {
-      padding: 20,
+      padding: spacing.xl,
     },
     title: {
       fontSize: 18,
       fontWeight: "600",
       color: colors.text,
-      marginBottom: 16,
+      marginBottom: spacing.lg,
     },
     groupItem: {
       flexDirection: "row",
       alignItems: "center",
-      paddingVertical: 12,
-      paddingHorizontal: 16,
+      paddingVertical: spacing.md,
+      paddingHorizontal: spacing.lg,
       backgroundColor: colors.background,
       borderRadius: 8,
-      marginBottom: 8,
+      marginBottom: spacing.sm,
       borderWidth: 1,
-      borderColor: colors.icon + "20",
+      borderColor: withOpacity(colors.textSecondary, 0.12),
     },
     selectedGroup: {
-      backgroundColor: colors.tint + "10",
-      borderColor: colors.tint,
+      backgroundColor: withOpacity(colors.primary, 0.06),
+      borderColor: colors.primary,
     },
     groupName: {
       flex: 1,
       fontSize: 16,
       color: colors.text,
-      marginLeft: 12,
+      marginLeft: spacing.md,
     },
     checkIcon: {
       width: 20,
       height: 20,
       borderRadius: 10,
       borderWidth: 2,
-      borderColor: colors.icon,
+      borderColor: colors.textSecondary,
       alignItems: "center",
       justifyContent: "center",
     },
     checkedIcon: {
-      backgroundColor: colors.tint,
-      borderColor: colors.tint,
+      backgroundColor: colors.primary,
+      borderColor: colors.primary,
     },
     saveButton: {
-      backgroundColor: colors.tint,
-      paddingVertical: 12,
-      paddingHorizontal: 24,
+      backgroundColor: colors.primary,
+      paddingVertical: spacing.md,
+      paddingHorizontal: spacing.xl,
       borderRadius: 8,
       alignItems: "center",
-      marginTop: 20,
+      marginTop: spacing.xl,
     },
     saveButtonText: {
       color: "white",
@@ -139,9 +139,9 @@ export const VehicleGroupSelector: React.FC<VehicleGroupSelectorProps> = ({
     },
     emptyText: {
       textAlign: "center",
-      color: colors.icon,
+      color: colors.textSecondary,
       fontSize: 14,
-      marginTop: 20,
+      marginTop: spacing.xl,
     },
   });
 

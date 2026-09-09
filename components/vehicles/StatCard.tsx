@@ -1,3 +1,4 @@
+import { withOpacity } from "@/src/design-system";
 import React from "react";
 import { View, Text } from "react-native";
 import { createStyleSheet, useStyles } from "react-native-unistyles";
@@ -81,7 +82,7 @@ const stylesheet = createStyleSheet((theme) => ({
       sm: 48,
     },
     borderRadius: theme.borderRadius.full,
-    backgroundColor: theme.colors.primary + "15",
+    backgroundColor: withOpacity(theme.colors.primary, 0.08),
     alignItems: "center",
     justifyContent: "center",
   },

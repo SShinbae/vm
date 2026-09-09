@@ -1,3 +1,5 @@
+import { spacing } from "@/src/design-system";
+import { useStyles } from "react-native-unistyles";
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import {
@@ -8,8 +10,6 @@ import {
   ResponsiveContainer,
   Legend,
 } from "recharts";
-import { useColorScheme } from "@/hooks/use-color-scheme";
-import { Colors } from "@/constants/theme";
 import { ChartDataPoint } from "@/lib/services/analyticsService";
 
 interface PieChartProps {
@@ -27,31 +27,31 @@ export function PieChart({
   colors: customColors,
   showLegend = true,
 }: PieChartProps) {
-  const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? "light"];
+  const { theme } = useStyles();
+  const colors = theme.colors;
 
   const defaultColors = [
-    colors.chart.fuel,
-    colors.chart.service,
-    colors.chart.mileage,
-    colors.chart.primary,
+    colors.analytics.fuel,
+    colors.analytics.service,
+    colors.info,
+    colors.primary,
   ];
   const pieColors = customColors || defaultColors;
 
   const styles = StyleSheet.create({
     container: {
-      backgroundColor: colors.card,
+      backgroundColor: colors.surface,
       borderRadius: 12,
-      padding: 16,
-      marginBottom: 16,
+      padding: spacing.lg,
+      marginBottom: spacing.lg,
       borderWidth: 1,
-      borderColor: colors.cardBorder,
+      borderColor: colors.border,
     },
     title: {
       fontSize: 18,
       fontWeight: "600",
       color: colors.text,
-      marginBottom: 16,
+      marginBottom: spacing.lg,
       textAlign: "center",
     },
     chartContainer: {
@@ -115,8 +115,8 @@ export function PieChart({
                 name,
               ]}
               contentStyle={{
-                backgroundColor: colors.card,
-                border: `1px solid ${colors.cardBorder}`,
+                backgroundColor: colors.surface,
+                border: `1px solid ${colors.border}`,
                 borderRadius: "8px",
               }}
             />

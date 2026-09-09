@@ -1,3 +1,5 @@
+import { spacing } from "@/src/design-system";
+import { useStyles } from "react-native-unistyles";
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import {
@@ -9,8 +11,6 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
-import { useColorScheme } from "@/hooks/use-color-scheme";
-import { Colors } from "@/constants/theme";
 import { ChartDataPoint } from "@/lib/services/analyticsService";
 
 interface LineChartProps {
@@ -30,25 +30,25 @@ export function LineChart({
   showArea = false,
   formatY = (value: number) => `RM${value.toFixed(0)}`,
 }: LineChartProps) {
-  const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? "light"];
+  const { theme } = useStyles();
+  const colors = theme.colors;
 
-  const chartColor = color || colors.chart.fuel;
+  const chartColor = color || colors.analytics.fuel;
 
   const styles = StyleSheet.create({
     container: {
-      backgroundColor: colors.card,
+      backgroundColor: colors.surface,
       borderRadius: 12,
-      padding: 16,
-      marginBottom: 16,
+      padding: spacing.lg,
+      marginBottom: spacing.lg,
       borderWidth: 1,
-      borderColor: colors.cardBorder,
+      borderColor: colors.border,
     },
     title: {
       fontSize: 18,
       fontWeight: "600",
       color: colors.text,
-      marginBottom: 16,
+      marginBottom: spacing.lg,
     },
     chartContainer: {
       height: height,
@@ -88,7 +88,7 @@ export function LineChart({
       <View style={styles.chartContainer}>
         <ResponsiveContainer width="100%" height="100%">
           <RechartsLineChart data={chartData}>
-            <CartesianGrid strokeDasharray="3 3" stroke={colors.chart.grid} />
+            <CartesianGrid strokeDasharray="3 3" stroke={colors.border} />
             <XAxis
               dataKey="name"
               stroke={colors.textSecondary}
@@ -109,8 +109,8 @@ export function LineChart({
               formatter={(value: any) => [formatY(value), "Value"]}
               labelStyle={{ color: colors.text }}
               contentStyle={{
-                backgroundColor: colors.card,
-                border: `1px solid ${colors.cardBorder}`,
+                backgroundColor: colors.surface,
+                border: `1px solid ${colors.border}`,
                 borderRadius: "8px",
               }}
             />

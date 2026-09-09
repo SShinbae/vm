@@ -1,3 +1,4 @@
+import { withOpacity } from "@/src/design-system";
 import React, { useCallback, useMemo, forwardRef } from "react";
 import { View, Text, TouchableOpacity } from "react-native";
 import { router } from "expo-router";
@@ -137,7 +138,12 @@ export const VehicleDetailsBottomSheet = forwardRef<
                     <View
                       style={[
                         styles.timelineIcon,
-                        { backgroundColor: theme.colors.warning + "15" },
+                        {
+                          backgroundColor: withOpacity(
+                            theme.colors.warning,
+                            0.08,
+                          ),
+                        },
                       ]}
                     >
                       <IconSymbol
@@ -165,7 +171,12 @@ export const VehicleDetailsBottomSheet = forwardRef<
                     <View
                       style={[
                         styles.timelineIcon,
-                        { backgroundColor: theme.colors.error + "15" },
+                        {
+                          backgroundColor: withOpacity(
+                            theme.colors.error,
+                            0.08,
+                          ),
+                        },
                       ]}
                     >
                       <IconSymbol
@@ -193,7 +204,12 @@ export const VehicleDetailsBottomSheet = forwardRef<
                     <View
                       style={[
                         styles.timelineIcon,
-                        { backgroundColor: theme.colors.primary + "15" },
+                        {
+                          backgroundColor: withOpacity(
+                            theme.colors.primary,
+                            0.08,
+                          ),
+                        },
                       ]}
                     >
                       <IconSymbol
@@ -418,7 +434,7 @@ const stylesheet = createStyleSheet((theme) => ({
     width: 48,
     height: 48,
     borderRadius: theme.borderRadius.full,
-    backgroundColor: theme.colors.primary + "15",
+    backgroundColor: withOpacity(theme.colors.primary, 0.08),
     alignItems: "center",
     justifyContent: "center",
   },

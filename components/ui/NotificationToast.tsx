@@ -1,7 +1,9 @@
 import { Ionicons } from "@expo/vector-icons";
+import { baseColors, spacing } from "@/src/design-system";
+import { useReducedMotion } from "@/hooks/useReducedMotion";
 import React, { useEffect, useRef } from "react";
 import { Animated, Platform, Text, TouchableOpacity, View } from "react-native";
-import { useThemeColor } from "../../hooks/use-theme-color";
+import { createStyleSheet, useStyles } from "react-native-unistyles";
 import { NotificationData } from "../../lib/services/notificationService";
 
 const ANIMATION_DURATION = 300;
@@ -23,21 +25,19 @@ export function NotificationToast({
   const translateY = useRef(new Animated.Value(-100)).current;
   const opacity = useRef(new Animated.Value(0)).current;
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const backgroundColor = String(useThemeColor({}, "card"));
-  const textColor = String(useThemeColor({}, "text"));
-  const borderColor = String(useThemeColor({}, "border"));
+  const reduceMotion = useReducedMotion();
+  const { styles, theme } = useStyles(stylesheet);
 
   const handleDismiss = () => {
     Animated.parallel([
       Animated.timing(translateY, {
         toValue: -100,
-        duration: ANIMATION_DURATION,
+        duration: reduceMotion ? 0 : ANIMATION_DURATION,
         useNativeDriver: true,
       }),
       Animated.timing(opacity, {
         toValue: 0,
-        duration: ANIMATION_DURATION,
+        duration: reduceMotion ? 0 : ANIMATION_DURATION,
         useNativeDriver: true,
       }),
     ]).start(() => {
@@ -56,12 +56,12 @@ export function NotificationToast({
       Animated.parallel([
         Animated.timing(translateY, {
           toValue: 0,
-          duration: ANIMATION_DURATION,
+          duration: reduceMotion ? 0 : ANIMATION_DURATION,
           useNativeDriver: true,
         }),
         Animated.timing(opacity, {
           toValue: 1,
-          duration: ANIMATION_DURATION,
+          duration: reduceMotion ? 0 : ANIMATION_DURATION,
           useNativeDriver: true,
         }),
       ]).start();
@@ -125,45 +125,39 @@ export function NotificationToast({
       <TouchableOpacity
         onPress={handlePress}
         activeOpacity={0.9}
-        className="rounded-lg shadow-lg"
-        style={{
-          backgroundColor,
-          borderWidth: 1,
-          borderColor,
-        }}
+        style={styles.toast}
+        accessibilityRole="button"
       >
-        <View className="p-4">
-          <View className="flex-row items-start">
-            <View className="mr-3 mt-1">
-              <Ionicons name={getIcon() as any} size={24} color={textColor} />
+        <View style={styles.padding}>
+          <View style={styles.row}>
+            <View style={styles.icon}>
+              <Ionicons
+                name={getIcon() as any}
+                size={24}
+                color={theme.colors.text}
+              />
             </View>
 
-            <View className="flex-1">
-              <Text
-                className="font-semibold text-base mb-1"
-                style={{ color: textColor }}
-                numberOfLines={1}
-              >
+            <View style={styles.content}>
+              <Text style={styles.title} numberOfLines={1}>
                 {notification.title}
               </Text>
-              <Text
-                className="text-sm"
-                style={{ color: textColor, opacity: 0.8 }}
-                numberOfLines={2}
-              >
+              <Text style={styles.body} numberOfLines={2}>
                 {notification.body}
               </Text>
             </View>
 
             <TouchableOpacity
               onPress={handleDismiss}
-              className="p-1 ml-2"
+              style={styles.close}
               hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              accessibilityRole="button"
+              accessibilityLabel="Dismiss notification"
             >
               <Ionicons
                 name="close-outline"
                 size={20}
-                color={textColor}
+                color={theme.colors.text}
                 style={{ opacity: 0.6 }}
               />
             </TouchableOpacity>
@@ -173,3 +167,29 @@ export function NotificationToast({
     </Animated.View>
   );
 }
+
+const stylesheet = createStyleSheet((theme) => ({
+  toast: {
+    backgroundColor: theme.colors.surface,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    borderRadius: theme.borderRadius.md,
+    shadowColor: baseColors.black,
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 6,
+  },
+  padding: { padding: theme.spacing.lg },
+  row: { flexDirection: "row", alignItems: "flex-start" },
+  icon: { marginRight: theme.spacing.md, marginTop: theme.spacing.xs },
+  content: { flex: 1 },
+  title: {
+    color: theme.colors.text,
+    fontSize: theme.fontSize.base,
+    fontWeight: theme.fontWeight.semibold,
+    marginBottom: spacing.xs,
+  },
+  body: { color: theme.colors.text, opacity: 0.8, fontSize: theme.fontSize.sm },
+  close: { marginLeft: theme.spacing.sm, padding: theme.spacing.xs },
+}));

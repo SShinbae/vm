@@ -1,10 +1,12 @@
+import { baseColors, withOpacity, spacing } from "@/src/design-system";
+import { useColorScheme } from "@/hooks/use-color-scheme";
+import { useStyles } from "react-native-unistyles";
 import { ActionMenu, ActionMenuItem } from "@/components/ui/ActionMenu";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { AlertModal, ConfirmModal } from "@/components/ui/Modal";
+import { Pagination } from "@/components/ui/Pagination";
 import { ServiceReceiptIndicator } from "@/components/ui/ReceiptViewer";
 import { SkeletonVehicleDetail } from "@/components/ui/Skeleton";
-import { Colors } from "@/constants/theme";
-import { useColorScheme } from "@/hooks/use-color-scheme";
 import {
   FuelLogService,
   MileageLogService,
@@ -76,9 +78,9 @@ export default function VehicleDetailScreen() {
     description: string;
   } | null>(null);
   const [canModify, setCanModify] = useState(true);
-
+  const { theme } = useStyles();
   const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? "light"];
+  const colors = theme.colors;
 
   const fetchVehicleData = useCallback(async () => {
     if (!id) return;
@@ -375,7 +377,7 @@ export default function VehicleDetailScreen() {
           <IconSymbol
             name={icon}
             size={isDesktopWeb ? 24 : 20}
-            color={gradient ? "#fff" : colors.tint}
+            color={gradient ? theme.colors.white : colors.primary}
           />
         </View>
         {isDesktopWeb && subtitle && (
@@ -414,7 +416,7 @@ export default function VehicleDetailScreen() {
       <IconSymbol
         name={icon}
         size={isDesktopWeb ? 18 : 16}
-        color={isActive ? colors.tint : colors.icon}
+        color={isActive ? colors.primary : colors.textSecondary}
       />
       <Text
         style={[styles.tabButtonText, isActive && styles.tabButtonTextActive]}
@@ -425,98 +427,11 @@ export default function VehicleDetailScreen() {
     </TouchableOpacity>
   );
 
-  // Pagination helper functions
+  // Slice an array to the current page worth of items
   const getPaginatedItems = (items: any[], currentPage: number) => {
     const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
     const endIndex = startIndex + ITEMS_PER_PAGE;
     return items.slice(startIndex, endIndex);
-  };
-
-  const getTotalPages = (totalItems: number) => {
-    return Math.ceil(totalItems / ITEMS_PER_PAGE);
-  };
-
-  const getPageRange = (currentPage: number, totalItems: number) => {
-    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE + 1;
-    const endIndex = Math.min(currentPage * ITEMS_PER_PAGE, totalItems);
-    return { startIndex, endIndex };
-  };
-
-  const PaginationControls = ({
-    currentPage,
-    totalItems,
-    onPageChange,
-  }: {
-    currentPage: number;
-    totalItems: number;
-    onPageChange: (page: number) => void;
-  }) => {
-    const totalPages = getTotalPages(totalItems);
-    const { startIndex, endIndex } = getPageRange(currentPage, totalItems);
-
-    if (totalItems === 0) return null;
-
-    return (
-      <View style={styles.paginationContainer}>
-        <Text style={styles.paginationInfo}>
-          Showing {startIndex}-{endIndex} of {totalItems}
-        </Text>
-
-        <View style={styles.paginationButtons}>
-          <TouchableOpacity
-            style={[
-              styles.paginationButton,
-              currentPage === 1 && styles.paginationButtonDisabled,
-            ]}
-            onPress={() => onPageChange(currentPage - 1)}
-            disabled={currentPage === 1}
-          >
-            <IconSymbol
-              name="chevron.left"
-              size={isDesktopWeb ? 16 : 14}
-              color={currentPage === 1 ? colors.icon + "50" : colors.tint}
-            />
-          </TouchableOpacity>
-
-          {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-            <TouchableOpacity
-              key={page}
-              style={[
-                styles.paginationPageButton,
-                currentPage === page && styles.paginationPageButtonActive,
-              ]}
-              onPress={() => onPageChange(page)}
-            >
-              <Text
-                style={[
-                  styles.paginationPageText,
-                  currentPage === page && styles.paginationPageTextActive,
-                ]}
-              >
-                {page}
-              </Text>
-            </TouchableOpacity>
-          ))}
-
-          <TouchableOpacity
-            style={[
-              styles.paginationButton,
-              currentPage === totalPages && styles.paginationButtonDisabled,
-            ]}
-            onPress={() => onPageChange(currentPage + 1)}
-            disabled={currentPage === totalPages}
-          >
-            <IconSymbol
-              name="chevron.right"
-              size={isDesktopWeb ? 16 : 14}
-              color={
-                currentPage === totalPages ? colors.icon + "50" : colors.tint
-              }
-            />
-          </TouchableOpacity>
-        </View>
-      </View>
-    );
   };
 
   const LogItem = ({
@@ -582,7 +497,7 @@ export default function VehicleDetailScreen() {
           <IconSymbol
             name={icon}
             size={isDesktopWeb ? 20 : 16}
-            color={colors.tint}
+            color={colors.primary}
           />
         </View>
         <View style={styles.logContent}>
@@ -612,7 +527,7 @@ export default function VehicleDetailScreen() {
             </Text>
           )}
         </View>
-        <View style={{ marginLeft: 8 }}>
+        <View style={{ marginLeft: spacing.sm }}>
           <ActionMenu items={actionMenuItems} />
         </View>
       </TouchableOpacity>
@@ -633,7 +548,7 @@ export default function VehicleDetailScreen() {
       fontSize: 16,
       color: colors.text,
       textAlign: "center",
-      marginTop: 40,
+      marginTop: spacing.xxxl,
     },
     content: {
       flex: 1,
@@ -663,7 +578,7 @@ export default function VehicleDetailScreen() {
       left: 0,
       right: 0,
       bottom: 0,
-      backgroundColor: "rgba(0, 0, 0, 0.5)",
+      backgroundColor: withOpacity(baseColors.black, 0.5),
     },
     heroContent: {
       flex: 1,
@@ -674,18 +589,18 @@ export default function VehicleDetailScreen() {
       alignSelf: "center",
     },
     heroCard: {
-      backgroundColor: colors.card,
+      backgroundColor: colors.surface,
       borderRadius: isDesktopWeb ? 20 : 14,
       padding: isDesktopWeb ? 32 : 18,
       ...(isDesktopWeb && {
         backdropFilter: "blur(20px)",
-        shadowColor: "#000",
+        shadowColor: theme.colors.black,
         shadowOffset: { width: 0, height: 8 },
         shadowOpacity: colorScheme === "dark" ? 0.4 : 0.2,
         shadowRadius: 24,
       }),
       borderWidth: 1,
-      borderColor: colors.cardBorder,
+      borderColor: colors.border,
     },
     vehicleActions: {
       flexDirection: "row",
@@ -700,8 +615,8 @@ export default function VehicleDetailScreen() {
       alignItems: "center",
       justifyContent: "center",
       borderWidth: 1,
-      borderColor: colors.cardBorder,
-      shadowColor: "#000",
+      borderColor: colors.border,
+      shadowColor: theme.colors.black,
       shadowOffset: { width: 0, height: 1 },
       shadowOpacity: 0.05,
       shadowRadius: 2,
@@ -720,18 +635,18 @@ export default function VehicleDetailScreen() {
       width: isDesktopWeb ? 80 : 56,
       height: isDesktopWeb ? 80 : 56,
       borderRadius: isDesktopWeb ? 40 : 28,
-      backgroundColor: colors.tint,
+      backgroundColor: colors.primary,
       alignItems: "center",
       justifyContent: "center",
       marginRight: isDesktopWeb ? 20 : 12,
       ...(isDesktopWeb && {
-        shadowColor: colors.tint,
+        shadowColor: colors.primary,
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.3,
         shadowRadius: 12,
       }),
       ...(isMobile && {
-        shadowColor: colors.tint,
+        shadowColor: colors.primary,
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.2,
         shadowRadius: 6,
@@ -758,15 +673,15 @@ export default function VehicleDetailScreen() {
       position: "absolute",
       top: isDesktopWeb ? -10 : -6,
       left: isDesktopWeb ? -10 : -6,
-      backgroundColor: colors.tint,
+      backgroundColor: colors.primary,
       paddingHorizontal: isDesktopWeb ? 12 : 10,
       paddingVertical: isDesktopWeb ? 6 : 5,
       borderRadius: isDesktopWeb ? 12 : 10,
       flexDirection: "row",
       alignItems: "center",
-      gap: 4,
+      gap: spacing.xs,
       ...(isDesktopWeb && {
-        shadowColor: "#000",
+        shadowColor: theme.colors.black,
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.15,
         shadowRadius: 8,
@@ -776,7 +691,7 @@ export default function VehicleDetailScreen() {
       }),
     },
     ownershipBadgeText: {
-      color: "#fff",
+      color: theme.colors.white,
       fontSize: isDesktopWeb ? 11 : 10,
       fontWeight: "700",
       textTransform: "uppercase",
@@ -791,7 +706,7 @@ export default function VehicleDetailScreen() {
     detailItem: {
       flexDirection: "row",
       alignItems: "center",
-      gap: 6,
+      gap: spacing.sm,
     },
     detailLabel: {
       fontSize: isDesktopWeb ? 14 : 12,
@@ -813,14 +728,14 @@ export default function VehicleDetailScreen() {
     },
     // Sharing Section
     sharingCard: {
-      backgroundColor: colors.card,
+      backgroundColor: colors.surface,
       borderRadius: isDesktopWeb ? 16 : 12,
       padding: isDesktopWeb ? 24 : 16,
       marginBottom: isDesktopWeb ? 32 : 18,
       borderWidth: 1,
-      borderColor: colors.cardBorder,
+      borderColor: colors.border,
       ...(isDesktopWeb && {
-        shadowColor: "#000",
+        shadowColor: theme.colors.black,
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.05,
         shadowRadius: 8,
@@ -840,7 +755,7 @@ export default function VehicleDetailScreen() {
       width: isDesktopWeb ? 48 : 38,
       height: isDesktopWeb ? 48 : 38,
       borderRadius: isDesktopWeb ? 24 : 19,
-      backgroundColor: colors.tint + "20",
+      backgroundColor: withOpacity(colors.primary, 0.12),
       alignItems: "center",
       justifyContent: "center",
       marginRight: isDesktopWeb ? 16 : 10,
@@ -872,7 +787,7 @@ export default function VehicleDetailScreen() {
       marginTop: isDesktopWeb ? 16 : 12,
       paddingTop: isDesktopWeb ? 16 : 12,
       borderTopWidth: 1,
-      borderTopColor: colors.divider,
+      borderTopColor: colors.border,
     },
     sharingGroupItem: {
       flexDirection: "row",
@@ -888,7 +803,7 @@ export default function VehicleDetailScreen() {
       width: isDesktopWeb ? 32 : 28,
       height: isDesktopWeb ? 32 : 28,
       borderRadius: isDesktopWeb ? 16 : 14,
-      backgroundColor: colors.tint + "30",
+      backgroundColor: withOpacity(colors.primary, 0.19),
       alignItems: "center",
       justifyContent: "center",
       marginRight: isDesktopWeb ? 12 : 10,
@@ -908,13 +823,13 @@ export default function VehicleDetailScreen() {
     statCard: {
       flex: 1,
       minWidth: isDesktopWeb ? "22%" : "47%",
-      backgroundColor: colors.card,
+      backgroundColor: colors.surface,
       borderRadius: isDesktopWeb ? 16 : 12,
       padding: isDesktopWeb ? 24 : 12,
       borderWidth: 1,
-      borderColor: colors.cardBorder,
+      borderColor: colors.border,
       ...(isDesktopWeb && {
-        shadowColor: "#000",
+        shadowColor: theme.colors.black,
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.04,
         shadowRadius: 8,
@@ -924,8 +839,8 @@ export default function VehicleDetailScreen() {
       // Web-specific transitions should be handled differently
     },
     statCardGradient: {
-      backgroundColor: isDesktopWeb ? colors.tint : colors.card,
-      borderColor: isDesktopWeb ? colors.tint : colors.cardBorder,
+      backgroundColor: isDesktopWeb ? colors.primary : colors.surface,
+      borderColor: isDesktopWeb ? colors.primary : colors.border,
     },
     statCardHeader: {
       flexDirection: "row",
@@ -937,18 +852,18 @@ export default function VehicleDetailScreen() {
       width: isDesktopWeb ? 48 : 36,
       height: isDesktopWeb ? 48 : 36,
       borderRadius: isDesktopWeb ? 24 : 18,
-      backgroundColor: colors.tint + "20",
+      backgroundColor: withOpacity(colors.primary, 0.12),
       alignItems: "center",
       justifyContent: "center",
     },
     statIconGradient: {
-      backgroundColor: colors.tint + "20",
+      backgroundColor: withOpacity(colors.primary, 0.12),
     },
     statTrend: {
       width: isDesktopWeb ? 24 : 20,
       height: isDesktopWeb ? 24 : 20,
       borderRadius: isDesktopWeb ? 12 : 10,
-      backgroundColor: colors.success + "20",
+      backgroundColor: withOpacity(colors.success, 0.12),
       alignItems: "center",
       justifyContent: "center",
     },
@@ -963,7 +878,7 @@ export default function VehicleDetailScreen() {
       lineHeight: isDesktopWeb ? 32 : 22,
     },
     statValueLight: {
-      color: isDesktopWeb ? "#fff" : colors.text,
+      color: isDesktopWeb ? theme.colors.white : colors.text,
     },
     statTitle: {
       fontSize: isDesktopWeb ? 13 : 11,
@@ -974,27 +889,31 @@ export default function VehicleDetailScreen() {
       lineHeight: isDesktopWeb ? 16 : 14,
     },
     statTitleLight: {
-      color: isDesktopWeb ? "rgba(255, 255, 255, 0.9)" : colors.textSecondary,
+      color: isDesktopWeb
+        ? withOpacity(baseColors.white, 0.9)
+        : colors.textSecondary,
     },
     statSubtitle: {
       fontSize: isDesktopWeb ? 12 : 10,
-      color: colors.textTertiary,
+      color: colors.gray[400],
       marginTop: isDesktopWeb ? 4 : 2,
       lineHeight: isDesktopWeb ? 16 : 14,
     },
     statSubtitleLight: {
-      color: isDesktopWeb ? "rgba(255, 255, 255, 0.75)" : colors.textTertiary,
+      color: isDesktopWeb
+        ? withOpacity(baseColors.white, 0.75)
+        : colors.gray[400],
     },
     // Tabs
     tabsContainer: {
-      backgroundColor: colors.card,
+      backgroundColor: colors.surface,
       borderRadius: isDesktopWeb ? 16 : 10,
       padding: isDesktopWeb ? 8 : 4,
       marginBottom: isDesktopWeb ? 24 : 14,
       flexDirection: "row",
       gap: isDesktopWeb ? 8 : 4,
       borderWidth: 1,
-      borderColor: colors.cardBorder,
+      borderColor: colors.border,
     },
     tabButton: {
       flex: 1,
@@ -1017,7 +936,7 @@ export default function VehicleDetailScreen() {
       color: colors.textSecondary,
     },
     tabButtonTextActive: {
-      color: colors.tint,
+      color: colors.primary,
     },
     tabIndicator: {
       position: "absolute",
@@ -1025,18 +944,18 @@ export default function VehicleDetailScreen() {
       left: "20%",
       right: "20%",
       height: isDesktopWeb ? 3 : 2,
-      backgroundColor: colors.tint,
+      backgroundColor: colors.primary,
       borderRadius: 2,
     },
     // Logs Section
     logsContainer: {
-      backgroundColor: colors.card,
+      backgroundColor: colors.surface,
       borderRadius: isDesktopWeb ? 16 : 12,
       padding: isDesktopWeb ? 24 : 14,
       borderWidth: 1,
-      borderColor: colors.cardBorder,
+      borderColor: colors.border,
       ...(isDesktopWeb && {
-        shadowColor: "#000",
+        shadowColor: theme.colors.black,
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.04,
         shadowRadius: 8,
@@ -1061,17 +980,17 @@ export default function VehicleDetailScreen() {
       paddingVertical: isDesktopWeb ? 10 : 8,
       paddingHorizontal: isDesktopWeb ? 20 : 14,
       borderRadius: isDesktopWeb ? 12 : 10,
-      backgroundColor: colors.tint,
+      backgroundColor: colors.primary,
       minHeight: 44,
       minWidth: 44,
       ...(isDesktopWeb && {
-        shadowColor: colors.tint,
+        shadowColor: colors.primary,
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.3,
         shadowRadius: 8,
       }),
       ...(isMobile && {
-        shadowColor: colors.tint,
+        shadowColor: colors.primary,
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.2,
         shadowRadius: 4,
@@ -1081,7 +1000,7 @@ export default function VehicleDetailScreen() {
     addLogButtonText: {
       fontSize: isDesktopWeb ? 14 : 13,
       fontWeight: "600",
-      color: "#fff",
+      color: theme.colors.white,
     },
     logItem: {
       position: "relative",
@@ -1094,7 +1013,7 @@ export default function VehicleDetailScreen() {
       backgroundColor: colors.surface,
       borderRadius: isDesktopWeb ? 12 : 10,
       borderWidth: 1,
-      borderColor: colors.cardBorder,
+      borderColor: colors.border,
       minHeight: 44,
     },
     logItemWeb: {
@@ -1106,7 +1025,7 @@ export default function VehicleDetailScreen() {
       top: 0,
       bottom: 0,
       width: isDesktopWeb ? 4 : 3,
-      backgroundColor: colors.tint,
+      backgroundColor: colors.primary,
       borderTopLeftRadius: isDesktopWeb ? 12 : 10,
       borderBottomLeftRadius: isDesktopWeb ? 12 : 10,
     },
@@ -1114,14 +1033,14 @@ export default function VehicleDetailScreen() {
       width: isDesktopWeb ? 44 : 32,
       height: isDesktopWeb ? 44 : 32,
       borderRadius: isDesktopWeb ? 22 : 16,
-      backgroundColor: colors.tint + "20",
+      backgroundColor: withOpacity(colors.primary, 0.12),
       alignItems: "center",
       justifyContent: "center",
       marginRight: isDesktopWeb ? 16 : 10,
     },
     logIconWeb: {
       ...(isDesktopWeb && {
-        shadowColor: colors.tint,
+        shadowColor: colors.primary,
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.1,
         shadowRadius: 4,
@@ -1158,7 +1077,7 @@ export default function VehicleDetailScreen() {
     },
     logDate: {
       fontSize: isDesktopWeb ? 13 : 11,
-      color: colors.textTertiary,
+      color: colors.gray[400],
       fontWeight: "500",
       lineHeight: isDesktopWeb ? 16 : 14,
     },
@@ -1179,76 +1098,21 @@ export default function VehicleDetailScreen() {
       paddingTop: isDesktopWeb ? 16 : 12,
       paddingBottom: isDesktopWeb ? 4 : 0,
       borderTopWidth: 1,
-      borderTopColor: colors.divider,
+      borderTopColor: colors.border,
       marginTop: isDesktopWeb ? 16 : 10,
       minHeight: 44,
     },
     viewAllText: {
       fontSize: isDesktopWeb ? 15 : 13,
-      color: colors.tint,
+      color: colors.primary,
       fontWeight: "600",
-      marginRight: 6,
+      marginRight: spacing.sm,
     },
-    // Pagination styles
-    paginationContainer: {
-      paddingTop: isDesktopWeb ? 20 : 14,
-      paddingBottom: isDesktopWeb ? 4 : 0,
+    // Pagination wrapper — preserves the divider above the shared Pagination component
+    paginationWrapper: {
       borderTopWidth: 1,
-      borderTopColor: colors.divider,
+      borderTopColor: colors.border,
       marginTop: isDesktopWeb ? 16 : 10,
-      gap: isDesktopWeb ? 12 : 8,
-    },
-    paginationInfo: {
-      fontSize: isDesktopWeb ? 14 : 12,
-      color: colors.textSecondary,
-      textAlign: "center",
-      fontWeight: "500",
-    },
-    paginationButtons: {
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "center",
-      gap: isDesktopWeb ? 8 : 4,
-      flexWrap: "wrap",
-    },
-    paginationButton: {
-      width: isDesktopWeb ? 36 : 32,
-      height: isDesktopWeb ? 36 : 32,
-      borderRadius: isDesktopWeb ? 18 : 16,
-      backgroundColor: colors.surface,
-      alignItems: "center",
-      justifyContent: "center",
-      borderWidth: 1,
-      borderColor: colors.cardBorder,
-      minHeight: 44,
-      minWidth: 44,
-    },
-    paginationButtonDisabled: {
-      opacity: 0.4,
-    },
-    paginationPageButton: {
-      width: isDesktopWeb ? 36 : 32,
-      height: isDesktopWeb ? 36 : 32,
-      borderRadius: isDesktopWeb ? 18 : 16,
-      backgroundColor: colors.surface,
-      alignItems: "center",
-      justifyContent: "center",
-      borderWidth: 1,
-      borderColor: colors.cardBorder,
-      minHeight: 44,
-      minWidth: 44,
-    },
-    paginationPageButtonActive: {
-      backgroundColor: colors.tint,
-      borderColor: colors.tint,
-    },
-    paginationPageText: {
-      fontSize: isDesktopWeb ? 14 : 12,
-      color: colors.text,
-      fontWeight: "600",
-    },
-    paginationPageTextActive: {
-      color: "#fff",
     },
   });
 
@@ -1338,7 +1202,7 @@ export default function VehicleDetailScreen() {
                               : "person.3.fill"
                           }
                           size={10}
-                          color="#fff"
+                          color={theme.colors.white}
                         />
                         <Text style={styles.ownershipBadgeText}>
                           {vehicle.is_own_vehicle ? "Owned" : "Shared"}
@@ -1374,7 +1238,7 @@ export default function VehicleDetailScreen() {
                       <IconSymbol
                         name="pencil"
                         size={isDesktopWeb ? 18 : 16}
-                        color={colors.tint}
+                        color={colors.primary}
                       />
                     </TouchableOpacity>
                     <TouchableOpacity
@@ -1393,13 +1257,21 @@ export default function VehicleDetailScreen() {
                 <View style={styles.vehicleDetails}>
                   {vehicle.vin && (
                     <View style={styles.detailItem}>
-                      <IconSymbol name="number" size={14} color={colors.icon} />
+                      <IconSymbol
+                        name="number"
+                        size={14}
+                        color={colors.textSecondary}
+                      />
                       <Text style={styles.detailLabel}>VIN:</Text>
                       <Text style={styles.detailValue}>{vehicle.vin}</Text>
                     </View>
                   )}
                   <View style={styles.detailItem}>
-                    <IconSymbol name="calendar" size={14} color={colors.icon} />
+                    <IconSymbol
+                      name="calendar"
+                      size={14}
+                      color={colors.textSecondary}
+                    />
                     <Text style={styles.detailLabel}>Added:</Text>
                     <Text style={styles.detailValue}>
                       {formatDateWithPrefix(vehicle.created_at, "Added")}
@@ -1425,7 +1297,7 @@ export default function VehicleDetailScreen() {
                       <IconSymbol
                         name="person.3.fill"
                         size={isDesktopWeb ? 22 : 20}
-                        color={colors.tint}
+                        color={colors.primary}
                       />
                     </View>
                     <View style={styles.sharingInfo}>
@@ -1441,7 +1313,7 @@ export default function VehicleDetailScreen() {
                     style={{
                       flexDirection: "row",
                       alignItems: "center",
-                      gap: 12,
+                      gap: spacing.md,
                     }}
                   >
                     <Switch
@@ -1449,12 +1321,12 @@ export default function VehicleDetailScreen() {
                       onValueChange={handleToggleSharing}
                       disabled={sharingLoading}
                       trackColor={{
-                        false: colors.icon + "30",
-                        true: colors.tint + "50",
+                        false: withOpacity(colors.textSecondary, 0.19),
+                        true: withOpacity(colors.primary, 0.31),
                       }}
                       thumbColor={
                         vehicle.sharing_info?.is_shared
-                          ? colors.tint
+                          ? colors.primary
                           : colors.background
                       }
                     />
@@ -1463,7 +1335,7 @@ export default function VehicleDetailScreen() {
                         <IconSymbol
                           name={sharingExpanded ? "chevron.up" : "chevron.down"}
                           size={20}
-                          color={colors.icon}
+                          color={colors.textSecondary}
                         />
                       </TouchableOpacity>
                     )}
@@ -1481,7 +1353,7 @@ export default function VehicleDetailScreen() {
                             <IconSymbol
                               name="person.3.fill"
                               size={16}
-                              color={colors.tint}
+                              color={colors.primary}
                             />
                           </View>
                           <Text style={styles.sharingGroupName}>
@@ -1630,7 +1502,11 @@ export default function VehicleDetailScreen() {
                     router.push(route as any);
                   }}
                 >
-                  <IconSymbol name="plus" size={16} color="#fff" />
+                  <IconSymbol
+                    name="plus"
+                    size={16}
+                    color={theme.colors.white}
+                  />
                   <Text style={styles.addLogButtonText}>Add</Text>
                 </TouchableOpacity>
               </View>
@@ -1657,11 +1533,17 @@ export default function VehicleDetailScreen() {
                           isFuelLog={false}
                         />
                       ))}
-                      <PaginationControls
-                        currentPage={mileageCurrentPage}
-                        totalItems={vehicle.mileage_logs.length}
-                        onPageChange={setMileageCurrentPage}
-                      />
+                      <View style={styles.paginationWrapper}>
+                        <Pagination
+                          currentPage={mileageCurrentPage}
+                          totalPages={Math.ceil(
+                            vehicle.mileage_logs.length / ITEMS_PER_PAGE,
+                          )}
+                          totalItems={vehicle.mileage_logs.length}
+                          pageSize={ITEMS_PER_PAGE}
+                          onPageChange={setMileageCurrentPage}
+                        />
+                      </View>
                     </>
                   ) : (
                     <Text style={styles.noLogsText}>
@@ -1693,11 +1575,17 @@ export default function VehicleDetailScreen() {
                           isFuelLog={true}
                         />
                       ))}
-                      <PaginationControls
-                        currentPage={fuelCurrentPage}
-                        totalItems={vehicle.fuel_logs.length}
-                        onPageChange={setFuelCurrentPage}
-                      />
+                      <View style={styles.paginationWrapper}>
+                        <Pagination
+                          currentPage={fuelCurrentPage}
+                          totalPages={Math.ceil(
+                            vehicle.fuel_logs.length / ITEMS_PER_PAGE,
+                          )}
+                          totalItems={vehicle.fuel_logs.length}
+                          pageSize={ITEMS_PER_PAGE}
+                          onPageChange={setFuelCurrentPage}
+                        />
+                      </View>
                     </>
                   ) : (
                     <Text style={styles.noLogsText}>
@@ -1729,11 +1617,17 @@ export default function VehicleDetailScreen() {
                           isFuelLog={false}
                         />
                       ))}
-                      <PaginationControls
-                        currentPage={serviceCurrentPage}
-                        totalItems={vehicle.service_logs.length}
-                        onPageChange={setServiceCurrentPage}
-                      />
+                      <View style={styles.paginationWrapper}>
+                        <Pagination
+                          currentPage={serviceCurrentPage}
+                          totalPages={Math.ceil(
+                            vehicle.service_logs.length / ITEMS_PER_PAGE,
+                          )}
+                          totalItems={vehicle.service_logs.length}
+                          pageSize={ITEMS_PER_PAGE}
+                          onPageChange={setServiceCurrentPage}
+                        />
+                      </View>
                     </>
                   ) : (
                     <Text style={styles.noLogsText}>

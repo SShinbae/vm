@@ -10,6 +10,7 @@ import { createStyleSheet, useStyles } from "react-native-unistyles";
 import { useResponsiveLayout } from "@/hooks/use-responsive-layout";
 import { CostChartDataPoint } from "../../../types/analytics";
 import { ChartLegend, LegendItem } from "./ChartLegend";
+import { withOpacity } from "@/src/design-system";
 
 interface CostLineChartProps {
   data: CostChartDataPoint[];
@@ -49,8 +50,6 @@ export function CostLineChart({
     );
   }
 
-  const isDark = theme.colors.background === "#1e292e";
-
   const chartData = {
     labels: data.map((d) => d.label),
     datasets: [
@@ -80,12 +79,9 @@ export function CostLineChart({
     backgroundGradientFrom: theme.colors.surface,
     backgroundGradientTo: theme.colors.surface,
     decimalPlaces: 0,
-    color: (opacity = 1) =>
-      isDark ? `rgba(255, 255, 255, ${opacity})` : `rgba(0, 0, 0, ${opacity})`,
+    color: (opacity = 1) => withOpacity(theme.colors.text, opacity),
     labelColor: (opacity = 1) =>
-      isDark
-        ? `rgba(255, 255, 255, ${opacity * 0.7})`
-        : `rgba(0, 0, 0, ${opacity * 0.7})`,
+      withOpacity(theme.colors.textSecondary, opacity),
     style: {
       borderRadius: theme.borderRadius.lg,
     },

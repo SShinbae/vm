@@ -1,5 +1,11 @@
 # Phase 6: Screen Migration Plan
 
+> [!WARNING]
+> **Stalled and superseded.** Marked "In Progress" since November 2025; the
+> migration did not complete. See the Notion design-system page for current state:
+> https://app.notion.com/p/3d571adddf1081deb516f32e693152df
+> The screen inventory below is still accurate and worth keeping.
+
 **Status**: In Progress  
 **Started**: November 2, 2025  
 **Estimated Duration**: 2-3 weeks

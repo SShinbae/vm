@@ -14,9 +14,9 @@ export function ThemedText({
   type = "default",
   ...rest
 }: ThemedTextProps) {
+  const colorScheme = useColorScheme();
   const { theme } = useStyles(stylesheet);
   const { styles } = useStyles(stylesheet);
-  const colorScheme = useColorScheme();
 
   const color =
     colorScheme === "dark"

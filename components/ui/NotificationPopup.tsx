@@ -1,3 +1,5 @@
+import { baseColors, withOpacity, spacing } from "@/src/design-system";
+import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { router } from "expo-router";
 import React, { useEffect, useRef } from "react";
 import {
@@ -85,7 +87,7 @@ function PopupNotificationItem({
       <View
         style={[
           styles.iconContainer,
-          { backgroundColor: getIconColor() + "15" },
+          { backgroundColor: withOpacity(getIconColor(), 0.08) },
         ]}
       >
         <IconSymbol name={getIcon() as any} size={16} color={getIconColor()} />
@@ -116,7 +118,7 @@ const itemStylesheet = createStyleSheet((theme) => ({
     borderBottomColor: theme.colors.border,
   },
   unreadItem: {
-    backgroundColor: theme.colors.primary + "08",
+    backgroundColor: withOpacity(theme.colors.primary, 0.03),
   },
   iconContainer: {
     width: 32,
@@ -132,7 +134,7 @@ const itemStylesheet = createStyleSheet((theme) => ({
   titleRow: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 2,
+    marginBottom: spacing.xs,
   },
   title: {
     fontSize: theme.fontSize.sm,
@@ -151,7 +153,7 @@ const itemStylesheet = createStyleSheet((theme) => ({
     fontSize: theme.fontSize.xs,
     color: theme.colors.textSecondary,
     lineHeight: 16,
-    marginBottom: 4,
+    marginBottom: spacing.xs,
   },
   timestamp: {
     fontSize: 10,
@@ -174,18 +176,19 @@ export function NotificationPopup({
   const { showSuccess, showError, showInfo } = useToast();
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(-10)).current;
+  const reduceMotion = useReducedMotion();
 
   useEffect(() => {
     if (visible) {
       Animated.parallel([
         Animated.timing(fadeAnim, {
           toValue: 1,
-          duration: 200,
+          duration: reduceMotion ? 0 : 200,
           useNativeDriver: Platform.OS !== "web",
         }),
         Animated.timing(slideAnim, {
           toValue: 0,
-          duration: 200,
+          duration: reduceMotion ? 0 : 200,
           useNativeDriver: Platform.OS !== "web",
         }),
       ]).start();
@@ -193,7 +196,7 @@ export function NotificationPopup({
       fadeAnim.setValue(0);
       slideAnim.setValue(-10);
     }
-  }, [visible, fadeAnim, slideAnim]);
+  }, [visible, fadeAnim, slideAnim, reduceMotion]);
 
   const handleAcceptInvitation = async (
     invitationId: string,
@@ -389,18 +392,18 @@ export function NotificationPopup({
 const popupStylesheet = createStyleSheet((theme) => ({
   overlay: {
     flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.3)",
+    backgroundColor: withOpacity(baseColors.black, 0.3),
     justifyContent: "flex-start",
     alignItems: "flex-start",
-    paddingTop: 60,
-    paddingLeft: 70,
+    paddingTop: spacing.xxxl,
+    paddingLeft: spacing.xxxl,
   },
   popup: {
     width: 360,
     maxHeight: 480,
     backgroundColor: theme.colors.background,
     borderRadius: theme.borderRadius.xl,
-    shadowColor: "#000",
+    shadowColor: theme.colors.black,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.15,
     shadowRadius: 12,
@@ -434,7 +437,7 @@ const popupStylesheet = createStyleSheet((theme) => ({
     backgroundColor: theme.colors.primary,
     alignItems: "center",
     justifyContent: "center",
-    paddingHorizontal: 6,
+    paddingHorizontal: spacing.sm,
   },
   badgeText: {
     fontSize: 11,

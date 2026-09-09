@@ -1,3 +1,5 @@
+import { spacing } from "@/src/design-system";
+import { useStyles } from "react-native-unistyles";
 import {
   AuthButton,
   AuthHeader,
@@ -9,8 +11,6 @@ import {
   useAlert,
   withWebAlert,
 } from "@/components/ui";
-import { Colors } from "@/constants/theme";
-import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useAuth } from "@/lib/contexts/AuthContext";
 import { validatePassword } from "@/utils/validation";
 import { Ionicons } from "@expo/vector-icons";
@@ -25,8 +25,8 @@ function ResetPasswordScreen() {
   const [passwordUpdated, setPasswordUpdated] = useState(false);
   const { updatePassword, clearPasswordRecovery } = useAuth();
   const { showError } = useAlert();
-  const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? "light"];
+  const { theme } = useStyles();
+  const colors = theme.colors;
   const params = useLocalSearchParams();
 
   useEffect(() => {
@@ -112,7 +112,7 @@ function ResetPasswordScreen() {
       flexDirection: "row",
       alignItems: "center",
       justifyContent: "center",
-      gap: 8,
+      gap: spacing.sm,
     },
     backButtonText: {
       color: colors.textSecondary,
@@ -121,24 +121,24 @@ function ResetPasswordScreen() {
     },
     passwordMismatch: {
       fontSize: 12,
-      color: colors.error || "#EF4444",
-      marginTop: 6,
-      marginLeft: 4,
+      color: colors.error || theme.colors.error,
+      marginTop: spacing.sm,
+      marginLeft: spacing.xs,
     },
     // Success state styles
     iconContainer: {
       alignItems: "center",
-      marginBottom: 32,
+      marginBottom: spacing.xxl,
     },
     successIcon: {
       width: 80,
       height: 80,
       borderRadius: 40,
-      backgroundColor: colors.success || "#10B981",
+      backgroundColor: colors.success || theme.colors.success,
       alignItems: "center",
       justifyContent: "center",
-      marginBottom: 24,
-      shadowColor: colors.success || "#10B981",
+      marginBottom: spacing.xl,
+      shadowColor: colors.success || theme.colors.success,
       shadowOffset: { width: 0, height: 4 },
       shadowOpacity: 0.3,
       shadowRadius: 8,
@@ -146,7 +146,7 @@ function ResetPasswordScreen() {
     },
     checkIcon: {
       fontSize: 40,
-      color: "#FFFFFF",
+      color: theme.colors.white,
       fontWeight: "bold",
     },
     title: {
@@ -154,7 +154,7 @@ function ResetPasswordScreen() {
       fontWeight: "700",
       color: colors.text,
       textAlign: "center",
-      marginBottom: 12,
+      marginBottom: spacing.md,
       letterSpacing: -0.5,
     },
     subtitle: {
@@ -162,7 +162,7 @@ function ResetPasswordScreen() {
       color: colors.textSecondary,
       textAlign: "center",
       lineHeight: 24,
-      marginBottom: 32,
+      marginBottom: spacing.xxl,
     },
   });
 
@@ -175,7 +175,7 @@ function ResetPasswordScreen() {
       <AuthLayout>
         <View style={styles.iconContainer}>
           <View style={styles.successIcon}>
-            <Text style={styles.checkIcon}>✓</Text>
+            <Ionicons name="checkmark" size={40} color={theme.colors.white} />
           </View>
           <Text style={styles.title}>Password Updated!</Text>
           <Text style={styles.subtitle}>

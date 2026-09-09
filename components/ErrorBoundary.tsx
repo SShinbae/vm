@@ -1,3 +1,4 @@
+import { spacing } from "@/src/design-system";
 import React, { Component, ErrorInfo, ReactNode } from "react";
 import {
   ScrollView,
@@ -8,9 +9,12 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { sentryService } from "@/lib/services/sentryService";
+import type { ThemeColors } from "@/src/design-system";
+import { useStyles } from "react-native-unistyles";
 
 interface Props {
   children: ReactNode;
+  colors: ThemeColors;
 }
 
 interface State {
@@ -19,7 +23,7 @@ interface State {
   errorInfo: ErrorInfo | null;
 }
 
-export class ErrorBoundary extends Component<Props, State> {
+class ErrorBoundaryContent extends Component<Props, State> {
   constructor(props: Props) {
     super(props);
     this.state = {
@@ -59,6 +63,7 @@ export class ErrorBoundary extends Component<Props, State> {
   };
 
   render() {
+    const styles = createStyles(this.props.colors);
     if (this.state.hasError) {
       return (
         <SafeAreaView style={styles.container}>
@@ -105,70 +110,80 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#f5f5f5",
-  },
-  content: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    padding: 20,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: "#333",
-    marginBottom: 10,
-    textAlign: "center",
-  },
-  message: {
-    fontSize: 16,
-    color: "#666",
-    textAlign: "center",
-    marginBottom: 20,
-    lineHeight: 24,
-  },
-  errorContainer: {
-    width: "100%",
-    maxHeight: 300,
-    backgroundColor: "#fff",
-    borderRadius: 8,
-    padding: 15,
-    marginVertical: 20,
-    borderWidth: 1,
-    borderColor: "#ddd",
-  },
-  errorTitle: {
-    fontSize: 14,
-    fontWeight: "bold",
-    color: "#d32f2f",
-    marginTop: 10,
-    marginBottom: 5,
-  },
-  errorText: {
-    fontSize: 12,
-    color: "#333",
-    fontFamily: "monospace",
-  },
-  button: {
-    backgroundColor: "#517c89",
-    paddingHorizontal: 30,
-    paddingVertical: 15,
-    borderRadius: 8,
-    marginTop: 20,
-  },
-  buttonText: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "600",
-  },
-  hint: {
-    fontSize: 12,
-    color: "#999",
-    textAlign: "center",
-    marginTop: 20,
-    paddingHorizontal: 20,
-  },
-});
+export function ErrorBoundary({ children }: { children: ReactNode }) {
+  const { theme } = useStyles();
+  return (
+    <ErrorBoundaryContent colors={theme.colors}>
+      {children}
+    </ErrorBoundaryContent>
+  );
+}
+
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    content: {
+      flex: 1,
+      justifyContent: "center",
+      alignItems: "center",
+      padding: spacing.xl,
+    },
+    title: {
+      fontSize: 24,
+      fontWeight: "bold",
+      color: colors.text,
+      marginBottom: spacing.md,
+      textAlign: "center",
+    },
+    message: {
+      fontSize: 16,
+      color: colors.textSecondary,
+      textAlign: "center",
+      marginBottom: spacing.xl,
+      lineHeight: 24,
+    },
+    errorContainer: {
+      width: "100%",
+      maxHeight: 300,
+      backgroundColor: colors.surface,
+      borderRadius: 8,
+      padding: spacing.lg,
+      marginVertical: spacing.xl,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    errorTitle: {
+      fontSize: 14,
+      fontWeight: "bold",
+      color: colors.error,
+      marginTop: spacing.md,
+      marginBottom: spacing.xs,
+    },
+    errorText: {
+      fontSize: 12,
+      color: colors.text,
+      fontFamily: "monospace",
+    },
+    button: {
+      backgroundColor: colors.primary,
+      paddingHorizontal: spacing.xxl,
+      paddingVertical: spacing.lg,
+      borderRadius: 8,
+      marginTop: spacing.xl,
+    },
+    buttonText: {
+      color: colors.white,
+      fontSize: 16,
+      fontWeight: "600",
+    },
+    hint: {
+      fontSize: 12,
+      color: colors.textSecondary,
+      textAlign: "center",
+      marginTop: spacing.xl,
+      paddingHorizontal: spacing.xl,
+    },
+  });

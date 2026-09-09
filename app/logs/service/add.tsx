@@ -1,3 +1,6 @@
+import { withOpacity, spacing } from "@/src/design-system";
+import { useColorScheme } from "@/hooks/use-color-scheme";
+import { useStyles } from "react-native-unistyles";
 import { Button } from "@/components/ui/Button";
 import { DatePicker } from "@/components/ui/DatePicker";
 import { IconSymbol } from "@/components/ui/icon-symbol";
@@ -15,8 +18,6 @@ import {
   createDefaultServiceItems,
   validateServiceItems,
 } from "@/components/ui/ServiceItemsInput";
-import { Colors } from "@/constants/theme";
-import { useColorScheme } from "@/hooks/use-color-scheme";
 import { ServiceLogService } from "@/lib/services/loggingService";
 import { OCRService, ReceiptProcessingResult } from "@/lib/services/ocrService";
 import { VehicleService } from "@/lib/services/vehicleService";
@@ -125,8 +126,9 @@ export default function AddServiceLogScreen() {
   );
   const [showOcrResult, setShowOcrResult] = useState(false);
   const [capturedImageUri, setCapturedImageUri] = useState<string | null>(null);
+  const { theme } = useStyles();
   const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? "light"];
+  const colors = theme.colors;
   const isWeb = Platform.OS === "web";
   const { width: screenWidth } = useWindowDimensions();
 
@@ -415,7 +417,11 @@ export default function AddServiceLogScreen() {
                 </Text>
               </View>
               <View style={styles.lockIcon}>
-                <IconSymbol name="lock.fill" size={14} color={colors.icon} />
+                <IconSymbol
+                  name="lock.fill"
+                  size={14}
+                  color={colors.textSecondary}
+                />
               </View>
             </View>
             <Text style={styles.lockedHelpText}>
@@ -475,7 +481,9 @@ export default function AddServiceLogScreen() {
               name={type.icon as any}
               size={20}
               color={
-                formData.service_type === type.value ? colors.tint : colors.icon
+                formData.service_type === type.value
+                  ? colors.primary
+                  : colors.textSecondary
               }
             />
             <Text
@@ -513,14 +521,14 @@ export default function AddServiceLogScreen() {
       flexDirection: "row",
       alignItems: "center",
       paddingHorizontal: isSmallScreen ? 12 : 20,
-      paddingVertical: 16,
+      paddingVertical: spacing.lg,
       backgroundColor: colors.background,
       borderBottomWidth: 1,
-      borderBottomColor: colors.icon + "20",
+      borderBottomColor: withOpacity(colors.textSecondary, 0.12),
     },
     customBackButton: {
       marginRight: isSmallScreen ? 8 : 16,
-      padding: 4,
+      padding: spacing.xs,
     },
     titleContainer: {
       flex: 1,
@@ -532,15 +540,15 @@ export default function AddServiceLogScreen() {
     },
     headerSubtitle: {
       fontSize: isSmallScreen ? 12 : 14,
-      color: colors.icon,
-      marginTop: 2,
+      color: colors.textSecondary,
+      marginTop: spacing.xs,
     },
     content: {
       flex: 1,
     },
     scrollContent: {
       padding: isLargeScreen ? 40 : isSmallScreen ? 12 : 16,
-      paddingBottom: 100,
+      paddingBottom: spacing.xxxl,
       ...(isLargeScreen && {
         maxWidth: 600,
         width: "100%",
@@ -552,7 +560,8 @@ export default function AddServiceLogScreen() {
       borderRadius: isLargeScreen ? 16 : 12,
       padding: isLargeScreen ? 32 : isSmallScreen ? 12 : 16,
       ...(isLargeScreen && {
-        shadowColor: colorScheme === "dark" ? "#ffffff" : "#000000",
+        shadowColor:
+          colorScheme === "dark" ? theme.colors.white : theme.colors.black,
         shadowOffset: {
           width: 0,
           height: 4,
@@ -593,10 +602,10 @@ export default function AddServiceLogScreen() {
       fontSize: isSmallScreen ? 14 : 16,
       fontWeight: "500",
       color: colors.text,
-      marginBottom: 8,
+      marginBottom: spacing.sm,
     },
     requiredLabel: {
-      color: "#ff4444",
+      color: theme.colors.error,
     },
     vehicleSelector: {
       maxHeight: 120,
@@ -607,22 +616,22 @@ export default function AddServiceLogScreen() {
     vehicleOption: {
       backgroundColor: colors.background,
       borderWidth: 1,
-      borderColor: colors.icon + "30",
+      borderColor: withOpacity(colors.textSecondary, 0.19),
       borderRadius: 8,
       padding: isSmallScreen ? 10 : 12,
       minWidth: isSmallScreen ? 100 : 120,
       alignItems: "center",
-      gap: 8,
+      gap: spacing.sm,
     },
     vehicleOptionSelected: {
-      borderColor: colors.tint,
-      backgroundColor: colors.tint + "10",
+      borderColor: colors.primary,
+      backgroundColor: withOpacity(colors.primary, 0.06),
     },
     vehicleIcon: {
       width: 32,
       height: 32,
       borderRadius: 16,
-      backgroundColor: colors.tint,
+      backgroundColor: colors.primary,
       alignItems: "center",
       justifyContent: "center",
     },
@@ -633,23 +642,23 @@ export default function AddServiceLogScreen() {
       textAlign: "center",
     },
     vehicleOptionTextSelected: {
-      color: colors.tint,
+      color: colors.primary,
     },
     vehiclePlateText: {
       fontSize: isSmallScreen ? 10 : 12,
-      color: colors.icon,
+      color: colors.textSecondary,
       textAlign: "center",
     },
     vehiclePlateTextSelected: {
-      color: colors.tint,
+      color: colors.primary,
     },
     lockedVehicleContainer: {
-      gap: 8,
+      gap: spacing.sm,
     },
     lockedVehicle: {
       backgroundColor: colors.background,
       borderWidth: 1,
-      borderColor: colors.tint,
+      borderColor: colors.primary,
       borderRadius: 8,
       padding: isSmallScreen ? 12 : 16,
       flexDirection: "row",
@@ -666,15 +675,15 @@ export default function AddServiceLogScreen() {
     },
     lockedVehiclePlate: {
       fontSize: isSmallScreen ? 12 : 14,
-      color: colors.icon,
-      marginTop: 2,
+      color: colors.textSecondary,
+      marginTop: spacing.xs,
     },
     lockIcon: {
-      padding: 4,
+      padding: spacing.xs,
     },
     lockedHelpText: {
       fontSize: isSmallScreen ? 11 : 12,
-      color: colors.icon,
+      color: colors.textSecondary,
       fontStyle: "italic",
     },
     serviceTypeGrid: {
@@ -688,19 +697,19 @@ export default function AddServiceLogScreen() {
       alignItems: "center",
       backgroundColor: colors.background,
       borderWidth: 1,
-      borderColor: colors.icon + "30",
+      borderColor: withOpacity(colors.textSecondary, 0.19),
       borderRadius: 8,
       paddingHorizontal: isSmallScreen ? 10 : 12,
       paddingVertical: isSmallScreen ? 8 : 10,
-      gap: 6,
+      gap: spacing.sm,
       // Dynamic width based on screen size
       width: getServiceTypeWidth(),
       flexGrow: isSmallScreen ? 0 : 1,
       flexShrink: 0,
     },
     serviceTypeOptionSelected: {
-      borderColor: colors.tint,
-      backgroundColor: colors.tint + "10",
+      borderColor: colors.primary,
+      backgroundColor: withOpacity(colors.primary, 0.06),
     },
     serviceTypeText: {
       fontSize: isSmallScreen ? 12 : 14,
@@ -709,37 +718,37 @@ export default function AddServiceLogScreen() {
       flexShrink: 1,
     },
     serviceTypeTextSelected: {
-      color: colors.tint,
+      color: colors.primary,
     },
     autoFillIndicator: {
       flexDirection: "row",
       alignItems: "center",
-      backgroundColor: "#4CAF50" + "15",
+      backgroundColor: withOpacity(theme.colors.success, 0.08),
       paddingHorizontal: isSmallScreen ? 10 : 12,
-      paddingVertical: 8,
+      paddingVertical: spacing.sm,
       borderRadius: 8,
-      gap: 8,
-      marginBottom: 16,
+      gap: spacing.sm,
+      marginBottom: spacing.lg,
     },
     autoFillText: {
       fontSize: isSmallScreen ? 12 : 14,
-      color: "#4CAF50",
+      color: theme.colors.success,
       fontWeight: "500",
       flex: 1,
     },
     pictureIndicator: {
       flexDirection: "row",
       alignItems: "center",
-      backgroundColor: colors.tint + "15",
+      backgroundColor: withOpacity(colors.primary, 0.08),
       paddingHorizontal: isSmallScreen ? 10 : 12,
-      paddingVertical: 8,
+      paddingVertical: spacing.sm,
       borderRadius: 8,
-      gap: 8,
-      marginBottom: 16,
+      gap: spacing.sm,
+      marginBottom: spacing.lg,
     },
     pictureText: {
       fontSize: isSmallScreen ? 12 : 14,
-      color: colors.tint,
+      color: colors.primary,
       fontWeight: "500",
       flex: 1,
     },
@@ -771,7 +780,7 @@ export default function AddServiceLogScreen() {
             title="Add Vehicle"
             onPress={() => router.push("/vehicles/add" as any)}
             icon="plus"
-            style={{ marginTop: 20 }}
+            style={{ marginTop: spacing.xl }}
           />
         </View>
       </SafeAreaView>
@@ -829,7 +838,7 @@ export default function AddServiceLogScreen() {
                 <IconSymbol
                   name="checkmark.circle.fill"
                   size={16}
-                  color="#4CAF50"
+                  color={theme.colors.success}
                 />
                 <Text style={styles.autoFillText}>
                   Data auto-filled from receipt
@@ -839,7 +848,11 @@ export default function AddServiceLogScreen() {
 
             {formData.receipt_image_url && !formData.auto_filled && (
               <View style={styles.pictureIndicator}>
-                <IconSymbol name="photo.fill" size={16} color={colors.tint} />
+                <IconSymbol
+                  name="photo.fill"
+                  size={16}
+                  color={colors.primary}
+                />
                 <Text style={styles.pictureText}>
                   Picture attached to service record
                 </Text>

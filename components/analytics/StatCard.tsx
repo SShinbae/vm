@@ -1,3 +1,4 @@
+import { spacing } from "@/src/design-system";
 import React from "react";
 import { View, Text } from "react-native";
 import { createStyleSheet, useStyles } from "react-native-unistyles";
@@ -38,7 +39,7 @@ const stylesheet = createStyleSheet((theme) => ({
     padding: theme.spacing.lg,
     alignItems: "center",
     justifyContent: "center",
-    shadowColor: "#000",
+    shadowColor: theme.colors.black,
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
     shadowRadius: 2,
@@ -53,7 +54,7 @@ const stylesheet = createStyleSheet((theme) => ({
     fontSize: theme.fontSize["3xl"],
     fontWeight: theme.fontWeight.bold,
     color: theme.colors.text,
-    marginBottom: 4,
+    marginBottom: spacing.xs,
   },
   valueMobile: {
     fontSize: theme.fontSize.xl,

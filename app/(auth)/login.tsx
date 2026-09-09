@@ -1,3 +1,5 @@
+import { spacing } from "@/src/design-system";
+import { useStyles } from "react-native-unistyles";
 import {
   AuthButton,
   AuthCheckbox,
@@ -7,8 +9,6 @@ import {
   AuthLink,
 } from "@/components/auth";
 import { withWebAlert } from "@/components/ui";
-import { Colors } from "@/constants/theme";
-import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useToast } from "@/hooks/useToast";
 import { useAuth } from "@/lib/contexts/AuthContext";
 import { isValidEmail } from "@/utils/validation";
@@ -24,8 +24,8 @@ function LoginScreen() {
   const loginAttempted = useRef(false);
   const { signIn, user, initialized } = useAuth();
   const { showSuccess, showError } = useToast();
-  const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? "light"];
+  const { theme } = useStyles();
+  const colors = theme.colors;
 
   // If user is already logged in before any login attempt, redirect to dashboard
   // This handles the case where user navigates to login while already authenticated
@@ -95,7 +95,7 @@ function LoginScreen() {
       flexDirection: "row",
       justifyContent: "space-between",
       alignItems: "center",
-      marginBottom: 8,
+      marginBottom: spacing.sm,
     },
     label: {
       fontSize: 14,
@@ -128,7 +128,7 @@ function LoginScreen() {
       />
 
       {/* Password Input with Forgot Password Link */}
-      <View style={{ marginBottom: 20 }}>
+      <View style={{ marginBottom: spacing.xl }}>
         <View style={styles.passwordLabelRow}>
           <Text style={styles.label}>Password</Text>
           <Link href="/(auth)/forgot-password" asChild>
@@ -168,17 +168,6 @@ function LoginScreen() {
         linkText="Sign up"
         href="/(auth)/register"
       />
-
-      {/* Demo Mode Link */}
-      {/* <View style={{ marginTop: 20, alignItems: 'center' }}>
-        <Link href="/demo/login" asChild>
-          <TouchableOpacity style={{ padding: 10 }}>
-            <Text style={{ color: colors.primary, fontSize: 14, fontWeight: '600' }}>
-              🎭 Try Demo Mode
-            </Text>
-          </TouchableOpacity>
-        </Link>
-      </View> */}
     </AuthLayout>
   );
 }

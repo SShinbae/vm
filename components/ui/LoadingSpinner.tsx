@@ -1,3 +1,5 @@
+import { baseColors, withOpacity, spacing } from "@/src/design-system";
+import { useStyles } from "react-native-unistyles";
 import React from "react";
 import {
   View,
@@ -7,8 +9,6 @@ import {
   ViewStyle,
   TextStyle,
 } from "react-native";
-import { Colors } from "@/constants/theme";
-import { useColorScheme } from "@/hooks/use-color-scheme";
 
 interface LoadingSpinnerProps {
   size?: "small" | "large";
@@ -27,10 +27,10 @@ export function LoadingSpinner({
   style,
   textStyle,
 }: LoadingSpinnerProps) {
-  const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? "light"];
+  const { theme } = useStyles();
+  const colors = theme.colors;
 
-  const spinnerColor = color || colors.tint;
+  const spinnerColor = color || colors.primary;
 
   const getContainerStyle = () => {
     const baseStyle: any[] = [styles.container];
@@ -105,20 +105,20 @@ const styles = StyleSheet.create({
   },
   defaultContainer: {
     flex: 1,
-    paddingVertical: 40,
+    paddingVertical: spacing.xxxl,
   },
   overlayContainer: {
-    paddingVertical: 20,
-    paddingHorizontal: 20,
+    paddingVertical: spacing.xl,
+    paddingHorizontal: spacing.xl,
   },
   inlineContainer: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: 8,
-    gap: 8,
+    paddingVertical: spacing.sm,
+    gap: spacing.sm,
   },
   text: {
-    marginTop: 12,
+    marginTop: spacing.md,
     fontSize: 16,
     fontWeight: "500",
     textAlign: "center",
@@ -129,15 +129,15 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: "rgba(0, 0, 0, 0.3)",
+    backgroundColor: withOpacity(baseColors.black, 0.3),
     justifyContent: "center",
     alignItems: "center",
     zIndex: 999,
   },
   overlayContent: {
-    backgroundColor: "rgba(255, 255, 255, 0.95)",
+    backgroundColor: withOpacity(baseColors.white, 0.95),
     borderRadius: 12,
-    padding: 24,
+    padding: spacing.xl,
     minWidth: 120,
     alignItems: "center",
   },

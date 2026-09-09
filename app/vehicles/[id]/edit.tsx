@@ -1,11 +1,12 @@
+import { withOpacity, spacing } from "@/src/design-system";
+import { useColorScheme } from "@/hooks/use-color-scheme";
+import { useStyles } from "react-native-unistyles";
 import { Button } from "@/components/ui/Button";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { ImageUpload } from "@/components/ui/ImageUpload";
 import { Input } from "@/components/ui/Input";
 import { YearPicker } from "@/components/ui/YearPicker";
 import { SkeletonVehicleEdit } from "@/components/ui/Skeleton";
-import { Colors } from "@/constants/theme";
-import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useToast } from "@/hooks/useToast";
 import { VehicleService } from "@/lib/services/vehicleService";
 import { VehicleFormData } from "@/types";
@@ -40,8 +41,9 @@ export default function EditVehicleScreen() {
   const [saving, setSaving] = useState(false);
   const { showSuccess, showError } = useToast();
   const posthog = usePostHog();
+  const { theme } = useStyles();
   const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? "light"];
+  const colors = theme.colors;
   const isWeb = Platform.OS === "web";
 
   useEffect(() => {
@@ -192,15 +194,15 @@ export default function EditVehicleScreen() {
     header: {
       flexDirection: "row",
       alignItems: "center",
-      paddingHorizontal: 20,
-      paddingVertical: 16,
+      paddingHorizontal: spacing.xl,
+      paddingVertical: spacing.lg,
       borderBottomWidth: 1,
-      borderBottomColor: colors.icon + "20",
+      borderBottomColor: withOpacity(colors.textSecondary, 0.12),
       backgroundColor: colors.background,
     },
     backButton: {
-      marginRight: 16,
-      padding: 4,
+      marginRight: spacing.lg,
+      padding: spacing.xs,
     },
     headerTitle: {
       fontSize: 24,
@@ -213,7 +215,7 @@ export default function EditVehicleScreen() {
     },
     scrollContent: {
       padding: isWeb ? 40 : 20,
-      paddingBottom: 100,
+      paddingBottom: spacing.xxxl,
       ...(isWeb && {
         maxWidth: 600,
         width: "100%",
@@ -224,18 +226,18 @@ export default function EditVehicleScreen() {
       fontSize: 32,
       fontWeight: "bold",
       color: colors.text,
-      marginBottom: 8,
+      marginBottom: spacing.sm,
       textAlign: isWeb ? "center" : "left",
     },
     subtitle: {
       fontSize: 16,
-      color: colors.icon,
-      marginBottom: 32,
+      color: colors.textSecondary,
+      marginBottom: spacing.xxl,
       textAlign: isWeb ? "center" : "left",
     },
     avatarContainer: {
       alignItems: "center",
-      marginBottom: 32,
+      marginBottom: spacing.xxl,
     },
     avatarUpload: {
       width: 120,
@@ -244,22 +246,22 @@ export default function EditVehicleScreen() {
     },
     avatarLabel: {
       fontSize: 14,
-      color: colors.icon,
-      marginTop: 12,
+      color: colors.textSecondary,
+      marginTop: spacing.md,
       textAlign: "center",
     },
     section: {
-      marginBottom: 24,
+      marginBottom: spacing.xl,
     },
     sectionTitle: {
       fontSize: 18,
       fontWeight: "600",
       color: colors.text,
-      marginBottom: 16,
+      marginBottom: spacing.lg,
     },
     row: {
       flexDirection: isWeb ? "row" : "column",
-      gap: 16,
+      gap: spacing.lg,
     },
     flex1: {
       flex: 1,
@@ -269,7 +271,8 @@ export default function EditVehicleScreen() {
       borderRadius: isWeb ? 16 : 12,
       padding: isWeb ? 32 : 20,
       ...(isWeb && {
-        shadowColor: colorScheme === "dark" ? "#ffffff" : "#000000",
+        shadowColor:
+          colorScheme === "dark" ? theme.colors.white : theme.colors.black,
         shadowOffset: {
           width: 0,
           height: 4,
@@ -281,8 +284,8 @@ export default function EditVehicleScreen() {
     },
     buttonContainer: {
       flexDirection: "row",
-      gap: 12,
-      marginTop: 32,
+      gap: spacing.md,
+      marginTop: spacing.xxl,
     },
     cancelButton: {
       flex: 1,
@@ -296,17 +299,17 @@ export default function EditVehicleScreen() {
       alignItems: "center",
     },
     sharedNotice: {
-      backgroundColor: colors.icon + "10",
+      backgroundColor: withOpacity(colors.textSecondary, 0.06),
       borderRadius: 8,
-      padding: 12,
-      marginBottom: 20,
+      padding: spacing.md,
+      marginBottom: spacing.xl,
       flexDirection: "row",
       alignItems: "center",
-      gap: 8,
+      gap: spacing.sm,
     },
     sharedNoticeText: {
       fontSize: 14,
-      color: colors.icon,
+      color: colors.textSecondary,
       flex: 1,
       lineHeight: 18,
     },
@@ -373,7 +376,7 @@ export default function EditVehicleScreen() {
                 <IconSymbol
                   name="person.2.fill"
                   size={16}
-                  color={colors.icon}
+                  color={colors.textSecondary}
                 />
                 <Text style={styles.sharedNoticeText}>
                   This is a shared vehicle. You can edit details as a group

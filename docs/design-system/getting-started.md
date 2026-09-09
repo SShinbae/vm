@@ -1,5 +1,10 @@
 # Getting Started with the Design System
 
+> [!WARNING]
+> **Superseded.** This guide documents `@/lib/design-system`, the abandoned token
+> layer (2 consumers). Use the canonical unistyles layer instead:
+> https://app.notion.com/p/3d571adddf1081deb516f32e693152df
+
 This guide will help you start using the Vehicle Management App Design System in your components.
 
 ## Installation

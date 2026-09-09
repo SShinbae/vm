@@ -1,5 +1,5 @@
-import { Colors } from "@/constants/theme";
-import { useColorScheme } from "@/hooks/use-color-scheme";
+import { withOpacity, spacing } from "@/src/design-system";
+import { useStyles } from "react-native-unistyles";
 import { Ionicons } from "@expo/vector-icons";
 import React from "react";
 import { StyleSheet, Text, View } from "react-native";
@@ -29,35 +29,35 @@ export function AuthHeader({
   iconSize = 40,
   iconContainerSize = 80,
 }: AuthHeaderProps) {
-  const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? "light"];
+  const { theme } = useStyles();
+  const colors = theme.colors;
 
   const styles = StyleSheet.create({
     iconContainer: {
       width: iconContainerSize,
       height: iconContainerSize,
       borderRadius: iconContainerSize / 2,
-      backgroundColor: colors.primary + "15",
+      backgroundColor: withOpacity(colors.primary, 0.08),
       alignItems: "center",
       justifyContent: "center",
       alignSelf: "center",
-      marginBottom: 24,
+      marginBottom: spacing.xl,
     },
     title: {
       fontSize: 28,
       fontWeight: "700",
       color: colors.text,
       textAlign: "center",
-      marginBottom: 12,
+      marginBottom: spacing.md,
       letterSpacing: -0.5,
     },
     subtitle: {
       fontSize: 16,
       color: colors.textSecondary,
       textAlign: "center",
-      marginBottom: 40,
+      marginBottom: spacing.xxxl,
       lineHeight: 24,
-      paddingHorizontal: 8,
+      paddingHorizontal: spacing.sm,
     },
   });
 

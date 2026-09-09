@@ -1,3 +1,4 @@
+import { withOpacity, spacing } from "@/src/design-system";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { VehicleWithDetails } from "@/types/database-v2";
 import { Image } from "expo-image";
@@ -134,7 +135,7 @@ const stylesheet = createStyleSheet((theme) => ({
     borderRadius: theme.borderRadius.full,
   },
   vehicleIconPlaceholder: {
-    backgroundColor: theme.colors.primary + "15",
+    backgroundColor: withOpacity(theme.colors.primary, 0.08),
     alignItems: "center",
     justifyContent: "center",
   },
@@ -149,7 +150,7 @@ const stylesheet = createStyleSheet((theme) => ({
   lockedVehiclePlate: {
     fontSize: theme.fontSize.sm,
     color: theme.colors.textSecondary,
-    marginTop: 2,
+    marginTop: spacing.xs,
   },
   lockIcon: {
     padding: theme.spacing.xs,

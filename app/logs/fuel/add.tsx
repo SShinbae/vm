@@ -1,3 +1,4 @@
+import { spacing } from "@/src/design-system";
 import { Button } from "@/components/ui/Button";
 import { DatePicker } from "@/components/ui/DatePicker";
 import { IconSymbol } from "@/components/ui/icon-symbol";
@@ -99,7 +100,7 @@ export default function AddFuelLogScreen() {
             title="Add Vehicle"
             onPress={() => router.push("/vehicles/add" as any)}
             icon="plus"
-            style={{ marginTop: 20 }}
+            style={{ marginTop: spacing.xl }}
           />
         </View>
       </SafeAreaView>
@@ -311,7 +312,7 @@ const stylesheet = createStyleSheet((theme) => ({
   },
   scrollContent: (isWeb: boolean) => ({
     padding: isWeb ? theme.spacing.xxl : theme.spacing.lg,
-    paddingBottom: 100,
+    paddingBottom: spacing.xxxl,
     ...(isWeb && {
       maxWidth: 600,
       width: "100%",

@@ -1,7 +1,7 @@
+import { baseColors, withOpacity, spacing } from "@/src/design-system";
+import { useStyles } from "react-native-unistyles";
 import React from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
-import { useColorScheme } from "@/hooks/use-color-scheme";
-import { Colors } from "@/constants/theme";
 import { IconSymbol } from "./icon-symbol";
 import { LinearGradient } from "expo-linear-gradient";
 
@@ -26,16 +26,16 @@ export function TrendCard({
   gradientColors,
   onPress,
 }: TrendCardProps) {
-  const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? "light"];
+  const { theme } = useStyles();
+  const colors = theme.colors;
 
-  const defaultGradient = gradientColors || colors.gradients.primary;
+  const defaultGradient = gradientColors || [colors.primary, colors.secondary];
 
   const styles = StyleSheet.create({
     container: {
       borderRadius: 16,
       overflow: "hidden",
-      shadowColor: "#000",
+      shadowColor: theme.colors.black,
       shadowOffset: {
         width: 0,
         height: 4,
@@ -45,7 +45,7 @@ export function TrendCard({
       elevation: 8,
     },
     card: {
-      padding: 20,
+      padding: spacing.xl,
       minHeight: 120,
     },
     cardPressed: {
@@ -55,35 +55,35 @@ export function TrendCard({
       flexDirection: "row",
       alignItems: "center",
       justifyContent: "space-between",
-      marginBottom: 16,
+      marginBottom: spacing.lg,
     },
     titleContainer: {
       flexDirection: "row",
       alignItems: "center",
-      gap: 8,
+      gap: spacing.sm,
       flex: 1,
     },
     iconContainer: {
       width: 40,
       height: 40,
       borderRadius: 20,
-      backgroundColor: "rgba(255, 255, 255, 0.2)",
+      backgroundColor: withOpacity(baseColors.white, 0.2),
       alignItems: "center",
       justifyContent: "center",
     },
     title: {
       fontSize: 14,
       fontWeight: "600",
-      color: "rgba(255, 255, 255, 0.9)",
+      color: withOpacity(baseColors.white, 0.9),
       flex: 1,
     },
     valueContainer: {
-      marginBottom: 12,
+      marginBottom: spacing.md,
     },
     value: {
       fontSize: 28,
       fontWeight: "700",
-      color: "#FFFFFF",
+      color: theme.colors.white,
       lineHeight: 34,
     },
     footer: {
@@ -94,20 +94,20 @@ export function TrendCard({
     trendContainer: {
       flexDirection: "row",
       alignItems: "center",
-      gap: 4,
-      backgroundColor: "rgba(255, 255, 255, 0.15)",
-      paddingHorizontal: 8,
-      paddingVertical: 4,
+      gap: spacing.xs,
+      backgroundColor: withOpacity(baseColors.white, 0.15),
+      paddingHorizontal: spacing.sm,
+      paddingVertical: spacing.xs,
       borderRadius: 12,
     },
     trendText: {
       fontSize: 12,
       fontWeight: "600",
-      color: "#FFFFFF",
+      color: theme.colors.white,
     },
     subtitle: {
       fontSize: 12,
-      color: "rgba(255, 255, 255, 0.7)",
+      color: withOpacity(baseColors.white, 0.7),
     },
   });
 
@@ -128,7 +128,11 @@ export function TrendCard({
           <View style={styles.titleContainer}>
             {icon && (
               <View style={styles.iconContainer}>
-                <IconSymbol name={icon as any} size={20} color="#FFFFFF" />
+                <IconSymbol
+                  name={icon as any}
+                  size={20}
+                  color={theme.colors.white}
+                />
               </View>
             )}
             <Text style={styles.title}>{title}</Text>
@@ -141,7 +145,11 @@ export function TrendCard({
 
         <View style={styles.footer}>
           <View style={styles.trendContainer}>
-            <IconSymbol name={getTrendIcon(trend)} size={12} color="#FFFFFF" />
+            <IconSymbol
+              name={getTrendIcon(trend)}
+              size={12}
+              color={theme.colors.white}
+            />
             <Text style={styles.trendText}>{Math.abs(trend).toFixed(1)}%</Text>
           </View>
           {subtitle && <Text style={styles.subtitle}>{subtitle}</Text>}

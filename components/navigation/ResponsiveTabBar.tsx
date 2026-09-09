@@ -1,3 +1,5 @@
+import { withOpacity, spacing } from "@/src/design-system";
+import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { BottomTabBarProps } from "@react-navigation/bottom-tabs";
 import * as Haptics from "expo-haptics";
 import React from "react";
@@ -30,6 +32,7 @@ export const ResponsiveTabBar: React.FC<BottomTabBarProps> = ({
 }) => {
   const { styles, theme, breakpoint } = useStyles(stylesheet);
   const insets = useSafeAreaInsets();
+  const reduceMotion = useReducedMotion();
 
   const visibleRoutes = React.useMemo(
     () =>
@@ -68,6 +71,11 @@ export const ResponsiveTabBar: React.FC<BottomTabBarProps> = ({
       }
 
       // Subtle spring animation
+      if (reduceMotion) {
+        navigation.navigate(route.name, route.params);
+        return;
+      }
+
       Animated.spring(scaleAnims[index], {
         toValue: 0.95,
         useNativeDriver: true,
@@ -226,12 +234,12 @@ const stylesheet = createStyleSheet((theme, runtime) => ({
     minHeight: 48,
     paddingVertical: theme.spacing.xs,
     paddingHorizontal: theme.spacing.sm,
-    gap: 4,
+    gap: spacing.xs,
     borderRadius: theme.borderRadius.md,
   },
 
   tabButtonActive: {
-    backgroundColor: theme.colors.primary + "14", // 8% opacity
+    backgroundColor: withOpacity(theme.colors.primary, 0.08), // 8% opacity
   },
 
   activeIndicatorLine: {
@@ -252,7 +260,7 @@ const stylesheet = createStyleSheet((theme, runtime) => ({
   tabLabel: {
     fontSize: 11,
     textAlign: "center",
-    marginTop: 2,
+    marginTop: spacing.xs,
     variants: {
       breakpoint: {
         xs: {

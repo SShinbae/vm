@@ -1,8 +1,8 @@
+import { withOpacity, spacing } from "@/src/design-system";
+import { useStyles } from "react-native-unistyles";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { ReceiptViewer } from "@/components/ui/ReceiptViewer";
 import { SkeletonCard } from "@/components/ui/Skeleton";
-import { Colors } from "@/constants/theme";
-import { useColorScheme } from "@/hooks/use-color-scheme";
 import { ServiceLogService } from "@/lib/services/loggingService";
 import { OCRExtractedData, ServiceLog, ServiceType } from "@/types";
 import { router, useLocalSearchParams } from "expo-router";
@@ -72,8 +72,8 @@ export default function ServiceLogDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const [serviceLog, setServiceLog] = useState<ServiceLog | null>(null);
   const [loading, setLoading] = useState(true);
-  const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? "light"];
+  const { theme } = useStyles();
+  const colors = theme.colors;
 
   useEffect(() => {
     const fetchServiceLog = async () => {
@@ -218,14 +218,14 @@ export default function ServiceLogDetailScreen() {
     header: {
       flexDirection: "row",
       alignItems: "center",
-      paddingHorizontal: 20,
-      paddingVertical: 16,
+      paddingHorizontal: spacing.xl,
+      paddingVertical: spacing.lg,
       borderBottomWidth: 1,
-      borderBottomColor: colors.icon + "20",
+      borderBottomColor: withOpacity(colors.textSecondary, 0.12),
     },
     backButton: {
-      marginRight: 16,
-      padding: 4,
+      marginRight: spacing.lg,
+      padding: spacing.xs,
     },
     title: {
       fontSize: 24,
@@ -235,19 +235,19 @@ export default function ServiceLogDetailScreen() {
     },
     actionsContainer: {
       flexDirection: "row",
-      gap: 8,
+      gap: spacing.sm,
     },
     actionButton: {
-      backgroundColor: colors.tint,
-      paddingHorizontal: 16,
-      paddingVertical: 8,
+      backgroundColor: colors.primary,
+      paddingHorizontal: spacing.lg,
+      paddingVertical: spacing.sm,
       borderRadius: 8,
       flexDirection: "row",
       alignItems: "center",
-      gap: 6,
+      gap: spacing.sm,
     },
     deleteButton: {
-      backgroundColor: "#F44336",
+      backgroundColor: theme.colors.error,
     },
     actionButtonText: {
       color: "white",
@@ -258,27 +258,27 @@ export default function ServiceLogDetailScreen() {
       flex: 1,
     },
     scrollContent: {
-      padding: 20,
+      padding: spacing.xl,
     },
     card: {
       backgroundColor: colors.background,
       borderRadius: 12,
-      padding: 20,
+      padding: spacing.xl,
       borderWidth: 1,
-      borderColor: colors.icon + "20",
-      marginBottom: 16,
+      borderColor: withOpacity(colors.textSecondary, 0.12),
+      marginBottom: spacing.lg,
     },
     serviceTypeHeader: {
       flexDirection: "row",
       alignItems: "center",
-      marginBottom: 16,
-      gap: 12,
+      marginBottom: spacing.lg,
+      gap: spacing.md,
     },
     serviceTypeIcon: {
       width: 48,
       height: 48,
       borderRadius: 24,
-      backgroundColor: colors.tint,
+      backgroundColor: colors.primary,
       alignItems: "center",
       justifyContent: "center",
     },
@@ -293,23 +293,23 @@ export default function ServiceLogDetailScreen() {
     },
     serviceTypeSubtitle: {
       fontSize: 16,
-      color: colors.icon,
-      marginTop: 2,
+      color: colors.textSecondary,
+      marginTop: spacing.xs,
     },
     vehicleInfo: {
-      backgroundColor: colors.icon + "10",
+      backgroundColor: withOpacity(colors.textSecondary, 0.06),
       borderRadius: 8,
-      padding: 12,
+      padding: spacing.md,
       flexDirection: "row",
       alignItems: "center",
-      gap: 12,
-      marginBottom: 16,
+      gap: spacing.md,
+      marginBottom: spacing.lg,
     },
     vehicleIcon: {
       width: 32,
       height: 32,
       borderRadius: 16,
-      backgroundColor: colors.tint,
+      backgroundColor: colors.primary,
       alignItems: "center",
       justifyContent: "center",
     },
@@ -320,29 +320,29 @@ export default function ServiceLogDetailScreen() {
     },
     vehiclePlate: {
       fontSize: 14,
-      color: colors.icon,
-      marginTop: 2,
+      color: colors.textSecondary,
+      marginTop: spacing.xs,
     },
     detailSection: {
-      marginBottom: 20,
+      marginBottom: spacing.xl,
     },
     sectionTitle: {
       fontSize: 18,
       fontWeight: "600",
       color: colors.text,
-      marginBottom: 12,
+      marginBottom: spacing.md,
     },
     detailRow: {
       flexDirection: "row",
       justifyContent: "space-between",
       alignItems: "center",
-      paddingVertical: 8,
+      paddingVertical: spacing.sm,
       borderBottomWidth: 1,
-      borderBottomColor: colors.icon + "10",
+      borderBottomColor: withOpacity(colors.textSecondary, 0.06),
     },
     detailLabel: {
       fontSize: 16,
-      color: colors.icon,
+      color: colors.textSecondary,
       fontWeight: "500",
     },
     detailValue: {
@@ -351,14 +351,14 @@ export default function ServiceLogDetailScreen() {
       fontWeight: "600",
       textAlign: "right",
       flex: 1,
-      marginLeft: 16,
+      marginLeft: spacing.lg,
     },
     description: {
       fontSize: 16,
       color: colors.text,
       lineHeight: 24,
-      backgroundColor: colors.icon + "05",
-      padding: 16,
+      backgroundColor: withOpacity(colors.textSecondary, 0.02),
+      padding: spacing.lg,
       borderRadius: 8,
     },
     loadingContainer: {
@@ -369,27 +369,27 @@ export default function ServiceLogDetailScreen() {
     autoFillIndicator: {
       flexDirection: "row",
       alignItems: "center",
-      backgroundColor: "#4CAF50" + "15",
-      paddingHorizontal: 12,
-      paddingVertical: 8,
+      backgroundColor: withOpacity(theme.colors.success, 0.08),
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.sm,
       borderRadius: 8,
-      gap: 8,
-      marginBottom: 16,
+      gap: spacing.sm,
+      marginBottom: spacing.lg,
     },
     autoFillText: {
       fontSize: 14,
-      color: "#4CAF50",
+      color: theme.colors.success,
       fontWeight: "500",
     },
     subHeader: {
       fontSize: 14,
-      color: colors.icon,
-      marginBottom: 16,
-      marginTop: -8,
+      color: colors.textSecondary,
+      marginBottom: spacing.lg,
+      marginTop: -spacing.sm,
     },
     itemRow: {
       flexDirection: "row",
-      marginBottom: 8,
+      marginBottom: spacing.sm,
       alignItems: "flex-start",
     },
     itemText: {
@@ -402,10 +402,10 @@ export default function ServiceLogDetailScreen() {
       flexDirection: "row",
       justifyContent: "space-between",
       alignItems: "center",
-      marginTop: 16,
-      paddingTop: 16,
+      marginTop: spacing.lg,
+      paddingTop: spacing.lg,
       borderTopWidth: 1,
-      borderTopColor: colors.icon + "20",
+      borderTopColor: withOpacity(colors.textSecondary, 0.12),
     },
     totalLabel: {
       fontSize: 18,
@@ -435,7 +435,7 @@ export default function ServiceLogDetailScreen() {
           style={styles.content}
           contentContainerStyle={styles.scrollContent}
         >
-          <SkeletonCard lines={6} style={{ marginBottom: 16 }} />
+          <SkeletonCard lines={6} style={{ marginBottom: spacing.lg }} />
           <SkeletonCard lines={4} />
         </ScrollView>
       </SafeAreaView>
@@ -542,7 +542,7 @@ export default function ServiceLogDetailScreen() {
               <IconSymbol
                 name="checkmark.circle.fill"
                 size={16}
-                color="#4CAF50"
+                color={theme.colors.success}
               />
               <Text style={styles.autoFillText}>
                 Data auto-filled from receipt
@@ -579,10 +579,10 @@ export default function ServiceLogDetailScreen() {
           {serviceLog.next_service_due && (
             <View
               style={{
-                marginTop: 8,
-                paddingTop: 16,
+                marginTop: spacing.sm,
+                paddingTop: spacing.lg,
                 borderTopWidth: 1,
-                borderTopColor: colors.icon + "20",
+                borderTopColor: withOpacity(colors.textSecondary, 0.12),
               }}
             >
               <View style={styles.detailRow}>
