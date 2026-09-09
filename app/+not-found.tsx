@@ -1,5 +1,5 @@
-import { Colors } from "@/constants/theme";
-import { useColorScheme } from "@/hooks/use-color-scheme";
+import { spacing } from "@/src/design-system";
+import { useStyles } from "react-native-unistyles";
 import { Ionicons } from "@expo/vector-icons";
 import { Link, Stack } from "expo-router";
 import React from "react";
@@ -7,8 +7,8 @@ import { Platform, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function NotFoundScreen() {
-  const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? "light"];
+  const { theme } = useStyles();
+  const colors = theme.colors;
 
   const styles = StyleSheet.create({
     container: {
@@ -19,37 +19,37 @@ export default function NotFoundScreen() {
       flex: 1,
       justifyContent: "center",
       alignItems: "center",
-      padding: 24,
+      padding: spacing.xl,
     },
     iconContainer: {
-      marginBottom: 24,
+      marginBottom: spacing.xl,
       opacity: 0.6,
     },
     title: {
       fontSize: 72,
       fontWeight: "700",
       color: colors.primary,
-      marginBottom: 8,
+      marginBottom: spacing.sm,
     },
     subtitle: {
       fontSize: 24,
       fontWeight: "600",
       color: colors.text,
-      marginBottom: 12,
+      marginBottom: spacing.md,
       textAlign: "center",
     },
     message: {
       fontSize: 16,
       color: colors.textSecondary,
       textAlign: "center",
-      marginBottom: 32,
+      marginBottom: spacing.xxl,
       maxWidth: 400,
       lineHeight: 24,
     },
     link: {
       backgroundColor: colors.primary,
-      paddingHorizontal: 24,
-      paddingVertical: 14,
+      paddingHorizontal: spacing.xl,
+      paddingVertical: spacing.lg,
       borderRadius: 8,
       ...Platform.select({
         web: {
@@ -60,14 +60,14 @@ export default function NotFoundScreen() {
       }),
     },
     linkText: {
-      color: "#FFFFFF",
+      color: theme.colors.white,
       fontSize: 16,
       fontWeight: "600",
     },
     pathContainer: {
-      marginTop: 24,
-      paddingHorizontal: 16,
-      paddingVertical: 8,
+      marginTop: spacing.xl,
+      paddingHorizontal: spacing.lg,
+      paddingVertical: spacing.sm,
       backgroundColor: colors.surface,
       borderRadius: 6,
       borderWidth: 1,

@@ -1,3 +1,4 @@
+import { withOpacity, spacing } from "@/src/design-system";
 import React, { useState, useEffect, useCallback } from "react";
 import {
   View,
@@ -20,8 +21,8 @@ import { useAuth } from "@/lib/contexts/AuthContext";
 import { useDialog } from "@/lib/contexts/DialogContext";
 import { usePostHog } from "posthog-react-native";
 import { formatDateWithPrefix } from "@/lib/utils/dateUtils";
-import { PageHeader } from "@/lib/design-system/components/organisms/PageHeader";
-import { Text } from "@/lib/design-system/components/atoms/Text";
+import { PageHeader } from "@/components/ui/PageHeader";
+import { ThemedText as Text } from "@/components/ui/ThemedText";
 import { useStyles } from "react-native-unistyles";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -274,7 +275,7 @@ export default function GroupDetailScreen() {
                 width: 40,
                 height: 40,
                 borderRadius: 20,
-                backgroundColor: theme.colors.primary + "20",
+                backgroundColor: withOpacity(theme.colors.primary, 0.12),
                 alignItems: "center",
                 justifyContent: "center",
                 marginRight: theme.spacing.sm,
@@ -292,8 +293,8 @@ export default function GroupDetailScreen() {
               style={{
                 flexDirection: "row",
                 alignItems: "center",
-                marginBottom: 4,
-                gap: 8,
+                marginBottom: spacing.xs,
+                gap: spacing.sm,
               }}
             >
               <Text weight="semibold">
@@ -303,9 +304,9 @@ export default function GroupDetailScreen() {
               {isMemberOwner && (
                 <View
                   style={{
-                    backgroundColor: theme.colors.primary + "20",
-                    paddingHorizontal: 6,
-                    paddingVertical: 2,
+                    backgroundColor: withOpacity(theme.colors.primary, 0.12),
+                    paddingHorizontal: spacing.sm,
+                    paddingVertical: spacing.xs,
                     borderRadius: 4,
                   }}
                 >
@@ -324,7 +325,7 @@ export default function GroupDetailScreen() {
           </View>
           {!isMemberOwner && !isCurrentUser && isOwner && (
             <TouchableOpacity
-              style={{ padding: 8 }}
+              style={{ padding: spacing.sm }}
               onPress={() =>
                 handleRemoveMember(
                   member.user_id,
@@ -361,7 +362,7 @@ export default function GroupDetailScreen() {
             width: 36,
             height: 36,
             borderRadius: 18,
-            backgroundColor: theme.colors.primary + "20",
+            backgroundColor: withOpacity(theme.colors.primary, 0.12),
             alignItems: "center",
             justifyContent: "center",
             marginRight: theme.spacing.sm,
@@ -386,7 +387,7 @@ export default function GroupDetailScreen() {
         </View>
         {isOwner && (
           <TouchableOpacity
-            style={{ padding: 8 }}
+            style={{ padding: spacing.sm }}
             onPress={() =>
               handleCancelInvitation(invitation.id, invitation.email)
             }
@@ -428,7 +429,7 @@ export default function GroupDetailScreen() {
               width: 60,
               height: 60,
               borderRadius: 8,
-              backgroundColor: theme.colors.primary + "20",
+              backgroundColor: withOpacity(theme.colors.primary, 0.12),
               alignItems: "center",
               justifyContent: "center",
               marginRight: theme.spacing.sm,
@@ -729,7 +730,7 @@ export default function GroupDetailScreen() {
         >
           <TouchableOpacity
             style={{
-              backgroundColor: theme.colors.error + "10",
+              backgroundColor: withOpacity(theme.colors.error, 0.06),
               paddingVertical: theme.spacing.sm,
               paddingHorizontal: theme.spacing.md,
               borderRadius: theme.spacing.sm,
@@ -757,7 +758,7 @@ export default function GroupDetailScreen() {
         >
           <TouchableOpacity
             style={{
-              backgroundColor: theme.colors.error + "10",
+              backgroundColor: withOpacity(theme.colors.error, 0.06),
               paddingVertical: theme.spacing.sm,
               paddingHorizontal: theme.spacing.md,
               borderRadius: theme.spacing.sm,

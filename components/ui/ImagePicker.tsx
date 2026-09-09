@@ -1,5 +1,5 @@
-import { Colors } from "@/constants/theme";
-import { useColorScheme } from "@/hooks/use-color-scheme";
+import { baseColors, withOpacity, spacing } from "@/src/design-system";
+import { useStyles } from "react-native-unistyles";
 import * as ExpoImagePicker from "expo-image-picker";
 import React, { useState } from "react";
 import {
@@ -47,8 +47,8 @@ export function ImagePicker({
   const [loading, setLoading] = useState(false);
   const [showCropModal, setShowCropModal] = useState(false);
   const [tempImageUri, setTempImageUri] = useState<string>("");
-  const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? "light"];
+  const { theme } = useStyles();
+  const colors = theme.colors;
 
   // Ref for hidden file input on web
   const fileInputRef = React.useRef<HTMLInputElement>(null);
@@ -206,19 +206,19 @@ export function ImagePicker({
 
   const styles = StyleSheet.create({
     container: {
-      marginBottom: 20,
+      marginBottom: spacing.xl,
     },
     label: {
       fontSize: 16,
       fontWeight: "500",
       color: colors.text,
-      marginBottom: 8,
+      marginBottom: spacing.sm,
     },
     imageContainer: {
       borderRadius: 12,
       borderWidth: 2,
       borderStyle: "dashed",
-      borderColor: colors.icon + "40",
+      borderColor: withOpacity(colors.textSecondary, 0.25),
       overflow: "hidden",
       backgroundColor: colors.background,
     },
@@ -236,21 +236,21 @@ export function ImagePicker({
       position: "absolute",
       top: 8,
       right: 8,
-      backgroundColor: "rgba(0, 0, 0, 0.6)",
+      backgroundColor: withOpacity(baseColors.black, 0.6),
       borderRadius: 20,
-      padding: 8,
+      padding: spacing.sm,
     },
     placeholder: {
       height: 200,
       justifyContent: "center",
       alignItems: "center",
-      gap: 12,
+      gap: spacing.md,
     },
     placeholderIcon: {
       width: 64,
       height: 64,
       borderRadius: 32,
-      backgroundColor: colors.backgroundSecondary,
+      backgroundColor: colors.secondary,
       justifyContent: "center",
       alignItems: "center",
     },
@@ -263,11 +263,11 @@ export function ImagePicker({
       fontSize: 14,
       color: colors.textSecondary,
       textAlign: "center",
-      paddingHorizontal: 20,
+      paddingHorizontal: spacing.xl,
     },
     loadingOverlay: {
       ...StyleSheet.absoluteFillObject,
-      backgroundColor: "rgba(0, 0, 0, 0.3)",
+      backgroundColor: withOpacity(baseColors.black, 0.3),
       justifyContent: "center",
       alignItems: "center",
     },
@@ -303,7 +303,11 @@ export function ImagePicker({
           ) : (
             <View style={styles.placeholder}>
               <View style={styles.placeholderIcon}>
-                <IconSymbol name="camera.fill" size={32} color={colors.tint} />
+                <IconSymbol
+                  name="camera.fill"
+                  size={32}
+                  color={colors.primary}
+                />
               </View>
               <Text style={styles.placeholderText}>{placeholder}</Text>
               <Text style={styles.placeholderHint}>
@@ -314,7 +318,7 @@ export function ImagePicker({
                   : "Tap to take a photo or choose from gallery"}
               </Text>
               {loading && (
-                <ActivityIndicator size="small" color={colors.tint} />
+                <ActivityIndicator size="small" color={colors.primary} />
               )}
             </View>
           )}

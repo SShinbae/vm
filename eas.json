@@ -59,6 +59,8 @@
       "distribution": "internal",
       "node": "20.18.2",
       "ios": {
+        "simulator": false,
+        "credentialsSource": "local",
         "resourceClass": "m-medium"
       },
       "android": {
@@ -89,6 +91,8 @@
         "gradleCommand": ":app:bundleRelease"
       },
       "ios": {
+        "simulator": false,
+        "credentialsSource": "local",
         "resourceClass": "m-medium"
       },
       "env": {

@@ -1,8 +1,9 @@
-import { Colors } from "@/constants/theme";
-import { useColorScheme } from "@/hooks/use-color-scheme";
+import { spacing } from "@/src/design-system";
+import { useStyles } from "react-native-unistyles";
 import React from "react";
 import {
   ActivityIndicator,
+  Platform,
   StyleSheet,
   Text,
   TextStyle,
@@ -38,8 +39,8 @@ export function Button({
   textStyle,
   fullWidth = false,
 }: ButtonProps) {
-  const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? "light"];
+  const { theme } = useStyles();
+  const colors = theme.colors;
 
   const getButtonStyle = (): ViewStyle[] => {
     const baseStyle: ViewStyle[] = [styles.button];
@@ -60,7 +61,7 @@ export function Button({
     switch (variant) {
       case "secondary":
         baseStyle.push({
-          backgroundColor: colors.backgroundSecondary,
+          backgroundColor: colors.secondary,
           borderColor: colors.border,
           borderWidth: 1,
         });
@@ -125,11 +126,11 @@ export function Button({
         baseStyle.push({ color: colors.primary });
         break;
       case "danger":
-        baseStyle.push({ color: "#FFFFFF" });
+        baseStyle.push({ color: theme.colors.white });
         break;
       default:
         // Primary button: use white text for better contrast with primary background
-        baseStyle.push({ color: "#FFFFFF" });
+        baseStyle.push({ color: theme.colors.white });
     }
 
     // Custom text style
@@ -158,10 +159,10 @@ export function Button({
       case "outline":
         return colors.primary;
       case "danger":
-        return "#FFFFFF";
+        return theme.colors.white;
       default:
         // Primary button: use white icons for better contrast with primary background
-        return "#FFFFFF";
+        return theme.colors.white;
     }
   };
 
@@ -172,7 +173,7 @@ export function Button({
           color={
             variant === "outline" || variant === "secondary"
               ? colors.primary
-              : "#FFFFFF"
+              : theme.colors.white
           }
           size="small"
         />
@@ -212,6 +213,8 @@ export function Button({
       onPress={onPress}
       disabled={disabled || loading}
       activeOpacity={0.7}
+      accessibilityRole="button"
+      accessibilityState={{ disabled: disabled || loading, busy: loading }}
     >
       {renderContent()}
     </TouchableOpacity>
@@ -224,19 +227,20 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     borderRadius: 8,
-    gap: 8,
+    gap: spacing.sm,
+    minHeight: Platform.select({ ios: 44, default: 48 }),
   },
   buttonSmall: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
   },
   buttonMedium: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
   },
   buttonLarge: {
-    paddingHorizontal: 24,
-    paddingVertical: 16,
+    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.lg,
   },
   fullWidth: {
     width: "100%",

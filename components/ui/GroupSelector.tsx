@@ -1,3 +1,5 @@
+import { baseColors, withOpacity, spacing } from "@/src/design-system";
+import { useStyles } from "react-native-unistyles";
 import React, { useState, useEffect } from "react";
 import {
   View,
@@ -9,8 +11,6 @@ import {
   Alert,
 } from "react-native";
 import { IconSymbol } from "./icon-symbol";
-import { Colors } from "@/constants/theme";
-import { useColorScheme } from "@/hooks/use-color-scheme";
 import { GroupService } from "@/lib/services/groupService";
 import { Group } from "@/types/database-v2";
 
@@ -36,8 +36,8 @@ export const GroupSelector: React.FC<GroupSelectorProps> = ({
   const [groups, setGroups] = useState<Group[]>([]);
   const [loading, setLoading] = useState(true);
   const [modalVisible, setModalVisible] = useState(false);
-  const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? "light"];
+  const { theme } = useStyles();
+  const colors = theme.colors;
 
   useEffect(() => {
     loadGroups();
@@ -105,24 +105,24 @@ export const GroupSelector: React.FC<GroupSelectorProps> = ({
       ...style,
     },
     header: {
-      marginBottom: 12,
+      marginBottom: spacing.md,
     },
     title: {
       fontSize: 16,
       fontWeight: "600",
       color: colors.text,
-      marginBottom: 4,
+      marginBottom: spacing.xs,
     },
     subtitle: {
       fontSize: 14,
-      color: colors.icon,
+      color: colors.textSecondary,
       lineHeight: 18,
     },
     selector: {
       borderWidth: 1,
-      borderColor: colors.icon + "30",
+      borderColor: withOpacity(colors.textSecondary, 0.19),
       borderRadius: 8,
-      padding: 12,
+      padding: spacing.md,
       backgroundColor: colors.background,
     },
     selectorContent: {
@@ -136,18 +136,18 @@ export const GroupSelector: React.FC<GroupSelectorProps> = ({
       color: colors.text,
     },
     placeholderText: {
-      color: colors.icon,
+      color: colors.textSecondary,
       fontStyle: "italic",
     },
     chevron: {
-      marginLeft: 8,
+      marginLeft: spacing.sm,
     },
     countBadge: {
-      backgroundColor: colors.tint,
+      backgroundColor: colors.primary,
       borderRadius: 10,
-      paddingHorizontal: 8,
-      paddingVertical: 2,
-      marginRight: 8,
+      paddingHorizontal: spacing.sm,
+      paddingVertical: spacing.xs,
+      marginRight: spacing.sm,
     },
     countText: {
       fontSize: 12,
@@ -158,14 +158,14 @@ export const GroupSelector: React.FC<GroupSelectorProps> = ({
     // Modal styles
     modalOverlay: {
       flex: 1,
-      backgroundColor: "rgba(0,0,0,0.5)",
+      backgroundColor: withOpacity(baseColors.black, 0.5),
       justifyContent: "center",
       alignItems: "center",
     },
     modalContent: {
       backgroundColor: colors.background,
       borderRadius: 12,
-      padding: 20,
+      padding: spacing.xl,
       width: "90%",
       maxWidth: 400,
       maxHeight: "80%",
@@ -174,10 +174,10 @@ export const GroupSelector: React.FC<GroupSelectorProps> = ({
       flexDirection: "row",
       alignItems: "center",
       justifyContent: "space-between",
-      marginBottom: 16,
-      paddingBottom: 12,
+      marginBottom: spacing.lg,
+      paddingBottom: spacing.md,
       borderBottomWidth: 1,
-      borderBottomColor: colors.icon + "20",
+      borderBottomColor: withOpacity(colors.textSecondary, 0.12),
     },
     modalTitle: {
       fontSize: 18,
@@ -185,19 +185,19 @@ export const GroupSelector: React.FC<GroupSelectorProps> = ({
       color: colors.text,
     },
     closeButton: {
-      padding: 4,
+      padding: spacing.xs,
     },
     selectAllButton: {
       flexDirection: "row",
       alignItems: "center",
-      paddingVertical: 8,
-      marginBottom: 12,
+      paddingVertical: spacing.sm,
+      marginBottom: spacing.md,
     },
     selectAllText: {
       fontSize: 14,
       fontWeight: "500",
-      color: colors.tint,
-      marginLeft: 8,
+      color: colors.primary,
+      marginLeft: spacing.sm,
     },
     groupsList: {
       maxHeight: 300,
@@ -205,14 +205,14 @@ export const GroupSelector: React.FC<GroupSelectorProps> = ({
     groupItem: {
       flexDirection: "row",
       alignItems: "center",
-      paddingVertical: 12,
-      paddingHorizontal: 4,
+      paddingVertical: spacing.md,
+      paddingHorizontal: spacing.xs,
       borderBottomWidth: 1,
-      borderBottomColor: colors.icon + "10",
+      borderBottomColor: withOpacity(colors.textSecondary, 0.06),
     },
     groupInfo: {
       flex: 1,
-      marginLeft: 12,
+      marginLeft: spacing.md,
     },
     groupName: {
       fontSize: 16,
@@ -221,42 +221,42 @@ export const GroupSelector: React.FC<GroupSelectorProps> = ({
     },
     groupDescription: {
       fontSize: 12,
-      color: colors.icon,
-      marginTop: 2,
+      color: colors.textSecondary,
+      marginTop: spacing.xs,
     },
     memberCount: {
       fontSize: 12,
-      color: colors.icon,
-      marginTop: 2,
+      color: colors.textSecondary,
+      marginTop: spacing.xs,
     },
     checkbox: {
       width: 20,
       height: 20,
       borderRadius: 4,
       borderWidth: 2,
-      borderColor: colors.icon + "50",
+      borderColor: withOpacity(colors.textSecondary, 0.31),
       alignItems: "center",
       justifyContent: "center",
     },
     checkboxSelected: {
-      backgroundColor: colors.tint,
-      borderColor: colors.tint,
+      backgroundColor: colors.primary,
+      borderColor: colors.primary,
     },
     checkboxIcon: {
-      marginTop: -1,
+      marginTop: -spacing.xs,
     },
     emptyText: {
       textAlign: "center",
       fontSize: 14,
-      color: colors.icon,
+      color: colors.textSecondary,
       fontStyle: "italic",
-      paddingVertical: 20,
+      paddingVertical: spacing.xl,
     },
     loadingText: {
       textAlign: "center",
       fontSize: 14,
-      color: colors.icon,
-      paddingVertical: 20,
+      color: colors.textSecondary,
+      paddingVertical: spacing.xl,
     },
   });
 
@@ -299,7 +299,7 @@ export const GroupSelector: React.FC<GroupSelectorProps> = ({
           <IconSymbol
             name="chevron.down"
             size={16}
-            color={colors.icon}
+            color={colors.textSecondary}
             style={styles.chevron}
           />
         </View>
@@ -320,7 +320,11 @@ export const GroupSelector: React.FC<GroupSelectorProps> = ({
                 style={styles.closeButton}
                 onPress={() => setModalVisible(false)}
               >
-                <IconSymbol name="xmark" size={20} color={colors.icon} />
+                <IconSymbol
+                  name="xmark"
+                  size={20}
+                  color={colors.textSecondary}
+                />
               </TouchableOpacity>
             </View>
 
@@ -430,24 +434,26 @@ export const QuickSharingToggle: React.FC<QuickSharingToggleProps> = ({
   groupCount,
   disabled = false,
 }) => {
-  const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? "light"];
+  const { theme } = useStyles();
+  const colors = theme.colors;
 
   const styles = StyleSheet.create({
     container: {
       flexDirection: "row",
       alignItems: "center",
       justifyContent: "space-between",
-      paddingVertical: 12,
-      paddingHorizontal: 16,
+      paddingVertical: spacing.md,
+      paddingHorizontal: spacing.lg,
       backgroundColor: colors.background,
       borderRadius: 8,
       borderWidth: 1,
-      borderColor: isShared ? colors.tint + "30" : colors.icon + "20",
+      borderColor: isShared
+        ? withOpacity(colors.primary, 0.19)
+        : withOpacity(colors.textSecondary, 0.12),
     },
     content: {
       flex: 1,
-      marginRight: 12,
+      marginRight: spacing.md,
     },
     title: {
       fontSize: 16,
@@ -456,16 +462,18 @@ export const QuickSharingToggle: React.FC<QuickSharingToggleProps> = ({
     },
     subtitle: {
       fontSize: 12,
-      color: colors.icon,
-      marginTop: 2,
+      color: colors.textSecondary,
+      marginTop: spacing.xs,
     },
     toggle: {
       width: 50,
       height: 30,
       borderRadius: 15,
-      backgroundColor: isShared ? colors.tint : colors.icon + "30",
+      backgroundColor: isShared
+        ? colors.primary
+        : withOpacity(colors.textSecondary, 0.19),
       justifyContent: "center",
-      paddingHorizontal: 2,
+      paddingHorizontal: spacing.xs,
     },
     toggleButton: {
       width: 26,
@@ -473,7 +481,7 @@ export const QuickSharingToggle: React.FC<QuickSharingToggleProps> = ({
       borderRadius: 13,
       backgroundColor: "white",
       alignSelf: isShared ? "flex-end" : "flex-start",
-      shadowColor: "#000",
+      shadowColor: theme.colors.black,
       shadowOffset: { width: 0, height: 2 },
       shadowOpacity: 0.2,
       shadowRadius: 2,

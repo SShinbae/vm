@@ -1,3 +1,4 @@
+import { spacing } from "@/src/design-system";
 import { useResponsiveLayout } from "@/hooks/use-responsive-layout";
 import React from "react";
 import { Platform, ScrollView, View, ViewStyle } from "react-native";
@@ -76,7 +77,7 @@ const stylesheet = createStyleSheet((theme) => ({
     }),
   },
   sidebarContent: {
-    padding: 20,
+    padding: spacing.xl,
   },
   mainContent: {
     flex: 1,

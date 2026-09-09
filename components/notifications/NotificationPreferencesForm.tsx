@@ -1,3 +1,4 @@
+import { withOpacity, spacing } from "@/src/design-system";
 import React, { useCallback, useRef } from "react";
 import {
   ActivityIndicator,
@@ -110,7 +111,7 @@ export function NotificationPreferencesForm() {
             style={{
               fontSize: theme.fontSize.sm,
               color: theme.colors.textSecondary,
-              marginTop: 2,
+              marginTop: spacing.xs,
             }}
           >
             {description}
@@ -496,7 +497,7 @@ export function NotificationPreferencesForm() {
                 width: 36,
                 height: 36,
                 borderRadius: 18,
-                backgroundColor: theme.colors.primary + "15",
+                backgroundColor: withOpacity(theme.colors.primary, 0.08),
                 alignItems: "center",
                 justifyContent: "center",
               }}
@@ -531,7 +532,7 @@ export function NotificationPreferencesForm() {
                 width: 36,
                 height: 36,
                 borderRadius: 18,
-                backgroundColor: theme.colors.primary + "15",
+                backgroundColor: withOpacity(theme.colors.primary, 0.08),
                 alignItems: "center",
                 justifyContent: "center",
               }}

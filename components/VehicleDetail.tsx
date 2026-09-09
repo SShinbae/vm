@@ -1,7 +1,7 @@
+import { baseColors, withOpacity, spacing } from "@/src/design-system";
+import { useStyles } from "react-native-unistyles";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { VehicleGroupSelector } from "@/components/VehicleGroupSelector";
-import { Colors } from "@/constants/theme";
-import { useColorScheme } from "@/hooks/use-color-scheme";
 import { formatDate } from "@/lib/utils/dateUtils";
 import { VehicleWithDetails } from "@/types/database-v2";
 import { Image } from "expo-image";
@@ -28,8 +28,8 @@ export const VehicleDetail: React.FC<VehicleDetailProps> = ({
   const [showSharingModal, setShowSharingModal] = useState(false);
   const [imageError, setImageError] = useState(false);
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
-  const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? "light"];
+  const { theme } = useStyles();
+  const colors = theme.colors;
   const isWeb = Platform.OS === "web";
 
   const handleSharingUpdate = (success: boolean) => {
@@ -63,28 +63,30 @@ export const VehicleDetail: React.FC<VehicleDetailProps> = ({
       flexDirection: "column",
       alignItems: "center",
       marginBottom: isWeb ? 32 : 20,
-      backgroundColor: colors.card,
+      backgroundColor: colors.surface,
       borderRadius: 16,
-      padding: 24,
+      padding: spacing.xl,
       ...(isWeb && {
-        shadowColor: "#000",
+        shadowColor: theme.colors.black,
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.08,
         shadowRadius: 12,
       }),
       borderWidth: 1,
-      borderColor: colors.cardBorder,
+      borderColor: colors.border,
     },
     vehicleIcon: {
       width: isWeb ? 120 : 60,
       height: isWeb ? 120 : 60,
       borderRadius: isWeb ? 60 : 30,
-      backgroundColor: vehicle.is_own_vehicle ? colors.tint : "#4CAF50",
+      backgroundColor: vehicle.is_own_vehicle
+        ? colors.primary
+        : theme.colors.success,
       alignItems: "center",
       justifyContent: "center",
-      marginBottom: 16,
+      marginBottom: spacing.lg,
       ...(isWeb && {
-        shadowColor: "#000",
+        shadowColor: theme.colors.black,
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.1,
         shadowRadius: 8,
@@ -94,13 +96,13 @@ export const VehicleDetail: React.FC<VehicleDetailProps> = ({
       position: "absolute",
       top: 0,
       right: 0,
-      backgroundColor: vehicle.is_own_vehicle ? colors.tint : colors.success,
-      paddingHorizontal: 8,
-      paddingVertical: 4,
+      backgroundColor: vehicle.is_own_vehicle ? colors.primary : colors.success,
+      paddingHorizontal: spacing.sm,
+      paddingVertical: spacing.xs,
       borderRadius: 12,
       flexDirection: "row",
       alignItems: "center",
-      gap: 4,
+      gap: spacing.xs,
     },
     statusBadgeText: {
       color: "white",
@@ -115,44 +117,44 @@ export const VehicleDetail: React.FC<VehicleDetailProps> = ({
       fontSize: isWeb ? 28 : 24,
       fontWeight: "bold",
       color: colors.text,
-      marginBottom: 8,
+      marginBottom: spacing.sm,
       textAlign: "center",
     },
     vehiclePlate: {
       fontSize: isWeb ? 18 : 16,
-      color: colors.icon,
+      color: colors.textSecondary,
       fontWeight: "500",
       textAlign: "center",
-      paddingHorizontal: 12,
-      paddingVertical: 6,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.sm,
       backgroundColor: colors.surface,
       borderRadius: 8,
-      marginBottom: 8,
+      marginBottom: spacing.sm,
     },
     ownerInfo: {
       fontSize: 14,
       color: colors.success,
       fontStyle: "italic",
-      marginTop: 4,
+      marginTop: spacing.xs,
       textAlign: "center",
     },
     statsContainer: {
       flexDirection: isWeb ? "row" : "column",
       flexWrap: "wrap",
-      gap: 16,
-      marginBottom: 24,
+      gap: spacing.lg,
+      marginBottom: spacing.xl,
     },
     statCard: {
       flex: isWeb ? 1 : undefined,
       minWidth: isWeb ? 200 : undefined,
-      backgroundColor: colors.card,
+      backgroundColor: colors.surface,
       borderRadius: 12,
-      padding: 16,
+      padding: spacing.lg,
       borderWidth: 1,
-      borderColor: colors.cardBorder,
+      borderColor: colors.border,
       alignItems: "center",
       ...(isWeb && {
-        shadowColor: "#000",
+        shadowColor: theme.colors.black,
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.05,
         shadowRadius: 8,
@@ -162,47 +164,47 @@ export const VehicleDetail: React.FC<VehicleDetailProps> = ({
       fontSize: 28,
       fontWeight: "bold",
       color: colors.text,
-      marginTop: 8,
+      marginTop: spacing.sm,
     },
     statLabel: {
       fontSize: 14,
       color: colors.textSecondary,
-      marginTop: 4,
+      marginTop: spacing.xs,
     },
     section: {
-      marginBottom: 24,
+      marginBottom: spacing.xl,
     },
     sectionTitle: {
       fontSize: 18,
       fontWeight: "600",
       color: colors.text,
-      marginBottom: 12,
+      marginBottom: spacing.md,
     },
     sharingSection: {
       backgroundColor: colors.background,
       borderRadius: 12,
-      padding: 16,
+      padding: spacing.lg,
       borderWidth: 1,
-      borderColor: colors.icon + "20",
+      borderColor: withOpacity(colors.textSecondary, 0.12),
     },
     sharingStatus: {
       flexDirection: "row",
       alignItems: "center",
       justifyContent: "space-between",
-      marginBottom: 12,
+      marginBottom: spacing.md,
     },
     sharingText: {
       fontSize: 16,
       color: colors.text,
     },
     shareButton: {
-      backgroundColor: colors.tint,
-      paddingHorizontal: 16,
-      paddingVertical: 8,
+      backgroundColor: colors.primary,
+      paddingHorizontal: spacing.lg,
+      paddingVertical: spacing.sm,
       borderRadius: 6,
       flexDirection: "row",
       alignItems: "center",
-      gap: 6,
+      gap: spacing.sm,
     },
     shareButtonText: {
       color: "white",
@@ -210,21 +212,21 @@ export const VehicleDetail: React.FC<VehicleDetailProps> = ({
       fontWeight: "600",
     },
     sharedGroupsList: {
-      marginTop: 8,
+      marginTop: spacing.sm,
     },
     sharedGroupItem: {
       flexDirection: "row",
       alignItems: "center",
-      paddingVertical: 6,
+      paddingVertical: spacing.sm,
     },
     groupAvatar: {
       width: 32,
       height: 32,
       borderRadius: 16,
-      backgroundColor: colors.tint + "20",
+      backgroundColor: withOpacity(colors.primary, 0.12),
       alignItems: "center",
       justifyContent: "center",
-      marginRight: 8,
+      marginRight: spacing.sm,
     },
     groupAvatarImage: {
       width: 32,
@@ -233,17 +235,19 @@ export const VehicleDetail: React.FC<VehicleDetailProps> = ({
     },
     sharedGroupText: {
       fontSize: 14,
-      color: colors.icon,
+      color: colors.textSecondary,
     },
     emptySharing: {
       textAlign: "center",
-      color: colors.icon,
+      color: colors.textSecondary,
       fontSize: 14,
       fontStyle: "italic",
     },
     modal: {
       flex: 1,
-      backgroundColor: isWeb ? "rgba(0, 0, 0, 0.6)" : "rgba(0, 0, 0, 0.5)",
+      backgroundColor: isWeb
+        ? withOpacity(baseColors.black, 0.6)
+        : withOpacity(baseColors.black, 0.5),
       justifyContent: "center",
       alignItems: "center",
       ...(isWeb && {
@@ -257,7 +261,7 @@ export const VehicleDetail: React.FC<VehicleDetailProps> = ({
       maxWidth: isWeb ? 600 : undefined,
       maxHeight: "80%",
       ...(isWeb && {
-        shadowColor: "#000",
+        shadowColor: theme.colors.black,
         shadowOffset: { width: 0, height: 8 },
         shadowOpacity: 0.2,
         shadowRadius: 24,
@@ -267,9 +271,9 @@ export const VehicleDetail: React.FC<VehicleDetailProps> = ({
       flexDirection: "row",
       alignItems: "center",
       justifyContent: "space-between",
-      padding: 20,
+      padding: spacing.xl,
       borderBottomWidth: 1,
-      borderBottomColor: colors.icon + "20",
+      borderBottomColor: withOpacity(colors.textSecondary, 0.12),
     },
     modalTitle: {
       fontSize: 18,
@@ -277,25 +281,25 @@ export const VehicleDetail: React.FC<VehicleDetailProps> = ({
       color: colors.text,
     },
     closeButton: {
-      padding: 8,
+      padding: spacing.sm,
     },
     detailsGrid: {
       flexDirection: isWeb ? "row" : "column",
       flexWrap: "wrap",
-      gap: 16,
+      gap: spacing.lg,
     },
     detailItem: {
       flex: isWeb ? 1 : undefined,
       minWidth: isWeb ? 280 : undefined,
       flexDirection: "row",
       alignItems: "center",
-      backgroundColor: colors.card,
+      backgroundColor: colors.surface,
       borderRadius: 12,
-      padding: 16,
+      padding: spacing.lg,
       borderWidth: 1,
-      borderColor: colors.cardBorder,
+      borderColor: colors.border,
       ...(isWeb && {
-        shadowColor: "#000",
+        shadowColor: theme.colors.black,
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.06,
         shadowRadius: 8,
@@ -307,7 +311,7 @@ export const VehicleDetail: React.FC<VehicleDetailProps> = ({
       ...(isWeb && {
         shadowOpacity: 0.12,
         shadowRadius: 12,
-        borderColor: colors.tint,
+        borderColor: colors.primary,
         transform: [{ translateY: -2 }],
       }),
     },
@@ -315,10 +319,10 @@ export const VehicleDetail: React.FC<VehicleDetailProps> = ({
       width: 40,
       height: 40,
       borderRadius: 20,
-      backgroundColor: colors.tint + "15",
+      backgroundColor: withOpacity(colors.primary, 0.08),
       alignItems: "center",
       justifyContent: "center",
-      marginRight: 12,
+      marginRight: spacing.md,
     },
     detailContent: {
       flex: 1,
@@ -326,8 +330,8 @@ export const VehicleDetail: React.FC<VehicleDetailProps> = ({
     detailLabel: {
       fontSize: 14,
       fontWeight: "500",
-      color: colors.icon,
-      marginBottom: 2,
+      color: colors.textSecondary,
+      marginBottom: spacing.xs,
     },
     detailValue: {
       fontSize: 16,
@@ -394,7 +398,7 @@ export const VehicleDetail: React.FC<VehicleDetailProps> = ({
                 <IconSymbol
                   name="list.bullet.clipboard.fill"
                   size={24}
-                  color={colors.tint}
+                  color={colors.primary}
                 />
                 <Text style={styles.statValue}>
                   {vehicle.logs?.counts?.mileage_count || 0}
@@ -405,7 +409,7 @@ export const VehicleDetail: React.FC<VehicleDetailProps> = ({
                 <IconSymbol
                   name="fuelpump.fill"
                   size={24}
-                  color={colors.tint}
+                  color={colors.primary}
                 />
                 <Text style={styles.statValue}>
                   {vehicle.logs?.counts?.fuel_count || 0}
@@ -416,7 +420,7 @@ export const VehicleDetail: React.FC<VehicleDetailProps> = ({
                 <IconSymbol
                   name="wrench.and.screwdriver.fill"
                   size={24}
-                  color={colors.tint}
+                  color={colors.primary}
                 />
                 <Text style={styles.statValue}>
                   {vehicle.logs?.counts?.service_count || 0}
@@ -468,7 +472,7 @@ export const VehicleDetail: React.FC<VehicleDetailProps> = ({
                             <IconSymbol
                               name="person.3.fill"
                               size={16}
-                              color={colors.tint}
+                              color={colors.primary}
                             />
                           </View>
                         )}
@@ -510,7 +514,7 @@ export const VehicleDetail: React.FC<VehicleDetailProps> = ({
                   <IconSymbol
                     name="speedometer"
                     size={20}
-                    color={colors.tint}
+                    color={colors.primary}
                   />
                 </View>
                 <View style={styles.detailContent}>
@@ -546,7 +550,7 @@ export const VehicleDetail: React.FC<VehicleDetailProps> = ({
                   <IconSymbol
                     name="fuelpump.fill"
                     size={20}
-                    color={colors.tint}
+                    color={colors.primary}
                   />
                 </View>
                 <View style={styles.detailContent}>
@@ -594,7 +598,7 @@ export const VehicleDetail: React.FC<VehicleDetailProps> = ({
                   <IconSymbol
                     name="wrench.and.screwdriver.fill"
                     size={20}
-                    color={colors.tint}
+                    color={colors.primary}
                   />
                 </View>
                 <View style={styles.detailContent}>
@@ -642,7 +646,7 @@ export const VehicleDetail: React.FC<VehicleDetailProps> = ({
                   <IconSymbol
                     name="list.bullet.clipboard.fill"
                     size={20}
-                    color={colors.tint}
+                    color={colors.primary}
                   />
                 </View>
                 <View style={styles.detailContent}>
@@ -692,7 +696,11 @@ export const VehicleDetail: React.FC<VehicleDetailProps> = ({
                 style={styles.closeButton}
                 onPress={() => setShowSharingModal(false)}
               >
-                <IconSymbol name="xmark" size={20} color={colors.icon} />
+                <IconSymbol
+                  name="xmark"
+                  size={20}
+                  color={colors.textSecondary}
+                />
               </TouchableOpacity>
             </View>
             <VehicleGroupSelector

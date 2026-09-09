@@ -1,5 +1,11 @@
-import { Colors } from "@/constants/theme";
-import { useColorScheme } from "@/hooks/use-color-scheme";
+import { useStyles } from "react-native-unistyles";
+import { IconSymbol } from "./icon-symbol";
+import {
+  withOpacity,
+  type ThemeColors,
+  baseColors,
+  spacing,
+} from "@/src/design-system";
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import {
   Modal,
@@ -156,8 +162,8 @@ export const ImageCropModal: React.FC<ImageCropModalProps> = ({
   aspectRatio = undefined,
 }) => {
   const [processing, setProcessing] = useState(false);
-  const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? "light"];
+  const { theme } = useStyles();
+  const colors = theme.colors;
 
   // For mobile - use react-native-image-crop-picker
   const isMobile = Platform.OS !== "web" && ImageCropPicker && visible;
@@ -224,7 +230,7 @@ export const ImageCropModal: React.FC<ImageCropModalProps> = ({
       title={title}
       description={description}
       aspectRatio={aspectRatio}
-      colors={colors as typeof Colors.light}
+      colors={colors}
       processing={processing}
       setProcessing={setProcessing}
     />
@@ -241,7 +247,7 @@ interface WebCropModalProps {
   title: string;
   description: string;
   aspectRatio: number | undefined;
-  colors: typeof Colors.light;
+  colors: ThemeColors;
   processing: boolean;
   setProcessing: (val: boolean) => void;
 }
@@ -316,7 +322,7 @@ const WebCropModal: React.FC<WebCropModalProps> = ({
     canvas.height = CONTAINER_HEIGHT;
 
     // Clear canvas
-    ctx.fillStyle = "#1a1a1a";
+    ctx.fillStyle = baseColors.black;
     ctx.fillRect(0, 0, CONTAINER_WIDTH, CONTAINER_HEIGHT);
 
     // Calculate image position
@@ -337,7 +343,7 @@ const WebCropModal: React.FC<WebCropModalProps> = ({
     ctx.restore();
 
     // Draw darkened overlay
-    ctx.fillStyle = "rgba(0, 0, 0, 0.5)";
+    ctx.fillStyle = withOpacity(baseColors.black, 0.5);
     ctx.fillRect(0, 0, CONTAINER_WIDTH, CONTAINER_HEIGHT);
 
     // Clear crop area (show original image)
@@ -358,12 +364,12 @@ const WebCropModal: React.FC<WebCropModalProps> = ({
     ctx.restore();
 
     // Draw crop border
-    ctx.strokeStyle = "#fff";
+    ctx.strokeStyle = colors.white;
     ctx.lineWidth = 2;
     ctx.strokeRect(cropArea.x, cropArea.y, cropArea.width, cropArea.height);
 
     // Draw grid lines (rule of thirds)
-    ctx.strokeStyle = "rgba(255, 255, 255, 0.3)";
+    ctx.strokeStyle = withOpacity(colors.white, 0.3);
     ctx.lineWidth = 1;
     const thirdW = cropArea.width / 3;
     const thirdH = cropArea.height / 3;
@@ -379,7 +385,7 @@ const WebCropModal: React.FC<WebCropModalProps> = ({
     ctx.stroke();
 
     // Draw corner handles
-    ctx.fillStyle = "#fff";
+    ctx.fillStyle = colors.white;
     const halfHandle = HANDLE_RENDER_SIZE / 2;
     // Top-left
     ctx.fillRect(
@@ -409,7 +415,7 @@ const WebCropModal: React.FC<WebCropModalProps> = ({
       HANDLE_RENDER_SIZE,
       HANDLE_RENDER_SIZE,
     );
-  }, [image, cropArea, rotation]);
+  }, [image, cropArea, rotation, colors.white]);
 
   // Use RAF for canvas updates
   useEffect(() => {
@@ -733,11 +739,11 @@ const WebCropModal: React.FC<WebCropModalProps> = ({
             style={styles.closeButton}
             disabled={processing}
           >
-            <Text style={[styles.closeText, { color: colors.text }]}>✕</Text>
+            <IconSymbol name="xmark" size={20} color={colors.text} />
           </TouchableOpacity>
         </View>
 
-        <Text style={[styles.description, { color: colors.icon }]}>
+        <Text style={[styles.description, { color: colors.textSecondary }]}>
           {description}
         </Text>
 
@@ -750,10 +756,10 @@ const WebCropModal: React.FC<WebCropModalProps> = ({
               width: "100%",
               maxWidth: CONTAINER_WIDTH,
               height: CONTAINER_HEIGHT,
-              background: "#1a1a1a",
+              background: baseColors.black,
               borderRadius: 8,
               overflow: "hidden",
-              marginBottom: 16,
+              marginBottom: spacing.lg,
               margin: "0 auto 16px auto",
               touchAction: "none",
             }}
@@ -765,7 +771,7 @@ const WebCropModal: React.FC<WebCropModalProps> = ({
                   top: "50%",
                   left: "50%",
                   transform: "translate(-50%, -50%)",
-                  color: "#fff",
+                  color: colors.white,
                 }}
               >
                 Loading image...
@@ -800,10 +806,7 @@ const WebCropModal: React.FC<WebCropModalProps> = ({
           <View style={styles.buttonRow}>
             <TouchableOpacity
               onPress={() => handleRotate(-90)}
-              style={[
-                styles.iconButton,
-                { backgroundColor: colors.backgroundSecondary },
-              ]}
+              style={[styles.iconButton, { backgroundColor: colors.secondary }]}
               disabled={processing || !imageLoaded}
             >
               <Text style={[styles.iconButtonText, { color: colors.text }]}>
@@ -812,10 +815,7 @@ const WebCropModal: React.FC<WebCropModalProps> = ({
             </TouchableOpacity>
             <TouchableOpacity
               onPress={() => handleRotate(90)}
-              style={[
-                styles.iconButton,
-                { backgroundColor: colors.backgroundSecondary },
-              ]}
+              style={[styles.iconButton, { backgroundColor: colors.secondary }]}
               disabled={processing || !imageLoaded}
             >
               <Text style={[styles.iconButtonText, { color: colors.text }]}>
@@ -848,8 +848,8 @@ const WebCropModal: React.FC<WebCropModalProps> = ({
                       (item.value !== undefined &&
                         aspectRatio !== undefined &&
                         Math.abs(aspectRatio - item.value) < 0.01)
-                        ? colors.tint
-                        : colors.backgroundSecondary,
+                        ? colors.primary
+                        : colors.secondary,
                   },
                 ]}
                 disabled={processing}
@@ -899,7 +899,7 @@ const WebCropModal: React.FC<WebCropModalProps> = ({
             style={[
               styles.button,
               styles.resetButton,
-              { backgroundColor: colors.backgroundSecondary },
+              { backgroundColor: colors.secondary },
               processing && styles.disabledButton,
             ]}
           >
@@ -914,7 +914,7 @@ const WebCropModal: React.FC<WebCropModalProps> = ({
             style={[
               styles.button,
               styles.saveButton,
-              { backgroundColor: colors.tint },
+              { backgroundColor: colors.primary },
               (processing || !imageLoaded) && styles.disabledButton,
             ]}
           >
@@ -950,10 +950,10 @@ const WebCropModal: React.FC<WebCropModalProps> = ({
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.8)",
+    backgroundColor: withOpacity(baseColors.black, 0.8),
     justifyContent: "center",
     alignItems: "center",
-    padding: 20,
+    padding: spacing.xl,
   } as ViewStyle,
   webOverlay: {
     ...(Platform.OS === "web"
@@ -969,7 +969,7 @@ const styles = StyleSheet.create({
   } as ViewStyle,
   container: {
     borderRadius: 16,
-    padding: 20,
+    padding: spacing.xl,
     maxWidth: 550,
     width: "100%",
   } as ViewStyle,
@@ -977,14 +977,14 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 8,
+    marginBottom: spacing.sm,
   } as ViewStyle,
   title: {
     fontSize: 20,
     fontWeight: "700",
   } as TextStyle,
   closeButton: {
-    padding: 8,
+    padding: spacing.sm,
   } as ViewStyle,
   closeText: {
     fontSize: 20,
@@ -992,16 +992,16 @@ const styles = StyleSheet.create({
   description: {
     fontSize: 14,
     textAlign: "center",
-    marginBottom: 12,
+    marginBottom: spacing.md,
   } as TextStyle,
   actions: {
     flexDirection: "row",
     justifyContent: "flex-end",
-    gap: 10,
+    gap: spacing.md,
   } as ViewStyle,
   button: {
-    paddingHorizontal: 16,
-    paddingVertical: 10,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
     borderRadius: 8,
     justifyContent: "center",
     alignItems: "center",
@@ -1027,21 +1027,21 @@ const styles = StyleSheet.create({
     opacity: 0.5,
   } as ViewStyle,
   controlSection: {
-    marginBottom: 12,
+    marginBottom: spacing.md,
   } as ViewStyle,
   sectionLabel: {
     fontSize: 13,
     fontWeight: "600",
-    marginBottom: 6,
+    marginBottom: spacing.sm,
   } as TextStyle,
   buttonRow: {
     flexDirection: "row",
-    gap: 8,
+    gap: spacing.sm,
     flexWrap: "wrap",
   } as ViewStyle,
   iconButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
     borderRadius: 8,
     justifyContent: "center",
     alignItems: "center",
@@ -1051,8 +1051,8 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   } as TextStyle,
   aspectButton: {
-    paddingHorizontal: 14,
-    paddingVertical: 8,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
     borderRadius: 8,
     justifyContent: "center",
     alignItems: "center",

@@ -1,6 +1,6 @@
+import { withOpacity, spacing } from "@/src/design-system";
+import { useStyles } from "react-native-unistyles";
 import { IconSymbol } from "@/components/ui/icon-symbol";
-import { Colors } from "@/constants/theme";
-import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useToast } from "@/hooks/useToast";
 import { VehicleService } from "@/lib/services/vehicleService";
 import { ServiceItemFormData, ServiceTemplateFormData } from "@/types";
@@ -29,8 +29,8 @@ export default function AddServiceScreen() {
     ],
   });
   const [loading, setLoading] = useState(false);
-  const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? "light"];
+  const { theme } = useStyles();
+  const colors = theme.colors;
   const { showSuccess, showError } = useToast();
 
   const calculateTotalCost = (items: ServiceItemFormData[]): number => {
@@ -141,7 +141,7 @@ export default function AddServiceScreen() {
             value={item.description}
             onChangeText={(text) => updateItem(index, "description", text)}
             placeholder="e.g., Engine Oil (5L)"
-            placeholderTextColor={colors.icon}
+            placeholderTextColor={colors.textSecondary}
           />
         </View>
 
@@ -155,7 +155,7 @@ export default function AddServiceScreen() {
               updateItem(index, "price", price);
             }}
             placeholder="0.00"
-            placeholderTextColor={colors.icon}
+            placeholderTextColor={colors.textSecondary}
             keyboardType="numeric"
           />
         </View>
@@ -171,14 +171,14 @@ export default function AddServiceScreen() {
     header: {
       flexDirection: "row",
       alignItems: "center",
-      paddingHorizontal: 20,
-      paddingVertical: 16,
+      paddingHorizontal: spacing.xl,
+      paddingVertical: spacing.lg,
       borderBottomWidth: 1,
-      borderBottomColor: colors.icon + "20",
+      borderBottomColor: withOpacity(colors.textSecondary, 0.12),
     },
     backButton: {
-      marginRight: 16,
-      padding: 4,
+      marginRight: spacing.lg,
+      padding: spacing.xs,
     },
     title: {
       fontSize: 24,
@@ -187,13 +187,13 @@ export default function AddServiceScreen() {
       flex: 1,
     },
     saveButton: {
-      backgroundColor: colors.tint,
-      paddingHorizontal: 16,
-      paddingVertical: 8,
+      backgroundColor: colors.primary,
+      paddingHorizontal: spacing.lg,
+      paddingVertical: spacing.sm,
       borderRadius: 8,
       flexDirection: "row",
       alignItems: "center",
-      gap: 6,
+      gap: spacing.sm,
     },
     saveButtonDisabled: {
       opacity: 0.6,
@@ -207,24 +207,24 @@ export default function AddServiceScreen() {
       flex: 1,
     },
     scrollContent: {
-      padding: 20,
+      padding: spacing.xl,
     },
     formCard: {
       backgroundColor: colors.background,
       borderRadius: 12,
-      padding: 20,
+      padding: spacing.xl,
       borderWidth: 1,
-      borderColor: colors.icon + "20",
-      marginBottom: 20,
+      borderColor: withOpacity(colors.textSecondary, 0.12),
+      marginBottom: spacing.xl,
     },
     inputContainer: {
-      marginBottom: 20,
+      marginBottom: spacing.xl,
     },
     label: {
       fontSize: 16,
       fontWeight: "500",
       color: colors.text,
-      marginBottom: 8,
+      marginBottom: spacing.sm,
     },
     requiredLabel: {
       color: colors.error,
@@ -232,10 +232,10 @@ export default function AddServiceScreen() {
     input: {
       backgroundColor: colors.background,
       borderWidth: 1,
-      borderColor: colors.icon,
+      borderColor: colors.textSecondary,
       borderRadius: 8,
-      paddingHorizontal: 16,
-      paddingVertical: 12,
+      paddingHorizontal: spacing.lg,
+      paddingVertical: spacing.md,
       fontSize: 16,
       color: colors.text,
     },
@@ -244,27 +244,27 @@ export default function AddServiceScreen() {
       textAlignVertical: "top",
     },
     itemsSection: {
-      marginBottom: 20,
+      marginBottom: spacing.xl,
     },
     sectionTitle: {
       fontSize: 18,
       fontWeight: "600",
       color: colors.text,
-      marginBottom: 16,
+      marginBottom: spacing.lg,
     },
     serviceItem: {
       backgroundColor: colors.background,
       borderWidth: 1,
-      borderColor: colors.icon + "30",
+      borderColor: withOpacity(colors.textSecondary, 0.19),
       borderRadius: 8,
-      padding: 16,
-      marginBottom: 12,
+      padding: spacing.lg,
+      marginBottom: spacing.md,
     },
     serviceItemHeader: {
       flexDirection: "row",
       justifyContent: "space-between",
       alignItems: "center",
-      marginBottom: 12,
+      marginBottom: spacing.md,
     },
     serviceItemTitle: {
       fontSize: 14,
@@ -272,10 +272,10 @@ export default function AddServiceScreen() {
       color: colors.text,
     },
     removeItemButton: {
-      padding: 4,
+      padding: spacing.xs,
     },
     serviceItemContent: {
-      gap: 12,
+      gap: spacing.md,
     },
     serviceItemDescriptionContainer: {
       flex: 1,
@@ -287,55 +287,55 @@ export default function AddServiceScreen() {
       fontSize: 14,
       fontWeight: "500",
       color: colors.text,
-      marginBottom: 6,
+      marginBottom: spacing.sm,
     },
     serviceItemInput: {
       backgroundColor: colors.background,
       borderWidth: 1,
-      borderColor: colors.icon + "50",
+      borderColor: withOpacity(colors.textSecondary, 0.31),
       borderRadius: 6,
-      paddingHorizontal: 12,
-      paddingVertical: 8,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.sm,
       fontSize: 14,
       color: colors.text,
     },
     addItemButton: {
       backgroundColor: colors.background,
       borderWidth: 2,
-      borderColor: colors.tint,
+      borderColor: colors.primary,
       borderStyle: "dashed",
       borderRadius: 8,
-      padding: 16,
+      padding: spacing.lg,
       alignItems: "center",
       flexDirection: "row",
       justifyContent: "center",
-      gap: 8,
+      gap: spacing.sm,
     },
     addItemButtonText: {
-      color: colors.tint,
+      color: colors.primary,
       fontSize: 14,
       fontWeight: "500",
     },
     totalSection: {
-      backgroundColor: colors.tint + "10",
+      backgroundColor: withOpacity(colors.primary, 0.06),
       borderRadius: 8,
-      padding: 16,
+      padding: spacing.lg,
       alignItems: "center",
     },
     totalLabel: {
       fontSize: 14,
       color: colors.text,
-      marginBottom: 4,
+      marginBottom: spacing.xs,
     },
     totalCost: {
       fontSize: 24,
       fontWeight: "bold",
-      color: colors.tint,
+      color: colors.primary,
     },
     helpText: {
       fontSize: 12,
-      color: colors.icon,
-      marginTop: 4,
+      color: colors.textSecondary,
+      marginTop: spacing.xs,
       lineHeight: 16,
     },
   });
@@ -390,7 +390,7 @@ export default function AddServiceScreen() {
                   setFormData((prev) => ({ ...prev, name: text }))
                 }
                 placeholder="e.g., Basic Oil Change"
-                placeholderTextColor={colors.icon}
+                placeholderTextColor={colors.textSecondary}
               />
             </View>
 
@@ -403,7 +403,7 @@ export default function AddServiceScreen() {
                   setFormData((prev) => ({ ...prev, description: text }))
                 }
                 placeholder="Optional description of the service..."
-                placeholderTextColor={colors.icon}
+                placeholderTextColor={colors.textSecondary}
                 multiline
                 textAlignVertical="top"
               />
@@ -418,7 +418,7 @@ export default function AddServiceScreen() {
             ))}
 
             <TouchableOpacity style={styles.addItemButton} onPress={addItem}>
-              <IconSymbol name="plus" size={16} color={colors.tint} />
+              <IconSymbol name="plus" size={16} color={colors.primary} />
               <Text style={styles.addItemButtonText}>Add Item</Text>
             </TouchableOpacity>
           </View>

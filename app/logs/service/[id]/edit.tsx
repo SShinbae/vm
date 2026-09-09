@@ -1,3 +1,6 @@
+import { withOpacity, spacing } from "@/src/design-system";
+import { useColorScheme } from "@/hooks/use-color-scheme";
+import { useStyles } from "react-native-unistyles";
 import { Button } from "@/components/ui/Button";
 import { DatePicker } from "@/components/ui/DatePicker";
 import { IconSymbol } from "@/components/ui/icon-symbol";
@@ -11,8 +14,6 @@ import {
   createDefaultServiceItems,
   validateServiceItems,
 } from "@/components/ui/ServiceItemsInput";
-import { Colors } from "@/constants/theme";
-import { useColorScheme } from "@/hooks/use-color-scheme";
 import { ServiceLogService } from "@/lib/services/loggingService";
 import {
   OCRExtractedData,
@@ -93,8 +94,9 @@ export default function EditServiceLogScreen() {
   const [dataLoading, setDataLoading] = useState(true);
   const { showSuccess, showError } = useToast();
   const posthog = usePostHog();
+  const { theme } = useStyles();
   const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? "light"];
+  const colors = theme.colors;
   const isWeb = Platform.OS === "web";
 
   useEffect(() => {
@@ -237,7 +239,9 @@ export default function EditServiceLogScreen() {
               name={type.icon as any}
               size={20}
               color={
-                formData.service_type === type.value ? colors.tint : colors.icon
+                formData.service_type === type.value
+                  ? colors.primary
+                  : colors.textSecondary
               }
             />
             <Text
@@ -263,15 +267,15 @@ export default function EditServiceLogScreen() {
     header: {
       flexDirection: "row",
       alignItems: "center",
-      paddingHorizontal: 20,
-      paddingVertical: 16,
+      paddingHorizontal: spacing.xl,
+      paddingVertical: spacing.lg,
       borderBottomWidth: 1,
-      borderBottomColor: colors.icon + "20",
+      borderBottomColor: withOpacity(colors.textSecondary, 0.12),
       backgroundColor: colors.background,
     },
     backButton: {
-      marginRight: 16,
-      padding: 4,
+      marginRight: spacing.lg,
+      padding: spacing.xs,
     },
     headerTitle: {
       fontSize: 24,
@@ -284,7 +288,7 @@ export default function EditServiceLogScreen() {
     },
     scrollContent: {
       padding: isWeb ? 40 : 20,
-      paddingBottom: 100,
+      paddingBottom: spacing.xxxl,
       ...(isWeb && {
         maxWidth: 600,
         width: "100%",
@@ -295,13 +299,13 @@ export default function EditServiceLogScreen() {
       fontSize: 32,
       fontWeight: "bold",
       color: colors.text,
-      marginBottom: 8,
+      marginBottom: spacing.sm,
       textAlign: isWeb ? "center" : "left",
     },
     subtitle: {
       fontSize: 16,
-      color: colors.icon,
-      marginBottom: 32,
+      color: colors.textSecondary,
+      marginBottom: spacing.xxl,
       textAlign: isWeb ? "center" : "left",
     },
     card: {
@@ -309,7 +313,8 @@ export default function EditServiceLogScreen() {
       borderRadius: isWeb ? 16 : 12,
       padding: isWeb ? 32 : 20,
       ...(isWeb && {
-        shadowColor: colorScheme === "dark" ? "#ffffff" : "#000000",
+        shadowColor:
+          colorScheme === "dark" ? theme.colors.white : theme.colors.black,
         shadowOffset: {
           width: 0,
           height: 4,
@@ -320,29 +325,29 @@ export default function EditServiceLogScreen() {
       }),
     },
     section: {
-      marginBottom: 24,
+      marginBottom: spacing.xl,
     },
     sectionTitle: {
       fontSize: 18,
       fontWeight: "600",
       color: colors.text,
-      marginBottom: 16,
+      marginBottom: spacing.lg,
     },
     inputContainer: {
-      marginBottom: 20,
+      marginBottom: spacing.xl,
     },
     label: {
       fontSize: 16,
       fontWeight: "500",
       color: colors.text,
-      marginBottom: 8,
+      marginBottom: spacing.sm,
     },
     requiredLabel: {
-      color: "#ff4444",
+      color: theme.colors.error,
     },
     row: {
       flexDirection: isWeb ? "row" : "column",
-      gap: 16,
+      gap: spacing.lg,
     },
     flex1: {
       flex: 1,
@@ -353,18 +358,18 @@ export default function EditServiceLogScreen() {
       alignItems: "center",
     },
     vehicleInfo: {
-      backgroundColor: colors.icon + "10",
+      backgroundColor: withOpacity(colors.textSecondary, 0.06),
       borderRadius: 8,
-      padding: 12,
+      padding: spacing.md,
       flexDirection: "row",
       alignItems: "center",
-      gap: 12,
+      gap: spacing.md,
     },
     vehicleIcon: {
       width: 32,
       height: 32,
       borderRadius: 16,
-      backgroundColor: colors.tint,
+      backgroundColor: colors.primary,
       alignItems: "center",
       justifyContent: "center",
     },
@@ -375,29 +380,29 @@ export default function EditServiceLogScreen() {
     },
     vehiclePlate: {
       fontSize: 14,
-      color: colors.icon,
-      marginTop: 2,
+      color: colors.textSecondary,
+      marginTop: spacing.xs,
     },
     serviceTypeGrid: {
       flexDirection: "row",
       flexWrap: "wrap",
-      gap: 12,
+      gap: spacing.md,
     },
     serviceTypeOption: {
       flexDirection: "row",
       alignItems: "center",
       backgroundColor: colors.background,
       borderWidth: 1,
-      borderColor: colors.icon + "30",
+      borderColor: withOpacity(colors.textSecondary, 0.19),
       borderRadius: 8,
-      paddingHorizontal: 12,
-      paddingVertical: 8,
-      gap: 8,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.sm,
+      gap: spacing.sm,
       minWidth: "45%",
     },
     serviceTypeOptionSelected: {
-      borderColor: colors.tint,
-      backgroundColor: colors.tint + "10",
+      borderColor: colors.primary,
+      backgroundColor: withOpacity(colors.primary, 0.06),
     },
     serviceTypeText: {
       fontSize: 14,
@@ -405,12 +410,12 @@ export default function EditServiceLogScreen() {
       color: colors.text,
     },
     serviceTypeTextSelected: {
-      color: colors.tint,
+      color: colors.primary,
     },
     buttonContainer: {
       flexDirection: "row",
-      gap: 12,
-      marginTop: 32,
+      gap: spacing.md,
+      marginTop: spacing.xxl,
     },
     cancelButton: {
       flex: 1,

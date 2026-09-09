@@ -1,3 +1,4 @@
+import { useStyles } from "react-native-unistyles";
 import { Tabs } from "expo-router";
 import React from "react";
 import { Platform, StyleSheet, View } from "react-native";
@@ -5,16 +6,16 @@ import { Platform, StyleSheet, View } from "react-native";
 import { ResponsiveTabBar } from "@/components/navigation/ResponsiveTabBar";
 import { WebSidebar } from "@/components/navigation/WebSidebar";
 import { IconSymbol } from "@/components/ui/icon-symbol";
-import { Colors } from "@/constants/theme";
-import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useKeyboardShortcuts } from "@/hooks/use-keyboard-shortcuts";
 import { useResponsiveLayout } from "@/hooks/use-responsive-layout";
+import { useNotifications } from "@/lib/contexts/NotificationContext";
 import { SidebarProvider, useSidebar } from "@/lib/contexts/SidebarContext";
 
 function TabLayoutContent() {
-  const colorScheme = useColorScheme();
+  const { theme } = useStyles();
   const layout = useResponsiveLayout();
   const { toggle, isOpen } = useSidebar();
+  const { unreadCount } = useNotifications();
 
   // Add keyboard shortcuts
   useKeyboardShortcuts({
@@ -45,7 +46,7 @@ function TabLayoutContent() {
             showTabBar ? <ResponsiveTabBar {...props} /> : null
           }
           screenOptions={{
-            tabBarActiveTintColor: Colors[colorScheme ?? "light"].tint,
+            tabBarActiveTintColor: theme.colors.primary,
             headerShown: false,
           }}
         >
@@ -91,6 +92,17 @@ function TabLayoutContent() {
               tabBarIcon: ({ color, size }) => (
                 <IconSymbol name="doc.text.fill" size={size} color={color} />
               ),
+            }}
+          />
+          <Tabs.Screen
+            name="notifications"
+            options={{
+              title: "Notifications",
+              tabBarLabel: "Notifications",
+              tabBarIcon: ({ color, size }) => (
+                <IconSymbol name="bell.fill" size={size} color={color} />
+              ),
+              tabBarBadge: unreadCount > 0 ? unreadCount : undefined,
             }}
           />
           <Tabs.Screen

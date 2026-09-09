@@ -28,6 +28,7 @@ try {
     .addBreakpoints(breakpoints)
     .addConfig({
       adaptiveThemes: false, // Manually controlled via ThemeContext
+      initialTheme: "light", // Required before ThemeContext can sync the saved preference
     });
 } catch (error) {
   // Silent fail in production - app will use default React Native styling

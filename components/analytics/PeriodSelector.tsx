@@ -1,3 +1,4 @@
+import { baseColors, withOpacity } from "@/src/design-system";
 import React, { useState } from "react";
 import { View, Text, TouchableOpacity, Modal, FlatList } from "react-native";
 import { createStyleSheet, useStyles } from "react-native-unistyles";
@@ -152,7 +153,7 @@ const stylesheet = createStyleSheet((theme) => ({
     padding: theme.spacing.md,
     borderRadius: theme.borderRadius.lg,
     marginBottom: theme.spacing.md,
-    shadowColor: "#000",
+    shadowColor: theme.colors.black,
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
     shadowRadius: 2,
@@ -173,7 +174,7 @@ const stylesheet = createStyleSheet((theme) => ({
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    backgroundColor: withOpacity(baseColors.black, 0.5),
     justifyContent: "flex-end",
   },
   modalContent: {

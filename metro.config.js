@@ -41,8 +41,6 @@ config.resolver = {
       // Stub out native-only packages that have .web.tsx alternatives or aren't needed on web
       const nativeOnlyPackages = [
         "react-native-chart-kit",
-        "victory-native",
-        "@shopify/react-native-skia",
         "react-image-crop",
         "sharp",
       ];

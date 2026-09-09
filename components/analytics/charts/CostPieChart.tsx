@@ -8,6 +8,7 @@ import { Dimensions, Text, View } from "react-native";
 import { PieChart } from "react-native-chart-kit";
 import { createStyleSheet, useStyles } from "react-native-unistyles";
 import { ChartLegend, LegendItem } from "./ChartLegend";
+import { withOpacity, spacing } from "@/src/design-system";
 
 interface CostPieChartProps {
   totalFuelCost: number;
@@ -61,7 +62,7 @@ export function CostPieChart({
   ];
 
   const chartConfig = {
-    color: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
+    color: (opacity = 1) => withOpacity(theme.colors.text, opacity),
   };
 
   const legendItems: LegendItem[] = [
@@ -127,7 +128,7 @@ const stylesheet = createStyleSheet((theme) => ({
   centerLabelTitle: {
     fontSize: theme.fontSize.sm,
     color: theme.colors.textSecondary,
-    marginBottom: 4,
+    marginBottom: spacing.xs,
   },
   centerLabelValue: {
     fontSize: theme.fontSize.lg,

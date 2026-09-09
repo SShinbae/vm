@@ -1,3 +1,4 @@
+import { withOpacity, spacing } from "@/src/design-system";
 import { Ionicons } from "@expo/vector-icons";
 import React from "react";
 import { Text, View } from "react-native";
@@ -16,33 +17,26 @@ interface MetricCardProps {
   color?: string;
 }
 
-// Map icon names to their background colors
+// Map icon names onto the theme's analytics palette.
+// These tokens already have light/dark variants, so the chip follows the scheme.
+// The icon duplicates the visible title, so it is decorative rather than
+// information-carrying.
 const getIconColors = (icon: string | undefined, theme: any) => {
+  const chip = (hex: string) => ({ bg: withOpacity(hex, 0.12), color: hex });
+
   switch (icon) {
     case "cash-outline":
-      return {
-        bg: theme.colors.green?.[100] || "#d1fae5",
-        color: theme.colors.green?.[600] || "#059669",
-      };
+      return chip(theme.colors.analytics.cost);
     case "speedometer-outline":
-      return {
-        bg: theme.colors.indigo?.[100] || "#e0e7ff",
-        color: theme.colors.indigo?.[600] || "#4f46e5",
-      };
+      return chip(theme.colors.analytics.neutral);
     case "water-outline":
-      return {
-        bg: theme.colors.blue?.[100] || "#dbeafe",
-        color: theme.colors.blue?.[600] || "#2563eb",
-      };
+      return chip(theme.colors.analytics.fuel);
     case "build-outline":
-      return {
-        bg: theme.colors.amber?.[100] || "#fef3c7",
-        color: theme.colors.amber?.[600] || "#d97706",
-      };
+      return chip(theme.colors.analytics.service);
     default:
       return {
-        bg: theme.colors.gray?.[100] || "#f3f4f6",
-        color: theme.colors.gray?.[600] || "#4b5563",
+        bg: theme.colors.gray[100],
+        color: theme.colors.gray[600],
       };
   }
 };
@@ -112,7 +106,7 @@ const stylesheet = createStyleSheet((theme) => ({
     backgroundColor: theme.colors.surface,
     borderRadius: theme.borderRadius.lg,
     padding: theme.spacing.lg,
-    shadowColor: "#000",
+    shadowColor: theme.colors.black,
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
     shadowRadius: 2,
@@ -147,17 +141,17 @@ const stylesheet = createStyleSheet((theme) => ({
     fontSize: theme.fontSize.sm,
     color: theme.colors.textSecondary,
     fontWeight: theme.fontWeight.medium,
-    marginBottom: 4,
+    marginBottom: spacing.xs,
   },
   titleMobile: {
     fontSize: theme.fontSize.xs,
-    marginBottom: 2,
+    marginBottom: spacing.xs,
   },
   value: {
     fontSize: theme.fontSize["2xl"],
     color: theme.colors.text,
     fontWeight: theme.fontWeight.bold,
-    marginBottom: 2,
+    marginBottom: spacing.xs,
     flexWrap: "nowrap",
     flexShrink: 1,
   },

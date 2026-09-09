@@ -1,16 +1,15 @@
-import { Colors } from "@/constants/theme";
-import { useColorScheme } from "@/hooks/use-color-scheme";
+import { useStyles } from "react-native-unistyles";
 import { Stack } from "expo-router";
 
 export default function FuelLogsLayout() {
-  const colorScheme = useColorScheme();
+  const { theme } = useStyles();
 
   return (
     <Stack
       screenOptions={{
         headerShown: false,
         contentStyle: {
-          backgroundColor: Colors[colorScheme ?? "light"].background,
+          backgroundColor: theme.colors.background,
         },
       }}
     >
@@ -21,7 +20,7 @@ export default function FuelLogsLayout() {
           presentation: "card",
           animation: "slide_from_right",
           contentStyle: {
-            backgroundColor: Colors[colorScheme ?? "light"].background,
+            backgroundColor: theme.colors.background,
           },
         }}
       />

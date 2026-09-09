@@ -1,6 +1,6 @@
+import { withOpacity, spacing } from "@/src/design-system";
+import { useStyles } from "react-native-unistyles";
 import { Skeleton, SkeletonDashboard } from "@/components/ui/Skeleton";
-import { Colors } from "@/constants/theme";
-import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useResponsiveLayout } from "@/hooks/use-responsive-layout";
 import { useAuth } from "@/lib/contexts/AuthContext";
 import { useDemoMode } from "@/lib/contexts/DemoContext";
@@ -204,8 +204,8 @@ export function AuthGuard({ children }: AuthGuardProps) {
   const { user, loading, initialized, isPasswordRecovery } = useAuth();
   const { isDemoMode } = useDemoMode();
   const segments = useSegments();
-  const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme];
+  const { theme } = useStyles();
+  const colors = theme.colors;
 
   const [redirectState, setRedirectState] = useState<RedirectState>({
     hasRedirected: false,
@@ -453,12 +453,14 @@ export function AuthGuard({ children }: AuthGuardProps) {
               styles.skeletonSidebar,
               {
                 backgroundColor: colors.background,
-                borderRightColor: colors.icon + "20",
+                borderRightColor: withOpacity(colors.textSecondary, 0.12),
               },
             ]}
           >
             <Skeleton width={24} height={24} borderRadius={12} />
-            <View style={{ flex: 1, justifyContent: "center", gap: 20 }}>
+            <View
+              style={{ flex: 1, justifyContent: "center", gap: spacing.xl }}
+            >
               {[1, 2, 3, 4, 5].map((i) => (
                 <Skeleton
                   key={i}
@@ -505,12 +507,14 @@ export function AuthGuard({ children }: AuthGuardProps) {
               styles.skeletonSidebar,
               {
                 backgroundColor: colors.background,
-                borderRightColor: colors.icon + "20",
+                borderRightColor: withOpacity(colors.textSecondary, 0.12),
               },
             ]}
           >
             <Skeleton width={24} height={24} borderRadius={12} />
-            <View style={{ flex: 1, justifyContent: "center", gap: 20 }}>
+            <View
+              style={{ flex: 1, justifyContent: "center", gap: spacing.xl }}
+            >
               {[1, 2, 3, 4, 5].map((i) => (
                 <Skeleton
                   key={i}
@@ -559,7 +563,7 @@ const styles = StyleSheet.create({
   skeletonSidebar: {
     width: 60,
     alignItems: "center",
-    paddingVertical: 16,
+    paddingVertical: spacing.lg,
     borderRightWidth: 1,
     ...(Platform.OS === "web"
       ? ({
@@ -573,6 +577,6 @@ const styles = StyleSheet.create({
   },
   skeletonContent: {
     flex: 1,
-    marginLeft: 60,
+    marginLeft: spacing.xxxl,
   },
 });

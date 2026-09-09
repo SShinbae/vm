@@ -1,3 +1,4 @@
+import { withOpacity, spacing } from "@/src/design-system";
 import React from "react";
 import { Platform, Text, TouchableOpacity, View } from "react-native";
 import { useStyles } from "react-native-unistyles";
@@ -46,7 +47,7 @@ function TimeInput({
           value={value}
           onChange={(e) => onChange(e.target.value)}
           style={{
-            padding: 8,
+            padding: spacing.sm,
             borderRadius: 8,
             border: `1px solid ${theme.colors.border}`,
             backgroundColor: theme.colors.surface,
@@ -95,7 +96,7 @@ function TimeInput({
             width: 32,
             height: 32,
             borderRadius: 16,
-            backgroundColor: theme.colors.primary + "15",
+            backgroundColor: withOpacity(theme.colors.primary, 0.08),
             alignItems: "center",
             justifyContent: "center",
           }}
@@ -121,7 +122,7 @@ function TimeInput({
             width: 32,
             height: 32,
             borderRadius: 16,
-            backgroundColor: theme.colors.primary + "15",
+            backgroundColor: withOpacity(theme.colors.primary, 0.08),
             alignItems: "center",
             justifyContent: "center",
           }}

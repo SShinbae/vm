@@ -1,3 +1,5 @@
+import { spacing } from "@/src/design-system";
+import { useStyles } from "react-native-unistyles";
 /**
  * Cost Line Chart web implementation using recharts
  * Displays cost trends over time with multiple data series
@@ -15,8 +17,6 @@ import {
   ResponsiveContainer,
   Legend,
 } from "recharts";
-import { useColorScheme } from "@/hooks/use-color-scheme";
-import { Colors } from "@/constants/theme";
 import { CostChartDataPoint } from "../../../types/analytics";
 
 interface CostLineChartProps {
@@ -32,33 +32,33 @@ export function CostLineChart({
   height = 250,
   showLegend = true,
 }: CostLineChartProps) {
-  const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? "light"];
+  const { theme } = useStyles();
+  const colors = theme.colors;
 
-  const costColor = colors.chart?.primary || "#3b82f6";
-  const fuelColor = colors.chart?.fuel || "#f59e0b";
-  const serviceColor = colors.chart?.service || "#10b981";
+  const costColor = colors.primary || theme.colors.info;
+  const fuelColor = colors.analytics.fuel || theme.colors.warning;
+  const serviceColor = colors.analytics.service || theme.colors.success;
 
   const styles = StyleSheet.create({
     container: {
-      marginBottom: 16,
+      marginBottom: spacing.lg,
     },
     title: {
       fontSize: 18,
       fontWeight: "600",
       color: colors.text,
-      marginBottom: 12,
+      marginBottom: spacing.md,
     },
     chartContainer: {
       height: height,
       width: "100%",
-      backgroundColor: colors.card,
+      backgroundColor: colors.surface,
       borderRadius: 12,
-      padding: 16,
+      padding: spacing.lg,
     },
     emptyContainer: {
       height: height,
-      backgroundColor: colors.card,
+      backgroundColor: colors.surface,
       borderRadius: 12,
       justifyContent: "center",
       alignItems: "center",
@@ -97,7 +97,7 @@ export function CostLineChart({
           <LineChart data={chartData}>
             <CartesianGrid
               strokeDasharray="3 3"
-              stroke={colors.chart?.grid || colors.border}
+              stroke={colors.border}
               vertical={false}
             />
             <XAxis
@@ -126,8 +126,8 @@ export function CostLineChart({
               }}
               labelStyle={{ color: colors.text }}
               contentStyle={{
-                backgroundColor: colors.card,
-                border: `1px solid ${colors.cardBorder || colors.border}`,
+                backgroundColor: colors.surface,
+                border: `1px solid ${colors.border}`,
                 borderRadius: "8px",
               }}
             />

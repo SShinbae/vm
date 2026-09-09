@@ -1,3 +1,4 @@
+import { spacing } from "@/src/design-system";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { ConfirmModal } from "@/components/ui/Modal";
 import { useResponsiveLayout } from "@/hooks/use-responsive-layout";
@@ -138,27 +139,27 @@ const stylesheet = createStyleSheet((theme) => ({
   brand: {
     flexDirection: "row",
     alignItems: "center",
-    marginRight: 40,
+    marginRight: spacing.xxxl,
   },
   brandText: {
     fontSize: 20,
     fontWeight: "bold",
     color: theme.colors.text,
-    marginLeft: 8,
+    marginLeft: spacing.sm,
   },
   nav: {
     flex: 1,
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
+    gap: spacing.sm,
   },
   navButton: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 16,
-    paddingVertical: 8,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
     borderRadius: 8,
-    gap: 8,
+    gap: spacing.sm,
   },
   navButtonText: {
     fontSize: 16,
@@ -167,7 +168,7 @@ const stylesheet = createStyleSheet((theme) => ({
   userSection: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 16,
+    gap: spacing.lg,
   },
   userInfo: {
     alignItems: "flex-end",
@@ -184,11 +185,11 @@ const stylesheet = createStyleSheet((theme) => ({
   signOutButton: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
     borderRadius: 6,
     backgroundColor: theme.colors.error,
-    gap: 6,
+    gap: spacing.sm,
   },
   signOutText: {
     color: "white",

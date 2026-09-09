@@ -1,5 +1,5 @@
-import { Colors } from "@/constants/theme";
-import { useColorScheme } from "@/hooks/use-color-scheme";
+import { spacing } from "@/src/design-system";
+import { useStyles } from "react-native-unistyles";
 import {
   checkPasswordRequirements,
   PASSWORD_REQUIREMENTS,
@@ -18,8 +18,8 @@ export function PasswordStrengthIndicator({
   password,
   showRequirements = true,
 }: PasswordStrengthIndicatorProps) {
-  const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? "light"];
+  const { theme } = useStyles();
+  const colors = theme.colors;
 
   const requirements = useMemo(
     () => checkPasswordRequirements(password),
@@ -37,16 +37,11 @@ export function PasswordStrengthIndicator({
     return "weak";
   }, [metCount]);
 
-  const strengthColor = useMemo(() => {
-    switch (strength) {
-      case "strong":
-        return colors.success || "#10B981";
-      case "medium":
-        return colors.warning || "#F59E0B";
-      default:
-        return colors.error || "#EF4444";
-    }
-  }, [strength, colors]);
+  const strengthColor = {
+    strong: colors.success,
+    medium: colors.warning,
+    weak: colors.error,
+  }[strength];
 
   const strengthLabel = useMemo(() => {
     switch (strength) {
@@ -108,7 +103,9 @@ export function PasswordStrengthIndicator({
                   name={isMet ? "checkmark-circle" : "close-circle"}
                   size={16}
                   color={
-                    isMet ? colors.success || "#10B981" : colors.textSecondary
+                    isMet
+                      ? colors.success || theme.colors.success
+                      : colors.textSecondary
                   }
                 />
                 <Text
@@ -133,19 +130,19 @@ export function PasswordStrengthIndicator({
 
 const styles = StyleSheet.create({
   container: {
-    marginTop: 8,
+    marginTop: spacing.sm,
   },
   strengthBarContainer: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 12,
+    marginBottom: spacing.md,
   },
   strengthBarBackground: {
     flex: 1,
     height: 4,
     borderRadius: 2,
     overflow: "hidden",
-    marginRight: 12,
+    marginRight: spacing.md,
   },
   strengthBarFill: {
     height: "100%",
@@ -158,12 +155,12 @@ const styles = StyleSheet.create({
     textAlign: "right",
   },
   requirementsList: {
-    gap: 6,
+    gap: spacing.sm,
   },
   requirementItem: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
+    gap: spacing.sm,
   },
   requirementText: {
     fontSize: 12,

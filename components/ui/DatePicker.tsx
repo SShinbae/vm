@@ -1,3 +1,6 @@
+import { baseColors, withOpacity, spacing } from "@/src/design-system";
+import { useStyles } from "react-native-unistyles";
+import type { ThemeColors } from "@/src/design-system";
 import React, { useState, useCallback } from "react";
 import {
   View,
@@ -11,8 +14,6 @@ import {
 import DateTimePicker from "react-native-ui-datepicker";
 import dayjs from "dayjs";
 import { IconSymbol } from "./icon-symbol";
-import { Colors } from "@/constants/theme";
-import { useColorScheme } from "@/hooks/use-color-scheme";
 
 // Wrapper component that manages its own state to prevent parent re-renders from resetting month
 function StableDateTimePicker({
@@ -22,7 +23,7 @@ function StableDateTimePicker({
 }: {
   initialDate: Date;
   onDateSelect: (date: Date) => void;
-  colors: (typeof Colors)["light"] | (typeof Colors)["dark"];
+  colors: ThemeColors;
 }) {
   const [selectedDate, setSelectedDate] = useState<Date>(initialDate);
 
@@ -44,21 +45,21 @@ function StableDateTimePicker({
       styles={{
         // Selected day styling
         selected: {
-          backgroundColor: colors.tint,
+          backgroundColor: colors.primary,
           borderRadius: 20,
         },
         selected_label: {
-          color: "#fff",
+          color: colors.white,
           fontWeight: "bold",
         },
         // Today styling
         today: {
           borderWidth: 1,
-          borderColor: colors.tint,
+          borderColor: colors.primary,
           borderRadius: 20,
         },
         today_label: {
-          color: colors.tint,
+          color: colors.primary,
         },
         // Day cells
         day: {
@@ -69,11 +70,11 @@ function StableDateTimePicker({
         },
         // Outside days (previous/next month)
         outside_label: {
-          color: colors.icon + "50",
+          color: withOpacity(colors.textSecondary, 0.31),
         },
         // Header styling
         header: {
-          marginBottom: 8,
+          marginBottom: spacing.sm,
         },
         month_selector_label: {
           color: colors.text,
@@ -85,7 +86,7 @@ function StableDateTimePicker({
         },
         // Weekday header
         weekday_label: {
-          color: colors.icon,
+          color: colors.textSecondary,
         },
         // Navigation buttons
         button_prev_image: {
@@ -123,8 +124,8 @@ export function DatePicker({
   );
   // Key to reset DateTimePicker only when modal opens (prevents re-render resets)
   const [pickerKey, setPickerKey] = useState(0);
-  const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? "light"];
+  const { theme } = useStyles();
+  const colors = theme.colors;
   const { width: screenWidth } = useWindowDimensions();
 
   // Responsive breakpoints
@@ -199,12 +200,12 @@ export function DatePicker({
       marginBottom: isSmallScreen ? 6 : 8,
     },
     requiredLabel: {
-      color: "#ff4444",
+      color: theme.colors.error,
     },
     dateButton: {
       backgroundColor: colors.background,
       borderWidth: 1,
-      borderColor: colors.icon,
+      borderColor: colors.textSecondary,
       borderRadius: 8,
       paddingHorizontal: isSmallScreen ? 10 : 16,
       paddingVertical: isSmallScreen ? 10 : 12,
@@ -215,7 +216,7 @@ export function DatePicker({
     },
     dateText: {
       fontSize: isSmallScreen ? 13 : 16,
-      color: value ? colors.text : colors.icon,
+      color: value ? colors.text : colors.textSecondary,
       flex: 1,
     },
     iconContainer: {
@@ -224,7 +225,7 @@ export function DatePicker({
     },
     modalOverlay: {
       flex: 1,
-      backgroundColor: "rgba(0, 0, 0, 0.5)",
+      backgroundColor: withOpacity(baseColors.black, 0.5),
       justifyContent: "center",
       alignItems: "center",
     },
@@ -236,7 +237,7 @@ export function DatePicker({
       maxWidth: 400,
       ...Platform.select({
         ios: {
-          shadowColor: "#000",
+          shadowColor: theme.colors.black,
           shadowOffset: { width: 0, height: 2 },
           shadowOpacity: 0.25,
           shadowRadius: 3.84,
@@ -250,7 +251,7 @@ export function DatePicker({
       flexDirection: "row",
       justifyContent: "space-between",
       alignItems: "center",
-      marginBottom: 16,
+      marginBottom: spacing.lg,
     },
     modalTitle: {
       fontSize: isSmallScreen ? 16 : 18,
@@ -258,26 +259,26 @@ export function DatePicker({
       color: colors.text,
     },
     closeButton: {
-      padding: 4,
+      padding: spacing.xs,
     },
     closeButtonText: {
       fontSize: 24,
-      color: colors.icon,
+      color: colors.textSecondary,
     },
     buttonRow: {
       flexDirection: "row",
       justifyContent: "flex-end",
-      gap: 12,
-      marginTop: 16,
-      paddingTop: 16,
+      gap: spacing.md,
+      marginTop: spacing.lg,
+      paddingTop: spacing.lg,
       borderTopWidth: 1,
-      borderTopColor: colors.icon + "20",
+      borderTopColor: withOpacity(colors.textSecondary, 0.12),
     },
     cancelButton: {
-      paddingVertical: 10,
-      paddingHorizontal: 20,
+      paddingVertical: spacing.md,
+      paddingHorizontal: spacing.xl,
       borderRadius: 8,
-      backgroundColor: colors.icon + "15",
+      backgroundColor: withOpacity(colors.textSecondary, 0.08),
     },
     cancelButtonText: {
       fontSize: 14,
@@ -285,15 +286,15 @@ export function DatePicker({
       color: colors.text,
     },
     confirmButton: {
-      paddingVertical: 10,
-      paddingHorizontal: 20,
+      paddingVertical: spacing.md,
+      paddingHorizontal: spacing.xl,
       borderRadius: 8,
-      backgroundColor: colors.tint,
+      backgroundColor: colors.primary,
     },
     confirmButtonText: {
       fontSize: 14,
       fontWeight: "600",
-      color: "#fff",
+      color: theme.colors.white,
     },
   });
 
@@ -310,7 +311,7 @@ export function DatePicker({
       >
         <Text style={styles.dateText}>{displayValue}</Text>
         <View style={styles.iconContainer}>
-          <IconSymbol name="calendar" size={20} color={colors.icon} />
+          <IconSymbol name="calendar" size={20} color={colors.textSecondary} />
         </View>
       </TouchableOpacity>
 

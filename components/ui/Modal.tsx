@@ -1,5 +1,4 @@
-import { Colors } from "@/constants/theme";
-import { useColorScheme } from "@/hooks/use-color-scheme";
+import { useStyles } from "react-native-unistyles";
 import React from "react";
 import {
   Dimensions,
@@ -16,6 +15,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Button } from "./Button";
 import { IconSymbol } from "./icon-symbol";
+import { baseColors, withOpacity, spacing } from "@/src/design-system";
 
 // Import createPortal for web platform
 let createPortal: any = null;
@@ -86,8 +86,8 @@ function WebModal({
   contentStyle,
   titleStyle,
 }: ModalProps) {
-  const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? "light"];
+  const { theme } = useStyles();
+  const colors = theme.colors;
 
   // Prevent body scroll when modal is open
   React.useEffect(() => {
@@ -107,14 +107,14 @@ function WebModal({
   const getContentStyle = (): ViewStyle => {
     const baseStyle: ViewStyle = {
       backgroundColor: colors.background,
-      borderColor: colors.icon + "20",
+      borderColor: withOpacity(colors.textSecondary, 0.12),
       borderRadius: 12,
       borderWidth: 1,
       overflow: "hidden",
       minWidth: 280,
       maxWidth: "100%",
       position: "relative",
-      boxShadow: "0 10px 25px rgba(0, 0, 0, 0.25)",
+      boxShadow: `0 10px 25px ${withOpacity(baseColors.black, 0.25)}`,
     };
 
     if (variant === "fullscreen") {
@@ -180,7 +180,6 @@ function WebModal({
   const modalContent = (
     <View
       // @ts-ignore - Web-specific className
-      className={`web-modal-overlay ${variant === "bottom-sheet" ? "bottom-sheet" : ""}`}
       style={[
         {
           position: "fixed" as any,
@@ -207,14 +206,13 @@ function WebModal({
       <Pressable
         onPress={handleBackdropPress}
         // @ts-ignore - Web-specific className
-        className="web-modal-backdrop"
         style={{
           position: "absolute" as any,
           top: 0,
           left: 0,
           right: 0,
           bottom: 0,
-          backgroundColor: "rgba(0, 0, 0, 0.5)",
+          backgroundColor: withOpacity(baseColors.black, 0.5),
         }}
         // @ts-ignore - Web-specific props
         aria-hidden={true}
@@ -223,7 +221,6 @@ function WebModal({
       {/* Modal Content */}
       <View
         // @ts-ignore - Web-specific className
-        className={`web-modal-content ${variant === "bottom-sheet" ? "bottom-sheet" : ""}`}
         style={{
           position: "relative" as any,
           zIndex: 1,
@@ -269,8 +266,8 @@ function WebModal({
 }
 
 export function Modal(props: ModalProps) {
-  const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? "light"];
+  const { theme } = useStyles();
+  const colors = theme.colors;
 
   // Use web-specific modal for web platform
   if (Platform.OS === "web") {
@@ -315,7 +312,7 @@ export function Modal(props: ModalProps) {
       styles.content,
       {
         backgroundColor: colors.background,
-        borderColor: colors.icon + "20",
+        borderColor: withOpacity(colors.textSecondary, 0.12),
       },
     ];
 
@@ -442,8 +439,8 @@ export function ConfirmModal({
   variant = "default",
   loading = false,
 }: ConfirmModalProps) {
-  const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? "light"];
+  const { theme } = useStyles();
+  const colors = theme.colors;
 
   const handleConfirm = () => {
     if (!loading) {
@@ -494,8 +491,8 @@ export function AlertModal({
   buttonText = "OK",
   variant = "info",
 }: AlertModalProps) {
-  const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? "light"];
+  const { theme } = useStyles();
+  const colors = theme.colors;
 
   const getIconName = () => {
     switch (variant) {
@@ -551,7 +548,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    padding: 20,
+    padding: spacing.xl,
   },
   fullscreenContainer: {
     padding: 0,
@@ -566,7 +563,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    backgroundColor: withOpacity(baseColors.black, 0.5),
   },
   content: {
     borderRadius: 12,
@@ -576,7 +573,7 @@ const styles = StyleSheet.create({
     maxWidth: "100%",
     ...Platform.select({
       ios: {
-        shadowColor: "#000",
+        shadowColor: baseColors.black,
         shadowOffset: { width: 0, height: 10 },
         shadowOpacity: 0.25,
         shadowRadius: 20,
@@ -607,10 +604,10 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: 20,
-    paddingVertical: 16,
+    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.lg,
     borderBottomWidth: 1,
-    borderBottomColor: "rgba(0, 0, 0, 0.1)",
+    borderBottomColor: withOpacity(baseColors.black, 0.1),
   },
   fullscreenBody: {
     flex: 1,
@@ -619,10 +616,10 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: 20,
-    paddingVertical: 16,
+    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.lg,
     borderBottomWidth: 1,
-    borderBottomColor: "rgba(0, 0, 0, 0.1)",
+    borderBottomColor: withOpacity(baseColors.black, 0.1),
   },
   title: {
     fontSize: 18,
@@ -630,11 +627,11 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   closeButton: {
-    padding: 4,
-    marginLeft: 12,
+    padding: spacing.xs,
+    marginLeft: spacing.md,
   },
   body: {
-    padding: 20,
+    padding: spacing.xl,
   },
   confirmContent: {
     alignItems: "center",
@@ -643,11 +640,11 @@ const styles = StyleSheet.create({
     fontSize: 16,
     lineHeight: 22,
     textAlign: "center",
-    marginBottom: 24,
+    marginBottom: spacing.xl,
   },
   confirmButtons: {
     flexDirection: "row",
-    gap: 12,
+    gap: spacing.md,
     width: "100%",
   },
   confirmButton: {
@@ -657,13 +654,13 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   alertIcon: {
-    marginBottom: 16,
+    marginBottom: spacing.lg,
   },
   alertMessage: {
     fontSize: 16,
     lineHeight: 22,
     textAlign: "center",
-    marginBottom: 24,
+    marginBottom: spacing.xl,
   },
   alertButton: {
     minWidth: 120,

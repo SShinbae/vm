@@ -1,3 +1,4 @@
+import { withOpacity } from "@/src/design-system";
 import React from "react";
 import { Text, TouchableOpacity } from "react-native";
 import { createStyleSheet, useStyles } from "react-native-unistyles";
@@ -20,7 +21,7 @@ export function FuelPriceChip({
   // Use 'primary' color as the tint
   const selectedStyles = isSelected && {
     borderColor: theme.colors.primary,
-    backgroundColor: theme.colors.primary + "15",
+    backgroundColor: withOpacity(theme.colors.primary, 0.08),
   };
 
   return (

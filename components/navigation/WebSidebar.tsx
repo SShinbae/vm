@@ -1,10 +1,12 @@
+import { withOpacity, spacing } from "@/src/design-system";
+import { useStyles } from "react-native-unistyles";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { ConfirmModal } from "@/components/ui/Modal";
+import { SidebarBadge } from "@/components/ui/SidebarBadge";
 import { Tooltip } from "@/components/ui/Tooltip";
-import { Colors } from "@/constants/theme";
-import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useResponsiveLayout } from "@/hooks/use-responsive-layout";
 import { useAuth } from "@/lib/contexts/AuthContext";
+import { useNotifications } from "@/lib/contexts/NotificationContext";
 import { useSidebar } from "@/lib/contexts/SidebarContext";
 import { Image } from "expo-image";
 import { router, usePathname } from "expo-router";
@@ -34,16 +36,23 @@ const NAV_ITEMS: NavItem[] = [
     label: "Analytics",
   },
   { name: "logs", icon: "doc.text.fill", path: "/logs", label: "Logs" },
+  {
+    name: "notifications",
+    icon: "bell.fill",
+    path: "/notifications",
+    label: "Notifications",
+  },
   { name: "profile", icon: "person.fill", path: "/profile", label: "Profile" },
 ];
 
 export function WebSidebar() {
   const layout = useResponsiveLayout();
-  const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? "light"];
+  const { theme } = useStyles();
+  const colors = theme.colors;
   const pathname = usePathname();
   const { user, signOut } = useAuth();
   const { isOpen, toggle } = useSidebar();
+  const { unreadCount } = useNotifications();
   const [showLogoutModal, setShowLogoutModal] = useState(false);
 
   // Hide sidebar on auth pages (login, register)
@@ -85,7 +94,7 @@ export function WebSidebar() {
             styles.navButton,
             showAsBottomBar && isActive && styles.navButtonActiveBottom,
             !showAsBottomBar && {
-              backgroundColor: isActive ? colors.tint : "transparent",
+              backgroundColor: isActive ? colors.primary : "transparent",
               justifyContent: isOpen ? "flex-start" : "center",
               paddingHorizontal: isOpen ? 16 : 12,
             },
@@ -98,17 +107,28 @@ export function WebSidebar() {
         >
           {/* Top accent line for active state on bottom bar */}
           {showAsBottomBar && isActive && <View style={styles.activeTopLine} />}
-          <IconSymbol
-            name={item.icon as any}
-            size={showAsBottomBar ? 22 : 20}
-            color={
-              isActive
-                ? showAsBottomBar
-                  ? colors.tint
-                  : "#ffffff"
-                : colors.textSecondary
-            }
-          />
+          <View style={styles.navIconWrap}>
+            <IconSymbol
+              name={item.icon as any}
+              size={showAsBottomBar ? 22 : 20}
+              color={
+                isActive
+                  ? showAsBottomBar
+                    ? colors.primary
+                    : theme.colors.white
+                  : colors.textSecondary
+              }
+            />
+            {/* Dot indicator when collapsed (desktop sidebar) */}
+            {item.name === "notifications" &&
+              !showAsBottomBar &&
+              !isOpen &&
+              unreadCount > 0 && (
+                <View style={styles.navIconDot}>
+                  <SidebarBadge count={unreadCount} variant="dot" />
+                </View>
+              )}
+          </View>
           {/* Always show labels on bottom bar for corporate clarity */}
           {(showAsBottomBar || isOpen) && (
             <Text
@@ -117,8 +137,8 @@ export function WebSidebar() {
                 {
                   color: isActive
                     ? showAsBottomBar
-                      ? colors.tint
-                      : "#ffffff"
+                      ? colors.primary
+                      : theme.colors.white
                     : colors.textSecondary,
                   fontWeight: isActive ? "600" : "500",
                 },
@@ -131,6 +151,14 @@ export function WebSidebar() {
               {item.label}
             </Text>
           )}
+          {/* Full numeric badge when label is visible */}
+          {item.name === "notifications" &&
+            (showAsBottomBar || isOpen) &&
+            unreadCount > 0 && (
+              <View style={styles.navTrailingBadge}>
+                <SidebarBadge count={unreadCount} variant="full" />
+              </View>
+            )}
         </TouchableOpacity>
       </Tooltip>
     );
@@ -144,8 +172,8 @@ export function WebSidebar() {
           backgroundColor: colors.background,
           borderTopWidth: 1,
           borderTopColor: colors.border,
-          paddingVertical: 8,
-          paddingHorizontal: 16,
+          paddingVertical: spacing.sm,
+          paddingHorizontal: spacing.lg,
           ...Platform.select({
             web: {
               position: "fixed" as any,
@@ -161,8 +189,8 @@ export function WebSidebar() {
           height: "100%",
           backgroundColor: colors.background,
           borderRightWidth: 1,
-          borderRightColor: colors.icon + "20",
-          paddingVertical: 24,
+          borderRightColor: withOpacity(colors.textSecondary, 0.12),
+          paddingVertical: spacing.xl,
           paddingHorizontal: isOpen ? 16 : 8,
           ...Platform.select({
             web: {
@@ -184,7 +212,7 @@ export function WebSidebar() {
       borderRadius: 15,
       backgroundColor: colors.background,
       borderWidth: 1,
-      borderColor: colors.icon + "20",
+      borderColor: withOpacity(colors.textSecondary, 0.12),
       alignItems: "center",
       justifyContent: "center",
       ...Platform.select({
@@ -198,10 +226,10 @@ export function WebSidebar() {
     brand: {
       flexDirection: "row",
       alignItems: "center",
-      marginBottom: 32,
+      marginBottom: spacing.xxl,
       paddingHorizontal: isOpen ? 8 : 0,
       justifyContent: isOpen ? "flex-start" : "center",
-      paddingVertical: 8,
+      paddingVertical: spacing.sm,
       borderRadius: 8,
       ...Platform.select({
         web: {
@@ -214,7 +242,7 @@ export function WebSidebar() {
       fontSize: 18,
       fontWeight: "bold",
       color: colors.text,
-      marginLeft: 8,
+      marginLeft: spacing.sm,
     },
     nav: showAsBottomBar
       ? {
@@ -225,17 +253,17 @@ export function WebSidebar() {
         }
       : {
           flex: 1,
-          gap: 4,
+          gap: spacing.xs,
         },
     navButton: showAsBottomBar
       ? {
           flexDirection: "column",
           alignItems: "center",
           justifyContent: "center",
-          paddingVertical: 8,
-          paddingHorizontal: 8,
+          paddingVertical: spacing.sm,
+          paddingHorizontal: spacing.sm,
           borderRadius: 8,
-          gap: 4,
+          gap: spacing.xs,
           flex: 1,
           minWidth: 0,
           position: "relative",
@@ -243,12 +271,25 @@ export function WebSidebar() {
       : {
           flexDirection: "row",
           alignItems: "center",
-          paddingVertical: 12,
+          paddingVertical: spacing.md,
           borderRadius: 8,
-          gap: 12,
+          gap: spacing.md,
         },
     navButtonActiveBottom: {
-      backgroundColor: colors.tint + "14", // 8% opacity for subtle highlight
+      backgroundColor: withOpacity(colors.primary, 0.08), // 8% opacity for subtle highlight
+    },
+    navIconWrap: {
+      position: "relative",
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    navIconDot: {
+      position: "absolute",
+      top: -2,
+      right: -4,
+    },
+    navTrailingBadge: {
+      marginLeft: "auto",
     },
     activeTopLine: {
       position: "absolute",
@@ -256,7 +297,7 @@ export function WebSidebar() {
       left: "25%",
       width: "50%",
       height: 2,
-      backgroundColor: colors.tint,
+      backgroundColor: colors.primary,
       borderRadius: 1,
     },
     navButtonText: showAsBottomBar
@@ -280,9 +321,9 @@ export function WebSidebar() {
         },
     userSection: {
       borderTopWidth: 1,
-      borderTopColor: colors.icon + "20",
-      paddingTop: 16,
-      gap: 12,
+      borderTopColor: withOpacity(colors.textSecondary, 0.12),
+      paddingTop: spacing.lg,
+      gap: spacing.md,
     },
     signOutButtonContainer: {
       paddingHorizontal: isOpen ? 8 : 0,
@@ -292,11 +333,11 @@ export function WebSidebar() {
       width: isOpen ? "100%" : 32,
       height: 32,
       borderRadius: 16,
-      backgroundColor: "#ff4444",
+      backgroundColor: theme.colors.error,
       flexDirection: "row",
       alignItems: "center",
       justifyContent: "center",
-      gap: 8,
+      gap: spacing.sm,
       ...Platform.select({
         web: {
           // @ts-ignore - web-specific class
@@ -320,12 +361,12 @@ export function WebSidebar() {
       flex: isOpen ? 1 : undefined,
       flexDirection: "column",
       alignItems: "center",
-      gap: 8,
+      gap: spacing.sm,
     },
     userAvatarRow: {
       flexDirection: "row",
       alignItems: "center",
-      gap: 12,
+      gap: spacing.md,
       width: isOpen ? "100%" : undefined,
       justifyContent: "center",
     },
@@ -335,7 +376,7 @@ export function WebSidebar() {
       borderRadius: 16,
       backgroundColor: colors.background,
       borderWidth: 2,
-      borderColor: colors.tint,
+      borderColor: colors.primary,
       alignItems: "center",
       justifyContent: "center",
       overflow: "hidden",
@@ -354,7 +395,7 @@ export function WebSidebar() {
       fontSize: 14,
       fontWeight: "600",
       color: colors.text,
-      marginBottom: 2,
+      marginBottom: spacing.xs,
       ...Platform.select({
         web: {
           overflow: "hidden",
@@ -366,7 +407,7 @@ export function WebSidebar() {
     },
     userEmail: {
       fontSize: 12,
-      color: colors.icon,
+      color: colors.textSecondary,
       ...Platform.select({
         web: {
           overflow: "hidden",
@@ -427,7 +468,7 @@ export function WebSidebar() {
       {/* Brand Section */}
       <Tooltip content="Vehicle Management" position="right" disabled={isOpen}>
         <View style={styles.brand}>
-          <IconSymbol name="car.fill" size={24} color={colors.tint} />
+          <IconSymbol name="car.fill" size={24} color={colors.primary} />
           {isOpen && (
             <Text
               style={[
@@ -501,7 +542,7 @@ export function WebSidebar() {
                     <IconSymbol
                       name="person.fill"
                       size={16}
-                      color={colors.tint}
+                      color={colors.primary}
                     />
                   )}
                 </View>

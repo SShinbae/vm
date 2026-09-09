@@ -1,5 +1,5 @@
-import { Colors } from "@/constants/theme";
-import { useColorScheme } from "@/hooks/use-color-scheme";
+import { spacing } from "@/src/design-system";
+import { useStyles } from "react-native-unistyles";
 import React from "react";
 import {
   ActivityIndicator,
@@ -37,21 +37,21 @@ export function AuthButton({
   fullWidth = true,
   style,
 }: AuthButtonProps) {
-  const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? "light"];
+  const { theme } = useStyles();
+  const colors = theme.colors;
 
   const isDisabled = disabled || loading;
 
   const getBackgroundColor = () => {
     if (variant === "outline") return "transparent";
-    if (variant === "secondary") return colors.card;
+    if (variant === "secondary") return colors.surface;
     return colors.primary;
   };
 
   const getTextColor = () => {
     if (variant === "outline") return colors.primary;
     if (variant === "secondary") return colors.text;
-    return "#FFFFFF";
+    return theme.colors.white;
   };
 
   const getBorderColor = () => {
@@ -63,10 +63,10 @@ export function AuthButton({
     button: {
       backgroundColor: getBackgroundColor(),
       borderRadius: 8,
-      paddingVertical: 16,
+      paddingVertical: spacing.lg,
       alignItems: "center",
       justifyContent: "center",
-      marginBottom: 24,
+      marginBottom: spacing.xl,
       minHeight: 52,
       borderWidth: variant === "outline" ? 2 : 0,
       borderColor: getBorderColor(),
@@ -104,7 +104,7 @@ export function AuthButton({
     >
       {loading ? (
         <ActivityIndicator
-          color={variant === "primary" ? "#FFFFFF" : colors.primary}
+          color={variant === "primary" ? theme.colors.white : colors.primary}
           size="small"
         />
       ) : (

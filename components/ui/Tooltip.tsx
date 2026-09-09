@@ -1,7 +1,7 @@
-import { Colors } from "@/constants/theme";
-import { useColorScheme } from "@/hooks/use-color-scheme";
+import { useStyles } from "react-native-unistyles";
 import React, { useState } from "react";
 import { Platform, StyleSheet, Text, View } from "react-native";
+import { baseColors, withOpacity, spacing } from "@/src/design-system";
 
 interface TooltipProps {
   content: string;
@@ -17,8 +17,8 @@ export function Tooltip({
   disabled = false,
 }: TooltipProps) {
   const [visible, setVisible] = useState(false);
-  const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? "light"];
+  const { theme } = useStyles();
+  const colors = theme.colors;
 
   // Only show tooltip on web and when not disabled
   if (Platform.OS !== "web" || disabled) {
@@ -35,15 +35,27 @@ export function Tooltip({
     if (Platform.OS === "web") {
       switch (position) {
         case "top":
-          return { ...baseStyle, bottom: "100%", marginBottom: 8 } as any;
+          return {
+            ...baseStyle,
+            bottom: "100%",
+            marginBottom: spacing.sm,
+          } as any;
         case "bottom":
-          return { ...baseStyle, top: "100%", marginTop: 8 } as any;
+          return { ...baseStyle, top: "100%", marginTop: spacing.sm } as any;
         case "left":
-          return { ...baseStyle, right: "100%", marginRight: 8 } as any;
+          return {
+            ...baseStyle,
+            right: "100%",
+            marginRight: spacing.sm,
+          } as any;
         case "right":
-          return { ...baseStyle, left: "100%", marginLeft: 8 } as any;
+          return { ...baseStyle, left: "100%", marginLeft: spacing.sm } as any;
         default:
-          return { ...baseStyle, bottom: "100%", marginBottom: 8 } as any;
+          return {
+            ...baseStyle,
+            bottom: "100%",
+            marginBottom: spacing.sm,
+          } as any;
       }
     }
 
@@ -75,8 +87,8 @@ const styles = StyleSheet.create({
   },
   tooltip: {
     position: "absolute",
-    paddingHorizontal: 8,
-    paddingVertical: 4,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
     borderRadius: 4,
     borderWidth: 1,
     zIndex: 1000,
@@ -84,7 +96,7 @@ const styles = StyleSheet.create({
     maxWidth: 200,
     ...Platform.select({
       web: {
-        boxShadow: "0 2px 8px rgba(0, 0, 0, 0.15)",
+        boxShadow: `0 2px 8px ${withOpacity(baseColors.black, 0.15)}`,
       },
     }),
   },

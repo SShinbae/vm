@@ -5,7 +5,7 @@
 import {
   blueBayoux,
   grayDark,
-  semanticColors,
+  darkSemanticColors,
   analyticsColors,
   baseColors,
 } from "../tokens/colors";
@@ -16,10 +16,10 @@ export const darkTheme = {
   colors: {
     primary: blueBayoux[300], // Brighter for dark mode
     secondary: blueBayoux[500],
-    success: semanticColors.success,
-    warning: semanticColors.warning,
-    error: semanticColors.error,
-    info: semanticColors.infoDark, // Lighter blue for dark mode
+    success: darkSemanticColors.success,
+    warning: darkSemanticColors.warning,
+    error: darkSemanticColors.error,
+    info: darkSemanticColors.info,
     background: blueBayoux[950],
     surface: blueBayoux[900],
     text: blueBayoux[50],

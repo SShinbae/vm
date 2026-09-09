@@ -14,13 +14,13 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import Toast from "react-native-toast-message";
 
 import { toastConfig } from "@/components/ui/ToastConfig";
+import { useColorScheme } from "@/hooks/use-color-scheme";
 
 // Import unistyles - theme configuration (already wrapped in try-catch in unistyles.ts)
 import "../unistyles";
 
 import { AuthGuard } from "@/components/AuthGuard";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
-import { useColorScheme } from "@/hooks/use-color-scheme";
 import { AuthProvider } from "@/lib/contexts/AuthContext";
 import { DemoProvider } from "@/lib/contexts/DemoContext";
 import { DialogProvider } from "@/lib/contexts/DialogContext";
@@ -72,7 +72,6 @@ export default function RootLayout() {
 
 function RootLayoutContent() {
   const colorScheme = useColorScheme();
-
   // OPTIMIZATION: Register service worker for asset caching (web only)
   useEffect(() => {
     if (Platform.OS === "web" && "serviceWorker" in navigator) {
@@ -161,13 +160,6 @@ function RootLayoutContent() {
               <Stack.Screen
                 name="modal"
                 options={{ presentation: "modal", title: "Modal" }}
-              />
-              <Stack.Screen
-                name="notifications"
-                options={{
-                  presentation: "modal",
-                  headerShown: false,
-                }}
               />
             </Stack>
           </View>

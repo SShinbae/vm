@@ -8,6 +8,30 @@ module.exports = defineConfig([
     ignores: ["dist/*", ".expo/*"],
   },
   {
+    files: [
+      "app/**/*.{ts,tsx}",
+      "components/**/*.{ts,tsx}",
+      "hooks/**/*.{ts,tsx}",
+    ],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          patterns: [
+            {
+              group: [
+                "@/constants/theme",
+                "@/lib/design-system",
+                "@/lib/design-system/*",
+              ],
+              message: "Use @/src/design-system as the single source of truth.",
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
     // Disable import plugin rules that require native bindings incompatible with Node 18
     rules: {
       "import/namespace": "off",

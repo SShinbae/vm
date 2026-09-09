@@ -1,3 +1,4 @@
+import { withOpacity, spacing } from "@/src/design-system";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { SkeletonList } from "@/components/ui/Skeleton";
 import { useAuth } from "@/lib/contexts/AuthContext";
@@ -99,7 +100,7 @@ export default function GroupsScreen() {
               {isOwner && (
                 <View
                   style={{
-                    backgroundColor: theme.colors.primary + "20",
+                    backgroundColor: withOpacity(theme.colors.primary, 0.12),
                     paddingHorizontal: theme.spacing.sm,
                     paddingVertical: theme.spacing.xs,
                     borderRadius: theme.borderRadius.sm,
@@ -181,7 +182,7 @@ export default function GroupsScreen() {
                     width: 28,
                     height: 28,
                     borderRadius: 14,
-                    backgroundColor: theme.colors.primary + "30",
+                    backgroundColor: withOpacity(theme.colors.primary, 0.19),
                     borderWidth: 2,
                     borderColor: theme.colors.surface,
                     marginLeft: index > 0 ? -8 : 0,
@@ -224,7 +225,7 @@ export default function GroupsScreen() {
                     backgroundColor: theme.colors.surface,
                     borderWidth: 2,
                     borderColor: theme.colors.border,
-                    marginLeft: -8,
+                    marginLeft: -spacing.sm,
                     alignItems: "center",
                     justifyContent: "center",
                   }}
