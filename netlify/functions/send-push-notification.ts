@@ -197,7 +197,7 @@ async function handleGroupInvitation(record: any): Promise<boolean> {
         invitationId: record.id,
       },
       web_url: `${process.env.SITE_URL}/notifications`,
-      app_url: "yourapp://notifications",
+      app_url: "vehiclesmanagement://notifications",
     });
 
     return pushSuccess;
@@ -325,7 +325,7 @@ async function handleLogChange(
           logId: record.id,
         },
         web_url: `${process.env.SITE_URL}/vehicles/${record.vehicle_id}`,
-        app_url: `yourapp://vehicles/${record.vehicle_id}`,
+        app_url: `vehiclesmanagement://vehicles/${record.vehicle_id}`,
       });
     }
 
@@ -437,7 +437,7 @@ async function handleGroupMemberChange(
           userId: record.user_id,
         },
         web_url: `${process.env.SITE_URL}/groups/${record.group_id}`,
-        app_url: `yourapp://groups/${record.group_id}`,
+        app_url: `vehiclesmanagement://groups/${record.group_id}`,
       });
     }
 

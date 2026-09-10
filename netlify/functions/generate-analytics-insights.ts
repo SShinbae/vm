@@ -15,17 +15,16 @@ import {
   isDeduplicated,
   recordDedup,
 } from "./_shared/notifications";
+import { calculateFuelEfficiency } from "../../lib/analytics/calculations";
+import { getPreviousReportingPeriod } from "./_shared/reportingPeriod";
+import type { FuelLog } from "../../types";
 
 export const handler: Handler = async () => {
   console.log("generate-analytics-insights: starting");
 
   try {
     const now = new Date();
-    const isFirstWeekOfMonth = now.getDate() <= 7;
-    const weekKey = `${now.getFullYear()}-W${Math.ceil(((now.getTime() - new Date(now.getFullYear(), 0, 1).getTime()) / 86400000 + 1) / 7)}`;
-    const monthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
-
-    // Get all users with fuel logs
+    // Get all users; users without fuel logs in the reporting period are skipped.
     const { data: users } = await supabaseAdmin.from("profiles").select("id");
 
     if (!users || users.length === 0) {
@@ -38,68 +37,68 @@ export const handler: Handler = async () => {
       const prefs = await getUserPreferences(user.id);
 
       // Check analytics frequency preference
-      const frequency = prefs
-        ? (prefs as any).analytics_frequency || "weekly"
-        : "weekly";
+      const frequency = prefs?.analytics_frequency || "weekly";
 
       if (frequency === "never") continue;
-      if (frequency === "monthly" && !isFirstWeekOfMonth) continue;
+
+      const period = getPreviousReportingPeriod(
+        now,
+        frequency,
+        prefs?.timezone,
+      );
+      if (frequency === "monthly" && period.localDayOfMonth > 7) continue;
 
       const { deliver } = shouldDeliverNotification(prefs, "analytics_insight");
 
-      const dedupKey = `analytics_insight:${frequency === "monthly" ? monthKey : weekKey}`;
+      const dedupKey = `analytics_insight:${frequency}:${period.periodKey}`;
       if (await isDeduplicated(user.id, dedupKey)) continue;
-
-      // Get recent fuel logs for this user (last 30 days)
-      const thirtyDaysAgo = new Date(now);
-      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
       const { data: fuelLogs } = await supabaseAdmin
         .from("fuel_logs")
-        .select("cost, liters_filled, odometer_reading, date")
+        .select(
+          "id, user_id, vehicle_id, cost, liters_filled, odometer_reading, date, location, created_at",
+        )
         .eq("user_id", user.id)
-        .gte("date", thirtyDaysAgo.toISOString().split("T")[0])
+        .gte("date", period.startDate)
+        .lt("date", period.endDate)
         .order("date", { ascending: true });
 
-      if (!fuelLogs || fuelLogs.length < 2) continue;
+      if (!fuelLogs || fuelLogs.length === 0) continue;
 
-      // Calculate total cost and fuel efficiency
       const totalCost = fuelLogs.reduce((sum, log) => sum + (log.cost || 0), 0);
       const totalLiters = fuelLogs.reduce(
         (sum, log) => sum + log.liters_filled,
         0,
       );
-
-      // Calculate km driven (difference between first and last odometer)
-      const firstOdometer = fuelLogs[0].odometer_reading;
-      const lastOdometer = fuelLogs[fuelLogs.length - 1].odometer_reading;
-      const kmDriven = lastOdometer - firstOdometer;
+      const fuelMetrics = calculateFuelEfficiency(fuelLogs as FuelLog[], []);
 
       let title: string;
       let body: string;
       const data: Record<string, any> = {
-        period: frequency === "monthly" ? monthKey : weekKey,
+        period: period.periodKey,
+        periodStart: period.startDate,
+        periodEnd: period.endDate,
         totalCost,
         totalLiters,
         logCount: fuelLogs.length,
       };
 
-      if (kmDriven > 0 && totalLiters > 0) {
-        const efficiency = kmDriven / totalLiters;
+      if (fuelMetrics.totalDistance > 0 && fuelMetrics.averageConsumption > 0) {
+        const efficiency = 100 / fuelMetrics.averageConsumption;
         data.efficiency = Math.round(efficiency * 100) / 100;
-        data.kmDriven = kmDriven;
+        data.kmDriven = fuelMetrics.totalDistance;
 
         title =
           frequency === "monthly"
             ? "Monthly Fuel Report"
             : "Weekly Fuel Summary";
-        body = `${kmDriven.toLocaleString()} km driven, ${efficiency.toFixed(1)} km/L efficiency. Total spent: $${totalCost.toFixed(2)}`;
+        body = `${fuelMetrics.totalDistance.toLocaleString()} km driven, ${efficiency.toFixed(1)} km/L efficiency. Total spent: RM${totalCost.toFixed(2)}`;
       } else {
         title =
           frequency === "monthly"
             ? "Monthly Cost Summary"
             : "Weekly Cost Summary";
-        body = `${fuelLogs.length} fuel entries totaling $${totalCost.toFixed(2)} (${totalLiters.toFixed(1)}L) in the past ${frequency === "monthly" ? "month" : "week"}`;
+        body = `${fuelLogs.length} fuel ${fuelLogs.length === 1 ? "entry" : "entries"} totaling RM${totalCost.toFixed(2)} (${totalLiters.toFixed(1)}L)`;
       }
 
       await createNotificationRecord({
@@ -108,6 +107,7 @@ export const handler: Handler = async () => {
         title,
         body,
         data,
+        actionUrl: "/analytics/fuel",
       });
 
       if (deliver) {
@@ -115,7 +115,11 @@ export const handler: Handler = async () => {
           recipientIds: [user.id],
           title,
           body,
-          data: { type: "analytics_insight" },
+          data: { type: "analytics_insight", period: period.periodKey },
+          webUrl: process.env.SITE_URL
+            ? `${process.env.SITE_URL}/analytics/fuel`
+            : undefined,
+          appUrl: "vehiclesmanagement://analytics/fuel",
         });
       }
 

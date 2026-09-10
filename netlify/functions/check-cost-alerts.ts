@@ -75,6 +75,7 @@ export const handler: Handler = async () => {
         title,
         body,
         data: { totalCost, threshold, month: monthKey },
+        actionUrl: "/analytics/costs",
       });
 
       if (deliver) {
@@ -83,6 +84,10 @@ export const handler: Handler = async () => {
           title,
           body,
           data: { type: "cost_alert", month: monthKey },
+          webUrl: process.env.SITE_URL
+            ? `${process.env.SITE_URL}/analytics/costs`
+            : undefined,
+          appUrl: "vehiclesmanagement://analytics/costs",
         });
       }
 
@@ -135,6 +140,7 @@ export const handler: Handler = async () => {
             title,
             body,
             data: { latestPrice, avgPrice, alertPercentage },
+            actionUrl: "/analytics/costs",
           });
 
           if (deliver) {
@@ -143,6 +149,10 @@ export const handler: Handler = async () => {
               title,
               body,
               data: { type: "cost_alert" },
+              webUrl: process.env.SITE_URL
+                ? `${process.env.SITE_URL}/analytics/costs`
+                : undefined,
+              appUrl: "vehiclesmanagement://analytics/costs",
             });
           }
 
