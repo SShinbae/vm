@@ -44,14 +44,8 @@ export async function fetchAnalyticsData(
       // Use specified vehicle IDs
       targetVehicleIds = vehicleIds;
     } else {
-      // Fetch all user's vehicles
-      const { data: userVehicles, error: vehicleError } = await supabase
-        .from("vehicles")
-        .select("id")
-        .eq("user_id", userId);
-
-      if (vehicleError) throw vehicleError;
-      targetVehicleIds = userVehicles?.map((v: any) => v.id) || [];
+      const accessibleVehicles = await fetchAccessibleVehicles(userId);
+      targetVehicleIds = accessibleVehicles.map((vehicle) => vehicle.id);
     }
 
     if (targetVehicleIds.length === 0) {
