@@ -20,6 +20,7 @@ interface NotificationPreferences {
   invitations_enabled: boolean;
   push_notifications_enabled: boolean;
   in_app_toasts_enabled: boolean;
+  analytics_frequency: "weekly" | "monthly" | "never";
   quiet_hours_enabled: boolean;
   quiet_hours_start: string;
   quiet_hours_end: string;

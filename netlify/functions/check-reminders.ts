@@ -137,6 +137,7 @@ export const handler: Handler = async () => {
           daysUntilDue,
         },
         relatedVehicleId: log.vehicle_id,
+        actionUrl: `/logs/service/${log.id}`,
       });
 
       // Send push only if preferences allow
@@ -148,7 +149,12 @@ export const handler: Handler = async () => {
           data: {
             type: "service_reminder",
             vehicleId: log.vehicle_id,
+            serviceLogId: log.id,
           },
+          webUrl: process.env.SITE_URL
+            ? `${process.env.SITE_URL}/logs/service/${log.id}`
+            : undefined,
+          appUrl: `vehiclesmanagement://logs/service/${log.id}`,
         });
       }
 

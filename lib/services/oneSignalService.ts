@@ -1,6 +1,8 @@
 import Constants from "expo-constants";
 import { Platform } from "react-native";
 import { supabase } from "../../services/supabaseClient";
+import { router } from "expo-router";
+import { getPushNotificationRoute } from "../utils/notificationNavigation";
 
 // Dynamically import OneSignal to handle cases where native module isn't available
 let OneSignal: typeof import("react-native-onesignal").OneSignal | null = null;
@@ -214,26 +216,9 @@ class OneSignalService {
       | Record<string, unknown>
       | undefined;
 
-    if (data?.type && data?.id) {
-      switch (data.type) {
-        case "log_update":
-          if (data.vehicleId) {
-            if (__DEV__) {
-              console.log("Navigate to vehicle:", data.vehicleId);
-            }
-            // Add navigation logic here
-          }
-          break;
-        case "group_invite":
-        case "group_member":
-          if (data.groupId) {
-            if (__DEV__) {
-              console.log("Navigate to group:", data.groupId);
-            }
-            // Add navigation logic here
-          }
-          break;
-      }
+    const route = getPushNotificationRoute(data);
+    if (route) {
+      router.push(route as any);
     }
   }
 
