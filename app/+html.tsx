@@ -18,7 +18,7 @@ export default function Root({ children }: { children: React.ReactNode }) {
         />
         <meta name="robots" content="index, follow" />
         <meta name="theme-color" content={lightTheme.colors.primary} />
-        <link rel="canonical" href="https://vm.wanahnaf.dev" />
+        {/* Canonical is emitted per-route via expo-router/head in _layout.tsx */}
         {/* Open Graph */}
         <meta property="og:type" content="website" />
         <meta property="og:url" content="https://vm.wanahnaf.dev" />

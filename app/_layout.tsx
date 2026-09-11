@@ -4,7 +4,7 @@ import {
   ThemeProvider as NavigationThemeProvider,
 } from "@react-navigation/native";
 import { useFonts } from "expo-font";
-import { Stack } from "expo-router";
+import { Stack, usePathname } from "expo-router";
 import Head from "expo-router/head";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
@@ -103,6 +103,8 @@ function RootLayoutContent() {
     // 'CustomFont': require('../assets/fonts/CustomFont.ttf'),
   });
 
+  const pathname = usePathname();
+
   const onLayoutRootView = useCallback(async () => {
     if (fontsLoaded || fontError) {
       // Hide splash screen once fonts are loaded or if there's an error
@@ -121,6 +123,8 @@ function RootLayoutContent() {
     return null;
   }
 
+  const canonicalUrl = `https://vm.wanahnaf.dev${pathname === "/" ? "" : pathname}`;
+
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <NavigationThemeProvider
@@ -129,6 +133,7 @@ function RootLayoutContent() {
         {Platform.OS === "web" && (
           <Head>
             <title>Vehicle Management</title>
+            <link rel="canonical" href={canonicalUrl} />
             <meta
               name="description"
               content="Track expenses, monitor mileage, analyze fuel consumption, and generate comprehensive reports for your vehicles — all in one powerful platform."
