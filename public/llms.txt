@@ -1,0 +1,9 @@
+# Vehicle Management System
+
+> Track vehicle expenses, monitor mileage, analyze fuel consumption, and generate comprehensive reports for your vehicles — all in one platform.
+
+## Pages
+- [Home](https://vm.wanahnaf.dev/)
+- [Login](https://vm.wanahnaf.dev/login)
+- [Register](https://vm.wanahnaf.dev/register)
+- [Privacy Policy](https://vm.wanahnaf.dev/privacy)

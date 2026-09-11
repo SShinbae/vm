@@ -3,4 +3,7 @@
   <url><loc>https://vm.wanahnaf.dev/</loc><changefreq>monthly</changefreq><priority>1.0</priority></url>
   <url><loc>https://vm.wanahnaf.dev/login</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
   <url><loc>https://vm.wanahnaf.dev/register</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://vm.wanahnaf.dev/forgot-password</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://vm.wanahnaf.dev/reset-password</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://vm.wanahnaf.dev/privacy</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
 </urlset>
