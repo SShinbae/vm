@@ -67,7 +67,7 @@ export const handler: Handler = async () => {
       if (await isDeduplicated(userId, dedupKey)) continue;
 
       const title = "Monthly Spending Alert";
-      const body = `Your fuel spending this month ($${totalCost.toFixed(2)}) has exceeded your threshold ($${threshold.toFixed(2)})`;
+      const body = `Your fuel spending this month (RM${totalCost.toFixed(2)}) has exceeded your threshold (RM${threshold.toFixed(2)})`;
 
       await createNotificationRecord({
         userId,
@@ -132,7 +132,7 @@ export const handler: Handler = async () => {
           const { deliver } = shouldDeliverNotification(prefs, "cost_alert");
 
           const title = "Fuel Price Alert";
-          const body = `Your latest fuel price ($${latestPrice.toFixed(2)}/L) is ${Math.round(((latestPrice - avgPrice) / avgPrice) * 100)}% above your average ($${avgPrice.toFixed(2)}/L)`;
+          const body = `Your latest fuel price (RM${latestPrice.toFixed(2)}/L) is ${Math.round(((latestPrice - avgPrice) / avgPrice) * 100)}% above your average (RM${avgPrice.toFixed(2)}/L)`;
 
           await createNotificationRecord({
             userId,

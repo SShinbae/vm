@@ -627,7 +627,7 @@ export function OCRResultDisplay({
   const formatFieldValue = (key: string, value: any): string => {
     switch (key) {
       case "cost":
-        return value ? `$${value.toFixed(2)}` : "Not detected";
+        return value ? `RM${value.toFixed(2)}` : "Not detected";
       case "service_type":
         return value
           ? value
