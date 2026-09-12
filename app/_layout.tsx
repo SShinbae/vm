@@ -48,6 +48,36 @@ SplashScreen.preventAutoHideAsync();
 
 // Removed unstable_settings to allow index.tsx to control default route
 
+// Per-route <title> for web. Pages with their own <Head> (e.g. vehicles/[id])
+// override this since helmet renders children after the layout.
+const ROUTE_TITLES: Record<string, string> = {
+  "/": "Vehicle Management",
+  "/login": "Login",
+  "/register": "Register",
+  "/forgot-password": "Forgot Password",
+  "/reset-password": "Reset Password",
+  "/email-confirmation": "Confirm Your Email",
+  "/confirmation-success": "Email Confirmed",
+  "/privacy": "Privacy Policy",
+  "/vehicles": "My Vehicles",
+  "/notifications": "Notifications",
+  "/profile": "Profile",
+  "/logs": "Logs",
+  "/analytics": "Analytics",
+  "/analytics/costs": "Cost Analytics",
+  "/analytics/fuel": "Fuel Analytics",
+  "/analytics/service": "Service Analytics",
+  "/analytics/performance": "Performance Analytics",
+  "/groups": "Groups",
+};
+
+function getPageTitle(pathname: string): string {
+  const name = ROUTE_TITLES[pathname];
+  return name && pathname !== "/"
+    ? `${name} – Vehicle Management`
+    : "Vehicle Management";
+}
+
 export default function RootLayout() {
   return (
     <ErrorBoundary>
@@ -124,6 +154,7 @@ function RootLayoutContent() {
   }
 
   const canonicalUrl = `https://vm.wanahnaf.dev${pathname === "/" ? "" : pathname}`;
+  const pageTitle = getPageTitle(pathname);
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
@@ -132,7 +163,7 @@ function RootLayoutContent() {
       >
         {Platform.OS === "web" && (
           <Head>
-            <title>Vehicle Management</title>
+            <title>{pageTitle}</title>
             <link rel="canonical" href={canonicalUrl} />
             <meta
               name="description"
