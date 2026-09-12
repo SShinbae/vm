@@ -110,12 +110,12 @@ export async function generateAnalyticsReport(
   report += "-".repeat(50) + "\n";
   report += "COST SUMMARY\n";
   report += "-".repeat(50) + "\n";
-  report += `Total Cost: $${costMetrics.totalCost.toFixed(2)}\n`;
-  report += `  - Fuel Cost: $${costMetrics.totalFuelCost.toFixed(2)}\n`;
-  report += `  - Service Cost: $${costMetrics.totalServiceCost.toFixed(2)}\n`;
-  report += `Cost per km: $${costMetrics.costPerKm.toFixed(2)}\n`;
-  report += `Average Fuel Cost: $${costMetrics.averageFuelCost.toFixed(2)} per fill-up\n`;
-  report += `Average Service Cost: $${costMetrics.averageServiceCost.toFixed(2)} per service\n\n`;
+  report += `Total Cost: RM${costMetrics.totalCost.toFixed(2)}\n`;
+  report += `  - Fuel Cost: RM${costMetrics.totalFuelCost.toFixed(2)}\n`;
+  report += `  - Service Cost: RM${costMetrics.totalServiceCost.toFixed(2)}\n`;
+  report += `Cost per km: RM${costMetrics.costPerKm.toFixed(2)}\n`;
+  report += `Average Fuel Cost: RM${costMetrics.averageFuelCost.toFixed(2)} per fill-up\n`;
+  report += `Average Service Cost: RM${costMetrics.averageServiceCost.toFixed(2)} per service\n\n`;
 
   // Fuel Efficiency
   report += "-".repeat(50) + "\n";
@@ -127,7 +127,7 @@ export async function generateAnalyticsReport(
   report += `Total Fill-ups: ${fuelMetrics.fuelUps}\n`;
   report += `Best Efficiency: ${fuelMetrics.bestEfficiency.toFixed(1)} L/100km\n`;
   report += `Worst Efficiency: ${fuelMetrics.worstEfficiency.toFixed(1)} L/100km\n`;
-  report += `Average Fuel Price: $${fuelMetrics.averageFuelPrice.toFixed(2)} per liter\n\n`;
+  report += `Average Fuel Price: RM${fuelMetrics.averageFuelPrice.toFixed(2)} per liter\n\n`;
 
   // Service Summary
   report += "-".repeat(50) + "\n";
@@ -148,7 +148,7 @@ export async function generateAnalyticsReport(
         .split("_")
         .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
         .join(" ");
-      report += `  - ${typeName}: ${count}x ($${cost.toFixed(2)})\n`;
+      report += `  - ${typeName}: ${count}x (RM${cost.toFixed(2)})\n`;
     }
   });
   report += "\n";
@@ -183,8 +183,8 @@ export async function generateAnalyticsReport(
     report += "-".repeat(50) + "\n";
     vehiclePerformance.forEach((vehicle, index) => {
       report += `${index + 1}. ${vehicle.vehicleName}\n`;
-      report += `   Total Cost: $${vehicle.totalCost.toFixed(2)}\n`;
-      report += `   Cost per km: $${vehicle.costPerKm.toFixed(2)}\n`;
+      report += `   Total Cost: RM${vehicle.totalCost.toFixed(2)}\n`;
+      report += `   Cost per km: RM${vehicle.costPerKm.toFixed(2)}\n`;
       report += `   Fuel Efficiency: ${vehicle.fuelEfficiency.toFixed(1)} L/100km\n`;
       report += `   Distance: ${vehicle.totalDistance.toFixed(0)} km\n`;
       report += `   Services: ${vehicle.serviceCount}\n\n`;
