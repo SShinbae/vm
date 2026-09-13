@@ -1,3 +1,4 @@
+import { logger } from "@/lib/utils/logger";
 /**
  * Notification Preferences Service
  *
@@ -90,11 +91,11 @@ export async function migratePreferencesFromAsyncStorage(
     await AsyncStorage.removeItem(ASYNC_STORAGE_PREFS_KEY);
 
     if (__DEV__) {
-      console.log("Notification preferences migrated from AsyncStorage");
+      logger.log("Notification preferences migrated from AsyncStorage");
     }
   } catch (error) {
     if (__DEV__) {
-      console.error("Error migrating notification preferences:", error);
+      logger.error("Error migrating notification preferences:", error);
     }
   }
 }

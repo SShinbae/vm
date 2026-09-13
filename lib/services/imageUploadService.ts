@@ -1,3 +1,4 @@
+import { logger } from "@/lib/utils/logger";
 import { supabase } from "../../services/supabaseClient";
 import {
   ApiResponse,
@@ -62,8 +63,8 @@ export class ImageUploadService {
    */
   static async uploadProfileAvatar(file: File): Promise<ApiResponse<string>> {
     try {
-      console.log("🚀 Starting avatar upload process...");
-      console.log("📄 File details:", {
+      logger.log("🚀 Starting avatar upload process...");
+      logger.log("📄 File details:", {
         name: file.name,
         size: file.size,
         type: file.type,
@@ -76,27 +77,27 @@ export class ImageUploadService {
       } = await supabase.auth.getUser();
 
       if (userError || !user) {
-        console.error("❌ User authentication failed:", userError);
+        logger.error("❌ User authentication failed:", userError);
         return { data: null, error: "User not authenticated", loading: false };
       }
 
-      console.log("✅ User authenticated:", user.id);
+      logger.log("✅ User authenticated:", user.id);
 
       // Validate file
       const validation = this.validateImageFile(file);
       if (!validation.isValid) {
-        console.error("❌ File validation failed:", validation.error);
+        logger.error("❌ File validation failed:", validation.error);
         return { data: null, error: validation.error!, loading: false };
       }
 
-      console.log("✅ File validation passed");
+      logger.log("✅ File validation passed");
 
       // Generate filename
       const fileName = this.generateFileName(user.id, "avatar", file.name);
-      console.log("📝 Generated filename:", fileName);
+      logger.log("📝 Generated filename:", fileName);
 
       // Upload to storage
-      console.log("📤 Uploading to Supabase storage...");
+      logger.log("📤 Uploading to Supabase storage...");
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from("profile-avatars")
         .upload(fileName, file, {
@@ -105,8 +106,8 @@ export class ImageUploadService {
         });
 
       if (uploadError) {
-        console.error("❌ Storage upload failed:", uploadError);
-        console.error("   Error details:", {
+        logger.error("❌ Storage upload failed:", uploadError);
+        logger.error("   Error details:", {
           message: uploadError.message,
           statusCode: (uploadError as any).statusCode,
           error: (uploadError as any).error,
@@ -114,17 +115,17 @@ export class ImageUploadService {
         return { data: null, error: uploadError.message, loading: false };
       }
 
-      console.log("✅ Storage upload successful:", uploadData);
+      logger.log("✅ Storage upload successful:", uploadData);
 
       // Get public URL
       const { data: urlData } = supabase.storage
         .from("profile-avatars")
         .getPublicUrl(fileName);
 
-      console.log("🔗 Generated public URL:", urlData.publicUrl);
+      logger.log("🔗 Generated public URL:", urlData.publicUrl);
 
       // Update user profile with new avatar URL
-      console.log("💾 Updating profile in database...");
+      logger.log("💾 Updating profile in database...");
       const { error: updateError } = await supabase
         .from("profiles")
         // @ts-expect-error - Supabase type inference issue with update
@@ -132,16 +133,16 @@ export class ImageUploadService {
         .eq("id", user.id);
 
       if (updateError) {
-        console.error("❌ Profile update failed:", updateError);
+        logger.error("❌ Profile update failed:", updateError);
         // Try to cleanup uploaded file
         await supabase.storage.from("profile-avatars").remove([fileName]);
         return { data: null, error: updateError.message, loading: false };
       }
 
-      console.log("✅ Avatar upload complete! URL:", urlData.publicUrl);
+      logger.log("✅ Avatar upload complete! URL:", urlData.publicUrl);
       return { data: urlData.publicUrl, error: null, loading: false };
     } catch (error) {
-      console.error("💥 Unexpected error uploading avatar:", error);
+      logger.error("💥 Unexpected error uploading avatar:", error);
       return { data: null, error: "Failed to upload avatar", loading: false };
     }
   }
@@ -155,8 +156,8 @@ export class ImageUploadService {
     uri: string,
   ): Promise<ApiResponse<string>> {
     try {
-      console.log("🚀 Starting avatar upload from URI...");
-      console.log("📄 URI:", uri);
+      logger.log("🚀 Starting avatar upload from URI...");
+      logger.log("📄 URI:", uri);
 
       const {
         data: { user },
@@ -164,11 +165,11 @@ export class ImageUploadService {
       } = await supabase.auth.getUser();
 
       if (userError || !user) {
-        console.error("❌ User authentication failed:", userError);
+        logger.error("❌ User authentication failed:", userError);
         return { data: null, error: "User not authenticated", loading: false };
       }
 
-      console.log("✅ User authenticated:", user.id);
+      logger.log("✅ User authenticated:", user.id);
 
       // Fetch the image and convert to base64
       const response = await fetch(uri);
@@ -195,10 +196,10 @@ export class ImageUploadService {
         `image.${fileExtension}`,
       );
 
-      console.log("📝 Generated filename:", fileName);
+      logger.log("📝 Generated filename:", fileName);
 
       // Upload using base64 data
-      console.log("📤 Uploading to Supabase storage...");
+      logger.log("📤 Uploading to Supabase storage...");
       const { decode } = await import("base64-arraybuffer");
       const arrayBuffer = decode(base64);
 
@@ -211,21 +212,21 @@ export class ImageUploadService {
         });
 
       if (uploadError) {
-        console.error("❌ Storage upload failed:", uploadError);
+        logger.error("❌ Storage upload failed:", uploadError);
         return { data: null, error: uploadError.message, loading: false };
       }
 
-      console.log("✅ Storage upload successful:", uploadData);
+      logger.log("✅ Storage upload successful:", uploadData);
 
       // Get public URL
       const { data: urlData } = supabase.storage
         .from("profile-avatars")
         .getPublicUrl(fileName);
 
-      console.log("🔗 Generated public URL:", urlData.publicUrl);
+      logger.log("🔗 Generated public URL:", urlData.publicUrl);
 
       // Update user profile with new avatar URL
-      console.log("💾 Updating profile in database...");
+      logger.log("💾 Updating profile in database...");
       const { error: updateError } = await supabase
         .from("profiles")
         // @ts-expect-error - Supabase type inference issue with update
@@ -233,16 +234,16 @@ export class ImageUploadService {
         .eq("id", user.id);
 
       if (updateError) {
-        console.error("❌ Profile update failed:", updateError);
+        logger.error("❌ Profile update failed:", updateError);
         // Try to cleanup uploaded file
         await supabase.storage.from("profile-avatars").remove([fileName]);
         return { data: null, error: updateError.message, loading: false };
       }
 
-      console.log("✅ Avatar upload complete! URL:", urlData.publicUrl);
+      logger.log("✅ Avatar upload complete! URL:", urlData.publicUrl);
       return { data: urlData.publicUrl, error: null, loading: false };
     } catch (error) {
-      console.error("💥 Unexpected error uploading avatar from URI:", error);
+      logger.error("💥 Unexpected error uploading avatar from URI:", error);
       return { data: null, error: "Failed to upload avatar", loading: false };
     }
   }
@@ -307,7 +308,7 @@ export class ImageUploadService {
         });
 
       if (uploadError) {
-        console.error("Error uploading vehicle image:", uploadError);
+        logger.error("Error uploading vehicle image:", uploadError);
         return { data: null, error: uploadError.message, loading: false };
       }
 
@@ -349,7 +350,7 @@ export class ImageUploadService {
         .single();
 
       if (imageError) {
-        console.error("Error creating image record:", imageError);
+        logger.error("Error creating image record:", imageError);
         // Try to cleanup uploaded file
         await supabase.storage.from("vehicle-images").remove([fileName]);
         return { data: null, error: imageError.message, loading: false };
@@ -364,7 +365,7 @@ export class ImageUploadService {
           .eq("id", vehicleId);
 
         if (vehicleUpdateError) {
-          console.error(
+          logger.error(
             "Error updating vehicle main image:",
             vehicleUpdateError,
           );
@@ -372,10 +373,10 @@ export class ImageUploadService {
         }
       }
 
-      console.log("✅ Vehicle image uploaded successfully:", urlData.publicUrl);
+      logger.log("✅ Vehicle image uploaded successfully:", urlData.publicUrl);
       return { data: imageRecord, error: null, loading: false };
     } catch (error) {
-      console.error("Unexpected error uploading vehicle image:", error);
+      logger.error("Unexpected error uploading vehicle image:", error);
       return {
         data: null,
         error: "Failed to upload vehicle image",
@@ -396,8 +397,8 @@ export class ImageUploadService {
     caption?: string,
   ): Promise<ApiResponse<VehicleImage>> {
     try {
-      console.log("🚀 Starting vehicle image upload from URI...");
-      console.log("📄 URI:", uri);
+      logger.log("🚀 Starting vehicle image upload from URI...");
+      logger.log("📄 URI:", uri);
 
       const {
         data: { user },
@@ -451,10 +452,10 @@ export class ImageUploadService {
         `image.${fileExtension}`,
       );
 
-      console.log("📝 Generated filename:", fileName);
+      logger.log("📝 Generated filename:", fileName);
 
       // Upload using base64 data
-      console.log("📤 Uploading to Supabase storage...");
+      logger.log("📤 Uploading to Supabase storage...");
       const { decode } = await import("base64-arraybuffer");
       const arrayBuffer = decode(base64);
 
@@ -467,7 +468,7 @@ export class ImageUploadService {
         });
 
       if (uploadError) {
-        console.error("Error uploading vehicle image:", uploadError);
+        logger.error("Error uploading vehicle image:", uploadError);
         return { data: null, error: uploadError.message, loading: false };
       }
 
@@ -509,7 +510,7 @@ export class ImageUploadService {
         .single();
 
       if (imageError) {
-        console.error("Error creating image record:", imageError);
+        logger.error("Error creating image record:", imageError);
         // Try to cleanup uploaded file
         await supabase.storage.from("vehicle-images").remove([fileName]);
         return { data: null, error: imageError.message, loading: false };
@@ -524,7 +525,7 @@ export class ImageUploadService {
           .eq("id", vehicleId);
 
         if (vehicleUpdateError) {
-          console.error(
+          logger.error(
             "Error updating vehicle main image:",
             vehicleUpdateError,
           );
@@ -532,13 +533,10 @@ export class ImageUploadService {
         }
       }
 
-      console.log("✅ Vehicle image uploaded successfully:", urlData.publicUrl);
+      logger.log("✅ Vehicle image uploaded successfully:", urlData.publicUrl);
       return { data: imageRecord, error: null, loading: false };
     } catch (error) {
-      console.error(
-        "Unexpected error uploading vehicle image from URI:",
-        error,
-      );
+      logger.error("Unexpected error uploading vehicle image from URI:", error);
       return {
         data: null,
         error: "Failed to upload vehicle image",
@@ -562,13 +560,13 @@ export class ImageUploadService {
         .order("display_order", { ascending: true });
 
       if (error) {
-        console.error("Error fetching vehicle images:", error);
+        logger.error("Error fetching vehicle images:", error);
         return { data: null, error: error.message, loading: false };
       }
 
       return { data: data || [], error: null, loading: false };
     } catch (error) {
-      console.error("Unexpected error fetching vehicle images:", error);
+      logger.error("Unexpected error fetching vehicle images:", error);
       return {
         data: null,
         error: "Failed to fetch vehicle images",
@@ -633,7 +631,7 @@ export class ImageUploadService {
         .remove([fullPath]);
 
       if (storageError) {
-        console.error("Error deleting from storage:", storageError);
+        logger.error("Error deleting from storage:", storageError);
         // Continue with database deletion even if storage fails
       }
 
@@ -644,7 +642,7 @@ export class ImageUploadService {
         .eq("id", imageId);
 
       if (deleteError) {
-        console.error("Error deleting image record:", deleteError);
+        logger.error("Error deleting image record:", deleteError);
         return { data: null, error: deleteError.message, loading: false };
       }
 
@@ -657,10 +655,10 @@ export class ImageUploadService {
           .eq("id", (imageRecord as any).vehicle_id);
       }
 
-      console.log("✅ Vehicle image deleted successfully");
+      logger.log("✅ Vehicle image deleted successfully");
       return { data: true, error: null, loading: false };
     } catch (error) {
-      console.error("Unexpected error deleting vehicle image:", error);
+      logger.error("Unexpected error deleting vehicle image:", error);
       return {
         data: null,
         error: "Failed to delete vehicle image",
@@ -727,13 +725,13 @@ export class ImageUploadService {
         .single();
 
       if (updateError) {
-        console.error("Error updating vehicle image:", updateError);
+        logger.error("Error updating vehicle image:", updateError);
         return { data: null, error: updateError.message, loading: false };
       }
 
       return { data: updatedImage, error: null, loading: false };
     } catch (error) {
-      console.error("Unexpected error updating vehicle image:", error);
+      logger.error("Unexpected error updating vehicle image:", error);
       return {
         data: null,
         error: "Failed to update vehicle image",
@@ -779,7 +777,7 @@ export class ImageUploadService {
         .remove([fullPath]);
 
       if (storageError) {
-        console.error("Error deleting avatar from storage:", storageError);
+        logger.error("Error deleting avatar from storage:", storageError);
         // Continue with database update even if storage fails
       }
 
@@ -791,14 +789,14 @@ export class ImageUploadService {
         .eq("id", user.id);
 
       if (updateError) {
-        console.error("Error updating profile:", updateError);
+        logger.error("Error updating profile:", updateError);
         return { data: null, error: updateError.message, loading: false };
       }
 
-      console.log("✅ Profile avatar deleted successfully");
+      logger.log("✅ Profile avatar deleted successfully");
       return { data: true, error: null, loading: false };
     } catch (error) {
-      console.error("Unexpected error deleting avatar:", error);
+      logger.error("Unexpected error deleting avatar:", error);
       return { data: null, error: "Failed to delete avatar", loading: false };
     }
   }

@@ -1,3 +1,4 @@
+import { logger } from "@/lib/utils/logger";
 /**
  * Local Notification Service
  *
@@ -21,7 +22,7 @@ async function ensureNotificationsModule(): Promise<
     return Notifications;
   } catch {
     if (__DEV__) {
-      console.log("expo-notifications not available");
+      logger.log("expo-notifications not available");
     }
     return null;
   }
@@ -85,7 +86,7 @@ export async function scheduleServiceReminder(params: {
       scheduledIds.push(id);
     } catch (error) {
       if (__DEV__) {
-        console.error("Error scheduling local notification:", error);
+        logger.error("Error scheduling local notification:", error);
       }
     }
   }
@@ -112,7 +113,7 @@ export async function cancelVehicleReminders(vehicleId: string): Promise<void> {
     }
   } catch (error) {
     if (__DEV__) {
-      console.error("Error canceling vehicle reminders:", error);
+      logger.error("Error canceling vehicle reminders:", error);
     }
   }
 }
@@ -128,7 +129,7 @@ export async function cancelAllLocalNotifications(): Promise<void> {
     await mod.cancelAllScheduledNotificationsAsync();
   } catch (error) {
     if (__DEV__) {
-      console.error("Error canceling all notifications:", error);
+      logger.error("Error canceling all notifications:", error);
     }
   }
 }
@@ -163,7 +164,7 @@ export async function scheduleSnooze(params: {
     return id;
   } catch (error) {
     if (__DEV__) {
-      console.error("Error scheduling snooze notification:", error);
+      logger.error("Error scheduling snooze notification:", error);
     }
     return null;
   }

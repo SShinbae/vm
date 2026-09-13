@@ -1,3 +1,4 @@
+import { logger } from "@/lib/utils/logger";
 import * as Sentry from "@sentry/react-native";
 import Constants from "expo-constants";
 
@@ -12,7 +13,7 @@ class SentryService {
       process.env.EXPO_PUBLIC_SENTRY_DSN;
     if (!dsn) {
       if (__DEV__) {
-        console.warn(
+        logger.warn(
           "Sentry: DSN not configured. Please set SENTRY_DSN in your .env file",
         );
       }
@@ -28,7 +29,7 @@ class SentryService {
 
     this.initialized = true;
     if (__DEV__) {
-      console.log("Sentry: Initialized successfully");
+      logger.log("Sentry: Initialized successfully");
     }
   }
 

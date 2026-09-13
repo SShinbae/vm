@@ -1,3 +1,4 @@
+import { logger } from "@/lib/utils/logger";
 import { supabase } from "../../services/supabaseClient";
 import {
   Vehicle,
@@ -28,7 +29,7 @@ export class VehicleServiceFallback {
         .order("created_at", { ascending: false });
 
       if (ownError) {
-        console.error("Error fetching own vehicles:", ownError);
+        logger.error("Error fetching own vehicles:", ownError);
         return { data: null, error: ownError.message, loading: false };
       }
 
@@ -77,7 +78,7 @@ export class VehicleServiceFallback {
             vehiclesQuery = vehiclesQuery.eq("shared_with_groups", true);
           } catch {
             // Column doesn't exist, get all vehicles from group members
-            console.log(
+            logger.log(
               "shared_with_groups column not found, showing all group member vehicles",
             );
           }
@@ -126,7 +127,7 @@ export class VehicleServiceFallback {
           new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
       );
 
-      console.log("Fetched vehicles (fallback) debug:", {
+      logger.log("Fetched vehicles (fallback) debug:", {
         userId: user.id,
         ownVehicles: ownVehicles?.length || 0,
         groupVehicles: groupVehicles.length,
@@ -136,7 +137,7 @@ export class VehicleServiceFallback {
 
       return { data: allVehicles, error: null, loading: false };
     } catch (err) {
-      console.error("Unexpected error fetching vehicles:", err);
+      logger.error("Unexpected error fetching vehicles:", err);
       return { data: null, error: "Failed to fetch vehicles", loading: false };
     }
   }
@@ -159,13 +160,13 @@ export class VehicleServiceFallback {
         .single();
 
       if (error) {
-        console.error("Error fetching vehicle:", error);
+        logger.error("Error fetching vehicle:", error);
         return { data: null, error: error.message, loading: false };
       }
 
       return { data, error: null, loading: false };
     } catch (err) {
-      console.error("Unexpected error fetching vehicle:", err);
+      logger.error("Unexpected error fetching vehicle:", err);
       return { data: null, error: "Failed to fetch vehicle", loading: false };
     }
   }
@@ -212,7 +213,7 @@ export class VehicleServiceFallback {
         vehicleData.shared_with_groups = vehicle.shared_with_groups ?? false;
       } catch {
         // Column doesn't exist, exclude it
-        console.log(
+        logger.log(
           "shared_with_groups column not found, creating vehicle without sharing field",
         );
       }
@@ -224,13 +225,13 @@ export class VehicleServiceFallback {
         .single();
 
       if (error) {
-        console.error("Error creating vehicle:", error);
+        logger.error("Error creating vehicle:", error);
         return { data: null, error: error.message, loading: false };
       }
 
       return { data, error: null, loading: false };
     } catch (err) {
-      console.error("Unexpected error creating vehicle:", err);
+      logger.error("Unexpected error creating vehicle:", err);
       return { data: null, error: "Failed to create vehicle", loading: false };
     }
   }
@@ -283,13 +284,13 @@ export class VehicleServiceFallback {
         .single();
 
       if (error) {
-        console.error("Error updating vehicle:", error);
+        logger.error("Error updating vehicle:", error);
         return { data: null, error: error.message, loading: false };
       }
 
       return { data, error: null, loading: false };
     } catch (err) {
-      console.error("Unexpected error updating vehicle:", err);
+      logger.error("Unexpected error updating vehicle:", err);
       return { data: null, error: "Failed to update vehicle", loading: false };
     }
   }
@@ -299,13 +300,13 @@ export class VehicleServiceFallback {
       const { error } = await supabase.from("vehicles").delete().eq("id", id);
 
       if (error) {
-        console.error("Error deleting vehicle:", error);
+        logger.error("Error deleting vehicle:", error);
         return { data: null, error: error.message, loading: false };
       }
 
       return { data: true, error: null, loading: false };
     } catch (err) {
-      console.error("Unexpected error deleting vehicle:", err);
+      logger.error("Unexpected error deleting vehicle:", err);
       return { data: null, error: "Failed to delete vehicle", loading: false };
     }
   }
@@ -346,7 +347,7 @@ export class VehicleServiceFallback {
         nextService: nextService?.[0] || null,
       };
     } catch (err) {
-      console.error("Error fetching vehicle stats:", err);
+      logger.error("Error fetching vehicle stats:", err);
       return {
         currentMileage: 0,
         fuelLogs: [],
@@ -377,7 +378,7 @@ export class VehicleServiceFallback {
         .single();
 
       if (vehicleError) {
-        console.error("Error fetching vehicle:", vehicleError);
+        logger.error("Error fetching vehicle:", vehicleError);
         return { data: null, error: "Vehicle not found", loading: false };
       }
 
@@ -407,7 +408,7 @@ export class VehicleServiceFallback {
           .single();
 
         if (error) {
-          console.error("Error updating vehicle sharing:", error);
+          logger.error("Error updating vehicle sharing:", error);
           return { data: null, error: error.message, loading: false };
         }
 
@@ -421,7 +422,7 @@ export class VehicleServiceFallback {
         };
       }
     } catch (err) {
-      console.error("Unexpected error toggling vehicle sharing:", err);
+      logger.error("Unexpected error toggling vehicle sharing:", err);
       return {
         data: null,
         error: "Failed to update vehicle sharing",

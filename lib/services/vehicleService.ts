@@ -1,3 +1,4 @@
+import { logger } from "@/lib/utils/logger";
 import { supabase } from "../../services/supabaseClient";
 import { ServiceTemplate, ServiceTemplateFormData } from "../../types";
 import {
@@ -39,7 +40,7 @@ export class VehicleService {
         return { data: null, error: "User not authenticated", loading: false };
       }
 
-      console.log("🔍 Fetching vehicles with sharing info for user:", user.id);
+      logger.log("🔍 Fetching vehicles with sharing info for user:", user.id);
 
       // Define the expected return type from the RPC
       type VehicleSharingInfo = {
@@ -66,12 +67,12 @@ export class VehicleService {
       ).rpc("get_user_vehicles_with_sharing", { user_uuid: user.id });
 
       if (vehicleError) {
-        console.error("❌ Error fetching vehicles:", vehicleError);
+        logger.error("❌ Error fetching vehicles:", vehicleError);
         return { data: null, error: vehicleError.message, loading: false };
       }
 
       const typedVehicleData = vehicleData as VehicleSharingInfo[] | null;
-      console.log(
+      logger.log(
         "✅ Raw vehicle data received:",
         typedVehicleData?.length || 0,
       );
@@ -178,10 +179,10 @@ export class VehicleService {
         }),
       );
 
-      console.log("🎉 Enhanced vehicles processed:", enhancedVehicles.length);
+      logger.log("🎉 Enhanced vehicles processed:", enhancedVehicles.length);
       return { data: enhancedVehicles, error: null, loading: false };
     } catch (error) {
-      console.error("💥 Unexpected error fetching vehicles:", error);
+      logger.error("💥 Unexpected error fetching vehicles:", error);
       return { data: null, error: "Failed to fetch vehicles", loading: false };
     }
   }
@@ -209,7 +210,7 @@ export class VehicleService {
       const ownVehicles = response.data.filter((v) => v.is_own_vehicle);
       const sharedVehicles = response.data.filter((v) => !v.is_own_vehicle);
 
-      console.log("📊 Vehicles separated:", {
+      logger.log("📊 Vehicles separated:", {
         ownCount: ownVehicles.length,
         sharedCount: sharedVehicles.length,
       });
@@ -220,7 +221,7 @@ export class VehicleService {
         loading: false,
       };
     } catch (error) {
-      console.error("💥 Error separating vehicles:", error);
+      logger.error("💥 Error separating vehicles:", error);
       return {
         data: null,
         error: "Failed to separate vehicles",
@@ -245,7 +246,7 @@ export class VehicleService {
         return { data: null, error: "User not authenticated", loading: false };
       }
 
-      console.log("🔍 Fetching vehicles for group:", groupId);
+      logger.log("🔍 Fetching vehicles for group:", groupId);
 
       // Get vehicles shared with this specific group
       const { data: shares, error: sharesError } = await supabase
@@ -272,12 +273,12 @@ export class VehicleService {
         .eq("group_id", groupId);
 
       if (sharesError) {
-        console.error("❌ Error fetching group vehicles:", sharesError);
+        logger.error("❌ Error fetching group vehicles:", sharesError);
         return { data: null, error: sharesError.message, loading: false };
       }
 
       if (!shares || shares.length === 0) {
-        console.log("📭 No vehicles shared with this group");
+        logger.log("📭 No vehicles shared with this group");
         return { data: [], error: null, loading: false };
       }
 
@@ -344,10 +345,10 @@ export class VehicleService {
         }),
       );
 
-      console.log("✅ Vehicles fetched for group:", enhancedVehicles.length);
+      logger.log("✅ Vehicles fetched for group:", enhancedVehicles.length);
       return { data: enhancedVehicles, error: null, loading: false };
     } catch (error) {
-      console.error("💥 Error fetching vehicles for group:", error);
+      logger.error("💥 Error fetching vehicles for group:", error);
       return {
         data: null,
         error: "Failed to fetch vehicles for group",
@@ -373,7 +374,7 @@ export class VehicleService {
         return { data: null, error: "User not authenticated", loading: false };
       }
 
-      console.log("🔄 Sharing vehicle with groups:", { vehicleId, groupIds });
+      logger.log("🔄 Sharing vehicle with groups:", { vehicleId, groupIds });
 
       // Use the database function for atomic operation
       const { error } = await (supabase as any).rpc(
@@ -382,18 +383,18 @@ export class VehicleService {
       );
 
       if (error) {
-        console.error("❌ Error sharing vehicle:", error);
+        logger.error("❌ Error sharing vehicle:", error);
         return { data: null, error: error.message, loading: false };
       }
 
-      console.log(
+      logger.log(
         "✅ Vehicle shared successfully with",
         groupIds.length,
         "groups",
       );
       return { data: true, error: null, loading: false };
     } catch (error) {
-      console.error("💥 Unexpected error sharing vehicle:", error);
+      logger.error("💥 Unexpected error sharing vehicle:", error);
       return { data: null, error: "Failed to share vehicle", loading: false };
     }
   }
@@ -448,7 +449,7 @@ export class VehicleService {
         .eq("vehicle_id", vehicleId);
 
       if (sharesError) {
-        console.error("Error fetching sharing config:", sharesError);
+        logger.error("Error fetching sharing config:", sharesError);
         return { data: null, error: sharesError.message, loading: false };
       }
 
@@ -462,7 +463,7 @@ export class VehicleService {
             .eq("group_id", share.group_id);
 
           if (countError) {
-            console.error("Error getting member count:", countError);
+            logger.error("Error getting member count:", countError);
           }
 
           return {
@@ -483,7 +484,7 @@ export class VehicleService {
 
       return { data: config, error: null, loading: false };
     } catch (error) {
-      console.error("Unexpected error fetching sharing config:", error);
+      logger.error("Unexpected error fetching sharing config:", error);
       return {
         data: null,
         error: "Failed to fetch sharing configuration",
@@ -501,7 +502,7 @@ export class VehicleService {
     try {
       return await this.shareVehicleWithGroups(vehicleId, []);
     } catch (error) {
-      console.error("Unexpected error removing vehicle sharing:", error);
+      logger.error("Unexpected error removing vehicle sharing:", error);
       return {
         data: null,
         error: "Failed to remove vehicle sharing",
@@ -554,7 +555,7 @@ export class VehicleService {
         if (uploadResult.success && uploadResult.url) {
           imageUrl = uploadResult.url;
         } else {
-          console.warn("Failed to upload vehicle image:", uploadResult.error);
+          logger.warn("Failed to upload vehicle image:", uploadResult.error);
         }
       }
 
@@ -572,7 +573,7 @@ export class VehicleService {
       const { data: vehicle, error: vehicleError } = vehicleResult as any;
 
       if (vehicleError || !vehicle) {
-        console.error("Error creating vehicle:", vehicleError);
+        logger.error("Error creating vehicle:", vehicleError);
         return { data: null, error: vehicleError.message, loading: false };
       }
 
@@ -583,15 +584,15 @@ export class VehicleService {
           sharedGroupIds,
         );
         if (shareResult.error) {
-          console.error("Error sharing new vehicle:", shareResult.error);
+          logger.error("Error sharing new vehicle:", shareResult.error);
           // Don't fail the creation, just log the sharing error
         }
       }
 
-      console.log("✅ Vehicle created successfully:", vehicle.id);
+      logger.log("✅ Vehicle created successfully:", vehicle.id);
       return { data: vehicle, error: null, loading: false };
     } catch (error) {
-      console.error("Unexpected error creating vehicle:", error);
+      logger.error("Unexpected error creating vehicle:", error);
       return { data: null, error: "Failed to create vehicle", loading: false };
     }
   }
@@ -667,7 +668,7 @@ export class VehicleService {
       const { data: vehicle, error: vehicleError } = vehicleUpdateResult as any;
 
       if (vehicleError || !vehicle) {
-        console.error("Error updating vehicle:", vehicleError);
+        logger.error("Error updating vehicle:", vehicleError);
         return { data: null, error: vehicleError.message, loading: false };
       }
 
@@ -678,15 +679,15 @@ export class VehicleService {
           sharedGroupIds,
         );
         if (shareResult.error) {
-          console.error("Error updating vehicle sharing:", shareResult.error);
+          logger.error("Error updating vehicle sharing:", shareResult.error);
           // Don't fail the update, just log the sharing error
         }
       }
 
-      console.log("✅ Vehicle updated successfully:", id);
+      logger.log("✅ Vehicle updated successfully:", id);
       return { data: vehicle, error: null, loading: false };
     } catch (error) {
-      console.error("Unexpected error updating vehicle:", error);
+      logger.error("Unexpected error updating vehicle:", error);
       return { data: null, error: "Failed to update vehicle", loading: false };
     }
   }
@@ -733,14 +734,14 @@ export class VehicleService {
         .eq("id", id);
 
       if (deleteError) {
-        console.error("Error deleting vehicle:", deleteError);
+        logger.error("Error deleting vehicle:", deleteError);
         return { data: null, error: deleteError.message, loading: false };
       }
 
-      console.log("✅ Vehicle deleted successfully:", id);
+      logger.log("✅ Vehicle deleted successfully:", id);
       return { data: true, error: null, loading: false };
     } catch (error) {
-      console.error("Unexpected error deleting vehicle:", error);
+      logger.error("Unexpected error deleting vehicle:", error);
       return { data: null, error: "Failed to delete vehicle", loading: false };
     }
   }
@@ -778,7 +779,7 @@ export class VehicleService {
       const { data: vehicle, error: vehicleError } = vehicleResult as any;
 
       if (vehicleError) {
-        console.error("Error fetching vehicle:", vehicleError);
+        logger.error("Error fetching vehicle:", vehicleError);
         return { data: null, error: vehicleError.message, loading: false };
       }
 
@@ -882,7 +883,7 @@ export class VehicleService {
 
       return { data: enhancedVehicle, error: null, loading: false };
     } catch (error) {
-      console.error("Unexpected error fetching vehicle:", error);
+      logger.error("Unexpected error fetching vehicle:", error);
       return { data: null, error: "Failed to fetch vehicle", loading: false };
     }
   }
@@ -921,7 +922,7 @@ export class VehicleService {
 
       return !membershipError && memberships && memberships.length > 0;
     } catch (error) {
-      console.error("Error checking vehicle access:", error);
+      logger.error("Error checking vehicle access:", error);
       return false;
     }
   }
@@ -970,7 +971,7 @@ export class VehicleService {
         nextService: nextService?.[0] || null,
       };
     } catch (error) {
-      console.error("Error fetching vehicle stats:", error);
+      logger.error("Error fetching vehicle stats:", error);
       return {
         currentMileage: 0,
         fuelLogs: [],
@@ -998,7 +999,7 @@ export class VehicleService {
         latestMileageResult as any;
 
       if (mileageError) {
-        console.error("Error fetching latest mileage:", mileageError);
+        logger.error("Error fetching latest mileage:", mileageError);
         return { data: null, error: mileageError.message, loading: false };
       }
 
@@ -1014,11 +1015,11 @@ export class VehicleService {
         const { error: updateError } = updateResult as any;
 
         if (updateError) {
-          console.error("Error updating current mileage:", updateError);
+          logger.error("Error updating current mileage:", updateError);
           return { data: null, error: updateError.message, loading: false };
         }
 
-        console.log(
+        logger.log(
           `✅ Updated vehicle ${vehicleId} current_mileage to ${newMileage}`,
         );
         return { data: true, error: null, loading: false };
@@ -1026,7 +1027,7 @@ export class VehicleService {
 
       return { data: true, error: null, loading: false };
     } catch (error) {
-      console.error("Unexpected error updating current mileage:", error);
+      logger.error("Unexpected error updating current mileage:", error);
       return {
         data: null,
         error: "Failed to update current mileage",
@@ -1056,7 +1057,7 @@ export class VehicleService {
         .eq("owner_id", user.id);
 
       if (ownedError) {
-        console.error("Error fetching owned groups:", ownedError);
+        logger.error("Error fetching owned groups:", ownedError);
         return { data: null, error: ownedError.message, loading: false };
       }
 
@@ -1081,7 +1082,7 @@ export class VehicleService {
         memberGroupsResult as any;
 
       if (memberError) {
-        console.error("Error fetching member groups:", memberError);
+        logger.error("Error fetching member groups:", memberError);
         return { data: ownedGroups || [], error: null, loading: false };
       }
 
@@ -1101,7 +1102,7 @@ export class VehicleService {
 
       return { data: allGroups, error: null, loading: false };
     } catch (error) {
-      console.error("Unexpected error fetching user groups:", error);
+      logger.error("Unexpected error fetching user groups:", error);
       return { data: null, error: "Failed to fetch groups", loading: false };
     }
   }
@@ -1196,7 +1197,7 @@ export class VehicleService {
         const errorType = isPermissionError(fuelCountResult.error)
           ? "Permission denied"
           : "Database error";
-        console.warn(
+        logger.warn(
           `${errorType} for fuel logs on vehicle ${vehicleId}:`,
           fuelCountResult.error,
         );
@@ -1205,7 +1206,7 @@ export class VehicleService {
         const errorType = isPermissionError(serviceCountResult.error)
           ? "Permission denied"
           : "Database error";
-        console.warn(
+        logger.warn(
           `${errorType} for service logs on vehicle ${vehicleId}:`,
           serviceCountResult.error,
         );
@@ -1214,7 +1215,7 @@ export class VehicleService {
         const errorType = isPermissionError(mileageCountResult.error)
           ? "Permission denied"
           : "Database error";
-        console.warn(
+        logger.warn(
           `${errorType} for mileage logs on vehicle ${vehicleId}:`,
           mileageCountResult.error,
         );
@@ -1222,7 +1223,7 @@ export class VehicleService {
 
       return { data: counts, error: null, loading: false };
     } catch (error) {
-      console.error("Unexpected error fetching vehicle record counts:", error);
+      logger.error("Unexpected error fetching vehicle record counts:", error);
       return {
         data: {
           fuel_count: 0,
@@ -1297,19 +1298,19 @@ export class VehicleService {
 
       // Log any errors but don't fail completely - graceful degradation
       if (mileageLogsResult.error) {
-        console.warn(
+        logger.warn(
           `Could not fetch mileage logs for vehicle ${vehicleId}:`,
           mileageLogsResult.error,
         );
       }
       if (fuelLogsResult.error) {
-        console.warn(
+        logger.warn(
           `Could not fetch fuel logs for vehicle ${vehicleId}:`,
           fuelLogsResult.error,
         );
       }
       if (serviceLogsResult.error) {
-        console.warn(
+        logger.warn(
           `Could not fetch service logs for vehicle ${vehicleId}:`,
           serviceLogsResult.error,
         );
@@ -1317,7 +1318,7 @@ export class VehicleService {
 
       return { data: logs, error: null, loading: false };
     } catch (error) {
-      console.error("Unexpected error fetching vehicle detailed logs:", error);
+      logger.error("Unexpected error fetching vehicle detailed logs:", error);
       return {
         data: { mileage_logs: [], fuel_logs: [], service_logs: [] },
         error: null,
@@ -1344,7 +1345,7 @@ export class VehicleService {
         return { data: null, error: "User not authenticated", loading: false };
       }
 
-      console.log("🔍 Fetching service templates for user:", user.id);
+      logger.log("🔍 Fetching service templates for user:", user.id);
 
       // Get templates with their items
       const templatesResult = await supabase
@@ -1361,7 +1362,7 @@ export class VehicleService {
       const { data: templates, error: templatesError } = templatesResult as any;
 
       if (templatesError) {
-        console.error("❌ Error fetching service templates:", templatesError);
+        logger.error("❌ Error fetching service templates:", templatesError);
         return { data: null, error: templatesError.message, loading: false };
       }
 
@@ -1385,14 +1386,14 @@ export class VehicleService {
         }),
       );
 
-      console.log("✅ Service templates fetched:", serviceTemplates.length);
+      logger.log("✅ Service templates fetched:", serviceTemplates.length);
       return {
         data: serviceTemplates,
         error: null,
         loading: false,
       };
     } catch (error) {
-      console.error("💥 Error fetching service templates:", error);
+      logger.error("💥 Error fetching service templates:", error);
       return {
         data: null,
         error: "Failed to fetch service templates",
@@ -1417,7 +1418,7 @@ export class VehicleService {
         return { data: null, error: "User not authenticated", loading: false };
       }
 
-      console.log("🔍 Fetching service template:", id);
+      logger.log("🔍 Fetching service template:", id);
 
       // Get template with its items
       const templateResult = await supabase
@@ -1435,7 +1436,7 @@ export class VehicleService {
       const { data: template, error: templateError } = templateResult as any;
 
       if (templateError) {
-        console.error("❌ Error fetching service template:", templateError);
+        logger.error("❌ Error fetching service template:", templateError);
         return {
           data: null,
           error:
@@ -1479,7 +1480,7 @@ export class VehicleService {
         loading: false,
       };
     } catch (error) {
-      console.error("💥 Error fetching service template:", error);
+      logger.error("💥 Error fetching service template:", error);
       return {
         data: null,
         error: "Failed to fetch service template",
@@ -1504,7 +1505,7 @@ export class VehicleService {
         return { data: null, error: "User not authenticated", loading: false };
       }
 
-      console.log("🔄 Creating service template:", formData.name);
+      logger.log("🔄 Creating service template:", formData.name);
 
       // Ensure at least 2 rows (default)
       const items =
@@ -1530,7 +1531,7 @@ export class VehicleService {
       const { data: template, error: templateError } = templateResult as any;
 
       if (templateError || !template) {
-        console.error("❌ Error creating service template:", templateError);
+        logger.error("❌ Error creating service template:", templateError);
         return { data: null, error: templateError.message, loading: false };
       }
 
@@ -1555,10 +1556,7 @@ export class VehicleService {
             .from("service_templates")
             .delete()
             .eq("id", template.id);
-          console.error(
-            "❌ Error creating service template items:",
-            itemsError,
-          );
+          logger.error("❌ Error creating service template items:", itemsError);
           return { data: null, error: itemsError.message, loading: false };
         }
       }
@@ -1574,14 +1572,14 @@ export class VehicleService {
         };
       }
 
-      console.log("✅ Service template created successfully:", template.id);
+      logger.log("✅ Service template created successfully:", template.id);
       return {
         data: createdTemplate.data,
         error: null,
         loading: false,
       };
     } catch (error) {
-      console.error("💥 Error creating service template:", error);
+      logger.error("💥 Error creating service template:", error);
       return {
         data: null,
         error: "Failed to create service template",
@@ -1607,7 +1605,7 @@ export class VehicleService {
         return { data: null, error: "User not authenticated", loading: false };
       }
 
-      console.log("🔄 Updating service template:", id);
+      logger.log("🔄 Updating service template:", id);
 
       // First, verify the template exists and belongs to the user
       const { data: existingTemplate, error: templateError } = await supabase
@@ -1637,7 +1635,7 @@ export class VehicleService {
       const { error: updateError } = updateResult;
 
       if (updateError) {
-        console.error("❌ Error updating service template:", updateError);
+        logger.error("❌ Error updating service template:", updateError);
         return { data: null, error: updateError.message, loading: false };
       }
 
@@ -1648,10 +1646,7 @@ export class VehicleService {
         .eq("template_id", id);
 
       if (deleteItemsError) {
-        console.error(
-          "❌ Error deleting old template items:",
-          deleteItemsError,
-        );
+        logger.error("❌ Error deleting old template items:", deleteItemsError);
         return { data: null, error: deleteItemsError.message, loading: false };
       }
 
@@ -1671,7 +1666,7 @@ export class VehicleService {
         const { error: itemsError } = itemsResult;
 
         if (itemsError) {
-          console.error("❌ Error creating new template items:", itemsError);
+          logger.error("❌ Error creating new template items:", itemsError);
           return { data: null, error: itemsError.message, loading: false };
         }
       }
@@ -1687,14 +1682,14 @@ export class VehicleService {
         };
       }
 
-      console.log("✅ Service template updated successfully:", id);
+      logger.log("✅ Service template updated successfully:", id);
       return {
         data: updatedTemplate.data,
         error: null,
         loading: false,
       };
     } catch (error) {
-      console.error("💥 Error updating service template:", error);
+      logger.error("💥 Error updating service template:", error);
       return {
         data: null,
         error: "Failed to update service template",
@@ -1719,7 +1714,7 @@ export class VehicleService {
         return { data: null, error: "User not authenticated", loading: false };
       }
 
-      console.log("🗑️ Deleting service template:", id);
+      logger.log("🗑️ Deleting service template:", id);
 
       // Delete the template (cascade will handle items)
       const { error: deleteError } = await supabase
@@ -1729,18 +1724,18 @@ export class VehicleService {
         .eq("user_id", user.id);
 
       if (deleteError) {
-        console.error("❌ Error deleting service template:", deleteError);
+        logger.error("❌ Error deleting service template:", deleteError);
         return { data: null, error: deleteError.message, loading: false };
       }
 
-      console.log("✅ Service template deleted successfully:", id);
+      logger.log("✅ Service template deleted successfully:", id);
       return {
         data: true,
         error: null,
         loading: false,
       };
     } catch (error) {
-      console.error("💥 Error deleting service template:", error);
+      logger.error("💥 Error deleting service template:", error);
       return {
         data: null,
         error: "Failed to delete service template",
