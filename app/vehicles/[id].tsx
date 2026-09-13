@@ -7,6 +7,7 @@ import { AlertModal, ConfirmModal } from "@/components/ui/Modal";
 import { Pagination } from "@/components/ui/Pagination";
 import { ServiceReceiptIndicator } from "@/components/ui/ReceiptViewer";
 import { SkeletonVehicleDetail } from "@/components/ui/Skeleton";
+import { useAuth } from "@/lib/contexts/AuthContext";
 import {
   FuelLogService,
   MileageLogService,
@@ -18,7 +19,6 @@ import {
   canUserAccessVehicle,
   formatServiceItems,
 } from "@/lib/utils/serviceUtils";
-import { supabase } from "@/services/supabaseClient";
 import { VehicleWithDetails } from "@/types/database-v2";
 import { Image } from "expo-image";
 import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
@@ -42,6 +42,7 @@ type LogTab = "mileage" | "fuel" | "service";
 
 export default function VehicleDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
+  const { user } = useAuth();
   const [vehicle, setVehicle] = useState<VehicleWithDetails | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -97,9 +98,6 @@ export default function VehicleDetailScreen() {
         setVehicle(vehicleResult.data);
 
         // Check if user can modify this vehicle's logs
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
         if (user) {
           const canAccess = await canUserAccessVehicle(id, user.id);
           setCanModify(canAccess);
@@ -115,7 +113,7 @@ export default function VehicleDetailScreen() {
     }
 
     setLoading(false);
-  }, [id]);
+  }, [id, user]);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
