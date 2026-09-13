@@ -8,17 +8,23 @@
  * @param timeoutMs Timeout in milliseconds (default: 10000ms)
  * @returns Promise that resolves/rejects within the timeout period
  */
-export function withTimeout<T>(
+export async function withTimeout<T>(
   promise: Promise<T>,
   timeoutMs: number = 10000,
 ): Promise<T> {
-  const timeoutPromise = new Promise<never>((_, reject) =>
-    setTimeout(
+  let timeoutId: ReturnType<typeof setTimeout>;
+  const timeoutPromise = new Promise<never>((_, reject) => {
+    timeoutId = setTimeout(
       () => reject(new Error(`Request timeout after ${timeoutMs}ms`)),
       timeoutMs,
-    ),
-  );
-  return Promise.race([promise, timeoutPromise]);
+    );
+  });
+
+  try {
+    return await Promise.race([promise, timeoutPromise]);
+  } finally {
+    clearTimeout(timeoutId!);
+  }
 }
 
 /**
@@ -68,6 +74,27 @@ export async function withRetry<T>(
   }
 
   throw lastError || new Error("Max retries exceeded");
+}
+
+/**
+ * Supabase-compatible fetch with timeout protection on every request and
+ * retries for read-only requests only. Retrying writes can duplicate them.
+ */
+export function resilientFetch(
+  input: RequestInfo | URL,
+  init?: RequestInit,
+): Promise<Response> {
+  const method = (
+    init?.method ??
+    (typeof Request !== "undefined" && input instanceof Request
+      ? input.method
+      : "GET")
+  ).toUpperCase();
+  const request = () => fetch(input, init);
+
+  return method === "GET" || method === "HEAD"
+    ? withRetry(request)
+    : withTimeout(request());
 }
 
 /**

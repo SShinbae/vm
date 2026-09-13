@@ -1,4 +1,5 @@
 import { logger } from "@/lib/utils/logger";
+import { withRetry } from "@/lib/utils/networkUtils";
 import Constants from "expo-constants";
 import { Platform } from "react-native";
 import { ApiResponse } from "../../types";
@@ -85,17 +86,19 @@ export class GoogleVisionService {
   ): Promise<GoogleVisionResponse | null> {
     const proxyUrl = this.getProxyUrl();
 
-    const response = await fetch(proxyUrl, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        image: base64Image,
-        features,
-        languageHints: ["en"],
+    const response = await withRetry(() =>
+      fetch(proxyUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          image: base64Image,
+          features,
+          languageHints: ["en"],
+        }),
       }),
-    });
+    );
 
     if (!response.ok) return null;
 
