@@ -3,6 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 import Constants from "expo-constants";
 import { Platform } from "react-native";
 import { Database } from "../types/database";
+import { resilientFetch } from "../lib/utils/networkUtils";
 
 // Safely get environment variables with error handling for production
 let supabaseUrl = "";
@@ -123,6 +124,7 @@ let supabase: ReturnType<typeof createClient<Database>>;
 
 try {
   supabase = createClient<Database>(safeSupabaseUrl, safeSupabaseKey, {
+    global: { fetch: resilientFetch },
     auth: {
       storage: storage,
       autoRefreshToken: true,
@@ -149,6 +151,7 @@ try {
     "https://placeholder.supabase.co",
     "placeholder-key",
     {
+      global: { fetch: resilientFetch },
       auth: {
         storage: storage,
         autoRefreshToken: false,

@@ -1,4 +1,5 @@
 import { logger } from "@/lib/utils/logger";
+import { withTimeout } from "@/lib/utils/networkUtils";
 import Constants from "expo-constants";
 import { Platform } from "react-native";
 import { supabase } from "../../services/supabaseClient";
@@ -148,16 +149,18 @@ class OneSignalService {
     }
 
     try {
-      await osWeb.init({
-        appId,
-        allowLocalhostAsSecureOrigin: __DEV__,
-        // In development, Metro doesn't serve from public folder
-        // In production, use the service worker from public folder
-        serviceWorkerParam: { scope: "/" },
-        serviceWorkerPath: __DEV__
-          ? undefined // Use OneSignal's default CDN-hosted worker in dev
-          : "/OneSignalSDKWorker.js",
-      });
+      await withTimeout(
+        osWeb.init({
+          appId,
+          allowLocalhostAsSecureOrigin: __DEV__,
+          // In development, Metro doesn't serve from public folder
+          // In production, use the service worker from public folder
+          serviceWorkerParam: { scope: "/" },
+          serviceWorkerPath: __DEV__
+            ? undefined // Use OneSignal's default CDN-hosted worker in dev
+            : "/OneSignalSDKWorker.js",
+        }),
+      );
 
       this.initialized = true;
       if (__DEV__) {
