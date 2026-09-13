@@ -1,5 +1,5 @@
+import { config } from "@/lib/config";
 import { logger } from "@/lib/utils/logger";
-import Constants from "expo-constants";
 
 interface PostHogConfig {
   apiKey: string;
@@ -7,12 +7,7 @@ interface PostHogConfig {
 }
 
 export function getPostHogConfig(): PostHogConfig | null {
-  const apiKey =
-    Constants.expoConfig?.extra?.posthogApiKey ||
-    process.env.EXPO_PUBLIC_POSTHOG_API_KEY;
-  const host =
-    Constants.expoConfig?.extra?.posthogHost ||
-    process.env.EXPO_PUBLIC_POSTHOG_HOST;
+  const { posthogApiKey: apiKey, posthogHost: host } = config;
 
   if (!apiKey) {
     if (__DEV__) {

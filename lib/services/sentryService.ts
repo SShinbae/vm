@@ -1,6 +1,6 @@
+import { config } from "@/lib/config";
 import { logger } from "@/lib/utils/logger";
 import * as Sentry from "@sentry/react-native";
-import Constants from "expo-constants";
 
 class SentryService {
   private initialized = false;
@@ -8,9 +8,7 @@ class SentryService {
   initialize(): void {
     if (this.initialized) return;
 
-    const dsn =
-      Constants.expoConfig?.extra?.sentryDsn ||
-      process.env.EXPO_PUBLIC_SENTRY_DSN;
+    const { sentryDsn: dsn } = config;
     if (!dsn) {
       if (__DEV__) {
         logger.warn(

@@ -1,5 +1,4 @@
 import { Session, User } from "@supabase/supabase-js";
-import Constants from "expo-constants";
 import { usePostHog } from "posthog-react-native";
 import React, {
   createContext,
@@ -12,6 +11,7 @@ import React, {
 import { Platform } from "react-native";
 import { supabase } from "../../services/supabaseClient";
 import { AuthState, AuthUser, Profile } from "../../types";
+import { config } from "../config";
 import { initializeOneSignalLazy } from "../services/oneSignalLazy";
 import { oneSignalService } from "../services/oneSignalService";
 import { sentryService } from "../services/sentryService";
@@ -313,17 +313,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
     setState((prev) => ({ ...prev, loading: true }));
 
     try {
-      const siteUrl = Constants.expoConfig?.extra?.siteUrl;
+      const siteUrl = config.siteUrl;
       const emailRedirectUrl = `${siteUrl}/auth/confirm`;
 
       // Enhanced debug logging (only in development)
       if (__DEV__) {
         console.log("=== SIGNUP DEBUG INFO ===");
         console.log("Email confirmation URL:", emailRedirectUrl);
-        console.log(
-          "Site URL from config:",
-          Constants.expoConfig?.extra?.siteUrl,
-        );
+        console.log("Site URL from config:", config.siteUrl);
         console.log("Full signup data:", { email, fullName });
         console.log("========================");
       }
@@ -473,16 +470,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   const resetPassword = async (email: string) => {
     try {
-      const siteUrl = Constants.expoConfig?.extra?.siteUrl;
+      const siteUrl = config.siteUrl;
       const resetPasswordUrl = `${siteUrl}/reset-password`;
 
       // Debug logging to ensure correct URL is being used
       if (__DEV__) {
         console.log("Reset password URL:", resetPasswordUrl);
-        console.log(
-          "Site URL from config:",
-          Constants.expoConfig?.extra?.siteUrl,
-        );
+        console.log("Site URL from config:", config.siteUrl);
       }
 
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
