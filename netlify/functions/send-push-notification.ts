@@ -1,5 +1,5 @@
 import type { Handler, HandlerEvent } from "@netlify/functions";
-import { createClient } from "@supabase/supabase-js";
+import { supabaseAdmin as supabase } from "./_shared/supabaseAdmin";
 import {
   getUserPreferences,
   shouldDeliverNotification,
@@ -8,9 +8,6 @@ import {
 // Environment variables
 const ONESIGNAL_REST_API_KEY = process.env.ONESIGNAL_REST_API_KEY!;
 const ONESIGNAL_APP_ID = process.env.EXPO_PUBLIC_ONESIGNAL_APP_ID!;
-const SUPABASE_URL = process.env.SUPABASE_URL!;
-const SUPABASE_SERVICE_KEY =
-  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_KEY!;
 
 // Webhook payload types
 interface WebhookPayload {
@@ -30,9 +27,6 @@ interface OneSignalNotification {
   web_url?: string;
   app_url?: string;
 }
-
-// Initialize Supabase client with service role key
-const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
 
 /**
  * Create notification record in database

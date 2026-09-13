@@ -1,6 +1,6 @@
+import { config } from "@/lib/config";
 import { logger } from "@/lib/utils/logger";
 import { withRetry } from "@/lib/utils/networkUtils";
-import Constants from "expo-constants";
 import { Platform } from "react-native";
 import { ApiResponse } from "../../types";
 
@@ -29,11 +29,10 @@ interface GoogleVisionResponse {
 
 export class GoogleVisionService {
   private static getProxyUrl(): string {
-    const siteUrl = Constants.expoConfig?.extra?.siteUrl || "";
     if (Platform.OS === "web") {
       return "/api/google-vision-proxy";
     }
-    return `${siteUrl}/api/google-vision-proxy`;
+    return `${config.siteUrl}/api/google-vision-proxy`;
   }
 
   /**

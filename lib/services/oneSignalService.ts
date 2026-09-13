@@ -1,6 +1,6 @@
+import { config } from "@/lib/config";
 import { logger } from "@/lib/utils/logger";
 import { withTimeout } from "@/lib/utils/networkUtils";
-import Constants from "expo-constants";
 import { Platform } from "react-native";
 import { supabase } from "../../services/supabaseClient";
 import { router } from "expo-router";
@@ -72,11 +72,7 @@ class OneSignalService {
   async initialize(): Promise<void> {
     if (this.initialized) return;
 
-    // Try to get App ID from expo config, fallback to process.env for web
-    const appId =
-      Constants.expoConfig?.extra?.oneSignalAppId ||
-      process.env.EXPO_PUBLIC_ONESIGNAL_APP_ID ||
-      process.env.ONESIGNAL_APP_ID;
+    const appId = config.oneSignalAppId;
 
     if (!appId || appId === "YOUR_ONESIGNAL_APP_ID_HERE") {
       if (__DEV__) {
