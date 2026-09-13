@@ -1,3 +1,4 @@
+import { logger } from "@/lib/utils/logger";
 import { supabase } from "../../services/supabaseClient";
 import {
   ApiResponse,
@@ -100,7 +101,7 @@ export class MileageLogService {
 
       // Handle errors
       if (ownedLogsResult.error) {
-        console.error(
+        logger.error(
           "Error fetching owned mileage logs:",
           ownedLogsResult.error,
         );
@@ -112,7 +113,7 @@ export class MileageLogService {
       }
 
       if (sharedLogsResult.error) {
-        console.warn(
+        logger.warn(
           "Error fetching shared mileage logs:",
           sharedLogsResult.error,
         );
@@ -140,7 +141,7 @@ export class MileageLogService {
 
       return { data: uniqueLogs, error: null, loading: false };
     } catch (error) {
-      console.error("Unexpected error fetching mileage logs:", error);
+      logger.error("Unexpected error fetching mileage logs:", error);
       return {
         data: null,
         error: "Failed to fetch mileage logs",
@@ -203,13 +204,13 @@ export class MileageLogService {
         .single();
 
       if (error) {
-        console.error("Error creating mileage log:", error);
+        logger.error("Error creating mileage log:", error);
         return { data: null, error: error.message, loading: false };
       }
 
       return { data, error: null, loading: false };
     } catch (error) {
-      console.error("Unexpected error creating mileage log:", error);
+      logger.error("Unexpected error creating mileage log:", error);
       return {
         data: null,
         error: "Failed to create mileage log",
@@ -229,11 +230,11 @@ export class MileageLogService {
       } = await supabase.auth.getUser();
 
       if (userError || !user) {
-        console.error("User authentication failed:", userError);
+        logger.error("User authentication failed:", userError);
         return { data: null, error: "User not authenticated", loading: false };
       }
 
-      console.log("Updating mileage log:", id, "with updates:", updates);
+      logger.log("Updating mileage log:", id, "with updates:", updates);
 
       // First, get the log to check vehicle access and ensure it exists
       const { data: existingLog, error: fetchError } = await supabase
@@ -243,7 +244,7 @@ export class MileageLogService {
         .single<{ vehicle_id: string; user_id: string }>();
 
       if (fetchError) {
-        console.error("Error fetching existing mileage log:", fetchError);
+        logger.error("Error fetching existing mileage log:", fetchError);
         if (fetchError.code === "PGRST116") {
           return { data: null, error: "Mileage log not found", loading: false };
         }
@@ -255,7 +256,7 @@ export class MileageLogService {
       }
 
       if (!existingLog) {
-        console.error("No mileage log found with ID:", id);
+        logger.error("No mileage log found with ID:", id);
         return { data: null, error: "Mileage log not found", loading: false };
       }
 
@@ -266,7 +267,7 @@ export class MileageLogService {
       );
 
       if (!hasAccess) {
-        console.error(
+        logger.error(
           "User does not have access to vehicle:",
           existingLog.vehicle_id,
         );
@@ -291,7 +292,7 @@ export class MileageLogService {
         .select();
 
       if (updateError) {
-        console.error("Error updating mileage log:", updateError);
+        logger.error("Error updating mileage log:", updateError);
         return {
           data: null,
           error: `Failed to update mileage log: ${updateError.message}`,
@@ -301,7 +302,7 @@ export class MileageLogService {
 
       // Check if any rows were updated
       if (!updateResult || updateResult.length === 0) {
-        console.error("No rows were updated for mileage log ID:", id);
+        logger.error("No rows were updated for mileage log ID:", id);
         return {
           data: null,
           error: "Mileage log could not be updated - it may have been deleted",
@@ -310,7 +311,7 @@ export class MileageLogService {
       }
 
       if (updateResult.length > 1) {
-        console.warn(
+        logger.warn(
           "Multiple rows updated for mileage log ID:",
           id,
           "Updated count:",
@@ -319,11 +320,11 @@ export class MileageLogService {
       }
 
       const updatedLog = updateResult[0] as MileageLog;
-      console.log("Successfully updated mileage log:", updatedLog);
+      logger.log("Successfully updated mileage log:", updatedLog);
 
       return { data: updatedLog, error: null, loading: false };
     } catch (error) {
-      console.error("Unexpected error updating mileage log:", error);
+      logger.error("Unexpected error updating mileage log:", error);
       return {
         data: null,
         error: "An unexpected error occurred while updating the mileage log",
@@ -340,11 +341,11 @@ export class MileageLogService {
       } = await supabase.auth.getUser();
 
       if (userError || !user) {
-        console.error("User authentication failed:", userError);
+        logger.error("User authentication failed:", userError);
         return { data: null, error: "User not authenticated", loading: false };
       }
 
-      console.log("Deleting mileage log:", id);
+      logger.log("Deleting mileage log:", id);
 
       // First, get the log to check vehicle access and ensure it exists
       const { data: existingLog, error: fetchError } = await supabase
@@ -354,7 +355,7 @@ export class MileageLogService {
         .single<{ vehicle_id: string }>();
 
       if (fetchError) {
-        console.error(
+        logger.error(
           "Error fetching existing mileage log for deletion:",
           fetchError,
         );
@@ -369,7 +370,7 @@ export class MileageLogService {
       }
 
       if (!existingLog) {
-        console.error("No mileage log found with ID for deletion:", id);
+        logger.error("No mileage log found with ID for deletion:", id);
         return { data: null, error: "Mileage log not found", loading: false };
       }
 
@@ -380,7 +381,7 @@ export class MileageLogService {
       );
 
       if (!hasAccess) {
-        console.error(
+        logger.error(
           "User does not have access to vehicle for deletion:",
           existingLog.vehicle_id,
         );
@@ -420,7 +421,7 @@ export class MileageLogService {
         .select();
 
       if (deleteError) {
-        console.error("Error deleting mileage log:", deleteError);
+        logger.error("Error deleting mileage log:", deleteError);
         return {
           data: null,
           error: `Failed to delete mileage log: ${deleteError.message}`,
@@ -430,7 +431,7 @@ export class MileageLogService {
 
       // Check if any rows were actually deleted
       if (!deleteResult || deleteResult.length === 0) {
-        console.error("No rows were deleted for mileage log ID:", id);
+        logger.error("No rows were deleted for mileage log ID:", id);
         return {
           data: null,
           error:
@@ -439,7 +440,7 @@ export class MileageLogService {
         };
       }
 
-      console.log(
+      logger.log(
         "Successfully deleted mileage log:",
         id,
         "Deleted count:",
@@ -448,7 +449,7 @@ export class MileageLogService {
 
       return { data: true, error: null, loading: false };
     } catch (error) {
-      console.error("Unexpected error deleting mileage log:", error);
+      logger.error("Unexpected error deleting mileage log:", error);
       return {
         data: null,
         error: "An unexpected error occurred while deleting the mileage log",
@@ -477,7 +478,7 @@ export class FuelLogService {
         .eq("date", date);
 
       if (existing && existing.length > 0) {
-        console.log("Mileage log exists for this date, skipping auto-creation");
+        logger.log("Mileage log exists for this date, skipping auto-creation");
         return;
       }
 
@@ -490,9 +491,9 @@ export class FuelLogService {
         user_id: userId,
       } as any);
 
-      console.log("Mileage log auto-created from fuel log");
+      logger.log("Mileage log auto-created from fuel log");
     } catch (error) {
-      console.warn("Failed to auto-create mileage log:", error);
+      logger.warn("Failed to auto-create mileage log:", error);
       // Don't throw - this is fire-and-forget
     }
   }
@@ -583,7 +584,7 @@ export class FuelLogService {
 
       // Handle errors
       if (ownedLogsResult.error) {
-        console.error("Error fetching owned fuel logs:", ownedLogsResult.error);
+        logger.error("Error fetching owned fuel logs:", ownedLogsResult.error);
         return {
           data: null,
           error: ownedLogsResult.error.message,
@@ -592,10 +593,7 @@ export class FuelLogService {
       }
 
       if (sharedLogsResult.error) {
-        console.warn(
-          "Error fetching shared fuel logs:",
-          sharedLogsResult.error,
-        );
+        logger.warn("Error fetching shared fuel logs:", sharedLogsResult.error);
         // Don't fail completely, just use owned logs
       }
 
@@ -620,7 +618,7 @@ export class FuelLogService {
 
       return { data: uniqueLogs, error: null, loading: false };
     } catch (error) {
-      console.error("Unexpected error fetching fuel logs:", error);
+      logger.error("Unexpected error fetching fuel logs:", error);
       return { data: null, error: "Failed to fetch fuel logs", loading: false };
     }
   }
@@ -648,7 +646,7 @@ export class FuelLogService {
         .single();
 
       if (error) {
-        console.error("Error fetching fuel log:", error);
+        logger.error("Error fetching fuel log:", error);
         return { data: null, error: error.message, loading: false };
       }
 
@@ -669,7 +667,7 @@ export class FuelLogService {
 
       return { data, error: null, loading: false };
     } catch (error) {
-      console.error("Unexpected error fetching fuel log:", error);
+      logger.error("Unexpected error fetching fuel log:", error);
       return { data: null, error: "Failed to fetch fuel log", loading: false };
     }
   }
@@ -715,7 +713,7 @@ export class FuelLogService {
         .single();
 
       if (error) {
-        console.error("Error creating fuel log:", error);
+        logger.error("Error creating fuel log:", error);
         return { data: null, error: error.message, loading: false };
       }
 
@@ -726,12 +724,12 @@ export class FuelLogService {
           log.odometer_reading,
           log.date,
           user.id,
-        ).catch((err) => console.warn("Mileage auto-log failed:", err));
+        ).catch((err) => logger.warn("Mileage auto-log failed:", err));
       }
 
       return { data, error: null, loading: false };
     } catch (error) {
-      console.error("Unexpected error creating fuel log:", error);
+      logger.error("Unexpected error creating fuel log:", error);
       return { data: null, error: "Failed to create fuel log", loading: false };
     }
   }
@@ -747,11 +745,11 @@ export class FuelLogService {
       } = await supabase.auth.getUser();
 
       if (userError || !user) {
-        console.error("User authentication failed:", userError);
+        logger.error("User authentication failed:", userError);
         return { data: null, error: "User not authenticated", loading: false };
       }
 
-      console.log("Updating fuel log:", id, "with updates:", updates);
+      logger.log("Updating fuel log:", id, "with updates:", updates);
 
       // First, get the log to check vehicle access and ensure it exists
       const { data: existingLog, error: fetchError } = await supabase
@@ -761,7 +759,7 @@ export class FuelLogService {
         .single<{ vehicle_id: string; user_id: string }>();
 
       if (fetchError) {
-        console.error("Error fetching existing fuel log:", fetchError);
+        logger.error("Error fetching existing fuel log:", fetchError);
         if (fetchError.code === "PGRST116") {
           return { data: null, error: "Fuel log not found", loading: false };
         }
@@ -773,7 +771,7 @@ export class FuelLogService {
       }
 
       if (!existingLog) {
-        console.error("No fuel log found with ID:", id);
+        logger.error("No fuel log found with ID:", id);
         return { data: null, error: "Fuel log not found", loading: false };
       }
 
@@ -784,7 +782,7 @@ export class FuelLogService {
       );
 
       if (!hasAccess) {
-        console.error(
+        logger.error(
           "User does not have access to vehicle:",
           existingLog.vehicle_id,
         );
@@ -811,7 +809,7 @@ export class FuelLogService {
         .select();
 
       if (updateError) {
-        console.error("Error updating fuel log:", updateError);
+        logger.error("Error updating fuel log:", updateError);
         return {
           data: null,
           error: `Failed to update fuel log: ${updateError.message}`,
@@ -821,7 +819,7 @@ export class FuelLogService {
 
       // Check if any rows were updated
       if (!updateResult || updateResult.length === 0) {
-        console.error("No rows were updated for fuel log ID:", id);
+        logger.error("No rows were updated for fuel log ID:", id);
         return {
           data: null,
           error: "Fuel log could not be updated - it may have been deleted",
@@ -830,7 +828,7 @@ export class FuelLogService {
       }
 
       if (updateResult.length > 1) {
-        console.warn(
+        logger.warn(
           "Multiple rows updated for fuel log ID:",
           id,
           "Updated count:",
@@ -839,11 +837,11 @@ export class FuelLogService {
       }
 
       const updatedLog = updateResult[0] as FuelLog;
-      console.log("Successfully updated fuel log:", updatedLog);
+      logger.log("Successfully updated fuel log:", updatedLog);
 
       return { data: updatedLog, error: null, loading: false };
     } catch (error) {
-      console.error("Unexpected error updating fuel log:", error);
+      logger.error("Unexpected error updating fuel log:", error);
       return {
         data: null,
         error: "An unexpected error occurred while updating the fuel log",
@@ -860,11 +858,11 @@ export class FuelLogService {
       } = await supabase.auth.getUser();
 
       if (userError || !user) {
-        console.error("User authentication failed:", userError);
+        logger.error("User authentication failed:", userError);
         return { data: null, error: "User not authenticated", loading: false };
       }
 
-      console.log("Deleting fuel log:", id);
+      logger.log("Deleting fuel log:", id);
 
       // First, get the log to check vehicle access and ensure it exists
       const { data: existingLog, error: fetchError } = await supabase
@@ -874,7 +872,7 @@ export class FuelLogService {
         .single<{ vehicle_id: string }>();
 
       if (fetchError) {
-        console.error(
+        logger.error(
           "Error fetching existing fuel log for deletion:",
           fetchError,
         );
@@ -889,7 +887,7 @@ export class FuelLogService {
       }
 
       if (!existingLog) {
-        console.error("No fuel log found with ID for deletion:", id);
+        logger.error("No fuel log found with ID for deletion:", id);
         return { data: null, error: "Fuel log not found", loading: false };
       }
 
@@ -900,7 +898,7 @@ export class FuelLogService {
       );
 
       if (!hasAccess) {
-        console.error(
+        logger.error(
           "User does not have access to vehicle for deletion:",
           existingLog.vehicle_id,
         );
@@ -940,7 +938,7 @@ export class FuelLogService {
         .select();
 
       if (deleteError) {
-        console.error("Error deleting fuel log:", deleteError);
+        logger.error("Error deleting fuel log:", deleteError);
         return {
           data: null,
           error: `Failed to delete fuel log: ${deleteError.message}`,
@@ -950,7 +948,7 @@ export class FuelLogService {
 
       // Check if any rows were actually deleted
       if (!deleteResult || deleteResult.length === 0) {
-        console.error("No rows were deleted for fuel log ID:", id);
+        logger.error("No rows were deleted for fuel log ID:", id);
         return {
           data: null,
           error:
@@ -959,7 +957,7 @@ export class FuelLogService {
         };
       }
 
-      console.log(
+      logger.log(
         "Successfully deleted fuel log:",
         id,
         "Deleted count:",
@@ -968,7 +966,7 @@ export class FuelLogService {
 
       return { data: true, error: null, loading: false };
     } catch (error) {
-      console.error("Unexpected error deleting fuel log:", error);
+      logger.error("Unexpected error deleting fuel log:", error);
       return {
         data: null,
         error: "An unexpected error occurred while deleting the fuel log",
@@ -1065,7 +1063,7 @@ export class ServiceLogService {
 
       // Handle errors
       if (ownedLogsResult.error) {
-        console.error(
+        logger.error(
           "Error fetching owned service logs:",
           ownedLogsResult.error,
         );
@@ -1077,7 +1075,7 @@ export class ServiceLogService {
       }
 
       if (sharedLogsResult.error) {
-        console.warn(
+        logger.warn(
           "Error fetching shared service logs:",
           sharedLogsResult.error,
         );
@@ -1105,7 +1103,7 @@ export class ServiceLogService {
 
       return { data: uniqueLogs, error: null, loading: false };
     } catch (error) {
-      console.error("Unexpected error fetching service logs:", error);
+      logger.error("Unexpected error fetching service logs:", error);
       return {
         data: null,
         error: "Failed to fetch service logs",
@@ -1159,13 +1157,13 @@ export class ServiceLogService {
         .single();
 
       if (error) {
-        console.error("Error creating service log:", error);
+        logger.error("Error creating service log:", error);
         return { data: null, error: error.message, loading: false };
       }
 
       return { data, error: null, loading: false };
     } catch (error) {
-      console.error("Unexpected error creating service log:", error);
+      logger.error("Unexpected error creating service log:", error);
       return {
         data: null,
         error: "Failed to create service log",
@@ -1185,11 +1183,11 @@ export class ServiceLogService {
       } = await supabase.auth.getUser();
 
       if (userError || !user) {
-        console.error("User authentication failed:", userError);
+        logger.error("User authentication failed:", userError);
         return { data: null, error: "User not authenticated", loading: false };
       }
 
-      console.log("Updating service log:", id, "with updates:", updates);
+      logger.log("Updating service log:", id, "with updates:", updates);
 
       // First, get the log to check vehicle access and ensure it exists
       const { data: existingLog, error: fetchError } = await supabase
@@ -1199,7 +1197,7 @@ export class ServiceLogService {
         .single<{ vehicle_id: string; user_id: string }>();
 
       if (fetchError) {
-        console.error("Error fetching existing service log:", fetchError);
+        logger.error("Error fetching existing service log:", fetchError);
         if (fetchError.code === "PGRST116") {
           return { data: null, error: "Service log not found", loading: false };
         }
@@ -1211,7 +1209,7 @@ export class ServiceLogService {
       }
 
       if (!existingLog) {
-        console.error("No service log found with ID:", id);
+        logger.error("No service log found with ID:", id);
         return { data: null, error: "Service log not found", loading: false };
       }
 
@@ -1222,7 +1220,7 @@ export class ServiceLogService {
       );
 
       if (!hasAccess) {
-        console.error(
+        logger.error(
           "User does not have access to vehicle:",
           existingLog.vehicle_id,
         );
@@ -1253,7 +1251,7 @@ export class ServiceLogService {
         .select();
 
       if (updateError) {
-        console.error("Error updating service log:", updateError);
+        logger.error("Error updating service log:", updateError);
         return {
           data: null,
           error: `Failed to update service log: ${updateError.message}`,
@@ -1263,7 +1261,7 @@ export class ServiceLogService {
 
       // Check if any rows were updated
       if (!updateResult || updateResult.length === 0) {
-        console.error("No rows were updated for service log ID:", id);
+        logger.error("No rows were updated for service log ID:", id);
         return {
           data: null,
           error: "Service log could not be updated - it may have been deleted",
@@ -1272,7 +1270,7 @@ export class ServiceLogService {
       }
 
       if (updateResult.length > 1) {
-        console.warn(
+        logger.warn(
           "Multiple rows updated for service log ID:",
           id,
           "Updated count:",
@@ -1281,11 +1279,11 @@ export class ServiceLogService {
       }
 
       const updatedLog = updateResult[0] as ServiceLog;
-      console.log("Successfully updated service log:", updatedLog);
+      logger.log("Successfully updated service log:", updatedLog);
 
       return { data: updatedLog, error: null, loading: false };
     } catch (error) {
-      console.error("Unexpected error updating service log:", error);
+      logger.error("Unexpected error updating service log:", error);
       return {
         data: null,
         error: "An unexpected error occurred while updating the service log",
@@ -1302,11 +1300,11 @@ export class ServiceLogService {
       } = await supabase.auth.getUser();
 
       if (userError || !user) {
-        console.error("User authentication failed:", userError);
+        logger.error("User authentication failed:", userError);
         return { data: null, error: "User not authenticated", loading: false };
       }
 
-      console.log("Deleting service log:", id);
+      logger.log("Deleting service log:", id);
 
       // First, get the log to check vehicle access and ensure it exists
       const { data: existingLog, error: fetchError } = await supabase
@@ -1316,7 +1314,7 @@ export class ServiceLogService {
         .single<{ vehicle_id: string }>();
 
       if (fetchError) {
-        console.error(
+        logger.error(
           "Error fetching existing service log for deletion:",
           fetchError,
         );
@@ -1331,7 +1329,7 @@ export class ServiceLogService {
       }
 
       if (!existingLog) {
-        console.error("No service log found with ID for deletion:", id);
+        logger.error("No service log found with ID for deletion:", id);
         return { data: null, error: "Service log not found", loading: false };
       }
 
@@ -1342,7 +1340,7 @@ export class ServiceLogService {
       );
 
       if (!hasAccess) {
-        console.error(
+        logger.error(
           "User does not have access to vehicle for deletion:",
           existingLog.vehicle_id,
         );
@@ -1382,7 +1380,7 @@ export class ServiceLogService {
         .single<{ user_id: string }>();
 
       if (vehicleError) {
-        console.error(
+        logger.error(
           "Error fetching vehicle for ownership check:",
           vehicleError,
         );
@@ -1410,7 +1408,7 @@ export class ServiceLogService {
         .select();
 
       if (deleteError) {
-        console.error("Error deleting service log:", deleteError);
+        logger.error("Error deleting service log:", deleteError);
         return {
           data: null,
           error: `Failed to delete service log: ${deleteError.message}`,
@@ -1420,7 +1418,7 @@ export class ServiceLogService {
 
       // Check if any rows were actually deleted
       if (!deleteResult || deleteResult.length === 0) {
-        console.error("No rows were deleted for service log ID:", id);
+        logger.error("No rows were deleted for service log ID:", id);
         return {
           data: null,
           error:
@@ -1429,7 +1427,7 @@ export class ServiceLogService {
         };
       }
 
-      console.log(
+      logger.log(
         "Successfully deleted service log:",
         id,
         "Deleted count:",
@@ -1438,7 +1436,7 @@ export class ServiceLogService {
 
       return { data: true, error: null, loading: false };
     } catch (error) {
-      console.error("Unexpected error deleting service log:", error);
+      logger.error("Unexpected error deleting service log:", error);
       return {
         data: null,
         error: "An unexpected error occurred while deleting the service log",

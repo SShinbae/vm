@@ -1,3 +1,4 @@
+import { logger } from "@/lib/utils/logger";
 import { supabase } from "../../services/supabaseClient";
 import { ApiResponse } from "../../types";
 
@@ -15,7 +16,7 @@ export class ReceiptStorageService {
 
       return { data: data.publicUrl, error: null, loading: false };
     } catch (error) {
-      console.error("Error getting receipt image URL:", error);
+      logger.error("Error getting receipt image URL:", error);
       return {
         data: null,
         error: "Failed to get receipt image URL",
@@ -36,13 +37,13 @@ export class ReceiptStorageService {
         .remove([receiptPath]);
 
       if (error) {
-        console.error("Error deleting receipt image:", error);
+        logger.error("Error deleting receipt image:", error);
         return { data: null, error: error.message, loading: false };
       }
 
       return { data: true, error: null, loading: false };
     } catch (error) {
-      console.error("Unexpected error deleting receipt image:", error);
+      logger.error("Unexpected error deleting receipt image:", error);
       return {
         data: null,
         error: "Failed to delete receipt image",
@@ -73,13 +74,13 @@ export class ReceiptStorageService {
         });
 
       if (error) {
-        console.error("Error listing receipt images:", error);
+        logger.error("Error listing receipt images:", error);
         return { data: null, error: error.message, loading: false };
       }
 
       return { data: data || [], error: null, loading: false };
     } catch (error) {
-      console.error("Unexpected error listing receipt images:", error);
+      logger.error("Unexpected error listing receipt images:", error);
       return {
         data: null,
         error: "Failed to list receipt images",
@@ -116,7 +117,7 @@ export class ReceiptStorageService {
         });
 
       if (error) {
-        console.error("Error getting storage stats:", error);
+        logger.error("Error getting storage stats:", error);
         return { data: null, error: error.message, loading: false };
       }
 
@@ -138,7 +139,7 @@ export class ReceiptStorageService {
         loading: false,
       };
     } catch (error) {
-      console.error("Unexpected error getting storage stats:", error);
+      logger.error("Unexpected error getting storage stats:", error);
       return {
         data: null,
         error: "Failed to get storage statistics",
@@ -192,13 +193,13 @@ export class ReceiptStorageService {
         .remove(filePaths);
 
       if (deleteError) {
-        console.error("Error cleaning up old receipts:", deleteError);
+        logger.error("Error cleaning up old receipts:", deleteError);
         return { data: null, error: deleteError.message, loading: false };
       }
 
       return { data: oldFiles.length, error: null, loading: false };
     } catch (error) {
-      console.error("Unexpected error cleaning up old receipts:", error);
+      logger.error("Unexpected error cleaning up old receipts:", error);
       return {
         data: null,
         error: "Failed to cleanup old receipts",

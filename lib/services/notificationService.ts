@@ -1,3 +1,4 @@
+import { logger } from "@/lib/utils/logger";
 import { supabase } from "../../services/supabaseClient";
 import { RealtimeChannel } from "@supabase/supabase-js";
 
@@ -70,11 +71,11 @@ class NotificationService {
       now - this.userDataCache.timestamp < this.userDataCache.ttl;
 
     if (!force && isCacheValid && this.userGroupIds.length > 0) {
-      console.log("📦 Using cached user data, skipping database queries");
+      logger.log("📦 Using cached user data, skipping database queries");
       return;
     }
 
-    console.log("🔄 Cache expired or forced, fetching fresh user data...");
+    logger.log("🔄 Cache expired or forced, fetching fresh user data...");
 
     // OPTIMIZATION: Run all queries in parallel for better performance
     const [userGroupsResult, vehiclesResult, profileResult] = await Promise.all(
@@ -119,7 +120,7 @@ class NotificationService {
 
     // Update cache timestamp
     this.userDataCache.timestamp = now;
-    console.log("✅ User data loaded and cached", {
+    logger.log("✅ User data loaded and cached", {
       vehicleCount: this.userVehicleIds.length,
       groupCount: this.userGroupIds.length,
       email: this.userEmail ? "set" : "not set",
@@ -138,7 +139,7 @@ class NotificationService {
     this.subscribeToGroupChanges();
     this.subscribeToInvitations();
 
-    console.log("📡 Realtime subscriptions configured with filters:", {
+    logger.log("📡 Realtime subscriptions configured with filters:", {
       vehicleFilter:
         this.userVehicleIds.length > 0
           ? `vehicle_id in (${this.userVehicleIds.length} vehicles)`
@@ -155,7 +156,7 @@ class NotificationService {
     // OPTIMIZATION: Only subscribe if user has vehicles to monitor
     // This prevents unnecessary data transfer for users with no vehicles
     if (this.userVehicleIds.length === 0) {
-      console.log(
+      logger.log(
         "⏭️ Skipping log subscriptions - user has no vehicles to monitor",
       );
       return;
@@ -223,9 +224,7 @@ class NotificationService {
     // OPTIMIZATION: Only subscribe if user is a member of any groups
     // This prevents unnecessary data transfer for users not in any groups
     if (this.userGroupIds.length === 0) {
-      console.log(
-        "⏭️ Skipping group_members subscription - user has no groups",
-      );
+      logger.log("⏭️ Skipping group_members subscription - user has no groups");
       return;
     }
 
@@ -255,13 +254,13 @@ class NotificationService {
   private subscribeToInvitations(): void {
     // OPTIMIZATION: Only subscribe if we have the user's email
     if (!this.userEmail) {
-      console.log(
+      logger.log(
         "⏭️ Skipping group_invitations subscription - user email not available",
       );
       return;
     }
 
-    console.log("🔌 Subscribing to group_invitations table changes...");
+    logger.log("🔌 Subscribing to group_invitations table changes...");
 
     // Build server-side filter for user's email (case-insensitive comparison done server-side)
     // Note: This assumes emails are stored in lowercase in the database
@@ -279,7 +278,7 @@ class NotificationService {
           filter: emailFilter,
         },
         async (payload) => {
-          console.log(
+          logger.log(
             "🔔 Realtime event received from group_invitations!",
             payload,
           );
@@ -287,11 +286,11 @@ class NotificationService {
         },
       )
       .subscribe((status) => {
-        console.log("📡 group_invitations subscription status:", status);
+        logger.log("📡 group_invitations subscription status:", status);
       });
 
     this.channels.push(invitationChannel);
-    console.log("✅ group_invitations subscription created with email filter");
+    logger.log("✅ group_invitations subscription created with email filter");
   }
 
   private async handleLogChange(
@@ -448,7 +447,7 @@ class NotificationService {
     // via the subscription filter, so we don't need client-side checks
     const { new: newRecord } = payload;
 
-    console.log("🔔 Processing group invitation for user", {
+    logger.log("🔔 Processing group invitation for user", {
       invitationId: newRecord.id,
       groupId: newRecord.group_id,
     });
@@ -461,7 +460,7 @@ class NotificationService {
       .single();
 
     if (groupError) {
-      console.warn("⚠️ Could not fetch group details:", groupError);
+      logger.warn("⚠️ Could not fetch group details:", groupError);
     }
 
     const { data: inviter, error: inviterError } = await supabase
@@ -471,7 +470,7 @@ class NotificationService {
       .single();
 
     if (inviterError) {
-      console.warn("⚠️ Could not fetch inviter details:", inviterError);
+      logger.warn("⚠️ Could not fetch inviter details:", inviterError);
     }
 
     const groupData = group as { name: string } | null;
@@ -504,18 +503,16 @@ class NotificationService {
     };
 
     this.notifyCallbacks(notification);
-    console.log("✅ Group invitation notification sent");
+    logger.log("✅ Group invitation notification sent");
   }
 
   private notifyCallbacks(notification: NotificationData): void {
-    console.log("🔔 notifyCallbacks triggered with", {
+    logger.log("🔔 notifyCallbacks triggered with", {
       notification,
       callbackCount: this.callbacks.length,
     });
     this.callbacks.forEach((callback, index) => {
-      console.log(
-        `🔔 Executing callback ${index + 1}/${this.callbacks.length}`,
-      );
+      logger.log(`🔔 Executing callback ${index + 1}/${this.callbacks.length}`);
       callback(notification);
     });
   }
@@ -560,14 +557,14 @@ class NotificationService {
    * Call this after user data changes (e.g., joining a group, adding a vehicle)
    */
   async recreateSubscriptions(): Promise<void> {
-    console.log("🔄 Recreating realtime subscriptions...");
+    logger.log("🔄 Recreating realtime subscriptions...");
 
     // First, refresh user data to get latest vehicles/groups
     await this.loadUserData(true);
 
     // Check if recreation is actually needed
     if (!this.shouldRecreateSubscriptions()) {
-      console.log("⏭️ No subscription changes needed - data unchanged");
+      logger.log("⏭️ No subscription changes needed - data unchanged");
       return;
     }
 
@@ -580,7 +577,7 @@ class NotificationService {
     // Setup new subscriptions with updated filters
     this.setupRealtimeSubscriptions();
 
-    console.log("✅ Realtime subscriptions recreated with updated filters");
+    logger.log("✅ Realtime subscriptions recreated with updated filters");
   }
 
   /**
@@ -589,7 +586,7 @@ class NotificationService {
    */
   invalidateCache(): void {
     this.userDataCache.timestamp = 0;
-    console.log("🗑️ User data cache invalidated");
+    logger.log("🗑️ User data cache invalidated");
   }
 
   /**

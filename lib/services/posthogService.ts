@@ -1,3 +1,4 @@
+import { logger } from "@/lib/utils/logger";
 import Constants from "expo-constants";
 
 interface PostHogConfig {
@@ -15,7 +16,7 @@ export function getPostHogConfig(): PostHogConfig | null {
 
   if (!apiKey) {
     if (__DEV__) {
-      console.warn(
+      logger.warn(
         "PostHog: API key not configured. Please set POSTHOG_API_KEY in your .env file",
       );
     }
