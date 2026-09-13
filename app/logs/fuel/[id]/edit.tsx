@@ -7,9 +7,9 @@ import { Input } from "@/components/ui/Input";
 import { ConfirmModal } from "@/components/ui/Modal";
 import { SkeletonFuelLogEdit } from "@/components/ui/Skeleton";
 import { useToast } from "@/hooks/useToast";
+import { useAuth } from "@/lib/contexts/AuthContext";
 import { FuelLogService } from "@/lib/services/loggingService";
 import { canUserAccessVehicle } from "@/lib/utils/serviceUtils";
-import { supabase } from "@/services/supabaseClient";
 import { FuelLog, FuelLogFormData, Vehicle } from "@/types";
 import { router, useLocalSearchParams, useNavigation } from "expo-router";
 import { usePostHog } from "posthog-react-native";
@@ -31,6 +31,7 @@ type FuelLogWithVehicle = FuelLog & {
 
 export default function EditFuelLogScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
+  const { user } = useAuth();
   const { styles, theme } = useStyles(stylesheet);
   const [fuelLog, setFuelLog] = useState<FuelLogWithVehicle | null>(null);
   const [formData, setFormData] = useState<FuelLogFormData>({
@@ -135,9 +136,6 @@ export default function EditFuelLogScreen() {
         );
 
         // Check if user can modify this log
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
         if (user) {
           const canAccess = await canUserAccessVehicle(
             log.vehicle_id!,
