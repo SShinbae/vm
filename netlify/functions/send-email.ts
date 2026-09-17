@@ -1,12 +1,5 @@
 import type { Handler, HandlerEvent } from "@netlify/functions";
-
-// Brevo API types
-interface BrevoEmailRequest {
-  sender: { email: string; name: string };
-  to: { email: string; name?: string }[];
-  subject: string;
-  htmlContent: string;
-}
+import { sendBrevoEmail, SENDER_EMAIL, SENDER_NAME } from "./_shared/email";
 
 interface SendEmailPayload {
   type: "confirmation" | "recovery" | "magic_link";
@@ -22,35 +15,6 @@ interface SendEmailPayload {
       full_name?: string;
     };
   };
-}
-
-const BREVO_API_KEY = process.env.BREVO_API_KEY!;
-const SENDER_EMAIL = process.env.SENDER_EMAIL || "noreply@vm.wanahnaf.dev";
-const SENDER_NAME = process.env.SENDER_NAME || "Vehicles Management";
-
-async function sendBrevoEmail(emailData: BrevoEmailRequest): Promise<boolean> {
-  try {
-    const response = await fetch("https://api.brevo.com/v3/smtp/email", {
-      method: "POST",
-      headers: {
-        "api-key": BREVO_API_KEY,
-        "Content-Type": "application/json",
-        Accept: "application/json",
-      },
-      body: JSON.stringify(emailData),
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error("Brevo API error:", response.status, errorText);
-      return false;
-    }
-
-    return true;
-  } catch (error) {
-    console.error("Brevo send error:", error);
-    return false;
-  }
 }
 
 function getConfirmationEmailHtml(

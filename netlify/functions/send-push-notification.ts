@@ -1,455 +1,213 @@
 import type { Handler, HandlerEvent } from "@netlify/functions";
+import { createHash } from "node:crypto";
 import { supabaseAdmin as supabase } from "./_shared/supabaseAdmin";
 import {
-  getUserPreferences,
-  shouldDeliverNotification,
+  deliverNotification,
+  type NotificationType,
 } from "./_shared/notifications";
+import {
+  sendBrevoEmail,
+  getInvitationEmailHtml,
+  SENDER_EMAIL,
+  SENDER_NAME,
+} from "./_shared/email";
 
-// Environment variables
-const ONESIGNAL_REST_API_KEY = process.env.ONESIGNAL_REST_API_KEY!;
-const ONESIGNAL_APP_ID = process.env.EXPO_PUBLIC_ONESIGNAL_APP_ID!;
-
-// Webhook payload types
 interface WebhookPayload {
   type: "INSERT" | "UPDATE" | "DELETE";
   table: string;
-  record: any;
-  old_record?: any;
+  record: Record<string, any>;
+  old_record?: Record<string, any>;
   schema: string;
 }
 
-interface OneSignalNotification {
-  app_id: string;
-  include_external_user_ids: string[];
-  headings: { en: string };
-  contents: { en: string };
-  data: Record<string, any>;
-  web_url?: string;
-  app_url?: string;
+const siteUrl = process.env.SITE_URL || "https://vm.wanahnaf.dev";
+
+function eventKey(payload: WebhookPayload): string {
+  const record = payload.record || payload.old_record || {};
+  const version = createHash("sha256")
+    .update(JSON.stringify(record))
+    .digest("hex");
+  return `event:${payload.table}:${payload.type}:${record.id}:${version}`;
 }
 
-/**
- * Create notification record in database
- */
-async function createNotificationRecord(
-  userId: string,
-  notificationType:
-    | "mileage_log"
-    | "fuel_log"
-    | "service_log"
-    | "group_member"
-    | "group_invite",
-  title: string,
-  body: string,
-  data: any,
-  relatedVehicleId?: string | null,
-  relatedGroupId?: string | null,
-  actionUrl?: string | null,
+async function handleGroupInvitation(
+  payload: WebhookPayload,
 ): Promise<boolean> {
-  try {
-    const { error } = await supabase.from("notifications").insert({
-      user_id: userId,
-      notification_type: notificationType,
-      title,
-      body,
-      data,
-      read: false,
-      related_vehicle_id: relatedVehicleId,
-      related_group_id: relatedGroupId,
-      action_url: actionUrl,
-    });
+  const record = payload.record;
+  const inviteEmail = String(record.email).toLowerCase();
 
-    if (error) {
-      console.error("Error creating notification record:", error);
-      return false;
-    }
+  const [{ data: invitedUser }, { data: group }, { data: inviter }] =
+    await Promise.all([
+      supabase
+        .from("profiles")
+        .select("id")
+        .eq("email", inviteEmail)
+        .maybeSingle(),
+      supabase.from("groups").select("name").eq("id", record.group_id).single(),
+      supabase
+        .from("profiles")
+        .select("full_name, email")
+        .eq("id", record.invited_by)
+        .single(),
+    ]);
 
-    console.log(`Notification record created for user ${userId}`);
-    return true;
-  } catch (error) {
-    console.error("Error creating notification record:", error);
-    return false;
-  }
+  const inviterName = inviter?.full_name || inviter?.email || "Someone";
+  const groupName = group?.name || "a group";
+
+  // Always email the invitee — this is the only delivery path for people who
+  // don't have an account yet; they sign up and the invite is waiting for them.
+  const emailSent = await sendBrevoEmail({
+    sender: { email: SENDER_EMAIL, name: SENDER_NAME },
+    to: [{ email: inviteEmail }],
+    subject: `${inviterName} invited you to join ${groupName}`,
+    htmlContent: getInvitationEmailHtml(inviterName, groupName, siteUrl),
+  });
+
+  // Existing users additionally get push + in-app notification.
+  if (!invitedUser) return emailSent;
+
+  const result = await deliverNotification({
+    userId: invitedUser.id,
+    notificationKey: `${eventKey(payload)}:${invitedUser.id}`,
+    notificationType: "group_invite",
+    title: "Group invitation",
+    body: `${inviterName} invited you to join ${groupName}`,
+    data: {
+      type: "group_invite",
+      inviterName,
+      inviterId: record.invited_by,
+      groupId: record.group_id,
+      invitationId: record.id,
+    },
+    relatedGroupId: record.group_id,
+    actionUrl: "/notifications",
+    webUrl: `${siteUrl}/notifications`,
+  });
+  return result !== "failed" || emailSent;
 }
 
-/**
- * Send push notification via OneSignal REST API
- */
-async function sendOneSignalNotification(
-  notification: OneSignalNotification,
-): Promise<boolean> {
-  try {
-    console.log("Sending OneSignal notification:", {
-      recipients: notification.include_external_user_ids,
-      heading: notification.headings.en,
-    });
+async function handleLogChange(payload: WebhookPayload): Promise<boolean> {
+  const record = payload.record || payload.old_record!;
+  const { data: vehicle } = await supabase
+    .from("vehicles")
+    .select("make, model, year")
+    .eq("id", record.vehicle_id)
+    .single();
+  if (!vehicle) return false;
 
-    const response = await fetch("https://onesignal.com/api/v1/notifications", {
-      method: "POST",
-      headers: {
-        Authorization: `Basic ${ONESIGNAL_REST_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(notification),
-    });
+  const { data: shares } = await supabase
+    .from("vehicle_group_shares")
+    .select("group_id")
+    .eq("vehicle_id", record.vehicle_id);
+  if (!shares?.length) return false;
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error("OneSignal API error:", response.status, errorText);
-      return false;
-    }
+  const { data: members } = await supabase
+    .from("group_members")
+    .select("user_id")
+    .in(
+      "group_id",
+      shares.map((share) => share.group_id),
+    )
+    .neq("user_id", record.user_id);
+  if (!members?.length) return false;
 
-    const result = await response.json();
-    console.log("OneSignal notification sent successfully:", result.id);
-    return true;
-  } catch (error) {
-    console.error("OneSignal send error:", error);
-    return false;
-  }
-}
+  const { data: user } = await supabase
+    .from("profiles")
+    .select("full_name, email")
+    .eq("id", record.user_id)
+    .single();
+  const userName = user?.full_name || user?.email || "Someone";
+  const action =
+    payload.type === "INSERT"
+      ? "added"
+      : payload.type === "DELETE"
+        ? "deleted"
+        : "updated";
+  const logType = payload.table.replace("_logs", "").replace("_", " ");
+  const notificationType = payload.table.replace(
+    "_logs",
+    "_log",
+  ) as NotificationType;
+  const title = "Vehicle log update";
+  const body = `${userName} ${action} a ${logType} for ${vehicle.year} ${vehicle.make} ${vehicle.model}`;
+  const recipients = [...new Set(members.map((member) => member.user_id))];
 
-/**
- * Handle group invitation notifications
- */
-async function handleGroupInvitation(record: any): Promise<boolean> {
-  console.log("Processing group invitation:", record.id);
-
-  try {
-    // Get recipient user by email
-    const { data: invitedUser, error: userError } = await supabase
-      .from("profiles")
-      .select("id, full_name")
-      .eq("email", record.email.toLowerCase())
-      .single();
-
-    if (userError || !invitedUser) {
-      console.log(
-        "Recipient not registered yet or error:",
-        record.email,
-        userError,
-      );
-      return false;
-    }
-
-    // Get group details
-    const { data: group } = await supabase
-      .from("groups")
-      .select("name")
-      .eq("id", record.group_id)
-      .single();
-
-    // Get inviter details
-    const { data: inviter } = await supabase
-      .from("profiles")
-      .select("full_name, email")
-      .eq("id", record.invited_by)
-      .single();
-
-    const groupName = group?.name || "a group";
-    const inviterName = inviter?.full_name || inviter?.email || "Someone";
-
-    const title = "Group Invitation";
-    const body = `${inviterName} invited you to join ${groupName}`;
-
-    // Always create notification record in database (visible in-app)
-    await createNotificationRecord(
-      invitedUser.id,
-      "group_invite",
-      title,
-      body,
-      {
-        inviterName,
-        inviterId: record.invited_by,
-        invitationId: record.id,
-      },
-      null,
-      record.group_id,
-      `${process.env.SITE_URL}/notifications`,
-    );
-
-    // Check user preferences before sending push
-    const prefs = await getUserPreferences(invitedUser.id);
-    const { deliver, reason } = shouldDeliverNotification(
-      prefs,
-      "group_invite",
-    );
-
-    if (!deliver) {
-      console.log(`Push skipped for ${invitedUser.id}: ${reason}`);
-      return true; // Record created, push skipped
-    }
-
-    // Send push notification
-    const pushSuccess = await sendOneSignalNotification({
-      app_id: ONESIGNAL_APP_ID,
-      include_external_user_ids: [invitedUser.id],
-      headings: { en: title },
-      contents: { en: body },
-      data: {
-        type: "group_invite",
-        groupId: record.group_id,
-        invitationId: record.id,
-      },
-      web_url: `${process.env.SITE_URL}/notifications`,
-      app_url: "vehiclesmanagement://notifications",
-    });
-
-    return pushSuccess;
-  } catch (error) {
-    console.error("Error handling group invitation:", error);
-    return false;
-  }
-}
-
-/**
- * Handle log change notifications (fuel, mileage, service)
- */
-async function handleLogChange(
-  table: string,
-  record: any,
-  eventType: string,
-): Promise<boolean> {
-  console.log(`Processing ${table} ${eventType}:`, record.id);
-
-  try {
-    // Get vehicle details
-    const { data: vehicle } = await supabase
-      .from("vehicles")
-      .select("make, model, year, user_id")
-      .eq("id", record.vehicle_id)
-      .single();
-
-    if (!vehicle) {
-      console.log("Vehicle not found:", record.vehicle_id);
-      return false;
-    }
-
-    // Get groups sharing this vehicle
-    const { data: shares } = await supabase
-      .from("vehicle_group_shares")
-      .select("group_id")
-      .eq("vehicle_id", record.vehicle_id);
-
-    if (!shares || shares.length === 0) {
-      console.log("No group shares for vehicle:", record.vehicle_id);
-      return false;
-    }
-
-    const groupIds = shares.map((s: any) => s.group_id);
-
-    // Get all group members (exclude the person who made the change)
-    const { data: members } = await supabase
-      .from("group_members")
-      .select("user_id")
-      .in("group_id", groupIds)
-      .neq("user_id", record.user_id);
-
-    if (!members || members.length === 0) {
-      console.log("No other members to notify");
-      return false;
-    }
-
-    // Get unique user IDs (a user might be in multiple groups)
-    const recipientIds = [...new Set(members.map((m: any) => m.user_id))];
-
-    // Get user who made the change
-    const { data: user } = await supabase
-      .from("profiles")
-      .select("full_name, email")
-      .eq("id", record.user_id)
-      .single();
-
-    const userName = user?.full_name || user?.email || "Someone";
-    const vehicleName = `${vehicle.year} ${vehicle.make} ${vehicle.model}`;
-    const logType = table.replace("_logs", "").replace("_", " ");
-
-    let action = "updated";
-    if (eventType === "INSERT") action = "added";
-    else if (eventType === "DELETE") action = "deleted";
-
-    const title = "Vehicle Log Update";
-    const body = `${userName} ${action} a ${logType} for ${vehicleName}`;
-    // Convert table name to notification_type enum: "mileage_logs" -> "mileage_log"
-    const notificationType = table.replace("_logs", "_log") as
-      | "mileage_log"
-      | "fuel_log"
-      | "service_log";
-
-    // Create notification records + filter push recipients by preferences
-    const pushRecipientIds: string[] = [];
-
-    for (const recipientId of recipientIds) {
-      // Always create in-app notification record
-      await createNotificationRecord(
-        recipientId,
+  const results = await Promise.all(
+    recipients.map((recipientId) =>
+      deliverNotification({
+        userId: recipientId,
+        notificationKey: `${eventKey(payload)}:${recipientId}`,
         notificationType,
         title,
         body,
-        {
-          action: eventType,
-          userName,
-          performedBy: record.user_id,
-          logId: record.id,
-        },
-        record.vehicle_id,
-        null,
-        `${process.env.SITE_URL}/vehicles/${record.vehicle_id}`,
-      );
-
-      // Check preferences for push delivery
-      const prefs = await getUserPreferences(recipientId);
-      const { deliver } = shouldDeliverNotification(prefs, notificationType);
-      if (deliver) {
-        pushRecipientIds.push(recipientId);
-      }
-    }
-
-    // Send push only to users who have it enabled
-    let pushSuccess = false;
-    if (pushRecipientIds.length > 0) {
-      pushSuccess = await sendOneSignalNotification({
-        app_id: ONESIGNAL_APP_ID,
-        include_external_user_ids: pushRecipientIds,
-        headings: { en: title },
-        contents: { en: body },
         data: {
           type: "log_update",
-          logType: table.replace("_logs", ""),
+          action: payload.type,
+          userName,
+          performedBy: record.user_id,
+          logType: payload.table.replace("_logs", ""),
           vehicleId: record.vehicle_id,
           logId: record.id,
         },
-        web_url: `${process.env.SITE_URL}/vehicles/${record.vehicle_id}`,
-        app_url: `vehiclesmanagement://vehicles/${record.vehicle_id}`,
-      });
-    }
-
-    console.log(
-      `Notification: ${recipientIds.length} records created, ${pushRecipientIds.length} pushes sent: ${pushSuccess}`,
-    );
-    return pushSuccess;
-  } catch (error) {
-    console.error("Error handling log change:", error);
-    return false;
-  }
+        relatedVehicleId: record.vehicle_id,
+        actionUrl: `/vehicles/${record.vehicle_id}`,
+        webUrl: `${siteUrl}/vehicles/${record.vehicle_id}`,
+      }),
+    ),
+  );
+  return results.every((result) => result !== "failed");
 }
 
-/**
- * Handle group member change notifications
- */
 async function handleGroupMemberChange(
-  record: any,
-  eventType: string,
+  payload: WebhookPayload,
 ): Promise<boolean> {
-  console.log(`Processing group_members ${eventType}:`, record.id);
+  const record = payload.record || payload.old_record!;
+  const [{ data: group }, { data: user }, { data: members }] =
+    await Promise.all([
+      supabase.from("groups").select("name").eq("id", record.group_id).single(),
+      supabase
+        .from("profiles")
+        .select("full_name, email")
+        .eq("id", record.user_id)
+        .single(),
+      supabase
+        .from("group_members")
+        .select("user_id")
+        .eq("group_id", record.group_id)
+        .neq("user_id", record.user_id),
+    ]);
+  if (!group || !members?.length) return false;
 
-  try {
-    // Get group details
-    const { data: group } = await supabase
-      .from("groups")
-      .select("name")
-      .eq("id", record.group_id)
-      .single();
-
-    if (!group) {
-      console.log("Group not found:", record.group_id);
-      return false;
-    }
-
-    // Get all group members (exclude the user who joined/left)
-    const { data: members } = await supabase
-      .from("group_members")
-      .select("user_id")
-      .eq("group_id", record.group_id)
-      .neq("user_id", record.user_id);
-
-    if (!members || members.length === 0) {
-      console.log("No other members to notify");
-      return false;
-    }
-
-    const recipientIds = members.map((m: any) => m.user_id);
-
-    // Get user who joined/left
-    const { data: user } = await supabase
-      .from("profiles")
-      .select("full_name, email")
-      .eq("id", record.user_id)
-      .single();
-
-    const userName = user?.full_name || user?.email || "Someone";
-    const groupName = group.name;
-
-    let title = "";
-    let body = "";
-
-    if (eventType === "INSERT") {
-      title = "New Group Member";
-      body = `${userName} joined ${groupName}`;
-    } else if (eventType === "DELETE") {
-      title = "Member Left Group";
-      body = `${userName} left ${groupName}`;
-    } else {
-      return false; // Don't notify on updates
-    }
-
-    // Create notification records + filter push recipients by preferences
-    const pushRecipientIds: string[] = [];
-
-    for (const recipientId of recipientIds) {
-      await createNotificationRecord(
-        recipientId,
-        "group_member",
+  const userName = user?.full_name || user?.email || "Someone";
+  const joined = payload.type === "INSERT";
+  const title = joined ? "New group member" : "Member left group";
+  const body = `${userName} ${joined ? "joined" : "left"} ${group.name}`;
+  const recipients = [...new Set(members.map((member) => member.user_id))];
+  const results = await Promise.all(
+    recipients.map((recipientId) =>
+      deliverNotification({
+        userId: recipientId,
+        notificationKey: `${eventKey(payload)}:${recipientId}`,
+        notificationType: "group_member",
         title,
         body,
-        {
-          action: eventType,
-          userName,
-          performedBy: record.user_id,
-        },
-        null,
-        record.group_id,
-        `${process.env.SITE_URL}/groups/${record.group_id}`,
-      );
-
-      const prefs = await getUserPreferences(recipientId);
-      const { deliver } = shouldDeliverNotification(prefs, "group_member");
-      if (deliver) {
-        pushRecipientIds.push(recipientId);
-      }
-    }
-
-    let pushSuccess = false;
-    if (pushRecipientIds.length > 0) {
-      pushSuccess = await sendOneSignalNotification({
-        app_id: ONESIGNAL_APP_ID,
-        include_external_user_ids: pushRecipientIds,
-        headings: { en: title },
-        contents: { en: body },
         data: {
           type: "group_member",
+          action: payload.type,
+          userName,
+          performedBy: record.user_id,
           groupId: record.group_id,
-          userId: record.user_id,
         },
-        web_url: `${process.env.SITE_URL}/groups/${record.group_id}`,
-        app_url: `vehiclesmanagement://groups/${record.group_id}`,
-      });
-    }
-
-    console.log(
-      `Notification: ${recipientIds.length} records created, ${pushRecipientIds.length} pushes sent: ${pushSuccess}`,
-    );
-    return pushSuccess;
-  } catch (error) {
-    console.error("Error handling group member change:", error);
-    return false;
-  }
+        relatedGroupId: record.group_id,
+        actionUrl: `/groups/${record.group_id}`,
+        webUrl: `${siteUrl}/groups/${record.group_id}`,
+      }),
+    ),
+  );
+  return results.every((result) => result !== "failed");
 }
 
-/**
- * Main handler for Supabase webhooks
- */
 export const handler: Handler = async (event: HandlerEvent) => {
-  // Only allow POST
   if (event.httpMethod !== "POST") {
     return {
       statusCode: 405,
@@ -457,82 +215,53 @@ export const handler: Handler = async (event: HandlerEvent) => {
     };
   }
 
-  // Verify webhook secret if configured
-  const webhookSecret = process.env.SUPABASE_WEBHOOK_SECRET;
-  if (webhookSecret) {
-    const authHeader = event.headers["authorization"];
-    if (authHeader !== `Bearer ${webhookSecret}`) {
-      return {
-        statusCode: 401,
-        body: JSON.stringify({ error: "Unauthorized" }),
-      };
-    }
+  const secret = process.env.SUPABASE_WEBHOOK_SECRET;
+  if (!secret) {
+    console.error("SUPABASE_WEBHOOK_SECRET is not configured");
+    return {
+      statusCode: 500,
+      body: JSON.stringify({ error: "Webhook not configured" }),
+    };
+  }
+  if (event.headers.authorization !== `Bearer ${secret}`) {
+    return { statusCode: 401, body: JSON.stringify({ error: "Unauthorized" }) };
   }
 
   try {
-    const payload: WebhookPayload = JSON.parse(event.body || "{}");
-
-    console.log("Webhook payload:", {
-      type: payload.type,
-      table: payload.table,
-      recordId: payload.record?.id,
-    });
-
-    let success = false;
-
-    // Route to appropriate handler based on table
-    switch (payload.table) {
-      case "group_invitations":
-        if (payload.type === "INSERT") {
-          success = await handleGroupInvitation(payload.record);
-        }
-        break;
-
-      case "fuel_logs":
-      case "mileage_logs":
-      case "service_logs":
-        if (["INSERT", "UPDATE", "DELETE"].includes(payload.type)) {
-          success = await handleLogChange(
-            payload.table,
-            payload.record || payload.old_record,
-            payload.type,
-          );
-        }
-        break;
-
-      case "group_members":
-        if (["INSERT", "DELETE"].includes(payload.type)) {
-          success = await handleGroupMemberChange(
-            payload.record || payload.old_record,
-            payload.type,
-          );
-        }
-        break;
-
-      default:
-        console.log("Unsupported table:", payload.table);
-        return {
-          statusCode: 400,
-          body: JSON.stringify({ error: "Unsupported table" }),
-        };
+    const payload = JSON.parse(event.body || "{}") as WebhookPayload;
+    if (!payload.record?.id || payload.schema !== "public") {
+      return {
+        statusCode: 400,
+        body: JSON.stringify({ error: "Invalid payload" }),
+      };
     }
 
-    return {
-      statusCode: 200,
-      body: JSON.stringify({
-        success,
-        message: success
-          ? "Notification sent successfully"
-          : "Notification skipped or failed",
-      }),
-    };
+    let success: boolean;
+    if (payload.table === "group_invitations" && payload.type === "INSERT") {
+      success = await handleGroupInvitation(payload);
+    } else if (
+      ["fuel_logs", "mileage_logs", "service_logs"].includes(payload.table) &&
+      ["INSERT", "UPDATE", "DELETE"].includes(payload.type)
+    ) {
+      success = await handleLogChange(payload);
+    } else if (
+      payload.table === "group_members" &&
+      ["INSERT", "DELETE"].includes(payload.type)
+    ) {
+      success = await handleGroupMemberChange(payload);
+    } else {
+      return {
+        statusCode: 400,
+        body: JSON.stringify({ error: "Unsupported event" }),
+      };
+    }
+
+    return { statusCode: 200, body: JSON.stringify({ success }) };
   } catch (error) {
     console.error("Webhook handler error:", error);
     return {
       statusCode: 500,
-      body: JSON.stringify({
-        error: "Internal server error",
-      }),
+      body: JSON.stringify({ error: "Internal server error" }),
     };
   }
 };
