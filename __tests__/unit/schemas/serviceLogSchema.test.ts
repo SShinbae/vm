@@ -121,6 +121,15 @@ describe("serviceLogSchema", () => {
       expect(result.success).toBe(true);
     });
 
+    it("should accept a valid next service mileage", () => {
+      expect(
+        serviceLogSchema.safeParse({
+          ...validServiceLog,
+          next_service_mileage: 55000,
+        }).success,
+      ).toBe(true);
+    });
+
     it("should accept optional receipt_image_url as empty string", () => {
       const result = serviceLogSchema.safeParse({
         ...validServiceLog,
@@ -231,6 +240,15 @@ describe("serviceLogSchema", () => {
         next_service_due: "not-a-date",
       });
       expect(result.success).toBe(false);
+    });
+
+    it("should reject an invalid next service mileage", () => {
+      expect(
+        serviceLogSchema.safeParse({
+          ...validServiceLog,
+          next_service_mileage: -1,
+        }).success,
+      ).toBe(false);
     });
 
     it("should reject invalid receipt_image_url", () => {

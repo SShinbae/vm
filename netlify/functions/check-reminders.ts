@@ -1,175 +1,141 @@
-/**
- * Scheduled function: Check service reminders (daily at 9 AM UTC)
- *
- * Queries service_logs.next_service_due within 30 days,
- * determines which thresholds apply, and sends reminder notifications.
- */
-
 import type { Handler } from "@netlify/functions";
 import { supabaseAdmin } from "./_shared/supabaseAdmin";
 import {
-  getUserPreferences,
-  shouldDeliverNotification,
-  sendOneSignalPush,
-  createNotificationRecord,
-  isDeduplicated,
-  recordDedup,
   cleanupDedupRecords,
+  deliverNotification,
+  getUserPreferences,
+  applicableThresholds,
 } from "./_shared/notifications";
+
+type Reminder = {
+  type: "service_reminder" | "mileage_reminder";
+  key: string;
+  title: string;
+  body: string;
+  data: Record<string, unknown>;
+};
 
 export const handler: Handler = async () => {
   console.log("check-reminders: starting daily reminder check");
 
   try {
-    const now = new Date();
-    const thirtyDaysFromNow = new Date(now);
-    thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
-
-    // Find service logs with upcoming due dates
-    const { data: dueLogs, error: dueError } = await supabaseAdmin
+    // ponytail: one daily scan is enough at current scale; add a due-reminders view if this table becomes large.
+    const { data: logs, error } = await supabaseAdmin
       .from("service_logs")
-      .select("id, vehicle_id, user_id, service_type, next_service_due")
-      .not("next_service_due", "is", null)
-      .lte("next_service_due", thirtyDaysFromNow.toISOString().split("T")[0])
-      .order("next_service_due", { ascending: true });
-
-    if (dueError) {
-      console.error("Error querying service logs:", dueError);
+      .select(
+        "id, vehicle_id, user_id, service_type, next_service_due, next_service_mileage, vehicles(make, model, year, current_mileage)",
+      )
+      .or("next_service_due.not.is.null,next_service_mileage.not.is.null");
+    if (error) {
       return {
         statusCode: 500,
-        body: JSON.stringify({ error: dueError.message }),
+        body: JSON.stringify({ error: error.message }),
       };
     }
 
+    const now = new Date();
     let sentCount = 0;
     let skippedCount = 0;
 
-    for (const log of dueLogs || []) {
-      if (!log.next_service_due) continue;
-
-      const dueDate = new Date(log.next_service_due);
-      const daysUntilDue = Math.ceil(
-        (dueDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24),
-      );
-
-      // Determine threshold label
-      let thresholdLabel: string | null = null;
-      if (daysUntilDue < 0) {
-        thresholdLabel = "overdue";
-      } else if (daysUntilDue <= 3) {
-        thresholdLabel = "3days";
-      } else if (daysUntilDue <= 7) {
-        thresholdLabel = "7days";
-      } else if (daysUntilDue <= 30) {
-        thresholdLabel = "30days";
-      }
-
-      if (!thresholdLabel) continue;
-
-      // Check user preferences
+    for (const log of (logs || []) as any[]) {
       const prefs = await getUserPreferences(log.user_id);
-
-      // Check if this threshold is in the user's configured reminder days
-      if (prefs) {
-        const reminderDays = ((prefs as any)
-          .service_reminder_days as number[]) || [30, 7, 3];
-        const thresholdDayMap: Record<string, number> = {
-          "30days": 30,
-          "7days": 7,
-          "3days": 3,
-          overdue: 0,
-        };
-        const thresholdDay = thresholdDayMap[thresholdLabel];
-        if (
-          thresholdDay &&
-          !reminderDays.includes(thresholdDay) &&
-          thresholdLabel !== "overdue"
-        ) {
-          skippedCount++;
-          continue;
-        }
-      }
-
-      // Check delivery preferences
-      const { deliver } = shouldDeliverNotification(prefs, "service_reminder");
-
-      // Dedup check
-      const dedupKey = `service_reminder:${log.vehicle_id}:${thresholdLabel}`;
-      const alreadySent = await isDeduplicated(log.user_id, dedupKey);
-      if (alreadySent) {
-        skippedCount++;
-        continue;
-      }
-
-      // Get vehicle info
-      const { data: vehicle } = await supabaseAdmin
-        .from("vehicles")
-        .select("make, model, year")
-        .eq("id", log.vehicle_id)
-        .single();
-
+      const vehicle = Array.isArray(log.vehicles)
+        ? log.vehicles[0]
+        : log.vehicles;
       const vehicleName = vehicle
         ? `${vehicle.year} ${vehicle.make} ${vehicle.model}`
         : "your vehicle";
+      const serviceType = String(log.service_type).replaceAll("_", " ");
+      const serviceName = serviceType
+        ? serviceType[0].toUpperCase() + serviceType.slice(1)
+        : "Service";
+      const reminders: Reminder[] = [];
 
-      let title: string;
-      let body: string;
-
-      if (thresholdLabel === "overdue") {
-        title = "Service Overdue";
-        body = `${log.service_type} for ${vehicleName} was due ${Math.abs(daysUntilDue)} day(s) ago`;
-      } else {
-        title = "Service Reminder";
-        body = `${log.service_type} for ${vehicleName} is due in ${daysUntilDue} day(s)`;
+      if (log.next_service_due) {
+        const days = Math.ceil(
+          (new Date(log.next_service_due).getTime() - now.getTime()) /
+            86_400_000,
+        );
+        const thresholds = (prefs?.service_reminder_days || [30, 7, 3]).filter(
+          (value) => value <= 30,
+        );
+        for (const threshold of applicableThresholds(days, thresholds)) {
+          const overdue = threshold === 0;
+          reminders.push({
+            type: "service_reminder",
+            key: `service_reminder:${log.id}:${log.next_service_due}:${overdue ? "overdue" : threshold}`,
+            title: overdue ? "Service overdue" : "Service reminder",
+            body: overdue
+              ? `${serviceName} for ${vehicleName} was due ${Math.abs(days)} day(s) ago`
+              : `${serviceName} for ${vehicleName} is due in ${days} day(s)`,
+            data: {
+              type: "service_reminder",
+              vehicleId: log.vehicle_id,
+              serviceLogId: log.id,
+              dueDate: log.next_service_due,
+              daysUntilDue: days,
+            },
+          });
+        }
       }
 
-      // Always create notification record
-      await createNotificationRecord({
-        userId: log.user_id,
-        notificationType: "service_reminder",
-        title,
-        body,
-        data: {
-          vehicleId: log.vehicle_id,
-          serviceLogId: log.id,
-          serviceType: log.service_type,
-          dueDate: log.next_service_due,
-          daysUntilDue,
-        },
-        relatedVehicleId: log.vehicle_id,
-        actionUrl: `/logs/service/${log.id}`,
-      });
+      if (
+        log.next_service_mileage != null &&
+        vehicle?.current_mileage != null
+      ) {
+        const remaining = log.next_service_mileage - vehicle.current_mileage;
+        const thresholds = prefs?.mileage_reminder_thresholds || [5000, 1000];
+        for (const threshold of applicableThresholds(remaining, thresholds)) {
+          const overdue = threshold === 0;
+          reminders.push({
+            type: "mileage_reminder",
+            key: `mileage_reminder:${log.id}:${log.next_service_mileage}:${overdue ? "overdue" : threshold}`,
+            title: overdue ? "Service mileage overdue" : "Mileage reminder",
+            body: overdue
+              ? `${serviceName} for ${vehicleName} is ${Math.abs(remaining).toLocaleString()} km overdue`
+              : `${serviceName} for ${vehicleName} is due in ${remaining.toLocaleString()} km`,
+            data: {
+              type: "mileage_reminder",
+              vehicleId: log.vehicle_id,
+              serviceLogId: log.id,
+              dueMileage: log.next_service_mileage,
+              remainingMileage: remaining,
+            },
+          });
+        }
+      }
 
-      // Send push only if preferences allow
-      if (deliver) {
-        await sendOneSignalPush({
-          recipientIds: [log.user_id],
-          title,
-          body,
-          data: {
-            type: "service_reminder",
-            vehicleId: log.vehicle_id,
-            serviceLogId: log.id,
-          },
+      const sentTypes = new Set<string>();
+      for (const reminder of reminders) {
+        if (sentTypes.has(reminder.type)) continue;
+        const result = await deliverNotification({
+          userId: log.user_id,
+          notificationKey: reminder.key,
+          notificationType: reminder.type,
+          title: reminder.title,
+          body: reminder.body,
+          data: reminder.data,
+          relatedVehicleId: log.vehicle_id,
+          actionUrl: `/logs/service/${log.id}`,
           webUrl: process.env.SITE_URL
             ? `${process.env.SITE_URL}/logs/service/${log.id}`
             : undefined,
-          appUrl: `vehiclesmanagement://logs/service/${log.id}`,
+          preferences: prefs,
+          now,
         });
+        if (result === "in_app" || result === "pushed") {
+          sentCount++;
+          sentTypes.add(reminder.type);
+        } else {
+          skippedCount++;
+        }
       }
-
-      // Record dedup
-      await recordDedup(log.user_id, dedupKey);
-      sentCount++;
     }
 
-    // Clean up old dedup records
     await cleanupDedupRecords();
-
     console.log(
-      `check-reminders: done. ${sentCount} sent, ${skippedCount} skipped`,
+      `check-reminders: ${sentCount} created, ${skippedCount} skipped`,
     );
-
     return {
       statusCode: 200,
       body: JSON.stringify({ sentCount, skippedCount }),

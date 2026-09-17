@@ -240,6 +240,7 @@ export interface Database {
           date: string;
           odometer_reading: number;
           next_service_due: string | null;
+          next_service_mileage: number | null;
           receipt_image_url: string | null;
           ocr_extracted_data: unknown | null;
           auto_filled: boolean | null;
@@ -255,6 +256,7 @@ export interface Database {
           date: string;
           odometer_reading: number;
           next_service_due?: string | null;
+          next_service_mileage?: number | null;
           receipt_image_url?: string | null;
           ocr_extracted_data?: unknown | null;
           auto_filled?: boolean | null;
@@ -266,6 +268,7 @@ export interface Database {
           date?: string;
           odometer_reading?: number;
           next_service_due?: string | null;
+          next_service_mileage?: number | null;
           receipt_image_url?: string | null;
           ocr_extracted_data?: unknown | null;
           auto_filled?: boolean | null;

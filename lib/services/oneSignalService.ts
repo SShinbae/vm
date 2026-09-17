@@ -110,9 +110,6 @@ class OneSignalService {
       // Initialize OneSignal
       os.initialize(appId);
 
-      // Request notification permission
-      os.Notifications.requestPermission(true);
-
       // Set up notification handlers
       this.setupNotificationHandlers(os);
 
@@ -151,10 +148,10 @@ class OneSignalService {
           allowLocalhostAsSecureOrigin: __DEV__,
           // In development, Metro doesn't serve from public folder
           // In production, use the service worker from public folder
-          serviceWorkerParam: { scope: "/" },
+          serviceWorkerParam: { scope: "/push/onesignal/" },
           serviceWorkerPath: __DEV__
-            ? undefined // Use OneSignal's default CDN-hosted worker in dev
-            : "/OneSignalSDKWorker.js",
+            ? undefined
+            : "/push/onesignal/OneSignalSDKWorker.js",
         }),
       );
 
@@ -166,14 +163,6 @@ class OneSignalService {
         const permission = osWeb.Notifications.permission;
         logger.log("OneSignal: Web notification permission:", permission);
 
-        // If permission not granted, request it
-        if (!permission) {
-          logger.log("OneSignal: Requesting web notification permission...");
-          const granted = await osWeb.Notifications.requestPermission();
-          logger.log("OneSignal: Permission granted:", granted);
-        }
-
-        // Log subscription status after permission
         const subscriptionId = osWeb.User.PushSubscription.id;
         logger.log("OneSignal: Web subscription ID:", subscriptionId);
       }
@@ -480,7 +469,12 @@ class OneSignalService {
     if (!os) return false;
 
     try {
-      return os.Notifications.requestPermission(true);
+      const granted = await os.Notifications.requestPermission(true);
+      if (!granted) return false;
+
+      os.User.pushSubscription.optIn();
+      await this.syncUser();
+      return true;
     } catch (error) {
       if (__DEV__) {
         logger.error("OneSignal: Failed to request permission", error);

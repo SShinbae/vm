@@ -77,6 +77,16 @@ module.exports = {
     },
     plugins: [
       [
+        "onesignal-expo-plugin",
+        {
+          mode:
+            process.env.EAS_BUILD_PROFILE === "production-apk" ||
+            process.env.EAS_BUILD_PROFILE === "production"
+              ? "production"
+              : "development",
+        },
+      ],
+      [
         "expo-router",
         {
           asyncRoutes: {
@@ -104,16 +114,6 @@ module.exports = {
         {
           icon: "./assets/images/vm_logo.png",
           color: "#517c89",
-        },
-      ],
-      [
-        "onesignal-expo-plugin",
-        {
-          mode:
-            process.env.EAS_BUILD_PROFILE === "production-apk" ||
-            process.env.EAS_BUILD_PROFILE === "production"
-              ? "production"
-              : "development",
         },
       ],
       [

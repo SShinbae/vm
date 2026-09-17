@@ -4,7 +4,6 @@ import {
   getPreferences,
   upsertPreferences,
 } from "@/lib/services/notificationPreferencesService";
-import { oneSignalService } from "@/lib/services/oneSignalService";
 import { Database } from "@/types/database";
 
 type Row = Database["public"]["Tables"]["notification_preferences"]["Row"];
@@ -44,13 +43,6 @@ export function useUpdateNotificationPreferences() {
     }) => {
       const res = await upsertPreferences(userId, data);
       if (res.error) throw new Error(res.error);
-
-      // Sync preference tags to OneSignal for server-side filtering
-      try {
-        if (res.data) await oneSignalService.syncPreferenceTags(res.data);
-      } catch {
-        // Non-critical — don't fail the mutation
-      }
 
       return res.data;
     },

@@ -74,6 +74,12 @@ export const serviceLogSchema = z.object({
     })
     .optional()
     .or(z.literal("")),
+  next_service_mileage: z
+    .number()
+    .int("Next service mileage must be a whole number")
+    .positive("Next service mileage must be positive")
+    .max(2000000, "Next service mileage seems too high")
+    .optional(),
   receipt_image_url: z
     .string()
     .url("Invalid image URL")
@@ -107,6 +113,7 @@ export const serviceLogDefaultValues: Partial<ServiceLogFormData> = {
   date: new Date().toISOString().split("T")[0],
   odometer_reading: undefined,
   next_service_due: "",
+  next_service_mileage: undefined,
   receipt_image_url: "",
   auto_filled: false,
 };

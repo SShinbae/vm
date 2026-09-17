@@ -1,5 +1,5 @@
 import { withOpacity, spacing } from "@/src/design-system";
-import React, { useCallback, useRef } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Switch,
@@ -17,6 +17,9 @@ import {
 import { notificationPreferencesDefaultValues } from "@/src/shared/schemas/notificationPreferencesSchema";
 import { QuietHoursPicker } from "./QuietHoursPicker";
 import { Database } from "@/types/database";
+import { initializeOneSignalLazy } from "@/lib/services/oneSignalLazy";
+import { oneSignalService } from "@/lib/services/oneSignalService";
+import { useToast } from "@/hooks/useToast";
 
 type Update =
   Database["public"]["Tables"]["notification_preferences"]["Update"];
@@ -36,6 +39,15 @@ export function NotificationPreferencesForm() {
 
   const { data: prefs, isLoading } = useNotificationPreferences(userId);
   const { mutate: updatePrefs } = useUpdateNotificationPreferences();
+  const { showError } = useToast();
+  const [pushPermission, setPushPermission] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    if (!userId) return;
+    initializeOneSignalLazy().then(async () => {
+      setPushPermission(await oneSignalService.hasPermission());
+    });
+  }, [userId]);
 
   // Debounce timer for auto-save
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -80,11 +92,13 @@ export function NotificationPreferencesForm() {
     value,
     field,
     description,
+    onChange,
   }: {
     label: string;
     value: boolean;
     field: keyof Update;
     description?: string;
+    onChange?: (value: boolean) => void | Promise<void>;
   }) => (
     <View
       style={{
@@ -120,7 +134,9 @@ export function NotificationPreferencesForm() {
       </View>
       <Switch
         value={value}
-        onValueChange={(val) => immediateUpdate({ [field]: val })}
+        onValueChange={(val) =>
+          onChange ? onChange(val) : immediateUpdate({ [field]: val })
+        }
         trackColor={{ false: theme.colors.border, true: theme.colors.primary }}
         thumbColor={value ? "white" : theme.colors.textSecondary}
       />
@@ -424,8 +440,21 @@ export function NotificationPreferencesForm() {
         <NotificationSwitch
           label="Push Notifications"
           description="Receive push notifications on your device"
-          value={p.push_notifications_enabled}
+          value={p.push_notifications_enabled && pushPermission !== false}
           field="push_notifications_enabled"
+          onChange={async (enabled) => {
+            if (!enabled) {
+              immediateUpdate({ push_notifications_enabled: false });
+              return;
+            }
+            await initializeOneSignalLazy();
+            if (await oneSignalService.requestPermission()) {
+              setPushPermission(true);
+              immediateUpdate({ push_notifications_enabled: true });
+            } else {
+              showError("Notification permission was not granted");
+            }
+          }}
         />
         <NotificationSwitch
           label="In-App Toasts"

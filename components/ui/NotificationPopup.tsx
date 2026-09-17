@@ -15,7 +15,11 @@ import {
 } from "react-native";
 import { createStyleSheet, useStyles } from "react-native-unistyles";
 import { useNotifications } from "../../lib/contexts/NotificationContext";
-import { NotificationData } from "../../lib/services/notificationService";
+import {
+  formatNotificationText,
+  formatNotificationTitle,
+  NotificationData,
+} from "../../lib/services/notificationService";
 import { getNotificationRoute } from "../../lib/utils/notificationNavigation";
 import { formatDistanceToNow } from "../../lib/utils/dateUtils";
 import { IconSymbol } from "./icon-symbol";
@@ -35,7 +39,7 @@ function PopupNotificationItem({
   notification: NotificationData;
   onPress: () => void;
 }) {
-  const { styles, theme } = useStyles(itemStylesheet);
+  const { styles } = useStyles(itemStylesheet);
   const { markAsRead } = useNotifications();
 
   const handlePress = () => {
@@ -45,63 +49,21 @@ function PopupNotificationItem({
     onPress();
   };
 
-  const getIcon = (): string => {
-    switch (notification.notification_type) {
-      case "mileage_log":
-        return "speedometer";
-      case "fuel_log":
-        return "fuelpump.fill";
-      case "service_log":
-        return "wrench.fill";
-      case "group_member":
-        return "person.2.fill";
-      case "group_invite":
-        return "envelope.fill";
-      default:
-        return "bell.fill";
-    }
-  };
-
-  const getIconColor = (): string => {
-    switch (notification.notification_type) {
-      case "mileage_log":
-        return theme.colors.primary;
-      case "fuel_log":
-        return theme.colors.warning;
-      case "service_log":
-        return theme.colors.error;
-      case "group_member":
-        return theme.colors.success;
-      case "group_invite":
-        return theme.colors.info;
-      default:
-        return theme.colors.primary;
-    }
-  };
-
   return (
     <TouchableOpacity
       onPress={handlePress}
       style={[styles.item, !notification.read && styles.unreadItem]}
       activeOpacity={0.7}
     >
-      <View
-        style={[
-          styles.iconContainer,
-          { backgroundColor: withOpacity(getIconColor(), 0.08) },
-        ]}
-      >
-        <IconSymbol name={getIcon() as any} size={16} color={getIconColor()} />
-      </View>
       <View style={styles.content}>
         <View style={styles.titleRow}>
           <Text style={styles.title} numberOfLines={1}>
-            {notification.title}
+            {formatNotificationTitle(notification.title)}
           </Text>
           {!notification.read && <View style={styles.unreadDot} />}
         </View>
         <Text style={styles.message} numberOfLines={2}>
-          {notification.body}
+          {formatNotificationText(notification.body)}
         </Text>
         <Text style={styles.timestamp}>
           {formatDistanceToNow(new Date(notification.created_at))} ago
@@ -120,14 +82,6 @@ const itemStylesheet = createStyleSheet((theme) => ({
   },
   unreadItem: {
     backgroundColor: withOpacity(theme.colors.primary, 0.03),
-  },
-  iconContainer: {
-    width: 32,
-    height: 32,
-    borderRadius: theme.borderRadius.md,
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: theme.spacing.sm,
   },
   content: {
     flex: 1,
