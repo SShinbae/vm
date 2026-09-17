@@ -505,6 +505,41 @@ export class GroupInvitationService {
     }
   }
 
+  // Resend a pending invitation. Only an INSERT trigger fires the email/push,
+  // so we delete the existing pending row and re-insert to re-fire it.
+  static async resendInvitation(
+    invitationId: string,
+  ): Promise<ApiResponse<GroupInvitation>> {
+    try {
+      const { data: invitation } = (await supabase
+        .from("group_invitations")
+        .select("group_id, email")
+        .eq("id", invitationId)
+        .single()) as {
+        data: { group_id: string; email: string } | null;
+        error: any;
+      };
+
+      if (!invitation) {
+        return { data: null, error: "Invitation not found", loading: false };
+      }
+
+      const cancelResult = await this.cancelInvitation(invitationId);
+      if (cancelResult.error) {
+        return { data: null, error: cancelResult.error, loading: false };
+      }
+
+      return await this.sendInvitation(invitation.group_id, invitation.email);
+    } catch (error) {
+      logger.error("Unexpected error resending invitation:", error);
+      return {
+        data: null,
+        error: "Failed to resend invitation",
+        loading: false,
+      };
+    }
+  }
+
   static async getInvitations(
     groupId?: string,
     status?: string,
@@ -748,13 +783,17 @@ export class GroupInvitationService {
         };
       }
 
-      // Add user to group
+      // Add user to group (idempotent — re-accepting must not fail on the
+      // UNIQUE(group_id, user_id) constraint)
       const { error: memberError } = await supabase
         .from("group_members")
-        .insert({
-          group_id: invitation.group_id,
-          user_id: user.id,
-        } as any);
+        .upsert(
+          {
+            group_id: invitation.group_id,
+            user_id: user.id,
+          } as any,
+          { onConflict: "group_id,user_id", ignoreDuplicates: true },
+        );
 
       if (memberError) {
         logger.error("Error adding member:", memberError);
