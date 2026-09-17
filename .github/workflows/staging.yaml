@@ -85,7 +85,7 @@ jobs:
           cache: "npm"
 
       - name: 📱 Setup Android SDK and NDK
-        uses: android-actions/setup-android@v3
+        uses: android-actions/setup-android@v4
         with:
           cmdline-tools-version: 11076708
 
