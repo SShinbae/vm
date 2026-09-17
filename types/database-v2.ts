@@ -264,6 +264,7 @@ export interface Database {
           date: string;
           odometer_reading: number;
           next_service_due: string | null;
+          next_service_mileage: number | null;
           created_at: string;
         };
         Insert: {
@@ -276,6 +277,7 @@ export interface Database {
           date: string;
           odometer_reading: number;
           next_service_due?: string | null;
+          next_service_mileage?: number | null;
         };
         Update: {
           service_type?: string;
@@ -284,6 +286,7 @@ export interface Database {
           date?: string;
           odometer_reading?: number;
           next_service_due?: string | null;
+          next_service_mileage?: number | null;
         };
       };
 

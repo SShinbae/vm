@@ -4,7 +4,11 @@ import { Modal as RNModal, Text, TouchableOpacity, View } from "react-native";
 import { router } from "expo-router";
 import { createStyleSheet, useStyles } from "react-native-unistyles";
 import { useNotifications } from "../../lib/contexts/NotificationContext";
-import { NotificationData } from "../../lib/services/notificationService";
+import {
+  formatNotificationText,
+  formatNotificationTitle,
+  NotificationData,
+} from "../../lib/services/notificationService";
 import { formatDistanceToNow } from "../../lib/utils/dateUtils";
 import { IconSymbol } from "./icon-symbol";
 import { Pagination } from "./Pagination";
@@ -25,56 +29,6 @@ function NotificationItem({ notification, onPress }: NotificationItemProps) {
       markAsRead(notification.id);
     }
     onPress?.(notification);
-  };
-
-  const getIcon = (): string => {
-    switch (notification.notification_type) {
-      case "mileage_log":
-        return "speedometer";
-      case "fuel_log":
-        return "fuelpump.fill";
-      case "service_log":
-        return "wrench.fill";
-      case "group_member":
-        return "person.2.fill";
-      case "group_invite":
-        return "envelope.fill";
-      case "service_reminder":
-        return "calendar.badge.clock";
-      case "mileage_reminder":
-        return "gauge.open.with.lines.needle.33percent";
-      case "cost_alert":
-        return "dollarsign.circle.fill";
-      case "analytics_insight":
-        return "chart.bar.fill";
-      default:
-        return "bell.fill";
-    }
-  };
-
-  const getIconColor = (): string => {
-    switch (notification.notification_type) {
-      case "mileage_log":
-        return theme.colors.primary;
-      case "fuel_log":
-        return theme.colors.warning;
-      case "service_log":
-        return theme.colors.error;
-      case "group_member":
-        return theme.colors.success;
-      case "group_invite":
-        return theme.colors.info;
-      case "service_reminder":
-        return theme.colors.warning;
-      case "mileage_reminder":
-        return theme.colors.primary;
-      case "cost_alert":
-        return theme.colors.error;
-      case "analytics_insight":
-        return theme.colors.info;
-      default:
-        return theme.colors.primary;
-    }
   };
 
   const action = notification.data?.action as string | undefined;
@@ -111,15 +65,6 @@ function NotificationItem({ notification, onPress }: NotificationItemProps) {
       style={[styles.container, !notification.read && styles.unreadContainer]}
       activeOpacity={0.7}
     >
-      <View
-        style={[
-          styles.iconContainer,
-          { backgroundColor: withOpacity(getIconColor(), 0.08) },
-        ]}
-      >
-        <IconSymbol name={getIcon() as any} size={20} color={getIconColor()} />
-      </View>
-
       <View style={styles.content}>
         <View style={styles.titleRow}>
           <View style={styles.titleContainer}>
@@ -127,7 +72,7 @@ function NotificationItem({ notification, onPress }: NotificationItemProps) {
               style={[styles.title, notification.read && styles.readTitle]}
               numberOfLines={1}
             >
-              {notification.title}
+              {formatNotificationTitle(notification.title)}
             </Text>
             {!notification.read && <View style={styles.unreadDot} />}
           </View>
@@ -149,20 +94,13 @@ function NotificationItem({ notification, onPress }: NotificationItemProps) {
           style={[styles.message, notification.read && styles.readMessage]}
           numberOfLines={2}
         >
-          {notification.body}
+          {formatNotificationText(notification.body)}
         </Text>
 
         <View style={styles.footer}>
-          <View style={styles.timestampContainer}>
-            <IconSymbol
-              name="clock"
-              size={12}
-              color={theme.colors.textSecondary}
-            />
-            <Text style={styles.timestamp}>
-              {formatDistanceToNow(new Date(notification.created_at))} ago
-            </Text>
-          </View>
+          <Text style={styles.timestamp}>
+            {formatDistanceToNow(new Date(notification.created_at))} ago
+          </Text>
 
           <TouchableOpacity
             onPress={() => setShowSnooze(true)}
@@ -171,7 +109,7 @@ function NotificationItem({ notification, onPress }: NotificationItemProps) {
             accessibilityRole="button"
             accessibilityLabel="Snooze this notification type"
           >
-            <IconSymbol name="clock" size={14} color={theme.colors.info} />
+            <Text style={styles.snoozeButtonText}>Snooze</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -221,14 +159,6 @@ const itemStylesheet = createStyleSheet((theme) => ({
   unreadContainer: {
     backgroundColor: theme.colors.primary + "08",
     borderColor: withOpacity(theme.colors.primary, 0.19),
-  },
-  iconContainer: {
-    width: 44,
-    height: 44,
-    borderRadius: theme.borderRadius.lg,
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: theme.spacing.md,
   },
   content: {
     flex: 1,
@@ -284,22 +214,22 @@ const itemStylesheet = createStyleSheet((theme) => ({
     alignItems: "center",
     justifyContent: "space-between",
   },
-  timestampContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: theme.spacing.xs,
-  },
   timestamp: {
     fontSize: theme.fontSize.xs,
     color: theme.colors.textSecondary,
   },
   snoozeButton: {
-    width: 28,
+    paddingHorizontal: theme.spacing.sm,
     height: 28,
     borderRadius: theme.borderRadius.md,
     backgroundColor: withOpacity(theme.colors.info, 0.08),
     alignItems: "center",
     justifyContent: "center",
+  },
+  snoozeButtonText: {
+    color: theme.colors.info,
+    fontSize: theme.fontSize.xs,
+    fontWeight: theme.fontWeight.medium,
   },
 }));
 

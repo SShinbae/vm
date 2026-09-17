@@ -1,40 +1,32 @@
-import React, { useEffect, useState, useCallback } from "react";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { NotificationToast } from "./NotificationToast";
 import { useNotifications } from "../../lib/contexts/NotificationContext";
 import { NotificationData } from "../../lib/services/notificationService";
 import { router } from "expo-router";
 import { getNotificationRoute } from "../../lib/utils/notificationNavigation";
+import { useAuth } from "@/lib/contexts/AuthContext";
+import { useNotificationPreferences } from "@/hooks/useNotificationPreferences";
+import { notificationPreferencesDefaultValues } from "@/src/shared/schemas/notificationPreferencesSchema";
 
 export function NotificationManager() {
-  const { notifications } = useNotifications();
+  const { latestNotification } = useNotifications();
+  const { user } = useAuth();
+  const { data, isLoading } = useNotificationPreferences(user?.id);
+  const preferences = useMemo(
+    () => ({ ...notificationPreferencesDefaultValues, ...data }),
+    [data],
+  );
   const [currentToast, setCurrentToast] = useState<NotificationData | null>(
     null,
   );
   const [toastVisible, setToastVisible] = useState(false);
-  const [lastNotificationCount, setLastNotificationCount] = useState(0);
-  const [notificationPrefs, setNotificationPrefs] = useState({
-    logUpdates: true,
-    groupMembers: true,
-    invitations: true,
-    inAppToasts: true,
-  });
-
-  // Load notification preferences
-  useEffect(() => {
-    const loadPreferences = async () => {
-      try {
-        const stored = await AsyncStorage.getItem("notification_preferences");
-        if (stored) {
-          const prefs = JSON.parse(stored);
-          setNotificationPrefs(prefs);
-        }
-      } catch (error) {
-        console.error("Error loading notification preferences:", error);
-      }
-    };
-    loadPreferences();
-  }, []);
+  const shownNotificationId = useRef<string | null>(null);
 
   const shouldShowNotification = useCallback(
     (notification: NotificationData): boolean => {
@@ -42,47 +34,48 @@ export function NotificationManager() {
         case "mileage_log":
         case "fuel_log":
         case "service_log":
-          return notificationPrefs.logUpdates;
+          return preferences.log_updates_enabled;
         case "group_member":
-          return notificationPrefs.groupMembers;
+          return preferences.group_members_enabled;
         case "group_invite":
-          return notificationPrefs.invitations;
+          return preferences.invitations_enabled;
+        case "service_reminder":
+          return preferences.service_reminders_enabled;
+        case "mileage_reminder":
+          return preferences.mileage_reminders_enabled;
+        case "cost_alert":
+          return preferences.cost_alerts_enabled;
+        case "analytics_insight":
+          return preferences.analytics_insights_enabled;
         default:
           return true;
       }
     },
-    [notificationPrefs],
+    [preferences],
   );
 
-  // Show toast for new notifications
   useEffect(() => {
     if (
-      notifications.length > lastNotificationCount &&
-      notifications.length > 0
+      isLoading ||
+      !latestNotification ||
+      latestNotification.id === shownNotificationId.current
     ) {
-      const latestNotification = notifications[0];
-
-      // Check if toasts are disabled
-      if (!notificationPrefs.inAppToasts) {
-        setLastNotificationCount(notifications.length);
-        return;
-      }
-
-      // Check if this type of notification is enabled
-      const shouldShow = shouldShowNotification(latestNotification);
-
-      // Only show toast if it's unread, not already showing, and enabled
-      if (!latestNotification.read && !toastVisible && shouldShow) {
-        setCurrentToast(latestNotification);
-        setToastVisible(true);
-      }
+      return;
     }
-    setLastNotificationCount(notifications.length);
+    shownNotificationId.current = latestNotification.id;
+
+    if (
+      !latestNotification.read &&
+      preferences.in_app_toasts_enabled &&
+      shouldShowNotification(latestNotification)
+    ) {
+      setCurrentToast(latestNotification);
+      setToastVisible(true);
+    }
   }, [
-    notifications,
-    lastNotificationCount,
-    toastVisible,
-    notificationPrefs,
+    latestNotification,
+    isLoading,
+    preferences.in_app_toasts_enabled,
     shouldShowNotification,
   ]);
 

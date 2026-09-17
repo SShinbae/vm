@@ -4,7 +4,11 @@ import { useReducedMotion } from "@/hooks/useReducedMotion";
 import React, { useEffect, useRef } from "react";
 import { Animated, Platform, Text, TouchableOpacity, View } from "react-native";
 import { createStyleSheet, useStyles } from "react-native-unistyles";
-import { NotificationData } from "../../lib/services/notificationService";
+import {
+  formatNotificationText,
+  formatNotificationTitle,
+  NotificationData,
+} from "../../lib/services/notificationService";
 
 const ANIMATION_DURATION = 300;
 const AUTO_DISMISS_DURATION = 4000;
@@ -140,10 +144,10 @@ export function NotificationToast({
 
             <View style={styles.content}>
               <Text style={styles.title} numberOfLines={1}>
-                {notification.title}
+                {formatNotificationTitle(notification.title)}
               </Text>
               <Text style={styles.body} numberOfLines={2}>
-                {notification.body}
+                {formatNotificationText(notification.body)}
               </Text>
             </View>
 

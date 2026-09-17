@@ -62,6 +62,7 @@ describe("Analytics Calculations", () => {
     date: new Date().toISOString().split("T")[0],
     odometer_reading: 50000,
     next_service_due: null,
+    next_service_mileage: null,
     receipt_image_url: null,
     ocr_extracted_data: null,
     auto_filled: false,

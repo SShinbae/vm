@@ -86,6 +86,7 @@ export default function EditServiceLogScreen() {
     date: new Date().toISOString().split("T")[0],
     odometer_reading: 0,
     next_service_due: "",
+    next_service_mileage: undefined,
     receipt_image_url: "",
     ocr_extracted_data: undefined,
     auto_filled: false,
@@ -136,6 +137,7 @@ export default function EditServiceLogScreen() {
           date: log.date,
           odometer_reading: log.odometer_reading,
           next_service_due: log.next_service_due || "",
+          next_service_mileage: log.next_service_mileage || undefined,
           receipt_image_url: log.receipt_image_url || "",
           ocr_extracted_data: log.ocr_extracted_data as
             | OCRExtractedData
@@ -171,6 +173,13 @@ export default function EditServiceLogScreen() {
       showError("Please select a date");
       return;
     }
+    if (
+      formData.next_service_mileage != null &&
+      formData.next_service_mileage <= formData.odometer_reading
+    ) {
+      showError("Next service mileage must be above the current odometer");
+      return;
+    }
 
     setLoading(true);
 
@@ -185,6 +194,7 @@ export default function EditServiceLogScreen() {
       date: formData.date,
       odometer_reading: formData.odometer_reading,
       next_service_due: formData.next_service_due?.trim() || undefined,
+      next_service_mileage: formData.next_service_mileage,
       // Don't update receipt_image_url or ocr_extracted_data in edit
     };
 
@@ -576,6 +586,23 @@ export default function EditServiceLogScreen() {
                   />
                 </View>
               </View>
+
+              <Input
+                label="Next Service Mileage (km)"
+                value={formData.next_service_mileage?.toString() || ""}
+                onChangeText={(text) => {
+                  const mileage = parseInt(text.replace(/,/g, ""));
+                  setFormData((prev) => ({
+                    ...prev,
+                    next_service_mileage: Number.isNaN(mileage)
+                      ? undefined
+                      : mileage,
+                  }));
+                }}
+                placeholder="155,000"
+                keyboardType="numeric"
+                leftIcon="speedometer"
+              />
             </View>
 
             {/* Action Buttons */}

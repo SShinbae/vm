@@ -8,7 +8,6 @@ import React, {
   useRef,
   useState,
 } from "react";
-import { Platform } from "react-native";
 import { supabase } from "../../services/supabaseClient";
 import { AuthState, AuthUser, Profile } from "../../types";
 import { config } from "../config";
@@ -309,6 +308,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Empty deps - setUser and fetchUserProfile are stable via useCallback
 
+  useEffect(() => {
+    if (!state.user?.id) return;
+    initializeOneSignalLazy().then(() => oneSignalService.syncUser());
+  }, [state.user?.id]);
+
   const signUp = async (email: string, password: string, fullName?: string) => {
     setState((prev) => ({ ...prev, loading: true }));
 
@@ -408,14 +412,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
         return { error: errorMessage };
       }
 
-      // Initialize and sync user with OneSignal for push notifications (mobile only)
-      // Deferred initialization to prevent blocking initial app load
-      if (Platform.OS !== "web") {
-        initializeOneSignalLazy().then(() => {
-          oneSignalService.syncUser();
-        });
-      }
-
       // Identify user in Sentry and PostHog on sign-in
       const {
         data: { user: signedInUser },
@@ -447,10 +443,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     setState((prev) => ({ ...prev, loading: true }));
 
     try {
-      // Clear OneSignal user on logout (mobile only)
-      if (Platform.OS !== "web") {
-        await oneSignalService.onLogout();
-      }
+      await oneSignalService.onLogout();
 
       posthog?.capture("user_signed_out");
 
