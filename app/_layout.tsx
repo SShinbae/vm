@@ -21,6 +21,7 @@ import "../unistyles";
 
 import { AuthGuard } from "@/components/AuthGuard";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { NotificationManager } from "@/components/ui/NotificationManager";
 import { AuthProvider } from "@/lib/contexts/AuthContext";
 import { DemoProvider } from "@/lib/contexts/DemoContext";
 import { DialogProvider } from "@/lib/contexts/DialogContext";
@@ -28,7 +29,6 @@ import { NotificationProvider } from "@/lib/contexts/NotificationContext";
 import { ThemeProvider } from "@/lib/contexts/ThemeContext";
 import { PostHogProvider } from "@/lib/providers/PostHogProvider";
 import { QueryProvider } from "@/lib/providers/QueryProvider";
-import { registerBackgroundTask } from "@/lib/tasks/backgroundTasks";
 
 // Import reanimated - required for gesture handler and animations
 // This import must happen before any other imports that use reanimated
@@ -120,13 +120,6 @@ function RootLayoutContent() {
     }
   }, []);
 
-  // Register background tasks on mobile after auth init
-  useEffect(() => {
-    if (Platform.OS !== "web") {
-      registerBackgroundTask();
-    }
-  }, []);
-
   // Preload fonts (if you add custom fonts, they'll be loaded here)
   const [fontsLoaded, fontError] = useFonts({
     // Add custom fonts here if needed
@@ -201,6 +194,7 @@ function RootLayoutContent() {
           </View>
         </AuthGuard>
         <StatusBar style="auto" />
+        <NotificationManager />
         <Toast config={toastConfig} position="top" topOffset={0} />
       </NavigationThemeProvider>
     </GestureHandlerRootView>

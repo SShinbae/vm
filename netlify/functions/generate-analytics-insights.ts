@@ -8,12 +8,8 @@
 import type { Handler } from "@netlify/functions";
 import { supabaseAdmin } from "./_shared/supabaseAdmin";
 import {
+  deliverNotification,
   getUserPreferences,
-  shouldDeliverNotification,
-  sendOneSignalPush,
-  createNotificationRecord,
-  isDeduplicated,
-  recordDedup,
 } from "./_shared/notifications";
 import { calculateFuelEfficiency } from "../../lib/analytics/calculations";
 import { getPreviousReportingPeriod } from "./_shared/reportingPeriod";
@@ -48,11 +44,7 @@ export const handler: Handler = async () => {
       );
       if (frequency === "monthly" && period.localDayOfMonth > 7) continue;
 
-      const { deliver } = shouldDeliverNotification(prefs, "analytics_insight");
-
       const dedupKey = `analytics_insight:${frequency}:${period.periodKey}`;
-      if (await isDeduplicated(user.id, dedupKey)) continue;
-
       const { data: fuelLogs } = await supabaseAdmin
         .from("fuel_logs")
         .select(
@@ -75,6 +67,7 @@ export const handler: Handler = async () => {
       let title: string;
       let body: string;
       const data: Record<string, any> = {
+        type: "analytics_insight",
         period: period.periodKey,
         periodStart: period.startDate,
         periodEnd: period.endDate,
@@ -90,41 +83,31 @@ export const handler: Handler = async () => {
 
         title =
           frequency === "monthly"
-            ? "Monthly Fuel Report"
-            : "Weekly Fuel Summary";
+            ? "Monthly fuel report"
+            : "Weekly fuel summary";
         body = `${fuelMetrics.totalDistance.toLocaleString()} km driven, ${efficiency.toFixed(1)} km/L efficiency. Total spent: RM${totalCost.toFixed(2)}`;
       } else {
         title =
           frequency === "monthly"
-            ? "Monthly Cost Summary"
-            : "Weekly Cost Summary";
+            ? "Monthly cost summary"
+            : "Weekly cost summary";
         body = `${fuelLogs.length} fuel ${fuelLogs.length === 1 ? "entry" : "entries"} totaling RM${totalCost.toFixed(2)} (${totalLiters.toFixed(1)}L)`;
       }
 
-      await createNotificationRecord({
+      const result = await deliverNotification({
         userId: user.id,
+        notificationKey: dedupKey,
         notificationType: "analytics_insight",
         title,
         body,
         data,
         actionUrl: "/analytics/fuel",
+        webUrl: process.env.SITE_URL
+          ? `${process.env.SITE_URL}/analytics/fuel`
+          : undefined,
+        preferences: prefs,
       });
-
-      if (deliver) {
-        await sendOneSignalPush({
-          recipientIds: [user.id],
-          title,
-          body,
-          data: { type: "analytics_insight", period: period.periodKey },
-          webUrl: process.env.SITE_URL
-            ? `${process.env.SITE_URL}/analytics/fuel`
-            : undefined,
-          appUrl: "vehiclesmanagement://analytics/fuel",
-        });
-      }
-
-      await recordDedup(user.id, dedupKey);
-      sentCount++;
+      if (result === "in_app" || result === "pushed") sentCount++;
     }
 
     console.log(

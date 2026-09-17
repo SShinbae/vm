@@ -23,7 +23,7 @@
     # HSTS - enforce HTTPS
     Strict-Transport-Security = "max-age=31536000; includeSubDomains; preload"
     # Content Security Policy
-    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; connect-src 'self' https://*.supabase.co https://*.supabase.in https://onesignal.com https://*.posthog.com https://*.sentry.io; frame-ancestors 'none'"
+    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.onesignal.com; worker-src 'self' https://cdn.onesignal.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; connect-src 'self' https://*.supabase.co https://*.supabase.in https://*.onesignal.com https://*.posthog.com https://*.sentry.io; frame-ancestors 'none'"
     # Other security headers
     X-Frame-Options = "DENY"
     X-Content-Type-Options = "nosniff"

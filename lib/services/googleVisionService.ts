@@ -1,4 +1,6 @@
-import Constants from "expo-constants";
+import { config } from "@/lib/config";
+import { logger } from "@/lib/utils/logger";
+import { withRetry } from "@/lib/utils/networkUtils";
 import { Platform } from "react-native";
 import { ApiResponse } from "../../types";
 
@@ -27,11 +29,10 @@ interface GoogleVisionResponse {
 
 export class GoogleVisionService {
   private static getProxyUrl(): string {
-    const siteUrl = Constants.expoConfig?.extra?.siteUrl || "";
     if (Platform.OS === "web") {
       return "/api/google-vision-proxy";
     }
-    return `${siteUrl}/api/google-vision-proxy`;
+    return `${config.siteUrl}/api/google-vision-proxy`;
   }
 
   /**
@@ -51,7 +52,7 @@ export class GoogleVisionService {
 
       return base64;
     } catch (error) {
-      console.error("Error converting image to base64:", error);
+      logger.error("Error converting image to base64:", error);
       throw new Error("Failed to process image for OCR");
     }
   }
@@ -84,17 +85,19 @@ export class GoogleVisionService {
   ): Promise<GoogleVisionResponse | null> {
     const proxyUrl = this.getProxyUrl();
 
-    const response = await fetch(proxyUrl, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        image: base64Image,
-        features,
-        languageHints: ["en"],
+    const response = await withRetry(() =>
+      fetch(proxyUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          image: base64Image,
+          features,
+          languageHints: ["en"],
+        }),
       }),
-    });
+    );
 
     if (!response.ok) return null;
 
@@ -169,7 +172,7 @@ export class GoogleVisionService {
         }
       } catch (error) {
         if (__DEV__) {
-          console.log(`Method ${method.name} failed:`, error);
+          logger.log(`Method ${method.name} failed:`, error);
         }
         continue;
       }
@@ -218,10 +221,10 @@ export class GoogleVisionService {
       }
 
       if (__DEV__) {
-        console.log(
+        logger.log(
           `OCR completed with ${extractionResult.confidence.toFixed(1)}% confidence`,
         );
-        console.log(
+        logger.log(
           `Extracted text length: ${extractionResult.text.length} characters`,
         );
       }
@@ -234,7 +237,7 @@ export class GoogleVisionService {
       };
     } catch (error) {
       if (__DEV__) {
-        console.error("Error in Google Vision OCR:", error);
+        logger.error("Error in Google Vision OCR:", error);
       }
 
       let errorMessage = "Failed to extract text from image";
@@ -287,7 +290,7 @@ export class GoogleVisionService {
       };
     } catch (error) {
       if (__DEV__) {
-        console.error("Error testing Google Vision API connection:", error);
+        logger.error("Error testing Google Vision API connection:", error);
       }
       return {
         data: false,

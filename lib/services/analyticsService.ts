@@ -1,3 +1,4 @@
+import { logger } from "@/lib/utils/logger";
 import { FuelLogService, ServiceLogService } from "./loggingService";
 import { FuelLog, ServiceLog, Vehicle } from "../../types";
 
@@ -124,7 +125,7 @@ export class AnalyticsService {
         period,
       };
     } catch (error) {
-      console.error("Error fetching analytics data:", error);
+      logger.error("Error fetching analytics data:", error);
       return {
         monthlyTrends: [],
         expenseBreakdown: [],

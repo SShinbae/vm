@@ -6,6 +6,7 @@ import { IconSymbol } from "@/components/ui/icon-symbol";
 import { AlertModal, ConfirmModal } from "@/components/ui/Modal";
 import { ServiceReceiptIndicator } from "@/components/ui/ReceiptViewer";
 import { SkeletonLogList } from "@/components/ui/Skeleton";
+import { useAuth } from "@/lib/contexts/AuthContext";
 import {
   FuelLogService,
   MileageLogService,
@@ -14,7 +15,6 @@ import {
 import { formatDate } from "@/lib/utils/dateUtils";
 import { isFulfilled, safePromiseAll } from "@/lib/utils/networkUtils";
 import { canUserAccessVehicle } from "@/lib/utils/serviceUtils";
-import { supabase } from "@/services/supabaseClient";
 import { FuelLog, MileageLog, ServiceLog, ServiceType } from "@/types";
 import { useFocusEffect } from "@react-navigation/native";
 import * as Haptics from "expo-haptics";
@@ -47,6 +47,7 @@ const SERVICE_TYPE_LABELS: Record<ServiceType, string> = {
 
 export default function LogsScreen() {
   const { theme } = useStyles();
+  const { user } = useAuth();
 
   const [activeTab, setActiveTab] = useState<LogType>("mileage");
   const [mileageLogs, setMileageLogs] = useState<MileageLog[]>([]);
@@ -97,11 +98,7 @@ export default function LogsScreen() {
 
   const canUserModifyLog = async (log: any): Promise<boolean> => {
     try {
-      const {
-        data: { user },
-        error: userError,
-      } = await supabase.auth.getUser();
-      if (userError || !user) return false;
+      if (!user) return false;
       return await canUserAccessVehicle(log.vehicle_id, user.id);
     } catch (error) {
       console.error("Error checking modify permission:", error);

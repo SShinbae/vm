@@ -1,22 +1,11 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { createClient } from "@supabase/supabase-js";
-import Constants from "expo-constants";
 import { Platform } from "react-native";
+import { config } from "../lib/config";
 import { Database } from "../types/database";
+import { resilientFetch } from "../lib/utils/networkUtils";
 
-// Safely get environment variables with error handling for production
-let supabaseUrl = "";
-let supabaseKey = "";
-
-try {
-  supabaseUrl = Constants.expoConfig?.extra?.supabaseUrl || "";
-  supabaseKey = Constants.expoConfig?.extra?.supabaseKey || "";
-} catch (error) {
-  // Silent fail in production - Constants.expoConfig might not be available
-  if (__DEV__) {
-    console.error("Failed to get Supabase config from Constants:", error);
-  }
-}
+const { supabaseUrl, supabaseKey } = config;
 
 // Warn instead of throwing to prevent production crashes
 if (!supabaseUrl || !supabaseKey) {
@@ -123,6 +112,7 @@ let supabase: ReturnType<typeof createClient<Database>>;
 
 try {
   supabase = createClient<Database>(safeSupabaseUrl, safeSupabaseKey, {
+    global: { fetch: resilientFetch },
     auth: {
       storage: storage,
       autoRefreshToken: true,
@@ -149,6 +139,7 @@ try {
     "https://placeholder.supabase.co",
     "placeholder-key",
     {
+      global: { fetch: resilientFetch },
       auth: {
         storage: storage,
         autoRefreshToken: false,

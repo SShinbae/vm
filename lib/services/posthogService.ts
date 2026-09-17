@@ -1,4 +1,5 @@
-import Constants from "expo-constants";
+import { config } from "@/lib/config";
+import { logger } from "@/lib/utils/logger";
 
 interface PostHogConfig {
   apiKey: string;
@@ -6,16 +7,11 @@ interface PostHogConfig {
 }
 
 export function getPostHogConfig(): PostHogConfig | null {
-  const apiKey =
-    Constants.expoConfig?.extra?.posthogApiKey ||
-    process.env.EXPO_PUBLIC_POSTHOG_API_KEY;
-  const host =
-    Constants.expoConfig?.extra?.posthogHost ||
-    process.env.EXPO_PUBLIC_POSTHOG_HOST;
+  const { posthogApiKey: apiKey, posthogHost: host } = config;
 
   if (!apiKey) {
     if (__DEV__) {
-      console.warn(
+      logger.warn(
         "PostHog: API key not configured. Please set POSTHOG_API_KEY in your .env file",
       );
     }

@@ -149,6 +149,21 @@ export default function GroupDetailScreen() {
     );
   };
 
+  const handleResendInvitation = async (
+    invitationId: string,
+    email: string,
+  ) => {
+    const { error } =
+      await GroupInvitationService.resendInvitation(invitationId);
+    if (error) {
+      dialog.showError("Error", error);
+    } else {
+      posthog?.capture("group_invitation_resent");
+      await fetchGroupData();
+      dialog.showSuccess("Success", `Invitation resent to ${email}`);
+    }
+  };
+
   const handleLeaveGroup = async () => {
     if (!group) return;
 
@@ -386,14 +401,32 @@ export default function GroupDetailScreen() {
           </Text>
         </View>
         {isOwner && (
-          <TouchableOpacity
-            style={{ padding: spacing.sm }}
-            onPress={() =>
-              handleCancelInvitation(invitation.id, invitation.email)
-            }
-          >
-            <IconSymbol name="xmark" size={16} color={theme.colors.error} />
-          </TouchableOpacity>
+          <View style={{ flexDirection: "row", alignItems: "center" }}>
+            <TouchableOpacity
+              style={{ padding: spacing.sm }}
+              onPress={() =>
+                handleResendInvitation(invitation.id, invitation.email)
+              }
+              accessibilityRole="button"
+              accessibilityLabel={`Resend invitation to ${invitation.email}`}
+            >
+              <IconSymbol
+                name="paperplane.fill"
+                size={16}
+                color={theme.colors.primary}
+              />
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={{ padding: spacing.sm }}
+              onPress={() =>
+                handleCancelInvitation(invitation.id, invitation.email)
+              }
+              accessibilityRole="button"
+              accessibilityLabel={`Cancel invitation to ${invitation.email}`}
+            >
+              <IconSymbol name="xmark" size={16} color={theme.colors.error} />
+            </TouchableOpacity>
+          </View>
         )}
       </View>
     </View>

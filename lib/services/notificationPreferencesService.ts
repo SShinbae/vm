@@ -1,3 +1,4 @@
+import { logger } from "@/lib/utils/logger";
 /**
  * Notification Preferences Service
  *
@@ -8,11 +9,45 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { supabase } from "../../services/supabaseClient";
 import { Database } from "@/types/database";
+import type { ApiResponse } from "@/types/database-v2";
 
 type Row = Database["public"]["Tables"]["notification_preferences"]["Row"];
+type Update =
+  Database["public"]["Tables"]["notification_preferences"]["Update"];
 
 const ASYNC_STORAGE_PREFS_KEY = "notification_preferences";
 const PREFS_MIGRATION_FLAG = "notification_preferences_migrated";
+
+/**
+ * Fetch notification preferences for a user (single row, may be null).
+ */
+export async function getPreferences(
+  userId: string,
+): Promise<ApiResponse<Row | null>> {
+  const { data, error } = await supabase
+    .from("notification_preferences")
+    .select("*")
+    .eq("user_id", userId)
+    .maybeSingle();
+  if (error) return { data: null, error: error.message, loading: false };
+  return { data: (data as Row | null) ?? null, error: null, loading: false };
+}
+
+/**
+ * Upsert notification preferences — creates with defaults if none exists.
+ */
+export async function upsertPreferences(
+  userId: string,
+  data: Partial<Update>,
+): Promise<ApiResponse<Row>> {
+  const { data: row, error } = await supabase
+    .from("notification_preferences")
+    .upsert({ user_id: userId, ...data } as never, { onConflict: "user_id" })
+    .select()
+    .single();
+  if (error) return { data: null, error: error.message, loading: false };
+  return { data: row as Row, error: null, loading: false };
+}
 
 /**
  * Migrate notification preferences from AsyncStorage to Supabase (one-time)
@@ -56,11 +91,11 @@ export async function migratePreferencesFromAsyncStorage(
     await AsyncStorage.removeItem(ASYNC_STORAGE_PREFS_KEY);
 
     if (__DEV__) {
-      console.log("Notification preferences migrated from AsyncStorage");
+      logger.log("Notification preferences migrated from AsyncStorage");
     }
   } catch (error) {
     if (__DEV__) {
-      console.error("Error migrating notification preferences:", error);
+      logger.error("Error migrating notification preferences:", error);
     }
   }
 }

@@ -1,3 +1,4 @@
+import { logger } from "@/lib/utils/logger";
 import { supabase } from "../../services/supabaseClient";
 import {
   ApiResponse,
@@ -41,7 +42,7 @@ export class GroupService {
       };
 
       if (ownedError) {
-        console.error("Error fetching owned groups:", ownedError);
+        logger.error("Error fetching owned groups:", ownedError);
         return { data: null, error: ownedError.message, loading: false };
       }
 
@@ -55,7 +56,7 @@ export class GroupService {
       };
 
       if (memberError) {
-        console.error("Error fetching member groups:", memberError);
+        logger.error("Error fetching member groups:", memberError);
         // Don't return error, just continue with owned groups
       }
 
@@ -63,7 +64,7 @@ export class GroupService {
       let memberGroups: any[] = [];
       if (membershipData && membershipData.length > 0) {
         const memberGroupIds = membershipData.map((m) => m.group_id);
-        console.log("Fetching member group details for IDs:", memberGroupIds);
+        logger.log("Fetching member group details for IDs:", memberGroupIds);
 
         const { data: memberGroupDetails, error: memberGroupDetailsError } =
           await supabase
@@ -80,14 +81,14 @@ export class GroupService {
             .in("id", memberGroupIds)
             .order("created_at", { ascending: false });
 
-        console.log("Member group details result:", {
+        logger.log("Member group details result:", {
           data: memberGroupDetails,
           error: memberGroupDetailsError,
           count: memberGroupDetails?.length || 0,
         });
 
         if (memberGroupDetailsError) {
-          console.error(
+          logger.error(
             "Error fetching member group details:",
             memberGroupDetailsError,
           );
@@ -117,7 +118,7 @@ export class GroupService {
         member_count: group.group_members?.length || 0,
       }));
 
-      console.log("Fetched groups debug:", {
+      logger.log("Fetched groups debug:", {
         currentUserId: user.id,
         ownedGroups: ownedGroups?.length || 0,
         ownedGroupIds: ownedGroups?.map((g) => g.id) || [],
@@ -132,7 +133,7 @@ export class GroupService {
 
       return { data: groupsWithMembers, error: null, loading: false };
     } catch (error) {
-      console.error("Unexpected error fetching groups:", error);
+      logger.error("Unexpected error fetching groups:", error);
       return { data: null, error: "Failed to fetch groups", loading: false };
     }
   }
@@ -152,7 +153,7 @@ export class GroupService {
       };
 
       if (groupError) {
-        console.error("Error fetching group:", groupError);
+        logger.error("Error fetching group:", groupError);
         return { data: null, error: groupError.message, loading: false };
       }
 
@@ -166,7 +167,7 @@ export class GroupService {
       };
 
       if (membersError) {
-        console.error("Error fetching group members:", membersError);
+        logger.error("Error fetching group members:", membersError);
         return { data: null, error: membersError.message, loading: false };
       }
 
@@ -190,7 +191,7 @@ export class GroupService {
         };
 
         if (profilesError) {
-          console.error("Error fetching member profiles:", profilesError);
+          logger.error("Error fetching member profiles:", profilesError);
         } else {
           // Combine member data with profile data
           membersWithProfiles = members.map((member) => ({
@@ -200,7 +201,7 @@ export class GroupService {
         }
       }
 
-      console.log("Group details fetched:", {
+      logger.log("Group details fetched:", {
         groupId: group?.id,
         groupName: group?.name,
         membersCount: membersWithProfiles.length,
@@ -219,7 +220,7 @@ export class GroupService {
 
       return { data: groupWithMembers, error: null, loading: false };
     } catch (error) {
-      console.error("Unexpected error fetching group:", error);
+      logger.error("Unexpected error fetching group:", error);
       return { data: null, error: "Failed to fetch group", loading: false };
     }
   }
@@ -250,7 +251,7 @@ export class GroupService {
       };
 
       if (error) {
-        console.error("Error creating group:", error);
+        logger.error("Error creating group:", error);
         return { data: null, error: error.message, loading: false };
       }
 
@@ -262,7 +263,7 @@ export class GroupService {
 
       return { data, error: null, loading: false };
     } catch (error) {
-      console.error("Unexpected error creating group:", error);
+      logger.error("Unexpected error creating group:", error);
       return { data: null, error: "Failed to create group", loading: false };
     }
   }
@@ -287,13 +288,13 @@ export class GroupService {
       };
 
       if (error) {
-        console.error("Error updating group:", error);
+        logger.error("Error updating group:", error);
         return { data: null, error: error.message, loading: false };
       }
 
       return { data, error: null, loading: false };
     } catch (error) {
-      console.error("Unexpected error updating group:", error);
+      logger.error("Unexpected error updating group:", error);
       return { data: null, error: "Failed to update group", loading: false };
     }
   }
@@ -303,13 +304,13 @@ export class GroupService {
       const { error } = await supabase.from("groups").delete().eq("id", id);
 
       if (error) {
-        console.error("Error deleting group:", error);
+        logger.error("Error deleting group:", error);
         return { data: null, error: error.message, loading: false };
       }
 
       return { data: true, error: null, loading: false };
     } catch (error) {
-      console.error("Unexpected error deleting group:", error);
+      logger.error("Unexpected error deleting group:", error);
       return { data: null, error: "Failed to delete group", loading: false };
     }
   }
@@ -352,13 +353,13 @@ export class GroupService {
         .eq("user_id", user.id);
 
       if (error) {
-        console.error("Error leaving group:", error);
+        logger.error("Error leaving group:", error);
         return { data: null, error: error.message, loading: false };
       }
 
       return { data: true, error: null, loading: false };
     } catch (error) {
-      console.error("Unexpected error leaving group:", error);
+      logger.error("Unexpected error leaving group:", error);
       return { data: null, error: "Failed to leave group", loading: false };
     }
   }
@@ -375,13 +376,13 @@ export class GroupService {
         .eq("user_id", userId);
 
       if (error) {
-        console.error("Error removing member:", error);
+        logger.error("Error removing member:", error);
         return { data: null, error: error.message, loading: false };
       }
 
       return { data: true, error: null, loading: false };
     } catch (error) {
-      console.error("Unexpected error removing member:", error);
+      logger.error("Unexpected error removing member:", error);
       return { data: null, error: "Failed to remove member", loading: false };
     }
   }
@@ -468,7 +469,7 @@ export class GroupInvitationService {
       const expiresAt = new Date();
       expiresAt.setDate(expiresAt.getDate() + 7);
 
-      console.log("Sending invitation:", {
+      logger.log("Sending invitation:", {
         group_id: groupId,
         email: email.toLowerCase(),
         invited_by: user.id,
@@ -490,17 +491,52 @@ export class GroupInvitationService {
       };
 
       if (error) {
-        console.error("Error sending invitation:", error);
+        logger.error("Error sending invitation:", error);
         return { data: null, error: error.message, loading: false };
       }
 
-      console.log("Invitation successfully created in database:", data);
-      console.log(`Invitation sent to ${email} for group ${groupId}`);
+      logger.log("Invitation successfully created in database:", data);
+      logger.log(`Invitation sent to ${email} for group ${groupId}`);
 
       return { data, error: null, loading: false };
     } catch (error) {
-      console.error("Unexpected error sending invitation:", error);
+      logger.error("Unexpected error sending invitation:", error);
       return { data: null, error: "Failed to send invitation", loading: false };
+    }
+  }
+
+  // Resend a pending invitation. Only an INSERT trigger fires the email/push,
+  // so we delete the existing pending row and re-insert to re-fire it.
+  static async resendInvitation(
+    invitationId: string,
+  ): Promise<ApiResponse<GroupInvitation>> {
+    try {
+      const { data: invitation } = (await supabase
+        .from("group_invitations")
+        .select("group_id, email")
+        .eq("id", invitationId)
+        .single()) as {
+        data: { group_id: string; email: string } | null;
+        error: any;
+      };
+
+      if (!invitation) {
+        return { data: null, error: "Invitation not found", loading: false };
+      }
+
+      const cancelResult = await this.cancelInvitation(invitationId);
+      if (cancelResult.error) {
+        return { data: null, error: cancelResult.error, loading: false };
+      }
+
+      return await this.sendInvitation(invitation.group_id, invitation.email);
+    } catch (error) {
+      logger.error("Unexpected error resending invitation:", error);
+      return {
+        data: null,
+        error: "Failed to resend invitation",
+        loading: false,
+      };
     }
   }
 
@@ -535,11 +571,11 @@ export class GroupInvitationService {
       const { data, error } = await query;
 
       if (error) {
-        console.error("Error fetching invitations:", error);
+        logger.error("Error fetching invitations:", error);
         return { data: null, error: error.message, loading: false };
       }
 
-      console.log(
+      logger.log(
         "Group invitations fetched for owner:",
         data?.map((inv: any) => ({
           id: inv.id,
@@ -553,7 +589,7 @@ export class GroupInvitationService {
 
       return { data: data || [], error: null, loading: false };
     } catch (error) {
-      console.error("Unexpected error fetching invitations:", error);
+      logger.error("Unexpected error fetching invitations:", error);
       return {
         data: null,
         error: "Failed to fetch invitations",
@@ -583,7 +619,7 @@ export class GroupInvitationService {
         .single()) as { data: { email: string } | null; error: any };
 
       const userEmail = userProfile?.email || user.email;
-      console.log(
+      logger.log(
         "Fetching user invitations for email:",
         userEmail?.toLowerCase(),
       );
@@ -595,7 +631,7 @@ export class GroupInvitationService {
       );
 
       if (error) {
-        console.error("Error fetching user invitations:", error);
+        logger.error("Error fetching user invitations:", error);
         return { data: null, error: error.message, loading: false };
       }
 
@@ -648,7 +684,7 @@ export class GroupInvitationService {
         },
       }));
 
-      console.log("User invitations query result:", {
+      logger.log("User invitations query result:", {
         invitationsCount: transformedData.length,
         groupsFound: transformedData.length,
         profilesFound: transformedData.length,
@@ -656,7 +692,7 @@ export class GroupInvitationService {
         sampleData: transformedData[0] || null,
       });
 
-      console.log(
+      logger.log(
         "Fetched invitations:",
         transformedData?.map((inv) => ({
           id: inv.id,
@@ -667,7 +703,7 @@ export class GroupInvitationService {
 
       return { data: transformedData, error: null, loading: false };
     } catch (error) {
-      console.error("Unexpected error fetching user invitations:", error);
+      logger.error("Unexpected error fetching user invitations:", error);
       return {
         data: null,
         error: "Failed to fetch invitations",
@@ -747,16 +783,20 @@ export class GroupInvitationService {
         };
       }
 
-      // Add user to group
+      // Add user to group (idempotent — re-accepting must not fail on the
+      // UNIQUE(group_id, user_id) constraint)
       const { error: memberError } = await supabase
         .from("group_members")
-        .insert({
-          group_id: invitation.group_id,
-          user_id: user.id,
-        } as any);
+        .upsert(
+          {
+            group_id: invitation.group_id,
+            user_id: user.id,
+          } as any,
+          { onConflict: "group_id,user_id", ignoreDuplicates: true },
+        );
 
       if (memberError) {
-        console.error("Error adding member:", memberError);
+        logger.error("Error adding member:", memberError);
         return { data: null, error: "Failed to join group", loading: false };
       }
 
@@ -769,7 +809,7 @@ export class GroupInvitationService {
         .select();
 
       if (updateError) {
-        console.error("Error updating invitation status:", updateError);
+        logger.error("Error updating invitation status:", updateError);
         return {
           data: null,
           error: "Failed to update invitation status",
@@ -778,7 +818,7 @@ export class GroupInvitationService {
       }
 
       if (!updateData || updateData.length === 0) {
-        console.error("No invitation was updated - possible permission issue");
+        logger.error("No invitation was updated - possible permission issue");
         return {
           data: null,
           error: "Failed to update invitation status",
@@ -786,7 +826,7 @@ export class GroupInvitationService {
         };
       }
 
-      console.log(
+      logger.log(
         `Successfully accepted invitation ${invitationId} and joined group ${invitation.groups?.name}`,
         updateData,
       );
@@ -797,7 +837,7 @@ export class GroupInvitationService {
         loading: false,
       };
     } catch (error) {
-      console.error("Unexpected error accepting invitation:", error);
+      logger.error("Unexpected error accepting invitation:", error);
       return {
         data: null,
         error: "Failed to accept invitation",
@@ -836,13 +876,13 @@ export class GroupInvitationService {
         .eq("email", userEmail?.toLowerCase() || "");
 
       if (error) {
-        console.error("Error declining invitation:", error);
+        logger.error("Error declining invitation:", error);
         return { data: null, error: error.message, loading: false };
       }
 
       return { data: true, error: null, loading: false };
     } catch (error) {
-      console.error("Unexpected error declining invitation:", error);
+      logger.error("Unexpected error declining invitation:", error);
       return {
         data: null,
         error: "Failed to decline invitation",
@@ -861,13 +901,13 @@ export class GroupInvitationService {
         .eq("id", invitationId);
 
       if (error) {
-        console.error("Error canceling invitation:", error);
+        logger.error("Error canceling invitation:", error);
         return { data: null, error: error.message, loading: false };
       }
 
       return { data: true, error: null, loading: false };
     } catch (error) {
-      console.error("Unexpected error canceling invitation:", error);
+      logger.error("Unexpected error canceling invitation:", error);
       return {
         data: null,
         error: "Failed to cancel invitation",
@@ -887,7 +927,7 @@ export class GroupInvitationService {
         return { data: null, error: "User not authenticated", loading: false };
       }
 
-      console.log("🚪 User attempting to leave group:", {
+      logger.log("🚪 User attempting to leave group:", {
         userId: user.id,
         groupId,
       });
@@ -903,7 +943,7 @@ export class GroupInvitationService {
       };
 
       if (groupError) {
-        console.error("Error fetching group:", groupError);
+        logger.error("Error fetching group:", groupError);
         return { data: null, error: "Group not found", loading: false };
       }
 
@@ -925,7 +965,7 @@ export class GroupInvitationService {
         .single();
 
       if (membershipError) {
-        console.error("Error checking membership:", membershipError);
+        logger.error("Error checking membership:", membershipError);
         return {
           data: null,
           error: "You are not a member of this group",
@@ -941,17 +981,17 @@ export class GroupInvitationService {
         .eq("user_id", user.id);
 
       if (leaveError) {
-        console.error("Error leaving group:", leaveError);
+        logger.error("Error leaving group:", leaveError);
         return { data: null, error: "Failed to leave group", loading: false };
       }
 
-      console.log("✅ User successfully left group:", {
+      logger.log("✅ User successfully left group:", {
         groupName: group?.name,
         groupId,
       });
       return { data: true, error: null, loading: false };
     } catch (error) {
-      console.error("Unexpected error leaving group:", error);
+      logger.error("Unexpected error leaving group:", error);
       return { data: null, error: "Failed to leave group", loading: false };
     }
   }
@@ -970,7 +1010,7 @@ export class GroupInvitationService {
         return { data: null, error: "User not authenticated", loading: false };
       }
 
-      console.log("👑 Transferring group ownership:", {
+      logger.log("👑 Transferring group ownership:", {
         groupId,
         fromUserId: user.id,
         toUserId: newOwnerId,
@@ -987,7 +1027,7 @@ export class GroupInvitationService {
       };
 
       if (groupError || !group) {
-        console.error("Error fetching group:", groupError);
+        logger.error("Error fetching group:", groupError);
         return { data: null, error: "Group not found", loading: false };
       }
 
@@ -1008,7 +1048,7 @@ export class GroupInvitationService {
         .single();
 
       if (membershipError) {
-        console.error("Error checking new owner membership:", membershipError);
+        logger.error("Error checking new owner membership:", membershipError);
         return {
           data: null,
           error: "New owner must be a member of the group",
@@ -1027,7 +1067,7 @@ export class GroupInvitationService {
         .eq("id", groupId);
 
       if (transferError) {
-        console.error("Error transferring ownership:", transferError);
+        logger.error("Error transferring ownership:", transferError);
         return {
           data: null,
           error: "Failed to transfer ownership",
@@ -1035,13 +1075,13 @@ export class GroupInvitationService {
         };
       }
 
-      console.log("✅ Group ownership transferred successfully:", {
+      logger.log("✅ Group ownership transferred successfully:", {
         groupName: group?.name,
         newOwnerId,
       });
       return { data: true, error: null, loading: false };
     } catch (error) {
-      console.error("Unexpected error transferring ownership:", error);
+      logger.error("Unexpected error transferring ownership:", error);
       return {
         data: null,
         error: "Failed to transfer ownership",

@@ -113,6 +113,7 @@ export default function AddServiceLogScreen() {
     date: new Date().toISOString().split("T")[0],
     odometer_reading: 0,
     next_service_due: "",
+    next_service_mileage: undefined,
     receipt_image_url: "",
     ocr_extracted_data: undefined,
     auto_filled: false,
@@ -200,6 +201,13 @@ export default function AddServiceLogScreen() {
       showError("Please select a date");
       return;
     }
+    if (
+      formData.next_service_mileage != null &&
+      formData.next_service_mileage <= formData.odometer_reading
+    ) {
+      showError("Next service mileage must be above the current odometer");
+      return;
+    }
 
     setLoading(true);
 
@@ -214,6 +222,7 @@ export default function AddServiceLogScreen() {
       date: formData.date,
       odometer_reading: formData.odometer_reading,
       next_service_due: formData.next_service_due?.trim() || undefined,
+      next_service_mileage: formData.next_service_mileage,
       receipt_image_url: formData.receipt_image_url || undefined,
       ocr_extracted_data: formData.ocr_extracted_data || undefined,
       auto_filled: formData.auto_filled || undefined,
@@ -914,6 +923,23 @@ export default function AddServiceLogScreen() {
                 />
               </View>
             </View>
+
+            <Input
+              label="Next Service Mileage (km)"
+              value={formData.next_service_mileage?.toString() || ""}
+              onChangeText={(text) => {
+                const mileage = parseInt(text.replace(/,/g, ""));
+                setFormData((prev) => ({
+                  ...prev,
+                  next_service_mileage: Number.isNaN(mileage)
+                    ? undefined
+                    : mileage,
+                }));
+              }}
+              placeholder="155,000"
+              keyboardType="numeric"
+              leftIcon="speedometer"
+            />
 
             <View style={styles.buttonContainer}>
               <Button

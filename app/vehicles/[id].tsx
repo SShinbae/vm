@@ -3,10 +3,13 @@ import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useStyles } from "react-native-unistyles";
 import { ActionMenu, ActionMenuItem } from "@/components/ui/ActionMenu";
 import { IconSymbol } from "@/components/ui/icon-symbol";
-import { AlertModal, ConfirmModal } from "@/components/ui/Modal";
+import { AlertModal, ConfirmModal, Modal } from "@/components/ui/Modal";
+import { VehicleGroupSelector } from "@/components/VehicleGroupSelector";
+import { Group } from "@/types";
 import { Pagination } from "@/components/ui/Pagination";
 import { ServiceReceiptIndicator } from "@/components/ui/ReceiptViewer";
 import { SkeletonVehicleDetail } from "@/components/ui/Skeleton";
+import { useAuth } from "@/lib/contexts/AuthContext";
 import {
   FuelLogService,
   MileageLogService,
@@ -18,20 +21,17 @@ import {
   canUserAccessVehicle,
   formatServiceItems,
 } from "@/lib/utils/serviceUtils";
-import { supabase } from "@/services/supabaseClient";
 import { VehicleWithDetails } from "@/types/database-v2";
 import { Image } from "expo-image";
 import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
 import Head from "expo-router/head";
 import React, { useCallback, useEffect, useState } from "react";
 import {
-  Alert,
   Dimensions,
   Platform,
   RefreshControl,
   ScrollView,
   StyleSheet,
-  Switch,
   Text,
   TouchableOpacity,
   View,
@@ -42,10 +42,12 @@ type LogTab = "mileage" | "fuel" | "service";
 
 export default function VehicleDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
+  const { user } = useAuth();
   const [vehicle, setVehicle] = useState<VehicleWithDetails | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [sharingLoading, setSharingLoading] = useState(false);
+  const [showSharingModal, setShowSharingModal] = useState(false);
+  const [currentShares, setCurrentShares] = useState<Group[]>([]);
   const [imageError, setImageError] = useState(false);
   const [activeTab, setActiveTab] = useState<LogTab>("mileage");
   const [sharingExpanded, setSharingExpanded] = useState(false);
@@ -97,9 +99,6 @@ export default function VehicleDetailScreen() {
         setVehicle(vehicleResult.data);
 
         // Check if user can modify this vehicle's logs
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
         if (user) {
           const canAccess = await canUserAccessVehicle(id, user.id);
           setCanModify(canAccess);
@@ -115,7 +114,7 @@ export default function VehicleDetailScreen() {
     }
 
     setLoading(false);
-  }, [id]);
+  }, [id, user]);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -208,112 +207,20 @@ export default function VehicleDetailScreen() {
     setSelectedLog(null);
   };
 
-  const handleToggleSharing = async (shared: boolean) => {
-    if (!vehicle || sharingLoading) return;
+  const openSharingModal = async () => {
+    if (!vehicle) return;
+    const { data } = await VehicleService.getVehicleSharingConfig(vehicle.id);
+    setCurrentShares(
+      (data?.shared_groups ?? []).map(
+        (s) => ({ id: s.group_id, name: s.group_name }) as Group,
+      ),
+    );
+    setShowSharingModal(true);
+  };
 
-    if (shared) {
-      // When turning on sharing, get user's groups and share with all
-      Alert.alert(
-        "Vehicle Sharing",
-        "In the new selective sharing system, you can choose specific groups to share with. For now, this will share with all your groups.",
-        [
-          { text: "Cancel", style: "cancel" },
-          {
-            text: "Share with All Groups",
-            onPress: async () => {
-              setSharingLoading(true);
-              try {
-                // Get user's groups
-                const { data: groups, error: groupsError } =
-                  await VehicleService.getUserGroups();
-
-                if (groupsError || !groups || groups.length === 0) {
-                  setSharingLoading(false);
-                  showAlert(
-                    "Error",
-                    "No groups found. You need to be a member of at least one group to share vehicles.",
-                    "error",
-                  );
-                  return;
-                }
-
-                // Share with all groups
-                const groupIds = groups.map((group) => group.id);
-                const { error: shareError } =
-                  await VehicleService.shareVehicleWithGroups(
-                    vehicle.id,
-                    groupIds,
-                  );
-
-                if (shareError) {
-                  setSharingLoading(false);
-                  showAlert(
-                    "Error",
-                    "Failed to share vehicle: " + shareError,
-                    "error",
-                  );
-                } else {
-                  // Update local state with actual data
-                  setVehicle((prev) =>
-                    prev
-                      ? {
-                          ...prev,
-                          sharing_info: {
-                            is_shared: true,
-                            shared_with_groups: groups.map((g) => g.name),
-                            total_shares: groups.length,
-                          },
-                        }
-                      : null,
-                  );
-                  setSharingLoading(false);
-                  showAlert(
-                    "Success",
-                    `Vehicle shared with ${groups.length} group(s)`,
-                    "success",
-                  );
-                }
-              } catch (error) {
-                console.error("Error sharing vehicle:", error);
-                setSharingLoading(false);
-                showAlert("Error", "Failed to share vehicle", "error");
-              }
-            },
-          },
-        ],
-      );
-    } else {
-      // When turning off sharing, remove all shares
-      setSharingLoading(true);
-      try {
-        const { error } = await VehicleService.shareVehicleWithGroups(
-          vehicle.id,
-          [],
-        );
-
-        if (error) {
-          showAlert("Error", "Failed to stop sharing", "error");
-        } else {
-          setVehicle((prev) =>
-            prev
-              ? {
-                  ...prev,
-                  sharing_info: {
-                    is_shared: false,
-                    shared_with_groups: [],
-                    total_shares: 0,
-                  },
-                }
-              : null,
-          );
-          showAlert("Success", "Vehicle is no longer shared", "success");
-        }
-      } catch {
-        showAlert("Error", "Failed to update sharing settings", "error");
-      } finally {
-        setSharingLoading(false);
-      }
-    }
+  const handleSharingUpdate = async (success: boolean) => {
+    setShowSharingModal(false);
+    if (success) await fetchVehicleData();
   };
 
   useEffect(() => {
@@ -1316,20 +1223,23 @@ export default function VehicleDetailScreen() {
                       gap: spacing.md,
                     }}
                   >
-                    <Switch
-                      value={vehicle.sharing_info?.is_shared || false}
-                      onValueChange={handleToggleSharing}
-                      disabled={sharingLoading}
-                      trackColor={{
-                        false: withOpacity(colors.textSecondary, 0.19),
-                        true: withOpacity(colors.primary, 0.31),
+                    <TouchableOpacity
+                      onPress={openSharingModal}
+                      style={{
+                        paddingVertical: spacing.sm,
+                        paddingHorizontal: spacing.lg,
+                        borderRadius: 8,
+                        backgroundColor: withOpacity(colors.primary, 0.1),
                       }}
-                      thumbColor={
-                        vehicle.sharing_info?.is_shared
-                          ? colors.primary
-                          : colors.background
-                      }
-                    />
+                      accessibilityRole="button"
+                      accessibilityLabel="Manage vehicle sharing"
+                    >
+                      <Text
+                        style={{ color: colors.primary, fontWeight: "600" }}
+                      >
+                        Manage
+                      </Text>
+                    </TouchableOpacity>
                     {isDesktopWeb && (
                       <TouchableOpacity style={styles.sharingExpandButton}>
                         <IconSymbol
@@ -1679,6 +1589,21 @@ export default function VehicleDetailScreen() {
           loading={deleteLogLoading}
           variant="danger"
         />
+
+        {vehicle && (
+          <Modal
+            visible={showSharingModal}
+            onClose={() => setShowSharingModal(false)}
+            title="Share with Groups"
+            variant="bottom-sheet"
+          >
+            <VehicleGroupSelector
+              vehicleId={vehicle.id}
+              currentSharedGroups={currentShares}
+              onSharingUpdate={handleSharingUpdate}
+            />
+          </Modal>
+        )}
       </SafeAreaView>
     </React.Fragment>
   );

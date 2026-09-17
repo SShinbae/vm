@@ -1,3 +1,4 @@
+import { logger } from "@/lib/utils/logger";
 import * as ImagePicker from "expo-image-picker";
 import { Platform } from "react-native";
 import { supabase } from "../../services/supabaseClient";
@@ -11,7 +12,7 @@ if (Platform.OS !== "web") {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     ImageCropPicker = require("react-native-image-crop-picker").default;
   } catch (error) {
-    console.warn("react-native-image-crop-picker not available:", error);
+    logger.warn("react-native-image-crop-picker not available:", error);
   }
 }
 
@@ -124,7 +125,7 @@ export class OCRService {
 
       return cameraStatus === "granted" && mediaStatus === "granted";
     } catch (error) {
-      console.error("Error requesting permissions:", error);
+      logger.error("Error requesting permissions:", error);
       return false;
     }
   }
@@ -162,7 +163,7 @@ export class OCRService {
       ) {
         return null;
       }
-      console.warn("Crop failed, using original image:", errorMessage);
+      logger.warn("Crop failed, using original image:", errorMessage);
       return uri;
     }
   }
@@ -200,7 +201,7 @@ export class OCRService {
 
       return result;
     } catch (error) {
-      console.error("Error capturing receipt from camera:", error);
+      logger.error("Error capturing receipt from camera:", error);
       return null;
     }
   }
@@ -238,7 +239,7 @@ export class OCRService {
 
       return result;
     } catch (error) {
-      console.error("Error picking receipt from gallery:", error);
+      logger.error("Error picking receipt from gallery:", error);
       return null;
     }
   }
@@ -253,7 +254,7 @@ export class OCRService {
     try {
       // Validate inputs
       if (!imageUri || typeof imageUri !== "string") {
-        console.error("Invalid imageUri provided:", imageUri);
+        logger.error("Invalid imageUri provided:", imageUri);
         return {
           data: null,
           error: "Invalid image URI provided",
@@ -262,7 +263,7 @@ export class OCRService {
       }
 
       if (!fileName || typeof fileName !== "string") {
-        console.error("Invalid fileName provided:", fileName);
+        logger.error("Invalid fileName provided:", fileName);
         return {
           data: null,
           error: "Invalid file name provided",
@@ -296,7 +297,7 @@ export class OCRService {
         });
 
       if (error) {
-        console.error("Error uploading receipt image:", error);
+        logger.error("Error uploading receipt image:", error);
         return { data: null, error: error.message, loading: false };
       }
 
@@ -307,7 +308,7 @@ export class OCRService {
 
       return { data: urlData.publicUrl, error: null, loading: false };
     } catch (error) {
-      console.error("Unexpected error uploading receipt image:", error);
+      logger.error("Unexpected error uploading receipt image:", error);
       return {
         data: null,
         error: "Failed to upload receipt image",
@@ -321,12 +322,12 @@ export class OCRService {
    */
   static async extractTextFromImage(imageUri: string): Promise<string> {
     try {
-      console.log("Extracting text from image using Google Vision API...");
+      logger.log("Extracting text from image using Google Vision API...");
 
       const result = await GoogleVisionService.extractTextFromImage(imageUri);
 
       if (result.error) {
-        console.error("Google Vision API error:", result.error);
+        logger.error("Google Vision API error:", result.error);
         throw new Error(result.error);
       }
 
@@ -334,10 +335,10 @@ export class OCRService {
         throw new Error("No text was extracted from the image");
       }
 
-      console.log("Text extraction successful, length:", result.data.length);
+      logger.log("Text extraction successful, length:", result.data.length);
       return result.data;
     } catch (error) {
-      console.error("Error extracting text from image:", error);
+      logger.error("Error extracting text from image:", error);
 
       // Provide fallback with more specific error message
       if (error instanceof Error) {
@@ -701,7 +702,7 @@ export class OCRService {
   ): OCRExtractedData["extracted_fields"] {
     // Validate input
     if (!rawText || typeof rawText !== "string") {
-      console.warn("Invalid rawText provided to parseExtractedText:", rawText);
+      logger.warn("Invalid rawText provided to parseExtractedText:", rawText);
       return { confidence_scores: {} };
     }
 
@@ -868,7 +869,7 @@ export class OCRService {
     try {
       // Validate input
       if (!imageUri || typeof imageUri !== "string") {
-        console.error(
+        logger.error(
           "Invalid imageUri provided to processReceiptImage:",
           imageUri,
         );
@@ -901,7 +902,7 @@ export class OCRService {
         };
       }
 
-      console.log(
+      logger.log(
         `Processing receipt with ${rawText.length} characters, OCR confidence: ${ocrConfidence.toFixed(1)}%`,
       );
 
@@ -921,10 +922,10 @@ export class OCRService {
         processing_timestamp: new Date().toISOString(),
       };
 
-      console.log(
+      logger.log(
         `Processing complete. Final confidence: ${overallConfidence}%`,
       );
-      console.log(
+      logger.log(
         "Extracted fields:",
         Object.keys(extractedFields).filter(
           (k) =>
@@ -939,7 +940,7 @@ export class OCRService {
         imageUri,
       };
     } catch (error) {
-      console.error("Error processing receipt image:", error);
+      logger.error("Error processing receipt image:", error);
       return {
         success: false,
         error:
@@ -972,7 +973,7 @@ export class OCRService {
       const imageUri = imageResult.assets[0].uri;
       return await this.processReceiptImage(imageUri);
     } catch (error) {
-      console.error("Error processing receipt from camera:", error);
+      logger.error("Error processing receipt from camera:", error);
       return {
         success: false,
         error:
@@ -1005,7 +1006,7 @@ export class OCRService {
       const imageUri = imageResult.assets[0].uri;
       return await this.processReceiptImage(imageUri);
     } catch (error) {
-      console.error("Error processing receipt from gallery:", error);
+      logger.error("Error processing receipt from gallery:", error);
       return {
         success: false,
         error:
@@ -1057,7 +1058,7 @@ export class OCRService {
         data: undefined, // No OCR data
       };
     } catch (error) {
-      console.error("Error saving picture from camera:", error);
+      logger.error("Error saving picture from camera:", error);
       return {
         success: false,
         error:
@@ -1109,7 +1110,7 @@ export class OCRService {
         data: undefined, // No OCR data
       };
     } catch (error) {
-      console.error("Error saving picture from gallery:", error);
+      logger.error("Error saving picture from gallery:", error);
       return {
         success: false,
         error:

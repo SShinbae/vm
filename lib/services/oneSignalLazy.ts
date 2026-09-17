@@ -1,3 +1,4 @@
+import { logger } from "@/lib/utils/logger";
 import { oneSignalService } from "./oneSignalService";
 
 /**
@@ -20,7 +21,7 @@ export const initializeOneSignalLazy = (): Promise<void> => {
           await oneSignalService.initialize();
           resolve();
         } catch (error) {
-          console.error("OneSignal lazy initialization failed:", error);
+          logger.error("OneSignal lazy initialization failed:", error);
           resolve(); // Resolve anyway to prevent blocking
         }
       }, 0);

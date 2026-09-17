@@ -9,9 +9,9 @@ import { Input } from "@/components/ui/Input";
 import { ConfirmModal } from "@/components/ui/Modal";
 import { SkeletonMileageLogEdit } from "@/components/ui/Skeleton";
 import { useToast } from "@/hooks/useToast";
+import { useAuth } from "@/lib/contexts/AuthContext";
 import { canUserAccessVehicle } from "@/lib/utils/serviceUtils";
 import { MileageLogService } from "@/lib/services/loggingService";
-import { supabase } from "@/services/supabaseClient";
 import { MileageLog, MileageLogFormData } from "@/types";
 import { router, useLocalSearchParams } from "expo-router";
 import { usePostHog } from "posthog-react-native";
@@ -29,6 +29,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function EditMileageLogScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
+  const { user } = useAuth();
   const [mileageLog, setMileageLog] = useState<MileageLog | null>(null);
   const [formData, setFormData] = useState<MileageLogFormData>({
     vehicle_id: "",
@@ -91,9 +92,6 @@ export default function EditMileageLogScreen() {
         });
 
         // Check if user can modify this log
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
         if (user) {
           const canAccess = await canUserAccessVehicle(log.vehicle_id, user.id);
           setCanModify(canAccess);

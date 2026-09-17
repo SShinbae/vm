@@ -8,12 +8,8 @@
 import type { Handler } from "@netlify/functions";
 import { supabaseAdmin } from "./_shared/supabaseAdmin";
 import {
+  deliverNotification,
   getUserPreferences,
-  shouldDeliverNotification,
-  sendOneSignalPush,
-  createNotificationRecord,
-  isDeduplicated,
-  recordDedup,
 } from "./_shared/notifications";
 
 export const handler: Handler = async () => {
@@ -54,45 +50,28 @@ export const handler: Handler = async () => {
       const prefs = await getUserPreferences(userId);
 
       // Check threshold
-      const threshold = prefs
-        ? (prefs as any).monthly_spending_threshold
-        : null;
+      const threshold = prefs?.monthly_spending_threshold;
 
       if (!threshold || totalCost < threshold) continue;
 
-      const { deliver } = shouldDeliverNotification(prefs, "cost_alert");
-
-      // Dedup
       const dedupKey = `cost_alert:monthly:${monthKey}`;
-      if (await isDeduplicated(userId, dedupKey)) continue;
-
-      const title = "Monthly Spending Alert";
+      const title = "Monthly spending alert";
       const body = `Your fuel spending this month (RM${totalCost.toFixed(2)}) has exceeded your threshold (RM${threshold.toFixed(2)})`;
 
-      await createNotificationRecord({
+      const result = await deliverNotification({
         userId,
+        notificationKey: dedupKey,
         notificationType: "cost_alert",
         title,
         body,
-        data: { totalCost, threshold, month: monthKey },
+        data: { type: "cost_alert", totalCost, threshold, month: monthKey },
         actionUrl: "/analytics/costs",
+        webUrl: process.env.SITE_URL
+          ? `${process.env.SITE_URL}/analytics/costs`
+          : undefined,
+        preferences: prefs,
       });
-
-      if (deliver) {
-        await sendOneSignalPush({
-          recipientIds: [userId],
-          title,
-          body,
-          data: { type: "cost_alert", month: monthKey },
-          webUrl: process.env.SITE_URL
-            ? `${process.env.SITE_URL}/analytics/costs`
-            : undefined,
-          appUrl: "vehiclesmanagement://analytics/costs",
-        });
-      }
-
-      await recordDedup(userId, dedupKey);
-      sentCount++;
+      if (result === "in_app" || result === "pushed") sentCount++;
     }
 
     // Fuel price anomaly detection: flag entries 20%+ above user's average
@@ -121,43 +100,32 @@ export const handler: Handler = async () => {
         const latestPrice = prices[0];
 
         const prefs = await getUserPreferences(userId);
-        const alertPercentage = prefs
-          ? (prefs as any).fuel_price_alert_percentage || 20
-          : 20;
+        const alertPercentage = prefs?.fuel_price_alert_percentage || 20;
 
         if (latestPrice > avgPrice * (1 + alertPercentage / 100)) {
           const dedupKey = `cost_alert:fuel_price:${monthKey}`;
-          if (await isDeduplicated(userId, dedupKey)) continue;
-
-          const { deliver } = shouldDeliverNotification(prefs, "cost_alert");
-
-          const title = "Fuel Price Alert";
+          const title = "Fuel price alert";
           const body = `Your latest fuel price (RM${latestPrice.toFixed(2)}/L) is ${Math.round(((latestPrice - avgPrice) / avgPrice) * 100)}% above your average (RM${avgPrice.toFixed(2)}/L)`;
 
-          await createNotificationRecord({
+          const result = await deliverNotification({
             userId,
+            notificationKey: dedupKey,
             notificationType: "cost_alert",
             title,
             body,
-            data: { latestPrice, avgPrice, alertPercentage },
+            data: {
+              type: "cost_alert",
+              latestPrice,
+              avgPrice,
+              alertPercentage,
+            },
             actionUrl: "/analytics/costs",
+            webUrl: process.env.SITE_URL
+              ? `${process.env.SITE_URL}/analytics/costs`
+              : undefined,
+            preferences: prefs,
           });
-
-          if (deliver) {
-            await sendOneSignalPush({
-              recipientIds: [userId],
-              title,
-              body,
-              data: { type: "cost_alert" },
-              webUrl: process.env.SITE_URL
-                ? `${process.env.SITE_URL}/analytics/costs`
-                : undefined,
-              appUrl: "vehiclesmanagement://analytics/costs",
-            });
-          }
-
-          await recordDedup(userId, dedupKey);
-          sentCount++;
+          if (result === "in_app" || result === "pushed") sentCount++;
         }
       }
     }

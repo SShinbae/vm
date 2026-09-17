@@ -199,6 +199,7 @@ export interface ServiceLogFormData {
   date: string;
   odometer_reading: number;
   next_service_due?: string;
+  next_service_mileage?: number;
   receipt_image_url?: string;
   ocr_extracted_data?: OCRExtractedData;
   auto_filled?: boolean;

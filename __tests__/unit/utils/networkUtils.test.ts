@@ -8,6 +8,7 @@ import {
   withTimeout,
   safePromiseAll,
   withRetry,
+  resilientFetch,
   isFulfilled,
   isRejected,
 } from "@/lib/utils/networkUtils";
@@ -172,6 +173,38 @@ describe("withRetry", () => {
 
     await rejection;
     expect(factory).toHaveBeenCalledTimes(2); // initial + 1 retry
+  });
+});
+
+describe("resilientFetch", () => {
+  const originalFetch = global.fetch;
+
+  afterEach(() => {
+    global.fetch = originalFetch;
+    jest.useRealTimers();
+  });
+
+  it("retries failed reads", async () => {
+    global.fetch = jest
+      .fn()
+      .mockRejectedValueOnce(new Error("offline"))
+      .mockResolvedValue({ ok: true } as Response);
+
+    jest.useFakeTimers();
+    const resultPromise = resilientFetch("https://example.com");
+    await jest.advanceTimersByTimeAsync(1000);
+
+    await expect(resultPromise).resolves.toEqual({ ok: true });
+    expect(global.fetch).toHaveBeenCalledTimes(2);
+  });
+
+  it("does not retry writes", async () => {
+    global.fetch = jest.fn().mockRejectedValue(new Error("offline"));
+
+    await expect(
+      resilientFetch("https://example.com", { method: "POST" }),
+    ).rejects.toThrow("offline");
+    expect(global.fetch).toHaveBeenCalledTimes(1);
   });
 });
 

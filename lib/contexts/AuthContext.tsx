@@ -1,5 +1,4 @@
 import { Session, User } from "@supabase/supabase-js";
-import Constants from "expo-constants";
 import { usePostHog } from "posthog-react-native";
 import React, {
   createContext,
@@ -9,9 +8,9 @@ import React, {
   useRef,
   useState,
 } from "react";
-import { Platform } from "react-native";
 import { supabase } from "../../services/supabaseClient";
 import { AuthState, AuthUser, Profile } from "../../types";
+import { config } from "../config";
 import { initializeOneSignalLazy } from "../services/oneSignalLazy";
 import { oneSignalService } from "../services/oneSignalService";
 import { sentryService } from "../services/sentryService";
@@ -309,21 +308,23 @@ export function AuthProvider({ children }: AuthProviderProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Empty deps - setUser and fetchUserProfile are stable via useCallback
 
+  useEffect(() => {
+    if (!state.user?.id) return;
+    initializeOneSignalLazy().then(() => oneSignalService.syncUser());
+  }, [state.user?.id]);
+
   const signUp = async (email: string, password: string, fullName?: string) => {
     setState((prev) => ({ ...prev, loading: true }));
 
     try {
-      const siteUrl = Constants.expoConfig?.extra?.siteUrl;
+      const siteUrl = config.siteUrl;
       const emailRedirectUrl = `${siteUrl}/auth/confirm`;
 
       // Enhanced debug logging (only in development)
       if (__DEV__) {
         console.log("=== SIGNUP DEBUG INFO ===");
         console.log("Email confirmation URL:", emailRedirectUrl);
-        console.log(
-          "Site URL from config:",
-          Constants.expoConfig?.extra?.siteUrl,
-        );
+        console.log("Site URL from config:", config.siteUrl);
         console.log("Full signup data:", { email, fullName });
         console.log("========================");
       }
@@ -411,14 +412,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
         return { error: errorMessage };
       }
 
-      // Initialize and sync user with OneSignal for push notifications (mobile only)
-      // Deferred initialization to prevent blocking initial app load
-      if (Platform.OS !== "web") {
-        initializeOneSignalLazy().then(() => {
-          oneSignalService.syncUser();
-        });
-      }
-
       // Identify user in Sentry and PostHog on sign-in
       const {
         data: { user: signedInUser },
@@ -450,10 +443,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     setState((prev) => ({ ...prev, loading: true }));
 
     try {
-      // Clear OneSignal user on logout (mobile only)
-      if (Platform.OS !== "web") {
-        await oneSignalService.onLogout();
-      }
+      await oneSignalService.onLogout();
 
       posthog?.capture("user_signed_out");
 
@@ -473,16 +463,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   const resetPassword = async (email: string) => {
     try {
-      const siteUrl = Constants.expoConfig?.extra?.siteUrl;
+      const siteUrl = config.siteUrl;
       const resetPasswordUrl = `${siteUrl}/reset-password`;
 
       // Debug logging to ensure correct URL is being used
       if (__DEV__) {
         console.log("Reset password URL:", resetPasswordUrl);
-        console.log(
-          "Site URL from config:",
-          Constants.expoConfig?.extra?.siteUrl,
-        );
+        console.log("Site URL from config:", config.siteUrl);
       }
 
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
