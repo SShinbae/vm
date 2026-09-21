@@ -68,3 +68,7 @@ ios/certs/
 # Service-account credentials — never commit
 Vehicles Firebase Admin SDK.json
 *Firebase Admin SDK*.json
+
+#claude skill
+.claude
+Markdown
