@@ -24,6 +24,8 @@ import {
 export function calculateFuelEfficiency(
   fuelLogs: FuelLog[],
   mileageLogs: MileageLog[],
+  // Last fill-up before the period per vehicle: odometer baseline only, not counted in totals.
+  baselineLogs: FuelLog[] = [],
 ): FuelEfficiencyMetrics {
   if (fuelLogs.length === 0) {
     return {
@@ -51,15 +53,21 @@ export function calculateFuelEfficiency(
   let bestEfficiency = Infinity;
   let worstEfficiency = 0;
   let totalConsumption = 0;
+  // Segments are per vehicle; diffing odometers across vehicles is meaningless.
+  const previousByVehicle = new Map<string | undefined, FuelLog>(
+    baselineLogs.map((log) => [log.vehicle_id, log]),
+  );
 
   for (let i = 0; i < sortedFuelLogs.length; i++) {
     const currentLog = sortedFuelLogs[i];
     totalLitersFilled += currentLog.liters_filled;
     totalCost += currentLog.cost || 0;
 
-    // Calculate efficiency only if we have a previous reading
-    if (i > 0) {
-      const previousLog = sortedFuelLogs[i - 1];
+    const previousLog = previousByVehicle.get(currentLog.vehicle_id);
+    previousByVehicle.set(currentLog.vehicle_id, currentLog);
+
+    // Calculate efficiency only if we have a previous reading for this vehicle
+    if (previousLog) {
       const distance =
         currentLog.odometer_reading - previousLog.odometer_reading;
 

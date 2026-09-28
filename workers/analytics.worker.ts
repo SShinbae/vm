@@ -71,6 +71,7 @@ export type WorkerMessage =
         mileageLogs: MileageLog[];
         vehicles: Vehicle[];
         vehiclesWithLogs?: VehicleWithLogs[];
+        baselineFuelLogs?: FuelLog[];
       };
     };
 
@@ -151,10 +152,15 @@ self.addEventListener("message", async (event: MessageEvent<WorkerMessage>) => {
           mileageLogs,
           vehicles,
           vehiclesWithLogs,
+          baselineFuelLogs,
         } = message.payload;
 
         const totalDistance = calculateTotalDistance(mileageLogs);
-        const fuelMetrics = calculateFuelEfficiency(fuelLogs, mileageLogs);
+        const fuelMetrics = calculateFuelEfficiency(
+          fuelLogs,
+          mileageLogs,
+          baselineFuelLogs,
+        );
         const costMetrics = calculateCostMetrics(
           fuelLogs,
           serviceLogs,

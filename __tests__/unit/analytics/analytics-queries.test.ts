@@ -14,6 +14,8 @@ function query(data: unknown[]) {
     in: jest.fn(() => builder),
     gte: jest.fn(() => builder),
     lte: jest.fn(() => builder),
+    lt: jest.fn(() => builder),
+    limit: jest.fn(() => builder),
     order: jest.fn(() => builder),
     then: (resolve: (value: unknown) => unknown) =>
       Promise.resolve({ data, error: null }).then(resolve),
@@ -32,7 +34,11 @@ const filters: AnalyticsFilters = {
 };
 
 describe("fetchAnalyticsData", () => {
-  beforeEach(() => mockFrom.mockReset());
+  beforeEach(() => {
+    mockFrom.mockReset();
+    // Baseline fuel-log lookups (one per vehicle) fall through to empty results.
+    mockFrom.mockImplementation(() => query([]));
+  });
 
   it("includes owned and group-shared vehicles when All is selected", async () => {
     const owned = query([{ id: "owned-1" }]);
@@ -79,6 +85,7 @@ describe("fetchAnalyticsData", () => {
     });
 
     expect(fuelLogs.in).toHaveBeenCalledWith("vehicle_id", ["selected-1"]);
-    expect(mockFrom).toHaveBeenCalledTimes(4);
+    // 4 period queries + 1 baseline fuel-log query for the selected vehicle
+    expect(mockFrom).toHaveBeenCalledTimes(5);
   });
 });

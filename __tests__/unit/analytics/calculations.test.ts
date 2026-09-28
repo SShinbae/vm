@@ -130,6 +130,64 @@ describe("Analytics Calculations", () => {
       expect(result.averageConsumption).toBe(8.5);
     });
 
+    it("should not diff odometers across different vehicles", () => {
+      const fuelLogs = [
+        createFuelLog({
+          vehicle_id: "a",
+          odometer_reading: 50000,
+          date: "2024-01-01",
+        }),
+        createFuelLog({
+          vehicle_id: "b",
+          odometer_reading: 52000,
+          date: "2024-01-02",
+        }),
+        createFuelLog({
+          vehicle_id: "a",
+          odometer_reading: 50400,
+          liters_filled: 32,
+          date: "2024-01-03",
+        }),
+        createFuelLog({
+          vehicle_id: "b",
+          odometer_reading: 52500,
+          liters_filled: 40,
+          date: "2024-01-04",
+        }),
+      ];
+
+      const result = calculateFuelEfficiency(fuelLogs, []);
+
+      // a: 400 km / 32 L = 8 L/100km, b: 500 km / 40 L = 8 L/100km
+      expect(result.totalDistance).toBe(900);
+      expect(result.averageConsumption).toBe(8);
+    });
+
+    it("should use a baseline log for distance without counting it in totals", () => {
+      const baseline = createFuelLog({
+        vehicle_id: "a",
+        odometer_reading: 50000,
+        liters_filled: 99,
+        cost: 999,
+        date: "2023-12-01",
+      });
+      const fuelLogs = [
+        createFuelLog({
+          vehicle_id: "a",
+          odometer_reading: 50400,
+          liters_filled: 32,
+          date: "2024-01-15",
+        }),
+      ];
+
+      const result = calculateFuelEfficiency(fuelLogs, [], [baseline]);
+
+      expect(result.totalDistance).toBe(400);
+      expect(result.averageConsumption).toBe(8);
+      expect(result.totalLitersFilled).toBe(32);
+      expect(result.fuelUps).toBe(1);
+    });
+
     it("should track best and worst efficiency", () => {
       const fuelLogs = [
         createFuelLog({

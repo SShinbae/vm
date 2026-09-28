@@ -79,6 +79,7 @@ export function useAnalyticsData(filters: AnalyticsFilters) {
         mileageLogs: data.mileageLogs,
         vehicles: data.vehicles,
         vehiclesWithLogs,
+        baselineFuelLogs: data.baselineFuelLogs,
       });
 
       setFuelMetrics(metrics.fuelMetrics);
@@ -301,6 +302,7 @@ export function useCompleteAnalytics(filters: AnalyticsFilters) {
       const fuelMetrics = calculateFuelEfficiency(
         data.fuelLogs,
         data.mileageLogs,
+        data.baselineFuelLogs,
       );
       const costMetrics = calculateCostMetrics(
         data.fuelLogs,
