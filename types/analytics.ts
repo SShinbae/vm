@@ -84,6 +84,7 @@ export interface AnalyticsData {
   serviceLogs: ServiceLog[];
   mileageLogs: MileageLog[];
   vehicles: Vehicle[];
+  baselineFuelLogs?: FuelLog[];
 }
 
 export interface VehicleWithLogs extends Vehicle {

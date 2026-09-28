@@ -91,6 +91,7 @@ export function useAnalyticsWorker() {
       mileageLogs: MileageLog[];
       vehicles: Vehicle[];
       vehiclesWithLogs?: VehicleWithLogs[];
+      baselineFuelLogs?: FuelLog[];
     }) => {
       return sendMessage<{
         fuelMetrics: FuelEfficiencyMetrics;
@@ -205,11 +206,21 @@ async function executeFallback<T>(message: WorkerMessage): Promise<T> {
     }
 
     case "CALCULATE_ALL_METRICS": {
-      const { fuelLogs, serviceLogs, mileageLogs, vehicles, vehiclesWithLogs } =
-        message.payload;
+      const {
+        fuelLogs,
+        serviceLogs,
+        mileageLogs,
+        vehicles,
+        vehiclesWithLogs,
+        baselineFuelLogs,
+      } = message.payload;
 
       const totalDistance = calculateTotalDistance(mileageLogs);
-      const fuelMetrics = calculateFuelEfficiency(fuelLogs, mileageLogs);
+      const fuelMetrics = calculateFuelEfficiency(
+        fuelLogs,
+        mileageLogs,
+        baselineFuelLogs,
+      );
       const costMetrics = calculateCostMetrics(
         fuelLogs,
         serviceLogs,

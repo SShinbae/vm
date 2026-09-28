@@ -63,6 +63,7 @@ export async function fetchAnalyticsData(
       serviceLogsResult,
       mileageLogsResult,
       vehiclesResult,
+      baselineResults,
     ] = await Promise.all([
       supabase
         .from("fuel_logs")
@@ -89,6 +90,22 @@ export async function fetchAnalyticsData(
         .order("date", { ascending: true }),
 
       supabase.from("vehicles").select("*").in("id", targetVehicleIds),
+
+      // Last fill-up before the period per vehicle, used as the odometer baseline
+      // for the first in-period fill-up.
+      // ponytail: one query per vehicle; switch to an RPC if vehicle count grows large
+      Promise.all(
+        targetVehicleIds.map((vehicleId) =>
+          supabase
+            .from("fuel_logs")
+            .select("*")
+            .eq("vehicle_id", vehicleId)
+            .lt("date", startDateStr)
+            .order("date", { ascending: false })
+            .order("odometer_reading", { ascending: false })
+            .limit(1),
+        ),
+      ),
     ]);
 
     // Check for errors
@@ -96,6 +113,7 @@ export async function fetchAnalyticsData(
     if (serviceLogsResult.error) throw serviceLogsResult.error;
     if (mileageLogsResult.error) throw mileageLogsResult.error;
     if (vehiclesResult.error) throw vehiclesResult.error;
+    for (const result of baselineResults) if (result.error) throw result.error;
 
     // Debug logging
     console.log("Analytics Query Debug:", {
@@ -113,6 +131,9 @@ export async function fetchAnalyticsData(
       serviceLogs: (serviceLogsResult.data as ServiceLog[]) || [],
       mileageLogs: (mileageLogsResult.data as MileageLog[]) || [],
       vehicles: (vehiclesResult.data as Vehicle[]) || [],
+      baselineFuelLogs: baselineResults.flatMap(
+        (result) => (result.data as FuelLog[]) || [],
+      ),
     };
   } catch (error) {
     console.error("Error fetching analytics data:", error);
