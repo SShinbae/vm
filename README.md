@@ -5,6 +5,7 @@ A comprehensive vehicle management application built with **React Native** and *
 ## 📋 Table of Contents
 
 - [Features](#-features)
+- [Screenshots](#-screenshots)
 - [Tech Stack](#-tech-stack)
 - [Getting Started](#-getting-started)
 - [Project Structure](#-project-structure)
@@ -62,6 +63,16 @@ A comprehensive vehicle management application built with **React Native** and *
 - **Row Level Security (RLS)**: Database-level access control
 - **Permission System**: Granular permissions for vehicle and log operations
 - **Secure Image Storage**: Protected media storage with Supabase Storage
+
+## 📸 Screenshots
+
+| Dashboard                                | Vehicles                               |
+| ---------------------------------------- | -------------------------------------- |
+| ![Dashboard](./screenshot/dashboard.jpg) | ![Vehicles](./screenshot/vehicles.jpg) |
+| **Analytics**                            | **Logs**                               |
+| ![Analytics](./screenshot/analytics.jpg) | ![Logs](./screenshot/logs.jpg)         |
+
+_Captured from the web build (Expo web)._
 
 ## 🛠 Tech Stack
 

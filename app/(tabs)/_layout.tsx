@@ -24,6 +24,7 @@ function TabLayoutContent() {
 
   // Hide tab bar on web desktop, show WebSidebar instead
   const showTabBar = !layout.isWeb || layout.isMobile;
+  const isDesktopWeb = Platform.OS === "web" && !layout.isMobile;
 
   return (
     <View style={styles.container}>
@@ -34,11 +35,9 @@ function TabLayoutContent() {
       <View
         style={[
           styles.content,
+          { backgroundColor: theme.colors.background },
           // Desktop web: add margin for sidebar
-          Platform.OS === "web" &&
-            !layout.isMobile && {
-              marginLeft: isOpen ? 240 : 60,
-            },
+          isDesktopWeb && { marginLeft: isOpen ? 240 : 60 },
         ]}
       >
         <Tabs

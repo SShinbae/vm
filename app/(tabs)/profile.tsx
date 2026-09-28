@@ -403,8 +403,9 @@ export default function ProfileScreen() {
           padding: theme.spacing.xl,
           backgroundColor: theme.colors.surface,
           marginTop: theme.spacing.md,
-          borderRadius: theme.borderRadius.xl,
-          marginHorizontal: theme.spacing.lg,
+          borderTopWidth: 1,
+          borderBottomWidth: 1,
+          borderColor: theme.colors.border,
         }}
       >
         <Text
@@ -551,8 +552,9 @@ export default function ProfileScreen() {
           padding: theme.spacing.xl,
           backgroundColor: theme.colors.surface,
           marginTop: theme.spacing.md,
-          borderRadius: theme.borderRadius.xl,
-          marginHorizontal: theme.spacing.lg,
+          borderTopWidth: 1,
+          borderBottomWidth: 1,
+          borderColor: theme.colors.border,
         }}
       >
         <Text
@@ -625,8 +627,9 @@ export default function ProfileScreen() {
           padding: theme.spacing.xl,
           backgroundColor: theme.colors.surface,
           marginTop: theme.spacing.md,
-          borderRadius: theme.borderRadius.xl,
-          marginHorizontal: theme.spacing.lg,
+          borderTopWidth: 1,
+          borderBottomWidth: 1,
+          borderColor: theme.colors.border,
         }}
       >
         <Text
