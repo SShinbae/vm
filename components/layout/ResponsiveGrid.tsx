@@ -50,12 +50,15 @@ export function ResponsiveGrid({
 
   if (minItemWidth) {
     // Auto-calculate based on minItemWidth
-    const availableWidth = layout.screenWidth - layout.contentPadding * 2;
+    const availableWidth =
+      Math.min(layout.screenWidth, layout.maxContentWidth) -
+      layout.contentPadding * 2;
     const itemsPerRow = Math.max(
       1,
       Math.floor((availableWidth + gridSpacing) / (minItemWidth + gridSpacing)),
     );
-    numColumns = Math.min(itemsPerRow, children.length);
+    // Keep full column count; spacers stop a lone item stretching the row
+    numColumns = itemsPerRow;
   } else if (columns) {
     // Use provided column configuration
     if (layout.isLargeDesktop && columns.largeDesktop) {

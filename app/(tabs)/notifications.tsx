@@ -132,34 +132,6 @@ export default function NotificationsScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
-      <View style={styles.header}>
-        <View style={styles.headerTitleContainer}>
-          <Text style={styles.headerTitle}>Notifications</Text>
-          {unreadCount > 0 && (
-            <View style={styles.unreadBadge}>
-              <Text style={styles.unreadBadgeText}>
-                {unreadCount > 99 ? "99+" : unreadCount}
-              </Text>
-            </View>
-          )}
-        </View>
-        {hasNotifications && unreadCount > 0 && (
-          <TouchableOpacity
-            onPress={markAllAsRead}
-            style={styles.markAllButton}
-            accessibilityRole="button"
-            accessibilityLabel="Mark all as read"
-          >
-            <IconSymbol
-              name="checkmark"
-              size={16}
-              color={theme.colors.primary}
-            />
-            <Text style={styles.markAllText}>Mark all read</Text>
-          </TouchableOpacity>
-        )}
-      </View>
-
       <View style={styles.contentWrapper}>
         <View
           style={[
@@ -167,6 +139,34 @@ export default function NotificationsScreen() {
             isDesktop && styles.contentContainerDesktop,
           ]}
         >
+          <View style={styles.header}>
+            <View style={styles.headerTitleContainer}>
+              <Text style={styles.headerTitle}>Notifications</Text>
+              {unreadCount > 0 && (
+                <View style={styles.unreadBadge}>
+                  <Text style={styles.unreadBadgeText}>
+                    {unreadCount > 99 ? "99+" : unreadCount}
+                  </Text>
+                </View>
+              )}
+            </View>
+            {hasNotifications && unreadCount > 0 && (
+              <TouchableOpacity
+                onPress={markAllAsRead}
+                style={styles.markAllButton}
+                accessibilityRole="button"
+                accessibilityLabel="Mark all as read"
+              >
+                <IconSymbol
+                  name="checkmark"
+                  size={16}
+                  color={theme.colors.primary}
+                />
+                <Text style={styles.markAllText}>Mark all read</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+
           <ScrollView
             style={styles.scrollView}
             contentContainerStyle={styles.scrollContent}

@@ -59,8 +59,8 @@ export function useResponsiveLayout(): ResponsiveLayout {
   // Dynamic padding - desktop gets more breathing room
   const contentPadding = isMobile ? 16 : isTablet ? 24 : 32;
 
-  // Max content width - desktop now 1600px
-  const maxContentWidth = isDesktop ? 1600 : isTablet ? 1024 : screenWidth;
+  // Max content width - capped so desktop content doesn't stretch
+  const maxContentWidth = isDesktop ? 1200 : isTablet ? 1024 : screenWidth;
 
   // Grid configuration
   const gridGutter = isMobile ? 12 : isTablet ? 16 : isLargeDesktop ? 24 : 20;
