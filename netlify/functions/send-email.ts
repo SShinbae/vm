@@ -1,19 +1,24 @@
 import type { Handler, HandlerEvent } from "@netlify/functions";
-import { sendBrevoEmail, SENDER_EMAIL, SENDER_NAME } from "./_shared/email";
+import { Webhook } from "standardwebhooks";
+import {
+  escapeHtml,
+  sendBrevoEmail,
+  SENDER_EMAIL,
+  SENDER_NAME,
+} from "./_shared/email";
 
-interface SendEmailPayload {
-  type: "confirmation" | "recovery" | "magic_link";
-  email: string;
-  confirmation_url?: string;
-  token?: string;
-  token_hash?: string;
-  redirect_to?: string;
-  user?: {
-    id: string;
+// Supabase Send Email Hook payload:
+// https://supabase.com/docs/guides/auth/auth-hooks/send-email-hook
+interface SendEmailHookPayload {
+  user: {
     email: string;
-    user_metadata?: {
-      full_name?: string;
-    };
+    user_metadata?: { full_name?: string };
+  };
+  email_data: {
+    token_hash: string;
+    redirect_to: string;
+    email_action_type: string;
+    site_url: string;
   };
 }
 
@@ -233,89 +238,78 @@ function getMagicLinkEmailHtml(magicLinkUrl: string): string {
   `;
 }
 
+function hookError(httpCode: number, message: string) {
+  return {
+    statusCode: httpCode,
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ error: { http_code: httpCode, message } }),
+  };
+}
+
 export const handler: Handler = async (event: HandlerEvent) => {
-  // Only allow POST
   if (event.httpMethod !== "POST") {
-    return {
-      statusCode: 405,
-      body: JSON.stringify({ error: "Method not allowed" }),
-    };
+    return hookError(405, "Method not allowed");
   }
 
-  // Verify webhook secret (optional but recommended)
-  const webhookSecret = process.env.SUPABASE_AUTH_HOOK_SECRET;
-  if (webhookSecret) {
-    const authHeader = event.headers["authorization"];
-    if (authHeader !== `Bearer ${webhookSecret}`) {
-      console.error("Invalid webhook secret");
-      return {
-        statusCode: 401,
-        body: JSON.stringify({ error: "Unauthorized" }),
-      };
-    }
+  const hookSecret = process.env.SEND_EMAIL_HOOK_SECRET;
+  const supabaseUrl = process.env.SUPABASE_URL;
+  if (!hookSecret || !supabaseUrl) {
+    console.error("SEND_EMAIL_HOOK_SECRET or SUPABASE_URL is not configured");
+    return hookError(500, "Email hook is not configured");
+  }
+
+  const rawBody = event.isBase64Encoded
+    ? Buffer.from(event.body || "", "base64").toString("utf8")
+    : event.body || "";
+
+  let payload: SendEmailHookPayload;
+  try {
+    payload = new Webhook(hookSecret.replace("v1,whsec_", "")).verify(
+      rawBody,
+      event.headers as Record<string, string>,
+    ) as SendEmailHookPayload;
+  } catch (error) {
+    console.error("Invalid hook signature:", error);
+    return hookError(401, "Invalid signature");
   }
 
   try {
-    const payload: SendEmailPayload = JSON.parse(event.body || "{}");
+    const email = payload.user?.email;
+    const { token_hash, redirect_to, email_action_type } =
+      payload.email_data || ({} as SendEmailHookPayload["email_data"]);
 
-    console.log("Received email request:", {
-      type: payload.type,
-      email: payload.email,
-      hasConfirmationUrl: !!payload.confirmation_url,
-    });
-
-    const { type, email, confirmation_url, user } = payload;
-
-    if (!email) {
-      return {
-        statusCode: 400,
-        body: JSON.stringify({ error: "Email is required" }),
-      };
+    if (!email || !token_hash || !email_action_type) {
+      return hookError(400, "Missing email, token_hash or email_action_type");
     }
+
+    const params = new URLSearchParams({
+      token: token_hash,
+      type: email_action_type,
+      redirect_to: redirect_to || "",
+    });
+    const actionUrl = escapeHtml(`${supabaseUrl}/auth/v1/verify?${params}`);
+    const recipientName =
+      payload.user.user_metadata?.full_name || email.split("@")[0];
+    const safeName = escapeHtml(recipientName);
 
     let subject: string;
     let htmlContent: string;
-    const recipientName = user?.user_metadata?.full_name || email.split("@")[0];
 
-    switch (type) {
-      case "confirmation":
-        if (!confirmation_url) {
-          return {
-            statusCode: 400,
-            body: JSON.stringify({ error: "Confirmation URL is required" }),
-          };
-        }
+    switch (email_action_type) {
+      case "signup":
         subject = "Confirm Your Email - Vehicles Management";
-        htmlContent = getConfirmationEmailHtml(recipientName, confirmation_url);
+        htmlContent = getConfirmationEmailHtml(safeName, actionUrl);
         break;
-
       case "recovery":
-        if (!confirmation_url) {
-          return {
-            statusCode: 400,
-            body: JSON.stringify({ error: "Reset URL is required" }),
-          };
-        }
         subject = "Reset Your Password - Vehicles Management";
-        htmlContent = getPasswordResetEmailHtml(confirmation_url);
+        htmlContent = getPasswordResetEmailHtml(actionUrl);
         break;
-
-      case "magic_link":
-        if (!confirmation_url) {
-          return {
-            statusCode: 400,
-            body: JSON.stringify({ error: "Magic link URL is required" }),
-          };
-        }
+      case "magiclink":
         subject = "Sign In to Vehicles Management";
-        htmlContent = getMagicLinkEmailHtml(confirmation_url);
+        htmlContent = getMagicLinkEmailHtml(actionUrl);
         break;
-
       default:
-        return {
-          statusCode: 400,
-          body: JSON.stringify({ error: `Unknown email type: ${type}` }),
-        };
+        return hookError(400, `Unsupported email type: ${email_action_type}`);
     }
 
     const success = await sendBrevoEmail({
@@ -326,23 +320,16 @@ export const handler: Handler = async (event: HandlerEvent) => {
     });
 
     if (!success) {
-      return {
-        statusCode: 500,
-        body: JSON.stringify({ error: "Failed to send email" }),
-      };
+      return hookError(500, "Failed to send email");
     }
-
-    console.log(`Email sent successfully: ${type} to ${email}`);
 
     return {
       statusCode: 200,
-      body: JSON.stringify({ success: true }),
+      headers: { "Content-Type": "application/json" },
+      body: "{}",
     };
   } catch (error) {
     console.error("Email handler error:", error);
-    return {
-      statusCode: 500,
-      body: JSON.stringify({ error: "Internal server error" }),
-    };
+    return hookError(500, "Internal server error");
   }
 };

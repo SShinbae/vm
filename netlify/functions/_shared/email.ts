@@ -40,11 +40,23 @@ export async function sendBrevoEmail(
   }
 }
 
+export function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 export function getInvitationEmailHtml(
-  inviterName: string,
-  groupName: string,
-  actionUrl: string,
+  rawInviterName: string,
+  rawGroupName: string,
+  rawActionUrl: string,
 ): string {
+  const inviterName = escapeHtml(rawInviterName);
+  const groupName = escapeHtml(rawGroupName);
+  const actionUrl = escapeHtml(rawActionUrl);
   return `
 <!DOCTYPE html>
 <html lang="en">
