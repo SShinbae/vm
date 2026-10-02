@@ -5,12 +5,9 @@ import {
   deliverNotification,
   type NotificationType,
 } from "./_shared/notifications";
-import {
-  sendBrevoEmail,
-  getInvitationEmailHtml,
-  SENDER_EMAIL,
-  SENDER_NAME,
-} from "./_shared/email";
+import { createElement } from "react";
+import { renderEmail, sendBrevoEmail } from "./_shared/email";
+import GroupInvite, { groupInviteSubject } from "./_shared/emails/GroupInvite";
 
 interface WebhookPayload {
   type: "INSERT" | "UPDATE" | "DELETE";
@@ -56,12 +53,25 @@ async function handleGroupInvitation(
 
   // Always email the invitee — this is the only delivery path for people who
   // don't have an account yet; they sign up and the invite is waiting for them.
-  const emailSent = await sendBrevoEmail({
-    sender: { email: SENDER_EMAIL, name: SENDER_NAME },
-    to: [{ email: inviteEmail }],
-    subject: `${inviterName} invited you to join ${groupName}`,
-    htmlContent: getInvitationEmailHtml(inviterName, groupName, siteUrl),
-  });
+  let emailSent = false;
+  try {
+    const { html, text } = await renderEmail(
+      createElement(GroupInvite, {
+        inviterName,
+        groupName,
+        actionUrl: siteUrl,
+      }),
+    );
+    emailSent = await sendBrevoEmail({
+      to: [{ email: inviteEmail }],
+      subject: groupInviteSubject(inviterName, groupName),
+      htmlContent: html,
+      textContent: text,
+    });
+  } catch (error) {
+    // A failed email must not block push/in-app delivery below.
+    console.error("Invitation email render failed:", error);
+  }
 
   // Existing users additionally get push + in-app notification.
   if (!invitedUser) return emailSent;

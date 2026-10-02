@@ -23,7 +23,9 @@
     "lint": "prettier --check .",
     "lint:fix": "prettier --write . && eslint --fix .",
     "prepare": "husky",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "typecheck": "tsc --noEmit && tsc --noEmit -p netlify",
+    "email:dev": "email dev --dir netlify/functions/_shared/emails --port 3030"
   },
   "lint-staged": {
     "*.{js,jsx,ts,tsx,json,css,md}": [
@@ -33,7 +35,7 @@
       "eslint --max-warnings=10"
     ],
     "*.{ts,tsx}": [
-      "bash -c 'tsc --noEmit'"
+      "bash -c 'tsc --noEmit && tsc --noEmit -p netlify'"
     ]
   },
   "dependencies": {
@@ -43,6 +45,8 @@
     "@expo/vector-icons": "^15.0.2",
     "@gorhom/bottom-sheet": "^5.2.6",
     "@hookform/resolvers": "^5.2.2",
+    "@react-email/components": "^1.0.12",
+    "@react-email/render": "^2.1.0",
     "@react-native-async-storage/async-storage": "^2.2.0",
     "@react-native-community/datetimepicker": "8.4.4",
     "@react-navigation/bottom-tabs": "^7.4.0",
@@ -113,11 +117,13 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
+    "@react-email/ui": "^6.11.0",
     "@react-native/codegen": "^0.81.6",
     "@testing-library/jest-native": "^5.4.3",
     "@testing-library/react-native": "^13.3.3",
     "@types/jest": "29.5.14",
     "@types/react": "~19.1.10",
+    "@types/react-dom": "~19.1.0",
     "@typescript-eslint/eslint-plugin": "^8.46.0",
     "@typescript-eslint/parser": "^8.46.0",
     "eslint": "^9.38.0",
@@ -127,6 +133,7 @@
     "jest-expo": "~54.0.16",
     "lint-staged": "^16.2.4",
     "prettier": "^3.6.2",
+    "react-email": "^6.11.0",
     "ts-jest": "^29.4.5",
     "typescript": "~5.9.2"
   },
