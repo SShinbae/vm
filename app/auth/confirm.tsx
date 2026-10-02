@@ -54,6 +54,10 @@ export default function ConfirmEmailScreen() {
         if (error) {
           console.error("Email confirmation error:", error);
           setError(error.message || "Failed to confirm email");
+        } else if (data.user && type === "recovery") {
+          // Keep the recovery session; AuthContext already received
+          // PASSWORD_RECOVERY from verifyOtp.
+          router.replace("/(auth)/reset-password");
         } else if (data.user) {
           console.log("User confirmed successfully:", data.user.email);
           setConfirmed(true);

@@ -20,6 +20,8 @@ const AUTH_PAGES = [
   "register",
   "forgot-password",
   "reset-password",
+  // /auth/confirm (email verification links) — not in the (auth) group
+  "confirm",
 ] as const;
 
 // Pages that should redirect to login when user is not authenticated
@@ -114,38 +116,42 @@ function useAuthPageTracking(
 /**
  * Hook to compute current route state
  */
+export function getRouteState(
+  segments: string[],
+): RouteState & { inDemoGroup: boolean } {
+  const segmentPath = segments.join("/");
+  const lastSegment = segments[segments.length - 1];
+
+  const inAuthGroup = segments[0] === "(auth)";
+  const inDemoGroup = segments[0] === "demo";
+  const inRootIndex =
+    !segmentPath || segmentPath === "" || segmentPath === "index";
+  const inTabs = segments[0] === "(tabs)";
+
+  // Check if current page is an auth page
+  const isOnAuthPage =
+    AUTH_PAGES.includes(lastSegment as AuthPage) || inAuthGroup;
+
+  // Check for invalid auth pages (confirmation pages without user)
+  const isOnInvalidAuthPage = INVALID_AUTH_PAGES.includes(
+    lastSegment as InvalidAuthPage,
+  );
+
+  return {
+    segmentPath,
+    inAuthGroup,
+    inDemoGroup,
+    inRootIndex,
+    inTabs,
+    isOnAuthPage,
+    isOnInvalidAuthPage,
+  };
+}
+
 function useRouteState(
   segments: string[],
 ): RouteState & { inDemoGroup: boolean } {
-  return useMemo(() => {
-    const segmentPath = segments.join("/");
-    const lastSegment = segments[segments.length - 1];
-
-    const inAuthGroup = segments[0] === "(auth)";
-    const inDemoGroup = segments[0] === "demo";
-    const inRootIndex =
-      !segmentPath || segmentPath === "" || segmentPath === "index";
-    const inTabs = segments[0] === "(tabs)";
-
-    // Check if current page is an auth page
-    const isOnAuthPage =
-      AUTH_PAGES.includes(lastSegment as AuthPage) || inAuthGroup;
-
-    // Check for invalid auth pages (confirmation pages without user)
-    const isOnInvalidAuthPage = INVALID_AUTH_PAGES.includes(
-      lastSegment as InvalidAuthPage,
-    );
-
-    return {
-      segmentPath,
-      inAuthGroup,
-      inDemoGroup,
-      inRootIndex,
-      inTabs,
-      isOnAuthPage,
-      isOnInvalidAuthPage,
-    };
-  }, [segments]);
+  return useMemo(() => getRouteState(segments), [segments]);
 }
 
 /**
