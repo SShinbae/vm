@@ -4,21 +4,25 @@ import { FeatureGrid } from "@/components/landing/FeatureGrid";
 import { Hero } from "@/components/landing/Hero";
 import { HowItWorks } from "@/components/landing/HowItWorks";
 import { LandingFooter } from "@/components/landing/LandingFooter";
-import { LandingNav, SectionKey } from "@/components/landing/LandingNav";
+import {
+  LandingNav,
+  NAV_BAR_HEIGHT,
+  SectionKey,
+} from "@/components/landing/LandingNav";
 import { Section, useBreakpoint } from "@/components/landing/layout";
 import { SkeletonLanding } from "@/components/ui/Skeleton";
 import { useAuth } from "@/lib/contexts/AuthContext";
 import { Redirect } from "expo-router";
 import React, { useRef } from "react";
 import { LayoutChangeEvent, ScrollView, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useStyles } from "react-native-unistyles";
-
-const NAV_HEIGHT = 64;
 
 export default function Index() {
   const { user, loading, initialized } = useAuth();
   const { theme } = useStyles();
   const { isMobile } = useBreakpoint();
+  const { top } = useSafeAreaInsets();
   const scrollRef = useRef<ScrollView>(null);
   const offsets = useRef<Partial<Record<SectionKey, number>>>({});
 
@@ -41,7 +45,10 @@ export default function Index() {
   const scrollToSection = (key: SectionKey) => {
     const y = offsets.current[key];
     if (y !== undefined) {
-      scrollRef.current?.scrollTo({ y: y - NAV_HEIGHT, animated: true });
+      scrollRef.current?.scrollTo({
+        y: y - (NAV_BAR_HEIGHT + top),
+        animated: true,
+      });
     }
   };
 
