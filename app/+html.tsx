@@ -1,5 +1,27 @@
 import { ScrollViewStyleReset } from "expo-router/html";
 import { darkTheme, lightTheme } from "@/src/design-system";
+import { FAQS } from "@/components/landing/content";
+
+const structuredData = [
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    name: "Vehicle Management",
+    url: "https://vm.wanahnaf.dev",
+    applicationCategory: "FinanceApplication",
+    operatingSystem: "Web, iOS, Android",
+    offers: { "@type": "Offer", price: "0", priceCurrency: "MYR" },
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: FAQS.map((faq) => ({
+      "@type": "Question",
+      name: faq.question,
+      acceptedAnswer: { "@type": "Answer", text: faq.answer },
+    })),
+  },
+];
 
 export default function Root({ children }: { children: React.ReactNode }) {
   return (
@@ -33,7 +55,7 @@ export default function Root({ children }: { children: React.ReactNode }) {
         />
         <meta property="og:site_name" content="Vehicle Management" />
         {/* Twitter */}
-        <meta name="twitter:card" content="summary" />
+        <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content="Vehicle Management System" />
         <meta
           name="twitter:description"
@@ -42,6 +64,10 @@ export default function Root({ children }: { children: React.ReactNode }) {
         <meta
           name="twitter:image"
           content="https://vm.wanahnaf.dev/og-image.png"
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
         />
         <ScrollViewStyleReset />
         {/* Inline dark-mode background so the page is never white/black before JS loads */}
