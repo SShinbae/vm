@@ -17,8 +17,7 @@ import {
 import { notificationPreferencesDefaultValues } from "@/src/shared/schemas/notificationPreferencesSchema";
 import { QuietHoursPicker } from "./QuietHoursPicker";
 import { Database } from "@/types/database";
-import { initializeOneSignalLazy } from "@/lib/services/oneSignalLazy";
-import { oneSignalService } from "@/lib/services/oneSignalService";
+import { pushService } from "@/lib/services/pushService";
 import { useToast } from "@/hooks/useToast";
 
 type Update =
@@ -44,9 +43,7 @@ export function NotificationPreferencesForm() {
 
   useEffect(() => {
     if (!userId) return;
-    initializeOneSignalLazy().then(async () => {
-      setPushPermission(await oneSignalService.hasPermission());
-    });
+    pushService.hasPermission().then(setPushPermission);
   }, [userId]);
 
   // Debounce timer for auto-save
@@ -440,7 +437,11 @@ export function NotificationPreferencesForm() {
         <SectionHeader title="Delivery" />
         <NotificationSwitch
           label="Push Notifications"
-          description="Receive push notifications on your device"
+          description={
+            pushService.isSupported
+              ? "Receive push notifications on your device"
+              : "Available in the mobile app"
+          }
           value={p.push_notifications_enabled && pushPermission !== false}
           field="push_notifications_enabled"
           onChange={async (enabled) => {
@@ -448,8 +449,11 @@ export function NotificationPreferencesForm() {
               immediateUpdate({ push_notifications_enabled: false });
               return;
             }
-            await initializeOneSignalLazy();
-            if (await oneSignalService.requestPermission()) {
+            if (!pushService.isSupported) {
+              showError("Push notifications are available in the mobile app");
+              return;
+            }
+            if (await pushService.requestPermission()) {
               setPushPermission(true);
               immediateUpdate({ push_notifications_enabled: true });
             } else {

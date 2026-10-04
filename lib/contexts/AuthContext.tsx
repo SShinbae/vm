@@ -11,8 +11,7 @@ import React, {
 import { supabase } from "../../services/supabaseClient";
 import { AuthState, AuthUser, Profile } from "../../types";
 import { config } from "../config";
-import { initializeOneSignalLazy } from "../services/oneSignalLazy";
-import { oneSignalService } from "../services/oneSignalService";
+import { pushService } from "../services/pushService";
 import { sentryService } from "../services/sentryService";
 
 interface AuthContextType extends AuthState {
@@ -310,7 +309,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   useEffect(() => {
     if (!state.user?.id) return;
-    initializeOneSignalLazy().then(() => oneSignalService.syncUser());
+    pushService.syncUser();
   }, [state.user?.id]);
 
   const signUp = async (email: string, password: string, fullName?: string) => {
@@ -443,7 +442,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     setState((prev) => ({ ...prev, loading: true }));
 
     try {
-      await oneSignalService.onLogout();
+      await pushService.onLogout();
 
       posthog?.capture("user_signed_out");
 

@@ -43,8 +43,7 @@ try {
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
 
-// OneSignal initialization is now deferred to prevent blocking initial render
-// See: lib/services/oneSignalLazy.ts and lib/contexts/AuthContext.tsx
+// Push registration runs from AuthContext once a user is signed in (lib/services/pushService.ts)
 
 // Removed unstable_settings to allow index.tsx to control default route
 
