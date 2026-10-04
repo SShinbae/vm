@@ -66,9 +66,6 @@ export const handler: Handler = async () => {
         body,
         data: { type: "cost_alert", totalCost, threshold, month: monthKey },
         actionUrl: "/analytics/costs",
-        webUrl: process.env.SITE_URL
-          ? `${process.env.SITE_URL}/analytics/costs`
-          : undefined,
         preferences: prefs,
       });
       if (result === "in_app" || result === "pushed") sentCount++;
@@ -120,9 +117,6 @@ export const handler: Handler = async () => {
               alertPercentage,
             },
             actionUrl: "/analytics/costs",
-            webUrl: process.env.SITE_URL
-              ? `${process.env.SITE_URL}/analytics/costs`
-              : undefined,
             preferences: prefs,
           });
           if (result === "in_app" || result === "pushed") sentCount++;

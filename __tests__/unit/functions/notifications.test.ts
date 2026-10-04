@@ -8,7 +8,7 @@ import { supabaseAdmin } from "@/netlify/functions/_shared/supabaseAdmin";
 import {
   deliverNotification,
   NotificationPreferences,
-  sendOneSignalPush,
+  sendExpoPush,
   shouldDeliverNotification,
 } from "@/netlify/functions/_shared/notifications";
 
@@ -122,34 +122,158 @@ describe("notification delivery rules", () => {
     ).resolves.toBe("skipped");
     expect(mockNotificationInsert).not.toHaveBeenCalled();
   });
+});
 
-  it("uses OneSignal aliases and current API authentication", async () => {
-    process.env.ONESIGNAL_REST_API_KEY = "test-key";
-    process.env.ONESIGNAL_APP_ID = "test-app";
+describe("sendExpoPush", () => {
+  const mockIn = jest.fn();
+  const mockDeleteIn = jest.fn().mockResolvedValue({ error: null });
+
+  function mockTokens(tokens: string[], error: unknown = null) {
+    mockIn.mockResolvedValue({
+      data: tokens.map((token) => ({ token })),
+      error,
+    });
+    mockFrom.mockImplementation((table: string) => {
+      if (table !== "push_tokens") throw new Error(`unexpected table ${table}`);
+      return {
+        select: () => ({ in: mockIn }),
+        delete: () => ({ in: mockDeleteIn }),
+      };
+    });
+  }
+
+  function expoResponse(tickets: unknown[], ok = true, status = 200) {
+    return {
+      ok,
+      status,
+      json: async () => ({ data: tickets }),
+      text: async () => "err",
+    } as unknown as Response;
+  }
+
+  afterEach(() => {
+    jest.restoreAllMocks();
+    mockDeleteIn.mockClear();
+    delete process.env.EXPO_ACCESS_TOKEN;
+  });
+
+  it("posts the user's tokens to Expo and reports delivery", async () => {
+    mockTokens(["ExponentPushToken[a]"]);
     const fetchMock = jest
       .spyOn(global, "fetch")
-      .mockResolvedValue({ ok: true } as Response);
+      .mockResolvedValue(expoResponse([{ status: "ok", id: "t1" }]));
 
     await expect(
-      sendOneSignalPush({
+      sendExpoPush({
         recipientIds: ["user-1"],
         title: "Title",
         body: "Body",
-        webUrl: "https://example.com/notifications",
+        data: { type: "log_update" },
       }),
     ).resolves.toBe(true);
 
+    expect(mockIn).toHaveBeenCalledWith("user_id", ["user-1"]);
     const [url, options] = fetchMock.mock.calls[0];
-    expect(url).toBe("https://api.onesignal.com/notifications?c=push");
-    expect((options?.headers as Record<string, string>).Authorization).toBe(
-      "Key test-key",
+    expect(url).toBe("https://exp.host/--/api/v2/push/send");
+    expect(JSON.parse(String(options?.body))).toEqual([
+      {
+        to: "ExponentPushToken[a]",
+        title: "Title",
+        body: "Body",
+        data: { type: "log_update" },
+        sound: "default",
+      },
+    ]);
+    expect(
+      (options?.headers as Record<string, string>).Authorization,
+    ).toBeUndefined();
+  });
+
+  it("sends the access token header when configured", async () => {
+    process.env.EXPO_ACCESS_TOKEN = "expo-secret";
+    mockTokens(["ExponentPushToken[a]"]);
+    const fetchMock = jest
+      .spyOn(global, "fetch")
+      .mockResolvedValue(expoResponse([{ status: "ok" }]));
+    await sendExpoPush({ recipientIds: ["user-1"], title: "T", body: "B" });
+    expect(
+      (fetchMock.mock.calls[0][1]?.headers as Record<string, string>)
+        .Authorization,
+    ).toBe("Bearer expo-secret");
+  });
+
+  it("returns false without calling Expo when the user has no tokens", async () => {
+    mockTokens([]);
+    const fetchMock = jest.spyOn(global, "fetch");
+    await expect(
+      sendExpoPush({ recipientIds: ["user-1"], title: "T", body: "B" }),
+    ).resolves.toBe(false);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("returns false when tokens cannot be loaded", async () => {
+    mockTokens([], { message: "db down" });
+    await expect(
+      sendExpoPush({ recipientIds: ["user-1"], title: "T", body: "B" }),
+    ).resolves.toBe(false);
+  });
+
+  it("deletes tokens Expo reports as DeviceNotRegistered", async () => {
+    mockTokens(["ExponentPushToken[dead]", "ExponentPushToken[live]"]);
+    jest.spyOn(global, "fetch").mockResolvedValue(
+      expoResponse([
+        {
+          status: "error",
+          message: "gone",
+          details: { error: "DeviceNotRegistered" },
+        },
+        { status: "ok" },
+      ]),
     );
-    expect(JSON.parse(String(options?.body))).toMatchObject({
-      include_aliases: { external_id: ["user-1"] },
-      target_channel: "push",
-      web_url: "https://example.com/notifications",
-    });
-    expect(JSON.parse(String(options?.body))).not.toHaveProperty("url");
-    fetchMock.mockRestore();
+    await expect(
+      sendExpoPush({ recipientIds: ["user-1"], title: "T", body: "B" }),
+    ).resolves.toBe(true);
+    expect(mockDeleteIn).toHaveBeenCalledWith("token", [
+      "ExponentPushToken[dead]",
+    ]);
+  });
+
+  it("batches by 100 and keeps going when one batch fails", async () => {
+    const tokens = Array.from(
+      { length: 150 },
+      (_, i) => `ExponentPushToken[${i}]`,
+    );
+    mockTokens(tokens);
+    const fetchMock = jest
+      .spyOn(global, "fetch")
+      .mockResolvedValueOnce(expoResponse([], false, 500))
+      .mockResolvedValueOnce(expoResponse(Array(50).fill({ status: "ok" })));
+    await expect(
+      sendExpoPush({ recipientIds: ["user-1"], title: "T", body: "B" }),
+    ).resolves.toBe(true);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(JSON.parse(String(fetchMock.mock.calls[0][1]?.body))).toHaveLength(
+      100,
+    );
+    expect(JSON.parse(String(fetchMock.mock.calls[1][1]?.body))).toHaveLength(
+      50,
+    );
+  });
+
+  it("returns false when every ticket fails", async () => {
+    mockTokens(["ExponentPushToken[a]"]);
+    jest.spyOn(global, "fetch").mockResolvedValue(
+      expoResponse([
+        {
+          status: "error",
+          message: "bad",
+          details: { error: "MessageRateExceeded" },
+        },
+      ]),
+    );
+    await expect(
+      sendExpoPush({ recipientIds: ["user-1"], title: "T", body: "B" }),
+    ).resolves.toBe(false);
+    expect(mockDeleteIn).not.toHaveBeenCalled();
   });
 });

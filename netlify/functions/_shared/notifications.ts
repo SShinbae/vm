@@ -195,55 +195,90 @@ async function releaseClaim(userId: string, key: string): Promise<void> {
     .eq("notification_key", key);
 }
 
-export async function sendOneSignalPush(params: {
+const EXPO_PUSH_URL = "https://exp.host/--/api/v2/push/send";
+const EXPO_BATCH_SIZE = 100;
+
+interface ExpoPushTicket {
+  status: "ok" | "error";
+  message?: string;
+  details?: { error?: string };
+}
+
+// ponytail: tickets only; add a receipts check (getReceipts) if silent APNs/FCM failures show up.
+export async function sendExpoPush(params: {
   recipientIds: string[];
   title: string;
   body: string;
   data?: Record<string, unknown>;
-  webUrl?: string;
 }): Promise<boolean> {
-  const apiKey = process.env.ONESIGNAL_REST_API_KEY;
-  const appId =
-    process.env.ONESIGNAL_APP_ID || process.env.EXPO_PUBLIC_ONESIGNAL_APP_ID;
-  if (!apiKey || !appId) {
-    console.error("OneSignal is not configured");
+  const { data: rows, error } = await supabaseAdmin
+    .from("push_tokens")
+    .select("token")
+    .in("user_id", params.recipientIds);
+  if (error) {
+    console.error("Error loading push tokens:", error);
     return false;
   }
 
-  try {
-    const response = await fetch(
-      "https://api.onesignal.com/notifications?c=push",
-      {
+  const tokens = (rows ?? []).map((row) => row.token as string);
+  if (tokens.length === 0) return false;
+
+  const headers: Record<string, string> = {
+    Accept: "application/json",
+    "Content-Type": "application/json",
+  };
+  if (process.env.EXPO_ACCESS_TOKEN) {
+    headers.Authorization = `Bearer ${process.env.EXPO_ACCESS_TOKEN}`;
+  }
+
+  let delivered = false;
+  const deadTokens: string[] = [];
+
+  for (let i = 0; i < tokens.length; i += EXPO_BATCH_SIZE) {
+    const batch = tokens.slice(i, i + EXPO_BATCH_SIZE);
+    try {
+      const response = await fetch(EXPO_PUSH_URL, {
         method: "POST",
-        headers: {
-          Authorization: `Key ${apiKey}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          app_id: appId,
-          include_aliases: { external_id: params.recipientIds },
-          target_channel: "push",
-          headings: { en: params.title },
-          contents: { en: params.body },
-          data: params.data || {},
-          web_url: params.webUrl,
-        }),
-      },
-    );
-
-    if (!response.ok) {
-      console.error(
-        "OneSignal API error:",
-        response.status,
-        await response.text(),
-      );
-      return false;
+        headers,
+        body: JSON.stringify(
+          batch.map((to) => ({
+            to,
+            title: params.title,
+            body: params.body,
+            data: params.data || {},
+            sound: "default",
+          })),
+        ),
+      });
+      if (!response.ok) {
+        console.error(
+          "Expo push API error:",
+          response.status,
+          await response.text(),
+        );
+        continue;
+      }
+      const { data: tickets } = (await response.json()) as {
+        data: ExpoPushTicket[];
+      };
+      tickets.forEach((ticket, index) => {
+        if (ticket.status === "ok") {
+          delivered = true;
+        } else if (ticket.details?.error === "DeviceNotRegistered") {
+          deadTokens.push(batch[index]);
+        } else {
+          console.error("Expo push ticket error:", ticket.message);
+        }
+      });
+    } catch (sendError) {
+      console.error("Expo push send error:", sendError);
     }
-    return true;
-  } catch (error) {
-    console.error("OneSignal send error:", error);
-    return false;
   }
+
+  if (deadTokens.length > 0) {
+    await supabaseAdmin.from("push_tokens").delete().in("token", deadTokens);
+  }
+  return delivered;
 }
 
 export async function deliverNotification(params: {
@@ -256,7 +291,6 @@ export async function deliverNotification(params: {
   relatedVehicleId?: string | null;
   relatedGroupId?: string | null;
   actionUrl?: string | null;
-  webUrl?: string;
   preferences?: NotificationPreferences | null;
   now?: Date;
 }): Promise<"skipped" | "in_app" | "pushed" | "failed"> {
@@ -301,12 +335,11 @@ export async function deliverNotification(params: {
   );
   if (!deliver) return "in_app";
 
-  return (await sendOneSignalPush({
+  return (await sendExpoPush({
     recipientIds: [params.userId],
     title: params.title,
     body: params.body,
     data: params.data,
-    webUrl: params.webUrl,
   }))
     ? "pushed"
     : "in_app";

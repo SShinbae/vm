@@ -102,9 +102,6 @@ export const handler: Handler = async () => {
         body,
         data,
         actionUrl: "/analytics/fuel",
-        webUrl: process.env.SITE_URL
-          ? `${process.env.SITE_URL}/analytics/fuel`
-          : undefined,
         preferences: prefs,
       });
       if (result === "in_app" || result === "pushed") sentCount++;

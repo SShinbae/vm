@@ -91,7 +91,6 @@ async function handleGroupInvitation(
     },
     relatedGroupId: record.group_id,
     actionUrl: "/notifications",
-    webUrl: `${siteUrl}/notifications`,
   });
   return result !== "failed" || emailSent;
 }
@@ -161,7 +160,6 @@ async function handleLogChange(payload: WebhookPayload): Promise<boolean> {
         },
         relatedVehicleId: record.vehicle_id,
         actionUrl: `/vehicles/${record.vehicle_id}`,
-        webUrl: `${siteUrl}/vehicles/${record.vehicle_id}`,
       }),
     ),
   );
@@ -210,7 +208,6 @@ async function handleGroupMemberChange(
         },
         relatedGroupId: record.group_id,
         actionUrl: `/groups/${record.group_id}`,
-        webUrl: `${siteUrl}/groups/${record.group_id}`,
       }),
     ),
   );

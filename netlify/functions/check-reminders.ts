@@ -117,9 +117,6 @@ export const handler: Handler = async () => {
           data: reminder.data,
           relatedVehicleId: log.vehicle_id,
           actionUrl: `/logs/service/${log.id}`,
-          webUrl: process.env.SITE_URL
-            ? `${process.env.SITE_URL}/logs/service/${log.id}`
-            : undefined,
           preferences: prefs,
           now,
         });
