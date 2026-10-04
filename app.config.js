@@ -78,16 +78,6 @@ module.exports = {
     },
     plugins: [
       [
-        "onesignal-expo-plugin",
-        {
-          mode:
-            process.env.EAS_BUILD_PROFILE === "production-apk" ||
-            process.env.EAS_BUILD_PROFILE === "production"
-              ? "production"
-              : "development",
-        },
-      ],
-      [
         "expo-router",
         {
           asyncRoutes: {
@@ -138,7 +128,6 @@ module.exports = {
       supabaseUrl: process.env.SUPABASE_URL,
       supabaseKey: process.env.SUPABASE_KEY,
       siteUrl: process.env.SITE_URL,
-      oneSignalAppId: process.env.ONESIGNAL_APP_ID,
       sentryDsn: process.env.SENTRY_DSN,
       posthogApiKey: process.env.POSTHOG_API_KEY,
       posthogHost: process.env.POSTHOG_HOST,
