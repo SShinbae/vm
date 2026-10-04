@@ -582,6 +582,10 @@ export interface Database {
           created_at: string;
         }[];
       };
+      register_push_token: {
+        Args: { p_token: string; p_device_type: string };
+        Returns: undefined;
+      };
     };
     Enums: {
       invitation_status: "pending" | "accepted" | "declined" | "expired";
