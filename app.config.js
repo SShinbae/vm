@@ -123,6 +123,8 @@ module.exports = {
           project: process.env.SENTRY_PROJECT,
         },
       ],
+      ["expo-build-properties"],
+      "./plugins/withXcode27Compat",
     ],
     experiments: {
       typedRoutes: true,
