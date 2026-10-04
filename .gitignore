@@ -75,3 +75,8 @@ Markdown
 
 # local planning docs
 /docs
+
+#supabse
+env.supabase-local
+supabase/.branches
+supabase/.temp
