@@ -1,7 +1,7 @@
 import Constants from "expo-constants";
 import * as Notifications from "expo-notifications";
 import { router } from "expo-router";
-import { Platform } from "react-native";
+import { Linking, Platform } from "react-native";
 import { logger } from "@/lib/utils/logger";
 import { getPushNotificationRoute } from "@/lib/utils/notificationNavigation";
 import { supabase } from "@/services/supabaseClient";
@@ -10,11 +10,17 @@ const isSupported = Platform.OS !== "web";
 let handlersReady = false;
 let currentToken: string | null = null;
 
-function openFromResponse(response: Notifications.NotificationResponse | null) {
+function routeFromResponse(
+  response: Notifications.NotificationResponse | null,
+): string | null {
   const data = response?.notification.request.content.data as
     | Record<string, unknown>
     | undefined;
-  const route = getPushNotificationRoute(data);
+  return getPushNotificationRoute(data);
+}
+
+function openFromResponse(response: Notifications.NotificationResponse | null) {
+  const route = routeFromResponse(response);
   if (route) router.push(route as never);
 }
 
@@ -31,9 +37,6 @@ function ensureHandlers() {
     }),
   });
   Notifications.addNotificationResponseReceivedListener(openFromResponse);
-  Notifications.getLastNotificationResponseAsync()
-    .then(openFromResponse)
-    .catch(() => {});
 
   if (Platform.OS === "android") {
     Notifications.setNotificationChannelAsync("default", {
@@ -63,7 +66,7 @@ async function registerToken(): Promise<void> {
     if (error) logger.error("Push: failed to save token", error);
   } catch (error) {
     // Simulators and devices without push entitlements throw here.
-    if (__DEV__) logger.warn("Push: could not get Expo push token", error);
+    logger.warn("Push: could not get Expo push token", error);
   }
 }
 
@@ -79,6 +82,13 @@ export const pushService = {
   async requestPermission(): Promise<boolean> {
     if (!isSupported) return false;
     ensureHandlers();
+    // Once denied, iOS never shows the prompt again; only Settings can turn
+    // notifications back on (OneSignal's requestPermission(true) did the same).
+    const current = await Notifications.getPermissionsAsync();
+    if (!current.granted && current.canAskAgain === false) {
+      await Linking.openSettings().catch(() => {});
+      return false;
+    }
     const { granted } = await Notifications.requestPermissionsAsync();
     if (!granted) return false;
     await registerToken();
@@ -98,9 +108,31 @@ export const pushService = {
     const token = currentToken;
     currentToken = null;
     try {
-      await supabase.from("push_tokens").delete().eq("token", token);
+      const { error } = await supabase
+        .from("push_tokens")
+        .delete()
+        .eq("token", token);
+      if (error) logger.error("Push: failed to remove token on logout", error);
     } catch (error) {
       logger.error("Push: failed to remove token on logout", error);
+    }
+  },
+
+  /**
+   * Route for the notification tap that launched the app, or null. Call it
+   * once the main navigator is mounted (the tabs layout); navigating earlier
+   * loses the race with the index screen's redirect to the dashboard.
+   * Clears the response so a JS reload doesn't re-open it.
+   */
+  consumeLaunchRoute(): string | null {
+    if (!isSupported) return null;
+    try {
+      const last = Notifications.getLastNotificationResponse();
+      if (!last) return null;
+      Notifications.clearLastNotificationResponse();
+      return routeFromResponse(last);
+    } catch {
+      return null;
     }
   },
 };

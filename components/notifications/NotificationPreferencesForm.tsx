@@ -457,7 +457,9 @@ export function NotificationPreferencesForm() {
               setPushPermission(true);
               immediateUpdate({ push_notifications_enabled: true });
             } else {
-              showError("Notification permission was not granted");
+              showError(
+                "Notifications are off. Turn them on for VM in Settings, then try again.",
+              );
             }
           }}
         />
