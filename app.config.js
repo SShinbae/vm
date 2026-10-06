@@ -51,6 +51,7 @@ module.exports = {
     },
     android: {
       package: "com.vehiclesmanagement.app",
+      googleServicesFile: "./google-services.json",
       adaptiveIcon: {
         backgroundColor: "#FFFFFF",
         foregroundImage: "./assets/images/android-icon-foreground.png",
@@ -80,6 +81,8 @@ module.exports = {
       [
         "expo-router",
         {
+          // Required by <Head> on iOS (Handoff); without it screens using Head throw.
+          origin: "https://vm.wanahnaf.dev",
           asyncRoutes: {
             web: true,
             default: false,
