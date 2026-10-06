@@ -3,6 +3,7 @@ import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useStyles } from "react-native-unistyles";
 import { ActionMenu, ActionMenuItem } from "@/components/ui/ActionMenu";
 import { IconSymbol } from "@/components/ui/icon-symbol";
+import { PageHeader } from "@/components/ui/PageHeader";
 import { AlertModal, ConfirmModal, Modal } from "@/components/ui/Modal";
 import { VehicleGroupSelector } from "@/components/VehicleGroupSelector";
 import { Group } from "@/types";
@@ -728,8 +729,10 @@ export default function VehicleDetailScreen() {
       marginBottom: isDesktopWeb ? 32 : 18,
     },
     statCard: {
-      flex: 1,
-      minWidth: isDesktopWeb ? "22%" : "47%",
+      // flexBasis, not flex: 1 — on native, flex: 1 starts the card at 0 width,
+      // so its text is measured near-zero wide and the card renders very tall.
+      flexGrow: 1,
+      flexBasis: isDesktopWeb ? "22%" : "47%",
       backgroundColor: colors.surface,
       borderRadius: isDesktopWeb ? 16 : 12,
       padding: isDesktopWeb ? 24 : 12,
@@ -774,9 +777,7 @@ export default function VehicleDetailScreen() {
       alignItems: "center",
       justifyContent: "center",
     },
-    statContent: {
-      flex: 1,
-    },
+    statContent: {},
     statValue: {
       fontSize: isDesktopWeb ? 28 : 18,
       fontWeight: "bold",
@@ -1030,6 +1031,7 @@ export default function VehicleDetailScreen() {
           <title>Loading Vehicle - Vehicle Management</title>
         </Head>
         <SafeAreaView style={styles.container}>
+          {isMobile && <PageHeader title="Vehicle Details" showBack />}
           <SkeletonVehicleDetail />
         </SafeAreaView>
       </React.Fragment>
@@ -1043,6 +1045,7 @@ export default function VehicleDetailScreen() {
           <title>Vehicle Not Found - Vehicle Management</title>
         </Head>
         <SafeAreaView style={styles.container}>
+          {isMobile && <PageHeader title="Vehicle Details" showBack />}
           <View style={styles.content}>
             <Text style={styles.errorText}>Vehicle not found</Text>
           </View>
@@ -1061,6 +1064,7 @@ export default function VehicleDetailScreen() {
         </title>
       </Head>
       <SafeAreaView style={styles.container}>
+        {isMobile && <PageHeader title="Vehicle Details" showBack />}
         <ScrollView
           style={styles.content}
           contentContainerStyle={styles.scrollContent}
