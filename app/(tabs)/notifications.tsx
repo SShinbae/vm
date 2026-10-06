@@ -88,6 +88,13 @@ export default function NotificationsScreen() {
         return;
       }
 
+      // `invitations` holds only pending, unexpired ones; don't re-prompt
+      // for an invitation that was already accepted, declined or expired.
+      if (!invitations.some((inv) => inv.id === invitationId)) {
+        showInfo("This invitation has already been answered or has expired.");
+        return;
+      }
+
       if (Platform.OS === "web") {
         const confirmed = window.confirm(`Do you want to join ${groupName}?`);
         if (confirmed) {
