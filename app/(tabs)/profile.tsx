@@ -92,11 +92,7 @@ export default function ProfileScreen() {
     showConfirm("Sign Out", "Are you sure you want to sign out?", async () => {
       await signOut();
       hideConfirm();
-      if (router.canGoBack()) {
-        router.back();
-      } else {
-        router.replace("/login");
-      }
+      router.replace("/(auth)/login");
     });
   };
 

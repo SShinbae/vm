@@ -502,9 +502,13 @@ export function AuthGuard({ children }: AuthGuardProps) {
    * But skip this check if we were recently on auth page (prevents flicker during login error)
    * Also skip after forceShowContent timeout to prevent infinite loading from race conditions
    */
+  // Keep the navigator ({children}) mounted and cover it instead of replacing
+  // it: unmounting it here made every redirect to login throw "Attempted to
+  // navigate before mounting the Root Layout" (sign-out, expired sessions).
+  let signedOutSkeleton: React.ReactNode = null;
   if (!user && inTabs && !wasRecentlyOnAuthPage && !forceShowContent) {
-    if (Platform.OS === "web" && !layout.isMobile) {
-      return (
+    signedOutSkeleton =
+      Platform.OS === "web" && !layout.isMobile ? (
         <View
           style={[styles.skeletonRoot, { backgroundColor: colors.background }]}
         >
@@ -537,21 +541,28 @@ export function AuthGuard({ children }: AuthGuardProps) {
             <SkeletonDashboard />
           </View>
         </View>
+      ) : (
+        <View
+          style={[
+            styles.loadingContainer,
+            { backgroundColor: colors.background },
+          ]}
+        >
+          <SkeletonDashboard />
+        </View>
       );
-    }
-    return (
-      <View
-        style={[
-          styles.loadingContainer,
-          { backgroundColor: colors.background },
-        ]}
-      >
-        <SkeletonDashboard />
-      </View>
-    );
   }
 
-  return <>{children}</>;
+  return (
+    <>
+      {children}
+      {signedOutSkeleton && (
+        <View style={[StyleSheet.absoluteFill, styles.signedOutOverlay]}>
+          {signedOutSkeleton}
+        </View>
+      )}
+    </>
+  );
 }
 
 // ============================================================================
@@ -561,6 +572,9 @@ export function AuthGuard({ children }: AuthGuardProps) {
 const styles = StyleSheet.create({
   loadingContainer: {
     flex: 1,
+  },
+  signedOutOverlay: {
+    zIndex: 1000,
   },
   skeletonRoot: {
     flex: 1,

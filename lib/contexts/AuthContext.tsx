@@ -438,9 +438,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
   };
 
+  // Deliberately doesn't set `loading`: AuthGuard swaps the whole navigator for
+  // a spinner while loading, and navigating while it remounts crashes the app
+  // ("Maximum update depth exceeded" / "navigate before mounting Root Layout").
   const signOut = async () => {
-    setState((prev) => ({ ...prev, loading: true }));
-
     try {
       await pushService.onLogout();
 
@@ -455,8 +456,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
       if (__DEV__) {
         console.error("Error signing out:", error);
       }
-    } finally {
-      setState((prev) => ({ ...prev, loading: false }));
     }
   };
 
