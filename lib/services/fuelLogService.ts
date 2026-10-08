@@ -8,45 +8,62 @@ import {
 } from "../../types";
 import { canUserAccessVehicle } from "../utils/serviceUtils";
 
-export class FuelLogService {
-  /**
-   * Creates a mileage log from fuel log data (fire-and-forget)
-   */
-  private static async createMileageLogFromFuelLog(
-    vehicleId: string,
-    odometerReading: number,
-    date: string,
-    userId: string,
-  ): Promise<void> {
-    try {
-      // Check for existing mileage log on same date
-      const { data: existing } = await supabase
-        .from("mileage_logs")
-        .select("id")
-        .eq("vehicle_id", vehicleId)
-        .eq("date", date);
+export const AUTO_MILEAGE_NOTE = "Auto-created from fuel log";
 
-      if (existing && existing.length > 0) {
-        logger.log("Mileage log exists for this date, skipping auto-creation");
-        return;
-      }
+/**
+ * Keeps one auto mileage log per vehicle per day in step with fuel logs:
+ * creates it if the day has none, raises it if a fuel log reads higher.
+ * Never touches a mileage log the user entered by hand. Fire-and-forget:
+ * logs failures, never throws.
+ */
+export async function upsertAutoMileageLog(
+  vehicleId: string,
+  odometerReading: number,
+  date: string,
+  userId: string,
+): Promise<void> {
+  try {
+    const { data: existing, error: findError } = (await supabase
+      .from("mileage_logs")
+      .select("id, odometer_reading, notes")
+      .eq("vehicle_id", vehicleId)
+      .eq("date", date)) as {
+      data:
+        | { id: string; odometer_reading: number; notes: string | null }[]
+        | null;
+      error: unknown;
+    };
+    if (findError) {
+      logger.warn("Failed to look up mileage logs:", findError);
+      return;
+    }
 
-      // Create mileage log
-      await supabase.from("mileage_logs").insert({
+    if (!existing || existing.length === 0) {
+      const { error } = await supabase.from("mileage_logs").insert({
         vehicle_id: vehicleId,
-        date: date,
+        date,
         odometer_reading: odometerReading,
-        notes: "Auto-created from fuel log",
+        notes: AUTO_MILEAGE_NOTE,
         user_id: userId,
       } as any);
-
-      logger.log("Mileage log auto-created from fuel log");
-    } catch (error) {
-      logger.warn("Failed to auto-create mileage log:", error);
-      // Don't throw - this is fire-and-forget
+      if (error) logger.warn("Failed to auto-create mileage log:", error);
+      return;
     }
-  }
 
+    const autoLog = existing.find((log) => log.notes === AUTO_MILEAGE_NOTE);
+    if (!autoLog || autoLog.odometer_reading >= odometerReading) return;
+
+    const { error } = await (supabase as any)
+      .from("mileage_logs")
+      .update({ odometer_reading: odometerReading })
+      .eq("id", autoLog.id);
+    if (error) logger.warn("Failed to raise auto mileage log:", error);
+  } catch (error) {
+    logger.warn("Failed to auto-create mileage log:", error);
+  }
+}
+
+export class FuelLogService {
   static async getFuelLogs(
     vehicleId?: string,
     options?: { limit?: number; offset?: number },
@@ -268,7 +285,7 @@ export class FuelLogService {
 
       // Fire-and-forget mileage log creation
       if (log.odometer_reading && log.odometer_reading > 0) {
-        this.createMileageLogFromFuelLog(
+        upsertAutoMileageLog(
           log.vehicle_id,
           log.odometer_reading,
           log.date,
