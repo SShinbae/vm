@@ -247,6 +247,10 @@ export async function sendExpoPush(params: {
             body: params.body,
             data: params.data || {},
             sound: "default",
+            // Default (FCM normal) priority is held back while Android has the
+            // app frozen in the background; high priority wakes it to show the push.
+            priority: "high",
+            channelId: "default",
           })),
         ),
       });

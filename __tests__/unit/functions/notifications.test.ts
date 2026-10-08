@@ -182,6 +182,9 @@ describe("sendExpoPush", () => {
         body: "Body",
         data: { type: "log_update" },
         sound: "default",
+        // High priority so Android wakes a backgrounded/frozen app to show it.
+        priority: "high",
+        channelId: "default",
       },
     ]);
     expect(
