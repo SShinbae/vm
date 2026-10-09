@@ -6,6 +6,7 @@ import React, { useState, useEffect } from "react";
 import {
   ActivityIndicator,
   Dimensions,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -14,6 +15,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { supabase } from "../../services/supabaseClient";
+import { parseVerifiedRedirect } from "@/lib/utils/authRedirect";
 
 const { width: screenWidth } = Dimensions.get("window");
 
@@ -35,9 +37,37 @@ export default function ConfirmEmailScreen() {
       console.log("URL params:", { token_hash, type });
       console.log("================================");
 
+      const showConfirmed = async () => {
+        setConfirmed(true);
+        // Sign out user after verification to ensure manual login
+        await supabase.auth.signOut();
+        // Redirect to confirmation success page after 2 seconds
+        setTimeout(() => {
+          setRedirecting(true);
+          router.replace("/(auth)/confirmation-success");
+        }, 2000);
+      };
+
       if (!token_hash || !type) {
-        console.error("Missing required params:", { token_hash, type });
-        setError("Invalid confirmation link");
+        const redirect =
+          Platform.OS === "web"
+            ? parseVerifiedRedirect(
+                window.location.search,
+                window.location.hash,
+              )
+            : null;
+        if (redirect?.status === "verified") {
+          // Let the client finish any ?code= exchange before signing out.
+          await supabase.auth.getSession();
+          await showConfirmed();
+        } else {
+          console.error("Missing required params:", { token_hash, type });
+          setError(
+            redirect?.status === "error"
+              ? redirect.message
+              : "Invalid confirmation link",
+          );
+        }
         setLoading(false);
         return;
       }
@@ -60,16 +90,7 @@ export default function ConfirmEmailScreen() {
           router.replace("/(auth)/reset-password");
         } else if (data.user) {
           console.log("User confirmed successfully:", data.user.email);
-          setConfirmed(true);
-          // Sign out user after verification to ensure manual login
-          console.log("Signing out user to force manual login...");
-          await supabase.auth.signOut();
-          // Redirect to confirmation success page after 2 seconds
-          setTimeout(() => {
-            console.log("Redirecting to confirmation success page...");
-            setRedirecting(true);
-            router.replace("/(auth)/confirmation-success");
-          }, 2000);
+          await showConfirmed();
         } else {
           console.error("No user data returned after verification");
           setError("Confirmation failed");
