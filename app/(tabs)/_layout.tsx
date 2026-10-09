@@ -1,6 +1,6 @@
 import { useStyles } from "react-native-unistyles";
-import { Tabs } from "expo-router";
-import React from "react";
+import { router, Tabs } from "expo-router";
+import React, { useEffect } from "react";
 import { Platform, StyleSheet, View } from "react-native";
 
 import { ResponsiveTabBar } from "@/components/navigation/ResponsiveTabBar";
@@ -9,6 +9,7 @@ import { IconSymbol } from "@/components/ui/icon-symbol";
 import { useKeyboardShortcuts } from "@/hooks/use-keyboard-shortcuts";
 import { useResponsiveLayout } from "@/hooks/use-responsive-layout";
 import { useNotifications } from "@/lib/contexts/NotificationContext";
+import { pushService } from "@/lib/services/pushService";
 import { SidebarProvider, useSidebar } from "@/lib/contexts/SidebarContext";
 
 function TabLayoutContent() {
@@ -21,6 +22,13 @@ function TabLayoutContent() {
   useKeyboardShortcuts({
     onToggleSidebar: toggle,
   });
+
+  // Open the screen for a notification tap that launched the app, on top of
+  // the dashboard, now that the navigator is mounted.
+  useEffect(() => {
+    const route = pushService.consumeLaunchRoute();
+    if (route) router.push(route as never);
+  }, []);
 
   // Hide tab bar on web desktop, show WebSidebar instead
   const showTabBar = !layout.isWeb || layout.isMobile;

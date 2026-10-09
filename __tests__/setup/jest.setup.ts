@@ -112,20 +112,6 @@ jest.mock("expo-image", () => ({
   Image: "Image",
 }));
 
-// Mock OneSignal
-jest.mock("react-native-onesignal", () => ({
-  OneSignal: {
-    initialize: jest.fn(),
-    Notifications: {
-      requestPermission: jest.fn().mockResolvedValue(true),
-      addEventListener: jest.fn(),
-      removeEventListener: jest.fn(),
-    },
-    login: jest.fn(),
-    logout: jest.fn(),
-  },
-}));
-
 // ============================================================================
 // Test Environment Setup
 // ============================================================================

@@ -11,8 +11,7 @@ import React, {
 import { supabase } from "../../services/supabaseClient";
 import { AuthState, AuthUser, Profile } from "../../types";
 import { config } from "../config";
-import { initializeOneSignalLazy } from "../services/oneSignalLazy";
-import { oneSignalService } from "../services/oneSignalService";
+import { pushService } from "../services/pushService";
 import { sentryService } from "../services/sentryService";
 
 interface AuthContextType extends AuthState {
@@ -25,7 +24,7 @@ interface AuthContextType extends AuthState {
     email: string,
     password: string,
   ) => Promise<{ error: string | null }>;
-  signOut: () => Promise<void>;
+  signOut: () => Promise<{ error: string | null }>;
   resetPassword: (email: string) => Promise<{ error: string | null }>;
   updatePassword: (password: string) => Promise<{ error: string | null }>;
   updateProfile: (
@@ -310,7 +309,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   useEffect(() => {
     if (!state.user?.id) return;
-    initializeOneSignalLazy().then(() => oneSignalService.syncUser());
+    pushService.syncUser();
   }, [state.user?.id]);
 
   const signUp = async (email: string, password: string, fullName?: string) => {
@@ -439,25 +438,36 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
   };
 
-  const signOut = async () => {
-    setState((prev) => ({ ...prev, loading: true }));
-
+  // Deliberately doesn't set `loading`: AuthGuard swaps the whole navigator for
+  // a spinner while loading, and navigating while it remounts crashes the app
+  // ("Maximum update depth exceeded" / "navigate before mounting Root Layout").
+  // Offline sign-out is blocked on purpose: supabase.auth.signOut() keeps the
+  // session on this device when the server can't be reached, and we don't
+  // sign out locally only (the session would stay valid on the server).
+  const signOut = async (): Promise<{ error: string | null }> => {
     try {
-      await oneSignalService.onLogout();
+      await pushService.onLogout();
+
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        // Still signed in: put this device's push token back.
+        void pushService.syncUser();
+        return { error: error.message };
+      }
 
       posthog?.capture("user_signed_out");
-
       // Clear Sentry and PostHog user on logout
       sentryService.clearUser();
       posthog?.reset();
-
-      await supabase.auth.signOut();
+      return { error: null };
     } catch (error) {
       if (__DEV__) {
         console.error("Error signing out:", error);
       }
-    } finally {
-      setState((prev) => ({ ...prev, loading: false }));
+      void pushService.syncUser();
+      return {
+        error: error instanceof Error ? error.message : "Sign out failed",
+      };
     }
   };
 

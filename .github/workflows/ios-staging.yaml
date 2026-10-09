@@ -89,7 +89,6 @@ jobs:
           echo "SUPABASE_KEY=${{ secrets.STAGING_SUPABASE_KEY || secrets.SUPABASE_KEY }}" >> .env.staging.build
           echo "GOOGLE_VISION_API_KEY=${{ secrets.STAGING_GOOGLE_VISION_API_KEY || secrets.GOOGLE_VISION_API_KEY }}" >> .env.staging.build
           echo "SITE_URL=${{ secrets.STAGING_SITE_URL || secrets.SITE_URL }}" >> .env.staging.build
-          echo "ONESIGNAL_APP_ID=${{ secrets.STAGING_ONESIGNAL_APP_ID || secrets.ONESIGNAL_APP_ID }}" >> .env.staging.build
           echo "SENTRY_DSN=${{ secrets.STAGING_SENTRY_DSN || secrets.SENTRY_DSN }}" >> .env.staging.build
           echo "SENTRY_ORG=${{ secrets.SENTRY_ORG }}" >> .env.staging.build
           echo "SENTRY_PROJECT=${{ secrets.SENTRY_PROJECT }}" >> .env.staging.build

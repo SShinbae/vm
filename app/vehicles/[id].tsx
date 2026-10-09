@@ -3,6 +3,7 @@ import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useStyles } from "react-native-unistyles";
 import { ActionMenu, ActionMenuItem } from "@/components/ui/ActionMenu";
 import { IconSymbol } from "@/components/ui/icon-symbol";
+import { PageHeader } from "@/components/ui/PageHeader";
 import { AlertModal, ConfirmModal, Modal } from "@/components/ui/Modal";
 import { VehicleGroupSelector } from "@/components/VehicleGroupSelector";
 import { Group } from "@/types";
@@ -13,6 +14,7 @@ import { useAuth } from "@/lib/contexts/AuthContext";
 import {
   FuelLogService,
   MileageLogService,
+  isAutoMileageLog,
   ServiceLogService,
 } from "@/lib/services/loggingService";
 import { VehicleService } from "@/lib/services/vehicleService";
@@ -376,21 +378,33 @@ export default function VehicleDetailScreen() {
         ? "fuel"
         : "mileage";
 
-    const actionMenuItems: ActionMenuItem[] = [
-      {
-        label: "Edit",
-        icon: "pencil",
-        onPress: () => handleEditLog(logType, log.id),
-        disabled: !canModify,
-      },
-      {
-        label: "Delete",
-        icon: "trash",
-        onPress: () => handleDeleteLog(logType, log.id, getLogText()),
-        variant: "danger",
-        disabled: !canModify,
-      },
-    ];
+    // Auto mileage logs mirror that day's fuel logs (database trigger) and
+    // are read-only: change the fuel log instead.
+    const actionMenuItems: ActionMenuItem[] = isAutoMileageLog(logType, log)
+      ? [
+          {
+            label:
+              "Created from fuel logs. Edit or delete the fuel log instead.",
+            icon: "info.circle",
+            onPress: () => {},
+            disabled: true,
+          },
+        ]
+      : [
+          {
+            label: "Edit",
+            icon: "pencil",
+            onPress: () => handleEditLog(logType, log.id),
+            disabled: !canModify,
+          },
+          {
+            label: "Delete",
+            icon: "trash",
+            onPress: () => handleDeleteLog(logType, log.id, getLogText()),
+            variant: "danger",
+            disabled: !canModify,
+          },
+        ];
 
     return (
       <TouchableOpacity
@@ -728,8 +742,10 @@ export default function VehicleDetailScreen() {
       marginBottom: isDesktopWeb ? 32 : 18,
     },
     statCard: {
-      flex: 1,
-      minWidth: isDesktopWeb ? "22%" : "47%",
+      // flexBasis, not flex: 1 — on native, flex: 1 starts the card at 0 width,
+      // so its text is measured near-zero wide and the card renders very tall.
+      flexGrow: 1,
+      flexBasis: isDesktopWeb ? "22%" : "47%",
       backgroundColor: colors.surface,
       borderRadius: isDesktopWeb ? 16 : 12,
       padding: isDesktopWeb ? 24 : 12,
@@ -774,9 +790,7 @@ export default function VehicleDetailScreen() {
       alignItems: "center",
       justifyContent: "center",
     },
-    statContent: {
-      flex: 1,
-    },
+    statContent: {},
     statValue: {
       fontSize: isDesktopWeb ? 28 : 18,
       fontWeight: "bold",
@@ -1030,6 +1044,7 @@ export default function VehicleDetailScreen() {
           <title>Loading Vehicle - Vehicle Management</title>
         </Head>
         <SafeAreaView style={styles.container}>
+          {isMobile && <PageHeader title="Vehicle Details" showBack />}
           <SkeletonVehicleDetail />
         </SafeAreaView>
       </React.Fragment>
@@ -1043,6 +1058,7 @@ export default function VehicleDetailScreen() {
           <title>Vehicle Not Found - Vehicle Management</title>
         </Head>
         <SafeAreaView style={styles.container}>
+          {isMobile && <PageHeader title="Vehicle Details" showBack />}
           <View style={styles.content}>
             <Text style={styles.errorText}>Vehicle not found</Text>
           </View>
@@ -1061,6 +1077,7 @@ export default function VehicleDetailScreen() {
         </title>
       </Head>
       <SafeAreaView style={styles.container}>
+        {isMobile && <PageHeader title="Vehicle Details" showBack />}
         <ScrollView
           style={styles.content}
           contentContainerStyle={styles.scrollContent}

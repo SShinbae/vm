@@ -164,7 +164,6 @@ jobs:
           SUPABASE_KEY=${{ secrets.STAGING_SUPABASE_KEY || secrets.SUPABASE_KEY }}
           GOOGLE_VISION_API_KEY=${{ secrets.STAGING_GOOGLE_VISION_API_KEY || secrets.GOOGLE_VISION_API_KEY }}
           SITE_URL=${{ secrets.STAGING_SITE_URL || secrets.SITE_URL }}
-          ONESIGNAL_APP_ID=${{ secrets.STAGING_ONESIGNAL_APP_ID || secrets.ONESIGNAL_APP_ID }}
           SENTRY_DSN=${{ secrets.STAGING_SENTRY_DSN || secrets.SENTRY_DSN }}
           SENTRY_ORG=${{ secrets.SENTRY_ORG }}
           SENTRY_PROJECT=${{ secrets.SENTRY_PROJECT }}
@@ -227,7 +226,6 @@ jobs:
           SUPABASE_KEY=${{ secrets.STAGING_SUPABASE_KEY || secrets.SUPABASE_KEY }}
           GOOGLE_VISION_API_KEY=${{ secrets.STAGING_GOOGLE_VISION_API_KEY || secrets.GOOGLE_VISION_API_KEY }}
           SITE_URL=${{ secrets.STAGING_SITE_URL || secrets.SITE_URL }}
-          ONESIGNAL_APP_ID=${{ secrets.STAGING_ONESIGNAL_APP_ID || secrets.ONESIGNAL_APP_ID }}
           SENTRY_DSN=${{ secrets.STAGING_SENTRY_DSN || secrets.SENTRY_DSN }}
           SENTRY_ORG=${{ secrets.SENTRY_ORG }}
           SENTRY_PROJECT=${{ secrets.SENTRY_PROJECT }}

@@ -5,6 +5,7 @@ import { Modal } from "@/components/ui/Modal";
 import { NotificationPreferencesForm } from "@/components/notifications/NotificationPreferencesForm";
 import { useResponsiveLayout } from "@/hooks/use-responsive-layout";
 import { useProfileStats } from "@/hooks/useProfileStats";
+import { useToast } from "@/hooks/useToast";
 import { useAuth } from "@/lib/contexts/AuthContext";
 import { useDialog } from "@/lib/contexts/DialogContext";
 import { useTheme } from "@/lib/contexts/ThemeContext";
@@ -29,6 +30,7 @@ export default function ProfileScreen() {
   const { user, updateProfile, signOut } = useAuth();
   const { themeMode, setThemeMode } = useTheme();
   const { showConfirm, hideConfirm } = useDialog();
+  const { showError } = useToast();
   const { theme } = useStyles();
   const { isMobile, isWeb } = useResponsiveLayout();
   const { stats, loading: statsLoading } = useProfileStats();
@@ -90,13 +92,13 @@ export default function ProfileScreen() {
 
   const handleSignOut = () => {
     showConfirm("Sign Out", "Are you sure you want to sign out?", async () => {
-      await signOut();
+      const { error } = await signOut();
       hideConfirm();
-      if (router.canGoBack()) {
-        router.back();
-      } else {
-        router.replace("/login");
+      if (error) {
+        showError("Couldn't sign out. Check your connection and try again.");
+        return;
       }
+      router.replace("/(auth)/login");
     });
   };
 

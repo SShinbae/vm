@@ -158,6 +158,8 @@ export interface Database {
           odometer_reading: number;
           date: string;
           notes: string | null;
+          /** 'fuel_log' = derived from that day's fuel logs (read-only in the app). */
+          source: "manual" | "fuel_log";
           created_at: string;
         };
         Insert: {
@@ -167,6 +169,7 @@ export interface Database {
           odometer_reading: number;
           date: string;
           notes?: string | null;
+          source?: "manual" | "fuel_log";
         };
         Update: {
           odometer_reading?: number;
@@ -581,6 +584,10 @@ export interface Database {
           shared_by: string;
           created_at: string;
         }[];
+      };
+      register_push_token: {
+        Args: { p_token: string; p_device_type: string };
+        Returns: undefined;
       };
     };
     Enums: {

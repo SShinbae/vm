@@ -75,3 +75,11 @@ Markdown
 
 # local planning docs
 /docs
+
+#supabse
+env.supabase-local
+supabase/.temp
+supabase/.branches
+supabase/config.toml
+supabase/seed.sql
+supabase/tests/

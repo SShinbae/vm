@@ -91,9 +91,13 @@ async function handleGroupInvitation(
     },
     relatedGroupId: record.group_id,
     actionUrl: "/notifications",
-    webUrl: `${siteUrl}/notifications`,
   });
   return result !== "failed" || emailSent;
+}
+
+/** "fuel_logs" → "fuel log", for notification text ("… added a fuel log …"). */
+export function logChangeLabel(table: string): string {
+  return `${table.replace("_logs", "").replace("_", " ")} log`;
 }
 
 async function handleLogChange(payload: WebhookPayload): Promise<boolean> {
@@ -133,7 +137,7 @@ async function handleLogChange(payload: WebhookPayload): Promise<boolean> {
       : payload.type === "DELETE"
         ? "deleted"
         : "updated";
-  const logType = payload.table.replace("_logs", "").replace("_", " ");
+  const logType = logChangeLabel(payload.table);
   const notificationType = payload.table.replace(
     "_logs",
     "_log",
@@ -161,7 +165,6 @@ async function handleLogChange(payload: WebhookPayload): Promise<boolean> {
         },
         relatedVehicleId: record.vehicle_id,
         actionUrl: `/vehicles/${record.vehicle_id}`,
-        webUrl: `${siteUrl}/vehicles/${record.vehicle_id}`,
       }),
     ),
   );
@@ -210,7 +213,6 @@ async function handleGroupMemberChange(
         },
         relatedGroupId: record.group_id,
         actionUrl: `/groups/${record.group_id}`,
-        webUrl: `${siteUrl}/groups/${record.group_id}`,
       }),
     ),
   );

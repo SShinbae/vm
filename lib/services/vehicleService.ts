@@ -981,62 +981,6 @@ export class VehicleService {
   }
 
   /**
-   * Update vehicle's current mileage based on latest mileage log
-   */
-  static async updateVehicleCurrentMileage(
-    vehicleId: string,
-  ): Promise<ApiResponse<boolean>> {
-    try {
-      // Get the latest mileage log
-      const latestMileageResult = await supabase
-        .from("mileage_logs")
-        .select("odometer_reading")
-        .eq("vehicle_id", vehicleId)
-        .order("date", { ascending: false })
-        .limit(1);
-
-      const { data: latestMileage, error: mileageError } =
-        latestMileageResult as any;
-
-      if (mileageError) {
-        logger.error("Error fetching latest mileage:", mileageError);
-        return { data: null, error: mileageError.message, loading: false };
-      }
-
-      if (latestMileage && latestMileage.length > 0) {
-        const newMileage = latestMileage[0].odometer_reading;
-
-        // Update the vehicle's current_mileage
-        const updateResult = (supabase as any)
-          .from("vehicles")
-          .update({ current_mileage: newMileage })
-          .eq("id", vehicleId);
-
-        const { error: updateError } = updateResult as any;
-
-        if (updateError) {
-          logger.error("Error updating current mileage:", updateError);
-          return { data: null, error: updateError.message, loading: false };
-        }
-
-        logger.log(
-          `✅ Updated vehicle ${vehicleId} current_mileage to ${newMileage}`,
-        );
-        return { data: true, error: null, loading: false };
-      }
-
-      return { data: true, error: null, loading: false };
-    } catch (error) {
-      logger.error("Unexpected error updating current mileage:", error);
-      return {
-        data: null,
-        error: "Failed to update current mileage",
-        loading: false,
-      };
-    }
-  }
-
-  /**
    * Get user's groups for sharing vehicles
    */
   static async getUserGroups(): Promise<ApiResponse<Group[]>> {

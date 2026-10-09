@@ -52,7 +52,7 @@ A comprehensive vehicle management application built with **React Native** and *
 
 ### 🔔 Notifications
 
-- **Push Notifications**: Live via OneSignal, delivered through a Netlify serverless function
+- **Push Notifications**: Live via Expo Push, delivered through a Netlify serverless function
 - **Transactional Email**: Group invitations and alerts sent via Brevo
 - **In-App Notifications**: Centralized notification center
 - **Group Invitations**: Real-time notifications for group invites
@@ -100,7 +100,7 @@ _Captured from the web build (Expo web)._
   - Real-time subscriptions
   - Storage for images
 - **Netlify Functions** - Scheduled jobs (weekly analytics insights) and push-notification delivery
-- **OneSignal** - Push notification service
+- **Expo Push** - Push notification service
 - **Brevo** - Transactional email
 
 ### State & Data Management
@@ -157,7 +157,7 @@ _Captured from the web build (Expo web)._
    EXPO_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
    ```
 
-   See `.env.sample` for the full set (Supabase, Sentry, PostHog, Google Vision, OneSignal, Site URL). Server-only secrets (service-role key, OneSignal REST key, Brevo API key, Firebase Admin SDK) are configured in your Netlify site environment, never committed.
+   See `.env.sample` for the full set (Supabase, Sentry, PostHog, Google Vision, Expo Push, Site URL). Server-only secrets (service-role key, Expo access token, Brevo API key, Firebase Admin SDK) are configured in your Netlify site environment, never committed.
 
 4. **Set up Supabase**
    - Create a new Supabase project
@@ -283,7 +283,7 @@ vm/
 
 ### Notifications
 
-- Push notifications live via **OneSignal**, delivered through the `send-push-notification` Netlify function
+- Push notifications live via **Expo Push**, delivered through the `send-push-notification` Netlify function
 - Group invitations and alerts sent by email via **Brevo**
 
 ### Permissions & Sharing

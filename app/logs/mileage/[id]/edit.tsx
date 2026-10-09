@@ -12,6 +12,7 @@ import { useToast } from "@/hooks/useToast";
 import { useAuth } from "@/lib/contexts/AuthContext";
 import { canUserAccessVehicle } from "@/lib/utils/serviceUtils";
 import { MileageLogService } from "@/lib/services/loggingService";
+import { AUTO_MILEAGE_LOG_READ_ONLY } from "@/lib/services/mileageLogService";
 import { MileageLog, MileageLogFormData } from "@/types";
 import { router, useLocalSearchParams } from "expo-router";
 import { usePostHog } from "posthog-react-native";
@@ -134,7 +135,12 @@ export default function EditMileageLogScreen() {
       console.error("Error updating mileage log:", error);
 
       let errorMsg = error;
-      if (error.includes("not found") || error.includes("no longer exists")) {
+      if (error === AUTO_MILEAGE_LOG_READ_ONLY) {
+        errorMsg = AUTO_MILEAGE_LOG_READ_ONLY;
+      } else if (
+        error.includes("not found") ||
+        error.includes("no longer exists")
+      ) {
         errorMsg =
           "This mileage log no longer exists. It may have been deleted by another user.";
       } else if (

@@ -39,7 +39,9 @@ function CustomToast({ type, props }: { type: ToastType; props: ToastProps }) {
   const { theme } = useStyles();
   const insets = useSafeAreaInsets();
   const statusColor = theme.colors[type];
-  const backgroundColor = withOpacity(statusColor, 0.12);
+  // Solid card + tint layer: a translucent background let the screen behind
+  // the toast show through and made the text unreadable.
+  const tintColor = withOpacity(statusColor, 0.12);
   const textColor = theme.colors.text;
   const secondaryTextColor = theme.colors.textSecondary;
 
@@ -53,13 +55,17 @@ function CustomToast({ type, props }: { type: ToastType; props: ToastProps }) {
       style={[
         styles.container,
         {
-          backgroundColor,
+          backgroundColor: theme.colors.surface,
           borderLeftColor: statusColor,
           width: toastWidth,
           marginTop: Platform.OS === "web" ? 60 : insets.top + 8,
         },
       ]}
     >
+      <View
+        pointerEvents="none"
+        style={[styles.tint, { backgroundColor: tintColor }]}
+      />
       <View style={styles.content}>
         <View style={styles.iconContainer}>
           <Ionicons name={TOAST_ICONS[type]} size={24} color={statusColor} />
@@ -133,6 +139,11 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.15,
     shadowRadius: 8,
     elevation: 4,
+  },
+  tint: {
+    ...StyleSheet.absoluteFillObject,
+    borderTopRightRadius: 12,
+    borderBottomRightRadius: 12,
   },
   content: {
     flexDirection: "row",

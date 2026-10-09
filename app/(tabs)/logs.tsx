@@ -10,6 +10,7 @@ import { useAuth } from "@/lib/contexts/AuthContext";
 import {
   FuelLogService,
   MileageLogService,
+  isAutoMileageLog,
   ServiceLogService,
 } from "@/lib/services/loggingService";
 import { formatDate } from "@/lib/utils/dateUtils";
@@ -756,21 +757,33 @@ export default function LogsScreen() {
 
     const details = getLogDetails();
 
-    const actionMenuItems: ActionMenuItem[] = [
-      {
-        label: "Edit",
-        icon: "pencil",
-        onPress: () => handleEditLog(type, log.id),
-        disabled: !canModify,
-      },
-      {
-        label: "Delete",
-        icon: "trash",
-        onPress: () => handleDeleteLog(type, log.id, details.title),
-        variant: "danger",
-        disabled: !canModify,
-      },
-    ];
+    // Auto mileage logs mirror that day's fuel logs (database trigger) and
+    // are read-only: change the fuel log instead.
+    const actionMenuItems: ActionMenuItem[] = isAutoMileageLog(type, log)
+      ? [
+          {
+            label:
+              "Created from fuel logs. Edit or delete the fuel log instead.",
+            icon: "info.circle",
+            onPress: () => {},
+            disabled: true,
+          },
+        ]
+      : [
+          {
+            label: "Edit",
+            icon: "pencil",
+            onPress: () => handleEditLog(type, log.id),
+            disabled: !canModify,
+          },
+          {
+            label: "Delete",
+            icon: "trash",
+            onPress: () => handleDeleteLog(type, log.id, details.title),
+            variant: "danger",
+            disabled: !canModify,
+          },
+        ];
 
     if (type === "service") {
       // Special layout for Service Logs

@@ -9,44 +9,6 @@ import {
 import { canUserAccessVehicle } from "../utils/serviceUtils";
 
 export class FuelLogService {
-  /**
-   * Creates a mileage log from fuel log data (fire-and-forget)
-   */
-  private static async createMileageLogFromFuelLog(
-    vehicleId: string,
-    odometerReading: number,
-    date: string,
-    userId: string,
-  ): Promise<void> {
-    try {
-      // Check for existing mileage log on same date
-      const { data: existing } = await supabase
-        .from("mileage_logs")
-        .select("id")
-        .eq("vehicle_id", vehicleId)
-        .eq("date", date);
-
-      if (existing && existing.length > 0) {
-        logger.log("Mileage log exists for this date, skipping auto-creation");
-        return;
-      }
-
-      // Create mileage log
-      await supabase.from("mileage_logs").insert({
-        vehicle_id: vehicleId,
-        date: date,
-        odometer_reading: odometerReading,
-        notes: "Auto-created from fuel log",
-        user_id: userId,
-      } as any);
-
-      logger.log("Mileage log auto-created from fuel log");
-    } catch (error) {
-      logger.warn("Failed to auto-create mileage log:", error);
-      // Don't throw - this is fire-and-forget
-    }
-  }
-
   static async getFuelLogs(
     vehicleId?: string,
     options?: { limit?: number; offset?: number },
@@ -266,16 +228,8 @@ export class FuelLogService {
         return { data: null, error: error.message, loading: false };
       }
 
-      // Fire-and-forget mileage log creation
-      if (log.odometer_reading && log.odometer_reading > 0) {
-        this.createMileageLogFromFuelLog(
-          log.vehicle_id,
-          log.odometer_reading,
-          log.date,
-          user.id,
-        ).catch((err) => logger.warn("Mileage auto-log failed:", err));
-      }
-
+      // The day's auto mileage log is kept in sync by a database trigger
+      // (sync_auto_mileage_from_fuel_log), not here.
       return { data, error: null, loading: false };
     } catch (error) {
       logger.error("Unexpected error creating fuel log:", error);

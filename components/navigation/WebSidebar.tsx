@@ -5,6 +5,7 @@ import { ConfirmModal } from "@/components/ui/Modal";
 import { SidebarBadge } from "@/components/ui/SidebarBadge";
 import { Tooltip } from "@/components/ui/Tooltip";
 import { useResponsiveLayout } from "@/hooks/use-responsive-layout";
+import { useToast } from "@/hooks/useToast";
 import { useAuth } from "@/lib/contexts/AuthContext";
 import { useNotifications } from "@/lib/contexts/NotificationContext";
 import { useSidebar } from "@/lib/contexts/SidebarContext";
@@ -51,6 +52,7 @@ export function WebSidebar() {
   const colors = theme.colors;
   const pathname = usePathname();
   const { user, signOut } = useAuth();
+  const { showError } = useToast();
   const { isOpen, toggle } = useSidebar();
   const { unreadCount } = useNotifications();
   const [showLogoutModal, setShowLogoutModal] = useState(false);
@@ -75,7 +77,11 @@ export function WebSidebar() {
 
   const handleConfirmSignOut = async () => {
     setShowLogoutModal(false);
-    await signOut();
+    const { error } = await signOut();
+    if (error) {
+      showError("Couldn't sign out. Check your connection and try again.");
+      return;
+    }
     router.replace("/(auth)/login");
   };
 

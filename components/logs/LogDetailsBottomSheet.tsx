@@ -2,6 +2,10 @@ import { withOpacity, spacing } from "@/src/design-system";
 import { Button } from "@/components/ui/Button";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { ServiceReceiptIndicator } from "@/components/ui/ReceiptViewer";
+import {
+  AUTO_MILEAGE_LOG_READ_ONLY,
+  isAutoMileageLog,
+} from "@/lib/services/mileageLogService";
 import { formatDate } from "@/lib/utils/dateUtils";
 import { formatServiceItems } from "@/lib/utils/serviceUtils";
 import type { FuelLog, MileageLog, ServiceLog } from "@/types";
@@ -382,32 +386,40 @@ export const LogDetailsBottomSheet = forwardRef<
 
         {/* Action Buttons */}
         <View style={styles.actionButtonsContainer}>
-          <Button
-            title="Edit Log"
-            onPress={handleEdit}
-            variant="primary"
-            icon="pencil"
-            iconPosition="left"
-            style={styles.actionButton}
-            disabled={!canModify}
-            fullWidth
-          />
-
-          <Button
-            title="Delete Log"
-            onPress={handleDelete}
-            variant="danger"
-            icon="trash"
-            iconPosition="left"
-            style={styles.actionButton}
-            disabled={!canModify}
-            fullWidth
-          />
-
-          {!canModify && (
-            <Text style={styles.permissionWarning}>
-              You don&apos;t have permission to modify this log
+          {isAutoMileageLog(logType, log) ? (
+            <Text style={styles.readOnlyNote}>
+              {AUTO_MILEAGE_LOG_READ_ONLY}
             </Text>
+          ) : (
+            <>
+              <Button
+                title="Edit Log"
+                onPress={handleEdit}
+                variant="primary"
+                icon="pencil"
+                iconPosition="left"
+                style={styles.actionButton}
+                disabled={!canModify}
+                fullWidth
+              />
+
+              <Button
+                title="Delete Log"
+                onPress={handleDelete}
+                variant="danger"
+                icon="trash"
+                iconPosition="left"
+                style={styles.actionButton}
+                disabled={!canModify}
+                fullWidth
+              />
+
+              {!canModify && (
+                <Text style={styles.permissionWarning}>
+                  You don&apos;t have permission to modify this log
+                </Text>
+              )}
+            </>
           )}
         </View>
 
@@ -634,6 +646,11 @@ const stylesheet = createStyleSheet((theme) => ({
   },
   actionButton: {
     width: "100%",
+  },
+  readOnlyNote: {
+    fontSize: 13,
+    color: theme.colors.textSecondary,
+    textAlign: "center",
   },
   permissionWarning: {
     fontSize: 13,

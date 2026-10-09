@@ -2,6 +2,7 @@ import { spacing } from "@/src/design-system";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { ConfirmModal } from "@/components/ui/Modal";
 import { useResponsiveLayout } from "@/hooks/use-responsive-layout";
+import { useToast } from "@/hooks/useToast";
 import { useAuth } from "@/lib/contexts/AuthContext";
 import { router, usePathname } from "expo-router";
 import React, { useState } from "react";
@@ -28,6 +29,7 @@ export function WebNavbar() {
   const layout = useResponsiveLayout();
   const pathname = usePathname();
   const { user, signOut } = useAuth();
+  const { showError } = useToast();
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const { styles, theme } = useStyles(stylesheet);
 
@@ -42,7 +44,11 @@ export function WebNavbar() {
 
   const handleConfirmSignOut = async () => {
     setShowLogoutModal(false);
-    await signOut();
+    const { error } = await signOut();
+    if (error) {
+      showError("Couldn't sign out. Check your connection and try again.");
+      return;
+    }
     router.replace("/(auth)/login");
   };
 

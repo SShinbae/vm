@@ -29,11 +29,11 @@ if (process.env.NODE_ENV !== "production" || process.env.DEBUG) {
 
 module.exports = {
   expo: {
-    name: "Vehicles Management",
+    name: "VM",
     slug: "vehicles-management",
     version: "1.0.0",
     orientation: "portrait",
-    icon: "./assets/images/vm_logo.png",
+    icon: "./assets/images/icon.png",
     scheme: "vehiclesmanagement",
     userInterfaceStyle: "automatic",
     newArchEnabled: true,
@@ -41,6 +41,8 @@ module.exports = {
       supportsTablet: true,
       bundleIdentifier: "com.vehiclesmanagement.app",
       infoPlist: {
+        CFBundleDisplayName: "VM",
+        CFBundleName: "VM",
         NSPhotoLibraryUsageDescription:
           "This app needs access to your photo library to let you select and crop images for your profile and vehicles.",
         NSCameraUsageDescription:
@@ -49,10 +51,10 @@ module.exports = {
     },
     android: {
       package: "com.vehiclesmanagement.app",
+      googleServicesFile: "./google-services.json",
       adaptiveIcon: {
-        backgroundColor: "#E6F4FE",
-        foregroundImage: "./assets/images/vm_logo_foreground.png",
-        backgroundImage: "./assets/images/android-icon-background.png",
+        backgroundColor: "#FFFFFF",
+        foregroundImage: "./assets/images/android-icon-foreground.png",
       },
       edgeToEdgeEnabled: true,
       predictiveBackGestureEnabled: false,
@@ -65,10 +67,10 @@ module.exports = {
     },
     web: {
       output: "static",
-      favicon: "./assets/images/vm_logo.png",
+      favicon: "./assets/images/favicon.png",
       bundler: "metro",
       name: "Vehicle Management System",
-      shortName: "Vehicle Manager",
+      shortName: "VM",
       description:
         "Comprehensive vehicle management and maintenance tracking system",
       lang: "en",
@@ -77,18 +79,10 @@ module.exports = {
     },
     plugins: [
       [
-        "onesignal-expo-plugin",
-        {
-          mode:
-            process.env.EAS_BUILD_PROFILE === "production-apk" ||
-            process.env.EAS_BUILD_PROFILE === "production"
-              ? "production"
-              : "development",
-        },
-      ],
-      [
         "expo-router",
         {
+          // Required by <Head> on iOS (Handoff); without it screens using Head throw.
+          origin: "https://vm.wanahnaf.dev",
           asyncRoutes: {
             web: true,
             default: false,
@@ -99,20 +93,20 @@ module.exports = {
       [
         "expo-splash-screen",
         {
-          image: "./assets/images/vm_logo.png",
+          image: "./assets/images/splash-icon-light.png",
           imageWidth: 200,
           resizeMode: "contain",
-          backgroundColor: "#E6F4FE",
+          backgroundColor: "#FFFFFF",
           dark: {
-            image: "./assets/images/vm_logo.png",
-            backgroundColor: "#202f36",
+            image: "./assets/images/splash-icon-dark.png",
+            backgroundColor: "#121212",
           },
         },
       ],
       [
         "expo-notifications",
         {
-          icon: "./assets/images/vm_logo.png",
+          icon: "./assets/images/android-icon-foreground.png",
           color: "#517c89",
         },
       ],
@@ -137,7 +131,6 @@ module.exports = {
       supabaseUrl: process.env.SUPABASE_URL,
       supabaseKey: process.env.SUPABASE_KEY,
       siteUrl: process.env.SITE_URL,
-      oneSignalAppId: process.env.ONESIGNAL_APP_ID,
       sentryDsn: process.env.SENTRY_DSN,
       posthogApiKey: process.env.POSTHOG_API_KEY,
       posthogHost: process.env.POSTHOG_HOST,

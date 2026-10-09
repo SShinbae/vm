@@ -46,6 +46,7 @@ describe("Analytics Calculations", () => {
     odometer_reading: 50000,
     date: new Date().toISOString().split("T")[0],
     notes: null,
+    source: "manual",
     created_at: new Date().toISOString(),
     ...overrides,
   });
