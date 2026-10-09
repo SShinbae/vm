@@ -167,6 +167,7 @@ export interface Database {
           odometer_reading: number;
           date: string;
           notes: string | null;
+          source: "manual" | "fuel_log";
           created_at: string;
         };
         Insert: {
@@ -176,11 +177,13 @@ export interface Database {
           odometer_reading: number;
           date: string;
           notes?: string | null;
+          source?: "manual" | "fuel_log";
         };
         Update: {
           odometer_reading?: number;
           date?: string;
           notes?: string | null;
+          source?: "manual" | "fuel_log";
         };
         Relationships: [
           {

@@ -8,8 +8,18 @@ import {
 } from "../../types";
 import { canUserAccessVehicle } from "../utils/serviceUtils";
 
-/** Auto mileage logs mirror that day's fuel logs (database trigger); edit or delete the fuel log instead. */
-export const AUTO_MILEAGE_LOG_READ_ONLY = "AUTO_MILEAGE_LOG_READ_ONLY";
+/**
+ * Auto mileage logs mirror that day's fuel logs (database trigger) and are
+ * read-only. The error is user-facing text, since callers show it as-is.
+ */
+export const AUTO_MILEAGE_LOG_READ_ONLY =
+  "This mileage log was created from fuel logs. Edit or delete the fuel log instead.";
+
+export const isAutoMileageLog = (logType: string | null, log: object | null) =>
+  logType === "mileage" &&
+  !!log &&
+  "source" in log &&
+  log.source === "fuel_log";
 
 export class MileageLogService {
   static async getMileageLogs(

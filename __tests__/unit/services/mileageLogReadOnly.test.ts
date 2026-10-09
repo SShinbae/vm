@@ -23,7 +23,18 @@ jest.mock("@/lib/utils/serviceUtils", () => ({
 import {
   AUTO_MILEAGE_LOG_READ_ONLY,
   MileageLogService,
+  isAutoMileageLog,
 } from "@/lib/services/mileageLogService";
+
+describe("isAutoMileageLog", () => {
+  it("is true only for mileage logs created from fuel logs", () => {
+    expect(isAutoMileageLog("mileage", { source: "fuel_log" })).toBe(true);
+    expect(isAutoMileageLog("mileage", { source: "manual" })).toBe(false);
+    expect(isAutoMileageLog("fuel", { source: "fuel_log" })).toBe(false);
+    expect(isAutoMileageLog("mileage", {})).toBe(false);
+    expect(isAutoMileageLog("mileage", null)).toBe(false);
+  });
+});
 
 describe("auto mileage logs are read-only", () => {
   beforeEach(() => {
@@ -37,6 +48,8 @@ describe("auto mileage logs are read-only", () => {
   it("refuses to delete an auto mileage log", async () => {
     const result = await MileageLogService.deleteMileageLog("m1");
     expect(result.error).toBe(AUTO_MILEAGE_LOG_READ_ONLY);
+    // Callers show the error as-is, so it must be readable, not a code.
+    expect(result.error).toMatch(/Edit or delete the fuel log instead/);
     expect(mockDelete).not.toHaveBeenCalled();
   });
 

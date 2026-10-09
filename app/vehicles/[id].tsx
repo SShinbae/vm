@@ -14,6 +14,7 @@ import { useAuth } from "@/lib/contexts/AuthContext";
 import {
   FuelLogService,
   MileageLogService,
+  isAutoMileageLog,
   ServiceLogService,
 } from "@/lib/services/loggingService";
 import { VehicleService } from "@/lib/services/vehicleService";
@@ -379,8 +380,7 @@ export default function VehicleDetailScreen() {
 
     // Auto mileage logs mirror that day's fuel logs (database trigger) and
     // are read-only: change the fuel log instead.
-    const isAutoMileageLog = logType === "mileage" && log.source === "fuel_log";
-    const actionMenuItems: ActionMenuItem[] = isAutoMileageLog
+    const actionMenuItems: ActionMenuItem[] = isAutoMileageLog(logType, log)
       ? [
           {
             label:

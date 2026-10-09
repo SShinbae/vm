@@ -28,9 +28,6 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-const AUTO_MILEAGE_READ_ONLY_MESSAGE =
-  "This mileage log was created from fuel logs. Edit or delete the fuel log instead.";
-
 export default function EditMileageLogScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { user } = useAuth();
@@ -139,7 +136,7 @@ export default function EditMileageLogScreen() {
 
       let errorMsg = error;
       if (error === AUTO_MILEAGE_LOG_READ_ONLY) {
-        errorMsg = AUTO_MILEAGE_READ_ONLY_MESSAGE;
+        errorMsg = AUTO_MILEAGE_LOG_READ_ONLY;
       } else if (
         error.includes("not found") ||
         error.includes("no longer exists")
@@ -182,11 +179,7 @@ export default function EditMileageLogScreen() {
       setDeleteModalVisible(false);
 
       if (error) {
-        showError(
-          error === AUTO_MILEAGE_LOG_READ_ONLY
-            ? AUTO_MILEAGE_READ_ONLY_MESSAGE
-            : error,
-        );
+        showError(error);
       } else {
         posthog?.capture("mileage_log_deleted");
         showSuccess("Mileage log deleted successfully!");
