@@ -2,7 +2,14 @@ import { baseColors, withOpacity } from "@/src/design-system";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import * as Haptics from "expo-haptics";
 import React, { useState } from "react";
-import { Modal, Pressable, Text, TouchableOpacity, View } from "react-native";
+import {
+  Modal,
+  Pressable,
+  Text,
+  TouchableOpacity,
+  useWindowDimensions,
+  View,
+} from "react-native";
 import { useStyles } from "react-native-unistyles";
 
 export interface ActionMenuItem {
@@ -20,6 +27,7 @@ interface ActionMenuProps {
 
 export function ActionMenu({ items, disabled = false }: ActionMenuProps) {
   const { theme } = useStyles();
+  const { width: windowWidth } = useWindowDimensions();
   const [visible, setVisible] = useState(false);
   const [menuPosition, setMenuPosition] = useState({ x: 0, y: 0 });
 
@@ -97,6 +105,8 @@ export function ActionMenu({ items, disabled = false }: ActionMenuProps) {
               borderWidth: 1,
               borderColor: theme.colors.border,
               minWidth: 160,
+              // Keep long labels on screen; they wrap instead.
+              maxWidth: windowWidth - 2 * theme.spacing.xl,
               shadowColor: theme.colors.black,
               shadowOffset: { width: 0, height: 4 },
               shadowOpacity: 0.15,
@@ -135,6 +145,7 @@ export function ActionMenu({ items, disabled = false }: ActionMenuProps) {
                 />
                 <Text
                   style={{
+                    flexShrink: 1,
                     fontSize: theme.fontSize.base,
                     fontWeight: theme.fontWeight.medium,
                     color:
