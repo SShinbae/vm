@@ -10,6 +10,7 @@ import {
   NotificationPreferences,
   sendExpoPush,
   shouldDeliverNotification,
+  timezoneMidnight,
 } from "@/netlify/functions/_shared/notifications";
 
 const mockFrom = supabaseAdmin.from as jest.Mock;
@@ -278,5 +279,26 @@ describe("sendExpoPush", () => {
       sendExpoPush({ recipientIds: ["user-1"], title: "T", body: "B" }),
     ).resolves.toBe(false);
     expect(mockDeleteIn).not.toHaveBeenCalled();
+  });
+});
+
+// Fixed instants with known answers: must hold whatever the host's own time
+// zone is (run with TZ=Asia/Kuala_Lumpur too — the old version failed there).
+describe("timezoneMidnight", () => {
+  it.each([
+    ["UTC", "2026-10-08T06:30:00Z", "2026-10-08T00:00:00.000Z"],
+    ["Asia/Kuala_Lumpur", "2026-10-08T06:30:00Z", "2026-10-07T16:00:00.000Z"],
+    // 01:00 local on the 9th
+    ["Asia/Kuala_Lumpur", "2026-10-08T17:00:00Z", "2026-10-08T16:00:00.000Z"],
+    // daylight time (UTC-4); 23:00 local on the 7th
+    ["America/New_York", "2026-10-08T03:00:00Z", "2026-10-07T04:00:00.000Z"],
+  ])("returns local midnight for %s at %s", (timezone, now, expected) => {
+    expect(timezoneMidnight(new Date(now), timezone)).toBe(expected);
+  });
+
+  it("falls back to UTC midnight for an invalid time zone", () => {
+    expect(
+      timezoneMidnight(new Date("2026-10-08T06:30:00Z"), "Not/AZone"),
+    ).toBe("2026-10-08T00:00:00.000Z");
   });
 });

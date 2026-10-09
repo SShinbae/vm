@@ -95,6 +95,11 @@ async function handleGroupInvitation(
   return result !== "failed" || emailSent;
 }
 
+/** "fuel_logs" → "fuel log", for notification text ("… added a fuel log …"). */
+export function logChangeLabel(table: string): string {
+  return `${table.replace("_logs", "").replace("_", " ")} log`;
+}
+
 async function handleLogChange(payload: WebhookPayload): Promise<boolean> {
   const record = payload.record || payload.old_record!;
   const { data: vehicle } = await supabase
@@ -132,7 +137,7 @@ async function handleLogChange(payload: WebhookPayload): Promise<boolean> {
       : payload.type === "DELETE"
         ? "deleted"
         : "updated";
-  const logType = payload.table.replace("_logs", "").replace("_", " ");
+  const logType = logChangeLabel(payload.table);
   const notificationType = payload.table.replace(
     "_logs",
     "_log",

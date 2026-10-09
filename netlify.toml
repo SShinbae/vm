@@ -74,6 +74,9 @@
 [functions."generate-analytics-insights"]
   schedule = "0 11 * * 1"
 
+[functions."prune-push-tokens"]
+  schedule = "0 3 * * *"
+
 # API routes for Netlify Functions
 [[redirects]]
   from = "/api/*"

@@ -128,7 +128,12 @@ export function shouldDeliverNotification(
   return quiet ? { deliver: false, reason: "quiet hours" } : { deliver: true };
 }
 
-function timezoneMidnight(now: Date, timezone: string): string {
+// Start of "today" in `timezone`, as a UTC ISO string. Uses only Intl parts —
+// never parses a locale string, which would read it in the server's own zone
+// (that made the daily limit miss rows on non-UTC hosts).
+// ponytail: offset taken at `now`; on a DST-change day midnight can be 1h off,
+// fine for a per-day notification cap.
+export function timezoneMidnight(now: Date, timezone: string): string {
   let parts: Intl.DateTimeFormatPart[];
   try {
     parts = new Intl.DateTimeFormat("en-US", {
@@ -136,6 +141,10 @@ function timezoneMidnight(now: Date, timezone: string): string {
       year: "numeric",
       month: "2-digit",
       day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hourCycle: "h23",
     }).formatToParts(now);
   } catch {
     return new Date(
@@ -145,15 +154,19 @@ function timezoneMidnight(now: Date, timezone: string): string {
 
   const value = (type: Intl.DateTimeFormatPartTypes) =>
     Number(parts.find((part) => part.type === type)?.value);
-  const approximate = new Date(
-    Date.UTC(value("year"), value("month") - 1, value("day")),
+  const year = value("year");
+  const month = value("month") - 1;
+  const day = value("day");
+  const localAsUtc = Date.UTC(
+    year,
+    month,
+    day,
+    value("hour"),
+    value("minute"),
+    value("second"),
   );
-  const displayed = new Date(
-    approximate.toLocaleString("en-US", { timeZone: timezone }),
-  );
-  return new Date(
-    approximate.getTime() - (displayed.getTime() - approximate.getTime()),
-  ).toISOString();
+  const offsetMs = Math.round((localAsUtc - now.getTime()) / 60_000) * 60_000;
+  return new Date(Date.UTC(year, month, day) - offsetMs).toISOString();
 }
 
 async function reachedDailyLimit(
