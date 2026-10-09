@@ -8,6 +8,9 @@ import {
 } from "../../types";
 import { canUserAccessVehicle } from "../utils/serviceUtils";
 
+/** Auto mileage logs mirror that day's fuel logs (database trigger); edit or delete the fuel log instead. */
+export const AUTO_MILEAGE_LOG_READ_ONLY = "AUTO_MILEAGE_LOG_READ_ONLY";
+
 export class MileageLogService {
   static async getMileageLogs(
     vehicleId?: string,
@@ -233,9 +236,9 @@ export class MileageLogService {
       // First, get the log to check vehicle access and ensure it exists
       const { data: existingLog, error: fetchError } = await supabase
         .from("mileage_logs")
-        .select("vehicle_id, user_id")
+        .select("vehicle_id, user_id, source")
         .eq("id", id)
-        .single<{ vehicle_id: string; user_id: string }>();
+        .single<{ vehicle_id: string; user_id: string; source: string }>();
 
       if (fetchError) {
         logger.error("Error fetching existing mileage log:", fetchError);
@@ -252,6 +255,14 @@ export class MileageLogService {
       if (!existingLog) {
         logger.error("No mileage log found with ID:", id);
         return { data: null, error: "Mileage log not found", loading: false };
+      }
+
+      if (existingLog.source === "fuel_log") {
+        return {
+          data: null,
+          error: AUTO_MILEAGE_LOG_READ_ONLY,
+          loading: false,
+        };
       }
 
       // Validate that user can access the vehicle (owns it or has shared access)
@@ -344,9 +355,9 @@ export class MileageLogService {
       // First, get the log to check vehicle access and ensure it exists
       const { data: existingLog, error: fetchError } = await supabase
         .from("mileage_logs")
-        .select("vehicle_id")
+        .select("vehicle_id, source")
         .eq("id", id)
-        .single<{ vehicle_id: string }>();
+        .single<{ vehicle_id: string; source: string }>();
 
       if (fetchError) {
         logger.error(
@@ -366,6 +377,14 @@ export class MileageLogService {
       if (!existingLog) {
         logger.error("No mileage log found with ID for deletion:", id);
         return { data: null, error: "Mileage log not found", loading: false };
+      }
+
+      if (existingLog.source === "fuel_log") {
+        return {
+          data: null,
+          error: AUTO_MILEAGE_LOG_READ_ONLY,
+          loading: false,
+        };
       }
 
       // Validate that user can access the vehicle (owns it or has shared access)

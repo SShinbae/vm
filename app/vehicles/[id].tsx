@@ -377,21 +377,34 @@ export default function VehicleDetailScreen() {
         ? "fuel"
         : "mileage";
 
-    const actionMenuItems: ActionMenuItem[] = [
-      {
-        label: "Edit",
-        icon: "pencil",
-        onPress: () => handleEditLog(logType, log.id),
-        disabled: !canModify,
-      },
-      {
-        label: "Delete",
-        icon: "trash",
-        onPress: () => handleDeleteLog(logType, log.id, getLogText()),
-        variant: "danger",
-        disabled: !canModify,
-      },
-    ];
+    // Auto mileage logs mirror that day's fuel logs (database trigger) and
+    // are read-only: change the fuel log instead.
+    const isAutoMileageLog = logType === "mileage" && log.source === "fuel_log";
+    const actionMenuItems: ActionMenuItem[] = isAutoMileageLog
+      ? [
+          {
+            label:
+              "Created from fuel logs. Edit or delete the fuel log instead.",
+            icon: "info.circle",
+            onPress: () => {},
+            disabled: true,
+          },
+        ]
+      : [
+          {
+            label: "Edit",
+            icon: "pencil",
+            onPress: () => handleEditLog(logType, log.id),
+            disabled: !canModify,
+          },
+          {
+            label: "Delete",
+            icon: "trash",
+            onPress: () => handleDeleteLog(logType, log.id, getLogText()),
+            variant: "danger",
+            disabled: !canModify,
+          },
+        ];
 
     return (
       <TouchableOpacity

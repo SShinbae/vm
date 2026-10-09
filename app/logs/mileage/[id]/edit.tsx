@@ -12,6 +12,7 @@ import { useToast } from "@/hooks/useToast";
 import { useAuth } from "@/lib/contexts/AuthContext";
 import { canUserAccessVehicle } from "@/lib/utils/serviceUtils";
 import { MileageLogService } from "@/lib/services/loggingService";
+import { AUTO_MILEAGE_LOG_READ_ONLY } from "@/lib/services/mileageLogService";
 import { MileageLog, MileageLogFormData } from "@/types";
 import { router, useLocalSearchParams } from "expo-router";
 import { usePostHog } from "posthog-react-native";
@@ -26,6 +27,9 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+
+const AUTO_MILEAGE_READ_ONLY_MESSAGE =
+  "This mileage log was created from fuel logs. Edit or delete the fuel log instead.";
 
 export default function EditMileageLogScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -134,7 +138,12 @@ export default function EditMileageLogScreen() {
       console.error("Error updating mileage log:", error);
 
       let errorMsg = error;
-      if (error.includes("not found") || error.includes("no longer exists")) {
+      if (error === AUTO_MILEAGE_LOG_READ_ONLY) {
+        errorMsg = AUTO_MILEAGE_READ_ONLY_MESSAGE;
+      } else if (
+        error.includes("not found") ||
+        error.includes("no longer exists")
+      ) {
         errorMsg =
           "This mileage log no longer exists. It may have been deleted by another user.";
       } else if (
@@ -173,7 +182,11 @@ export default function EditMileageLogScreen() {
       setDeleteModalVisible(false);
 
       if (error) {
-        showError(error);
+        showError(
+          error === AUTO_MILEAGE_LOG_READ_ONLY
+            ? AUTO_MILEAGE_READ_ONLY_MESSAGE
+            : error,
+        );
       } else {
         posthog?.capture("mileage_log_deleted");
         showSuccess("Mileage log deleted successfully!");
