@@ -128,8 +128,22 @@ function RegisterScreen() {
 
   const termsLabel = (
     <Text style={styles.termsLabel}>
-      I agree to the <Text style={styles.termsLink}>Terms of Service</Text> and{" "}
-      <Text style={styles.termsLink}>Privacy Policy</Text>
+      I agree to the{" "}
+      <Text
+        style={styles.termsLink}
+        accessibilityRole="link"
+        onPress={() => router.push("/terms")}
+      >
+        Terms of Service
+      </Text>{" "}
+      and{" "}
+      <Text
+        style={styles.termsLink}
+        accessibilityRole="link"
+        onPress={() => router.push("/privacy")}
+      >
+        Privacy Policy
+      </Text>
     </Text>
   );
 

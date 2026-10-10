@@ -24,6 +24,10 @@ const AUTH_PAGES = [
   "confirm",
 ] as const;
 
+// Public pages: readable by anyone, signed in or not, with no loading gate
+// (their static HTML must carry the real text for crawlers and Google review).
+const PUBLIC_PAGES = ["privacy", "terms"] as const;
+
 // Pages that should redirect to login when user is not authenticated
 const INVALID_AUTH_PAGES = [
   "confirmation-success",
@@ -47,6 +51,7 @@ const AUTH_ROUTES = {
 
 type AuthPage = (typeof AUTH_PAGES)[number];
 type InvalidAuthPage = (typeof INVALID_AUTH_PAGES)[number];
+type PublicPage = (typeof PUBLIC_PAGES)[number];
 type SegmentPath = string;
 
 interface RedirectState {
@@ -66,6 +71,7 @@ interface RouteState {
   inTabs: boolean;
   isOnAuthPage: boolean;
   isOnInvalidAuthPage: boolean;
+  inPublicPage: boolean;
 }
 
 // ============================================================================
@@ -127,6 +133,7 @@ export function getRouteState(
   const inRootIndex =
     !segmentPath || segmentPath === "" || segmentPath === "index";
   const inTabs = segments[0] === "(tabs)";
+  const inPublicPage = PUBLIC_PAGES.includes(segments[0] as PublicPage);
 
   // Check if current page is an auth page
   const isOnAuthPage =
@@ -145,6 +152,7 @@ export function getRouteState(
     inTabs,
     isOnAuthPage,
     isOnInvalidAuthPage,
+    inPublicPage,
   };
 }
 
@@ -239,6 +247,7 @@ export function AuthGuard({ children }: AuthGuardProps) {
     inTabs,
     isOnAuthPage,
     isOnInvalidAuthPage,
+    inPublicPage,
   } = routeState;
 
   // Compute shouldShowLoading early (used in multiple places)
@@ -346,6 +355,7 @@ export function AuthGuard({ children }: AuthGuardProps) {
     if (!initialized || loading) return;
     if (!segmentPath) return; // Skip during transitions
     if (isPasswordRecovery) return; // Skip during password recovery
+    if (inPublicPage) return; // Privacy/terms: open to everyone
 
     // IMPORTANT: Never interfere with auth pages - let them handle their own redirects
     // This prevents flickering when auth state changes during login/register attempts
@@ -423,6 +433,7 @@ export function AuthGuard({ children }: AuthGuardProps) {
     navigate,
     inDemoGroup,
     isDemoMode,
+    inPublicPage,
   ]);
 
   // ============================================================================
@@ -431,6 +442,8 @@ export function AuthGuard({ children }: AuthGuardProps) {
 
   // If user is in demo routes, bypass all authentication checks
   // This check happens AFTER all hooks have been called
+  if (inPublicPage) return <>{children}</>;
+
   if (inDemoGroup || isDemoMode) {
     if (__DEV__) {
       console.log("[AuthGuard] In demo mode, bypassing auth checks");

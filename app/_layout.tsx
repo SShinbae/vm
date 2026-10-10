@@ -58,6 +58,7 @@ const ROUTE_TITLES: Record<string, string> = {
   "/email-confirmation": "Confirm Your Email",
   "/confirmation-success": "Email Confirmed",
   "/privacy": "Privacy Policy",
+  "/terms": "Terms of Service",
   "/vehicles": "My Vehicles",
   "/notifications": "Notifications",
   "/profile": "Profile",
