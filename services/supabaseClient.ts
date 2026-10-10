@@ -107,6 +107,13 @@ const shouldDetectSessionInUrl = (): boolean => {
   return false;
 };
 
+// Snapshot before createClient: detectSessionInUrl strips ?code= and
+// #access_token from the address bar, and /auth/confirm still needs them.
+export const initialUrl =
+  Platform.OS === "web" && typeof window !== "undefined"
+    ? { search: window.location.search, hash: window.location.hash }
+    : { search: "", hash: "" };
+
 // Create Supabase client with error handling to prevent production crashes
 let supabase: ReturnType<typeof createClient<Database>>;
 
