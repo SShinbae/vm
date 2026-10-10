@@ -397,7 +397,7 @@ export function Modal(props: ModalProps) {
       <View
         style={getContentStyle()}
         accessibilityViewIsModal
-        onAccessibilityEscape={onClose}
+        onAccessibilityEscape={handleBackdropPress}
       >
         {(title || showCloseButton) && (
           <View style={styles.header}>

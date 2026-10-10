@@ -4,9 +4,10 @@ import React, {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
-import { Platform } from "react-native";
+import { Keyboard, Platform } from "react-native";
 import { FullWindowOverlay } from "react-native-screens";
 import { AlertModal, ChoiceModal, ConfirmModal } from "@/components/ui/Modal";
 
@@ -72,17 +73,17 @@ const DialogContext = createContext<DialogApi | undefined>(undefined);
 
 export function DialogProvider({ children }: { children: React.ReactNode }) {
   const [queue, setQueue] = useState<Request[]>([]);
+  // Mirror of the queue, read outside state updaters so dedupe has no side
+  // effects inside setQueue.
+  const pending = useRef<Request[]>([]);
   // An identical pending request (double tap) resolves as cancel at once.
-  // Resolving inside the updater is safe: a promise settles only once.
-  const enqueue = useCallback(
-    (r: Request) =>
-      setQueue((q) => {
-        if (!q.some(sameAs(r))) return [...q, r];
-        cancel(r);
-        return q;
-      }),
-    [],
-  );
+  const enqueue = useCallback((r: Request) => {
+    if (pending.current.some(sameAs(r))) return cancel(r);
+    pending.current.push(r);
+    // A dialog opened over a focused input would sit under the keyboard.
+    Keyboard.dismiss();
+    setQueue((q) => [...q, r]);
+  }, []);
 
   const api = useMemo<DialogApi>(() => {
     const confirm = (opts: ConfirmOptions) =>
@@ -112,7 +113,10 @@ export function DialogProvider({ children }: { children: React.ReactNode }) {
 
   const head = queue[0];
   // Dequeue by identity so a second resolve of the same head can't drop the next one.
-  const done = () => setQueue((q) => (q[0] === head ? q.slice(1) : q));
+  const done = () => {
+    pending.current = pending.current.filter((r) => r !== head);
+    setQueue((q) => (q[0] === head ? q.slice(1) : q));
+  };
   // iOS: an RN Modal can't present while another RN Modal is up (e.g. Edit
   // Profile), which would hide the head and jam the queue. Draw the dialog in
   // a window-level overlay instead. Android keeps RN Modal (back button), web
