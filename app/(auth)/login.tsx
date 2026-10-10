@@ -7,8 +7,8 @@ import {
   AuthInput,
   AuthLayout,
   AuthLink,
+  GoogleSignInButton,
 } from "@/components/auth";
-import { withWebAlert } from "@/components/ui";
 import { useToast } from "@/hooks/useToast";
 import { useAuth } from "@/lib/contexts/AuthContext";
 import { isValidEmail } from "@/utils/validation";
@@ -162,6 +162,8 @@ function LoginScreen() {
         disabled={!email.trim() || !password.trim()}
       />
 
+      <GoogleSignInButton />
+
       {/* Sign Up Section */}
       <AuthLink
         text="Don't have an account?"
@@ -172,4 +174,4 @@ function LoginScreen() {
   );
 }
 
-export default withWebAlert(LoginScreen);
+export default LoginScreen;

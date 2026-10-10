@@ -7,8 +7,9 @@ import {
   AuthInput,
   AuthLayout,
   AuthLink,
+  GoogleSignInButton,
 } from "@/components/auth";
-import { PasswordStrengthIndicator, withWebAlert } from "@/components/ui";
+import { PasswordStrengthIndicator } from "@/components/ui";
 import { useAuth } from "@/lib/contexts/AuthContext";
 import { useToast } from "@/hooks/useToast";
 import { isValidEmail, validatePassword } from "@/utils/validation";
@@ -202,6 +203,8 @@ function RegisterScreen() {
         disabled={!isFormValid()}
       />
 
+      <GoogleSignInButton />
+
       {/* Login Section */}
       <AuthLink
         text="Already have an account?"
@@ -212,4 +215,4 @@ function RegisterScreen() {
   );
 }
 
-export default withWebAlert(RegisterScreen);
+export default RegisterScreen;
