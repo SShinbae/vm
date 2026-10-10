@@ -6,7 +6,7 @@ import {
   AuthInput,
   AuthLayout,
 } from "@/components/auth";
-import { useAlert, withWebAlert } from "@/components/ui";
+import { useToast } from "@/hooks/useToast";
 import { useAuth } from "@/lib/contexts/AuthContext";
 import { isValidEmail } from "@/utils/validation";
 import { Ionicons } from "@expo/vector-icons";
@@ -14,12 +14,12 @@ import { Link, router, useRouter } from "expo-router";
 import React, { useState } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
-function ForgotPasswordScreen() {
+export default function ForgotPasswordScreen() {
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
   const { resetPassword } = useAuth();
-  const { showError } = useAlert();
+  const { showError } = useToast();
   const { theme } = useStyles();
   const colors = theme.colors;
   const navigation = useRouter();
@@ -34,12 +34,12 @@ function ForgotPasswordScreen() {
 
   const handleResetPassword = async () => {
     if (!email.trim()) {
-      showError("Error", "Please enter your email address");
+      showError("Please enter your email address");
       return;
     }
 
     if (!isValidEmail(email)) {
-      showError("Error", "Please enter a valid email address");
+      showError("Please enter a valid email address");
       return;
     }
 
@@ -48,7 +48,7 @@ function ForgotPasswordScreen() {
     setLoading(false);
 
     if (error) {
-      showError("Reset Failed", error);
+      showError("Reset Failed", { message: error });
     } else {
       setEmailSent(true);
     }
@@ -290,5 +290,3 @@ function ForgotPasswordScreen() {
     </AuthLayout>
   );
 }
-
-export default withWebAlert(ForgotPasswordScreen);

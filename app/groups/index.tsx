@@ -2,7 +2,7 @@ import { withOpacity, spacing } from "@/src/design-system";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { SkeletonList } from "@/components/ui/Skeleton";
 import { useAuth } from "@/lib/contexts/AuthContext";
-import { useDialog } from "@/lib/contexts/DialogContext";
+import { toast } from "@/hooks/useToast";
 import { GroupService } from "@/lib/services/groupService";
 import { GroupWithMembers } from "@/types";
 import { Image } from "expo-image";
@@ -21,7 +21,6 @@ import { useStyles } from "react-native-unistyles";
 export default function GroupsScreen() {
   const { theme } = useStyles();
   const { user } = useAuth();
-  const dialog = useDialog();
   const navigation = useRouter();
   const [groups, setGroups] = useState<GroupWithMembers[]>([]);
   const [loading, setLoading] = useState(true);
@@ -38,12 +37,12 @@ export default function GroupsScreen() {
   const fetchGroups = useCallback(async () => {
     const result = await GroupService.getGroups();
     if (result.error) {
-      dialog.showError("Error", "Failed to load groups");
+      toast.error("Failed to load groups");
     } else {
       setGroups(result.data || []);
     }
     setLoading(false);
-  }, [dialog]);
+  }, []);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);

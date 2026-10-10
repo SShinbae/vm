@@ -8,9 +8,9 @@ import {
   StyleSheet,
   ScrollView,
   Modal,
-  Alert,
 } from "react-native";
 import { IconSymbol } from "./icon-symbol";
+import { useToast } from "@/hooks/useToast";
 import { GroupService } from "@/lib/services/groupService";
 import { Group } from "@/types/database-v2";
 
@@ -37,6 +37,7 @@ export const GroupSelector: React.FC<GroupSelectorProps> = ({
   const [loading, setLoading] = useState(true);
   const [modalVisible, setModalVisible] = useState(false);
   const { theme } = useStyles();
+  const { showError, showWarning } = useToast();
   const colors = theme.colors;
 
   useEffect(() => {
@@ -47,7 +48,7 @@ export const GroupSelector: React.FC<GroupSelectorProps> = ({
     try {
       const result = await GroupService.getGroups();
       if (result.error) {
-        Alert.alert("Error", "Failed to load groups");
+        showError("Couldn't load groups");
       } else {
         setGroups(result.data || []);
       }
@@ -68,10 +69,9 @@ export const GroupSelector: React.FC<GroupSelectorProps> = ({
     } else {
       // Add to selection
       if (maxSelections && selectedGroupIds.length >= maxSelections) {
-        Alert.alert(
-          "Selection Limit",
-          `You can only select up to ${maxSelections} group${maxSelections > 1 ? "s" : ""}.`,
-        );
+        showWarning("Selection limit", {
+          message: `You can only select up to ${maxSelections} group${maxSelections > 1 ? "s" : ""}.`,
+        });
         return;
       }
       newSelection = [...selectedGroupIds, groupId];

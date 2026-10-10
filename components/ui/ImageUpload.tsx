@@ -7,13 +7,14 @@ import { MediaTypeOptions } from "expo-image-picker";
 import React, { useRef, useState } from "react";
 import {
   ActivityIndicator,
-  Alert,
   Platform,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
+import { useToast } from "@/hooks/useToast";
+import { useDialog } from "@/lib/contexts/DialogContext";
 import { IconSymbol } from "./icon-symbol";
 import { ImageCropModal } from "./ImageCropModal";
 
@@ -51,8 +52,10 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { theme } = useStyles();
   const colors = theme.colors;
+  const { showSuccess, showError, showWarning, showInfo } = useToast();
+  const { confirm, choose } = useDialog();
 
-  const handleImageSelect = () => {
+  const handleImageSelect = async () => {
     if (disabled || uploading) return;
 
     if (Platform.OS === "web") {
@@ -60,11 +63,16 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
       fileInputRef.current?.click();
     } else {
       // Mobile: Use ImagePicker (would need expo-image-picker)
-      Alert.alert("Select Image", "Choose image source", [
-        { text: "Camera", onPress: () => pickImageFromCamera() },
-        { text: "Gallery", onPress: () => pickImageFromGallery() },
-        { text: "Cancel", style: "cancel" },
-      ]);
+      const pick = await choose({
+        title: "Select image",
+        message: "Choose image source",
+        options: [
+          { label: "Camera", value: "camera" },
+          { label: "Gallery", value: "gallery" },
+        ],
+      });
+      if (pick === "camera") pickImageFromCamera();
+      else if (pick === "gallery") pickImageFromGallery();
     }
   };
 
@@ -83,10 +91,9 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
       // Request camera permissions
       const { status } = await ImagePicker.requestCameraPermissionsAsync();
       if (status !== "granted") {
-        Alert.alert(
-          "Permission Denied",
-          "Camera access is required to take photos.",
-        );
+        showWarning("Camera permission needed", {
+          message: "Camera access is required to take photos.",
+        });
         return;
       }
 
@@ -101,7 +108,9 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
         await processImageUri(result.assets[0].uri);
       }
     } catch (error: any) {
-      Alert.alert("Camera Error", error.message || "Failed to access camera");
+      showError("Camera error", {
+        message: error.message || "Failed to access camera",
+      });
     }
   };
 
@@ -111,10 +120,9 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
       const { status } =
         await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (status !== "granted") {
-        Alert.alert(
-          "Permission Denied",
-          "Photo library access is required to select images.",
-        );
+        showWarning("Photo library permission needed", {
+          message: "Photo library access is required to select images.",
+        });
         return;
       }
 
@@ -129,10 +137,9 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
         await processImageUri(result.assets[0].uri);
       }
     } catch (error: any) {
-      Alert.alert(
-        "Gallery Error",
-        error.message || "Failed to access photo library",
-      );
+      showError("Gallery error", {
+        message: error.message || "Failed to access photo library",
+      });
     }
   };
 
@@ -152,7 +159,7 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
         const validation = ImageUploadService.validateImageFile(file);
         if (!validation.isValid) {
           onUploadError?.(validation.error!);
-          Alert.alert("Invalid File", validation.error!);
+          showError("Invalid file", { message: validation.error! });
           setLocalImageUri(null);
           return;
         }
@@ -173,7 +180,7 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
 
         if (result.error) {
           onUploadError?.(result.error);
-          Alert.alert("Upload Failed", result.error);
+          showError("Upload failed", { message: result.error });
           setLocalImageUri(null);
         } else {
           const imageUrl =
@@ -185,7 +192,7 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
                 ? result.data
                 : result.data!.image_url;
           onUploadComplete?.(imageUrl as string);
-          Alert.alert("Success", "Image uploaded successfully!");
+          showSuccess("Image uploaded");
         }
       } else {
         // Mobile: Use direct URI upload to avoid ArrayBuffer blob issues
@@ -205,7 +212,7 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
 
         if (result.error) {
           onUploadError?.(result.error);
-          Alert.alert("Upload Failed", result.error);
+          showError("Upload failed", { message: result.error });
           setLocalImageUri(null);
         } else {
           const imageUrl =
@@ -217,30 +224,17 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
                 ? result.data
                 : result.data!.image_url;
           onUploadComplete?.(imageUrl as string);
-          Alert.alert("Success", "Image uploaded successfully!");
+          showSuccess("Image uploaded");
         }
       }
     } catch (error: any) {
       onUploadError?.(error.message);
-      Alert.alert("Upload Error", error.message);
+      showError("Upload error", { message: error.message });
       setLocalImageUri(null);
     } finally {
       setUploading(false);
     }
   };
-
-  // Utility function for future use - validates image dimensions
-  // const validateImageSize = (width: number, height: number): boolean => {
-  //   const maxDimension = 4096; // Typical max for mobile devices
-  //   if (width > maxDimension || height > maxDimension) {
-  //     Alert.alert(
-  //       "Image Too Large",
-  //       `Please select a smaller image (max ${maxDimension}px)`,
-  //     );
-  //     return false;
-  //   }
-  //   return true;
-  // };
 
   const handleCropComplete = (croppedFile: File) => {
     console.log("🎯 Crop complete, received file:", croppedFile);
@@ -276,10 +270,9 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
     onUploadError?.(error);
 
     // Provide user-friendly error message
-    Alert.alert(
-      "Crop Error",
-      error || "Failed to crop image. Please try again.",
-    );
+    showError("Couldn't crop image", {
+      message: error || "Please try again.",
+    });
   };
 
   const processImageFile = async (file: File) => {
@@ -296,7 +289,7 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
       if (!validation.isValid) {
         console.error("❌ Validation failed:", validation.error);
         onUploadError?.(validation.error!);
-        Alert.alert("Invalid File", validation.error!);
+        showError("Invalid file", { message: validation.error! });
         return;
       }
 
@@ -344,7 +337,7 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
       if (result.error) {
         console.error("❌ Upload failed:", result.error);
         onUploadError?.(result.error);
-        Alert.alert("Upload Failed", result.error);
+        showError("Upload failed", { message: result.error });
         setLocalImageUri(null);
       } else {
         const imageUrl =
@@ -357,12 +350,12 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
               : result.data!.image_url;
         console.log("✅ Upload successful! Image URL:", imageUrl);
         onUploadComplete?.(imageUrl as string);
-        Alert.alert("Success", "Image uploaded successfully!");
+        showSuccess("Image uploaded");
       }
     } catch (error: any) {
       console.error("❌ Upload error:", error);
       onUploadError?.(error.message);
-      Alert.alert("Upload Error", error.message);
+      showError("Upload error", { message: error.message });
       setLocalImageUri(null);
     } finally {
       console.log("🏁 Upload process complete, resetting uploading state");
@@ -371,39 +364,36 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
   };
 
   const handleDeleteImage = async () => {
-    Alert.alert("Delete Image", "Are you sure you want to delete this image?", [
-      { text: "Cancel", style: "cancel" },
-      {
-        text: "Delete",
-        style: "destructive",
-        onPress: async () => {
-          try {
-            setUploading(true);
+    const ok = await confirm({
+      title: "Delete image?",
+      message: "Are you sure you want to delete this image?",
+      confirmText: "Delete",
+      destructive: true,
+    });
+    if (!ok) return;
+    try {
+      setUploading(true);
 
-            if (type === "avatar") {
-              const result = await ImageUploadService.deleteProfileAvatar();
-              if (result.error) {
-                Alert.alert("Delete Failed", result.error);
-              } else {
-                onUploadComplete?.(null as any);
-                setLocalImageUri(null);
-                Alert.alert("Success", "Avatar deleted successfully!");
-              }
-            } else {
-              // For vehicle images, this would need the image ID
-              Alert.alert(
-                "Info",
-                "Vehicle image deletion requires additional implementation",
-              );
-            }
-          } catch (error: any) {
-            Alert.alert("Delete Error", error.message);
-          } finally {
-            setUploading(false);
-          }
-        },
-      },
-    ]);
+      if (type === "avatar") {
+        const result = await ImageUploadService.deleteProfileAvatar();
+        if (result.error) {
+          showError("Delete failed", { message: result.error });
+        } else {
+          onUploadComplete?.(null as any);
+          setLocalImageUri(null);
+          showSuccess("Avatar deleted");
+        }
+      } else {
+        // For vehicle images, this would need the image ID
+        showInfo("Not available yet", {
+          message: "Vehicle image deletion requires additional implementation",
+        });
+      }
+    } catch (error: any) {
+      showError("Delete error", { message: error.message });
+    } finally {
+      setUploading(false);
+    }
   };
 
   const getImageSize = () => {
@@ -604,13 +594,15 @@ export const ImageGallery: React.FC<ImageGalleryProps> = ({
 }) => {
   const { theme } = useStyles();
   const colors = theme.colors;
+  const { showError } = useToast();
+  const { confirm } = useDialog();
 
   const handleImageUpload = (imageUrl: string) => {
     onImageAdded?.();
   };
 
   const handleImageError = (error: string) => {
-    Alert.alert("Upload Error", error);
+    showError("Upload error", { message: error });
   };
 
   const styles = StyleSheet.create({
@@ -678,23 +670,24 @@ export const ImageGallery: React.FC<ImageGalleryProps> = ({
                   justifyContent: "center",
                   alignItems: "center",
                 }}
-                onPress={() => {
-                  Alert.alert("Delete Image", "Are you sure?", [
-                    { text: "Cancel", style: "cancel" },
-                    {
-                      text: "Delete",
-                      style: "destructive",
-                      onPress: async () => {
-                        const result =
-                          await ImageUploadService.deleteVehicleImage(image.id);
-                        if (result.error) {
-                          Alert.alert("Error", result.error);
-                        } else {
-                          onImageDeleted?.();
-                        }
-                      },
-                    },
-                  ]);
+                onPress={async () => {
+                  const ok = await confirm({
+                    title: "Delete image?",
+                    message: "Are you sure?",
+                    confirmText: "Delete",
+                    destructive: true,
+                  });
+                  if (!ok) return;
+                  const result = await ImageUploadService.deleteVehicleImage(
+                    image.id,
+                  );
+                  if (result.error) {
+                    showError("Couldn't delete image", {
+                      message: result.error,
+                    });
+                  } else {
+                    onImageDeleted?.();
+                  }
                 }}
               >
                 <IconSymbol name="xmark" size={12} color="white" />

@@ -1,9 +1,9 @@
 import { spacing } from "@/src/design-system";
 import { IconSymbol } from "@/components/ui/icon-symbol";
-import { ConfirmModal } from "@/components/ui/Modal";
 import { useResponsiveLayout } from "@/hooks/use-responsive-layout";
 import { useToast } from "@/hooks/useToast";
 import { useAuth } from "@/lib/contexts/AuthContext";
+import { useDialog } from "@/lib/contexts/DialogContext";
 import { router, usePathname } from "expo-router";
 import React, { useState } from "react";
 import { Platform, Text, TouchableOpacity, View } from "react-native";
@@ -30,7 +30,8 @@ export function WebNavbar() {
   const pathname = usePathname();
   const { user, signOut } = useAuth();
   const { showError } = useToast();
-  const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const { confirm } = useDialog();
+  const [signingOut, setSigningOut] = useState(false);
   const { styles, theme } = useStyles(stylesheet);
 
   // Only render on web and larger screens
@@ -38,15 +39,22 @@ export function WebNavbar() {
     return null;
   }
 
-  const handleSignOutClick = () => {
-    setShowLogoutModal(true);
-  };
+  const handleSignOutClick = async () => {
+    if (signingOut) return;
+    const ok = await confirm({
+      title: "Sign out?",
+      message: "Are you sure you want to sign out?",
+      confirmText: "Sign out",
+    });
+    if (!ok) return;
 
-  const handleConfirmSignOut = async () => {
-    setShowLogoutModal(false);
+    setSigningOut(true);
     const { error } = await signOut();
     if (error) {
-      showError("Couldn't sign out. Check your connection and try again.");
+      setSigningOut(false);
+      showError("Couldn't sign out", {
+        message: "Check your connection and try again.",
+      });
       return;
     }
     router.replace("/(auth)/login");
@@ -111,17 +119,6 @@ export function WebNavbar() {
           <Text style={styles.signOutText}>Sign Out</Text>
         </TouchableOpacity>
       </View>
-
-      <ConfirmModal
-        visible={showLogoutModal}
-        onClose={() => setShowLogoutModal(false)}
-        onConfirm={handleConfirmSignOut}
-        title="Sign Out"
-        message="Are you sure you want to sign out?"
-        confirmText="Sign Out"
-        cancelText="Cancel"
-        variant="danger"
-      />
     </View>
   );
 }

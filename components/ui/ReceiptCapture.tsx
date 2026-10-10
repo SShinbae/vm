@@ -12,7 +12,7 @@ import {
 import { Image } from "expo-image";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { Modal } from "@/components/ui/Modal";
-import { useDialog } from "@/lib/contexts/DialogContext";
+import { toast } from "@/hooks/useToast";
 import { OCRService, ReceiptProcessingResult } from "@/lib/services/ocrService";
 import { OCRExtractedData } from "@/types";
 
@@ -40,7 +40,6 @@ export function ReceiptCapture({
   >([]);
   const { theme } = useStyles();
   const colors = theme.colors;
-  const dialog = useDialog();
 
   const showActionSheet = (
     title: string,
@@ -60,10 +59,10 @@ export function ReceiptCapture({
 
       const hasPermissions = await OCRService.requestPermissions();
       if (!hasPermissions) {
-        dialog.showError(
-          "Permissions Required",
-          "Camera and media library permissions are required to scan receipts. Please enable them in your device settings.",
-        );
+        toast.error("Permissions Required", {
+          message:
+            "Camera and media library permissions are required to scan receipts. Please enable them in your device settings.",
+        });
         return;
       }
 
@@ -87,14 +86,14 @@ export function ReceiptCapture({
             "Network error. Please check your internet connection and try again.";
         }
 
-        dialog.showError("Error", errorMessage);
+        toast.error("Error", { message: errorMessage });
       }
     } catch (error) {
       console.error("Camera capture error:", error);
-      dialog.showError(
-        "Error",
-        "An unexpected error occurred while capturing the receipt. Please try again.",
-      );
+      toast.error("Error", {
+        message:
+          "An unexpected error occurred while capturing the receipt. Please try again.",
+      });
     } finally {
       setProcessing(false);
     }
@@ -106,10 +105,10 @@ export function ReceiptCapture({
 
       const hasPermissions = await OCRService.requestPermissions();
       if (!hasPermissions) {
-        dialog.showError(
-          "Permissions Required",
-          "Media library permission is required to select receipt images. Please enable it in your device settings.",
-        );
+        toast.error("Permissions Required", {
+          message:
+            "Media library permission is required to select receipt images. Please enable it in your device settings.",
+        });
         return;
       }
 
@@ -136,14 +135,14 @@ export function ReceiptCapture({
             "No text was found in the image. Please try a clearer photo of your receipt.";
         }
 
-        dialog.showError("Error", errorMessage);
+        toast.error("Error", { message: errorMessage });
       }
     } catch (error) {
       console.error("Gallery pick error:", error);
-      dialog.showError(
-        "Error",
-        "An unexpected error occurred while processing the receipt. Please try again.",
-      );
+      toast.error("Error", {
+        message:
+          "An unexpected error occurred while processing the receipt. Please try again.",
+      });
     } finally {
       setProcessing(false);
     }
@@ -155,10 +154,10 @@ export function ReceiptCapture({
 
       const hasPermissions = await OCRService.requestPermissions();
       if (!hasPermissions) {
-        dialog.showError(
-          "Permissions Required",
-          "Camera permission is required to take pictures. Please enable it in your device settings.",
-        );
+        toast.error("Permissions Required", {
+          message:
+            "Camera permission is required to take pictures. Please enable it in your device settings.",
+        });
         return;
       }
 
@@ -175,14 +174,14 @@ export function ReceiptCapture({
         if (errorMessage.includes("cancelled")) {
           return;
         }
-        dialog.showError("Error", errorMessage);
+        toast.error("Error", { message: errorMessage });
       }
     } catch (error) {
       console.error("Picture only camera error:", error);
-      dialog.showError(
-        "Error",
-        "An unexpected error occurred while taking the picture. Please try again.",
-      );
+      toast.error("Error", {
+        message:
+          "An unexpected error occurred while taking the picture. Please try again.",
+      });
     } finally {
       setProcessing(false);
     }
@@ -194,10 +193,10 @@ export function ReceiptCapture({
 
       const hasPermissions = await OCRService.requestPermissions();
       if (!hasPermissions) {
-        dialog.showError(
-          "Permissions Required",
-          "Media library permission is required to select pictures. Please enable it in your device settings.",
-        );
+        toast.error("Permissions Required", {
+          message:
+            "Media library permission is required to select pictures. Please enable it in your device settings.",
+        });
         return;
       }
 
@@ -215,14 +214,14 @@ export function ReceiptCapture({
         if (errorMessage.includes("cancelled")) {
           return;
         }
-        dialog.showError("Error", errorMessage);
+        toast.error("Error", { message: errorMessage });
       }
     } catch (error) {
       console.error("Picture only gallery error:", error);
-      dialog.showError(
-        "Error",
-        "An unexpected error occurred while selecting the picture. Please try again.",
-      );
+      toast.error("Error", {
+        message:
+          "An unexpected error occurred while selecting the picture. Please try again.",
+      });
     } finally {
       setProcessing(false);
     }

@@ -3,10 +3,11 @@ import { LogDetailsBottomSheet } from "@/components/logs";
 import { MaxWidthContainer } from "@/components/layout/MaxWidthContainer";
 import { ActionMenu, ActionMenuItem } from "@/components/ui/ActionMenu";
 import { IconSymbol } from "@/components/ui/icon-symbol";
-import { AlertModal, ConfirmModal } from "@/components/ui/Modal";
 import { ServiceReceiptIndicator } from "@/components/ui/ReceiptViewer";
 import { SkeletonLogList } from "@/components/ui/Skeleton";
+import { useToast } from "@/hooks/useToast";
 import { useAuth } from "@/lib/contexts/AuthContext";
+import { useDialog } from "@/lib/contexts/DialogContext";
 import {
   FuelLogService,
   MileageLogService,
@@ -74,19 +75,9 @@ export default function LogsScreen() {
   const PAGE_SIZE = 20;
 
   // Modal states
-  const [deleteModalVisible, setDeleteModalVisible] = useState(false);
+  const { confirm } = useDialog();
+  const { showSuccess, showError, showWarning } = useToast();
   const [deleteLoading, setDeleteLoading] = useState(false);
-  const [selectedLog, setSelectedLog] = useState<{
-    type: LogType;
-    id: string;
-    description: string;
-  } | null>(null);
-  const [alertModalVisible, setAlertModalVisible] = useState(false);
-  const [alertMessage, setAlertMessage] = useState("");
-  const [alertTitle, setAlertTitle] = useState("");
-  const [alertVariant, setAlertVariant] = useState<
-    "info" | "success" | "warning" | "error"
-  >("info");
 
   // Bottom sheet states
   const bottomSheetRef = useRef<any>(null);
@@ -297,82 +288,69 @@ export default function LogsScreen() {
     ],
   );
 
-  const handleDeleteLog = (type: LogType, id: string, description: string) => {
-    setSelectedLog({ type, id, description });
-    setDeleteModalVisible(true);
-  };
-
-  const handleConfirmDelete = async () => {
-    if (!selectedLog) return;
+  const handleDeleteLog = async (
+    type: LogType,
+    id: string,
+    description: string,
+  ) => {
+    if (deleteLoading) return;
+    const ok = await confirm({
+      title: "Delete Log",
+      message: `Are you sure you want to delete this ${type} log?\n\n${description}`,
+      confirmText: "Delete",
+      destructive: true,
+    });
+    if (!ok) return;
 
     setDeleteLoading(true);
-
-    let result;
-    switch (selectedLog.type) {
-      case "mileage":
-        result = await MileageLogService.deleteMileageLog(selectedLog.id);
-        break;
-      case "fuel":
-        result = await FuelLogService.deleteFuelLog(selectedLog.id);
-        break;
-      case "service":
-        result = await ServiceLogService.deleteServiceLog(selectedLog.id);
-        break;
-    }
-
-    setDeleteLoading(false);
-    setDeleteModalVisible(false);
-
-    if (result?.error) {
-      let errorMessage = result.error;
-      if (
-        result.error.includes("not found") ||
-        result.error.includes("Log not found")
-      ) {
-        errorMessage = `This ${selectedLog.type} log no longer exists. It may have been deleted by another user.`;
-      } else if (result.error === "PERMISSION_DENIED_SHARED_VEHICLE") {
-        errorMessage = `This ${selectedLog.type} log belongs to a shared vehicle. You can view it but cannot modify or delete it.`;
-      } else if (result.error === "PERMISSION_DENIED_ACCESS") {
-        errorMessage = `You do not have permission to delete this ${selectedLog.type} log.`;
-      } else if (
-        result.error.includes("Access denied") ||
-        result.error.includes("not authenticated")
-      ) {
-        errorMessage = `You do not have permission to delete this ${selectedLog.type} log.`;
-      } else if (result.error.includes("Failed to delete")) {
-        errorMessage = `Unable to delete ${selectedLog.type} log. Please check your internet connection and try again.`;
+    try {
+      let result;
+      switch (type) {
+        case "mileage":
+          result = await MileageLogService.deleteMileageLog(id);
+          break;
+        case "fuel":
+          result = await FuelLogService.deleteFuelLog(id);
+          break;
+        case "service":
+          result = await ServiceLogService.deleteServiceLog(id);
+          break;
       }
 
-      showAlert("Error", errorMessage, "error");
-      await fetchAllLogs();
-    } else if (result?.data === true) {
-      await fetchAllLogs();
-      showAlert(
-        "Success",
-        `${selectedLog.type} log deleted successfully`,
-        "success",
-      );
-    } else {
-      showAlert(
-        "Warning",
-        `${selectedLog.type} log deletion status unclear. Please refresh to see current state.`,
-        "warning",
-      );
-      await fetchAllLogs();
+      if (result?.error) {
+        let errorMessage = result.error;
+        if (
+          result.error.includes("not found") ||
+          result.error.includes("Log not found")
+        ) {
+          errorMessage = `This ${type} log no longer exists. It may have been deleted by another user.`;
+        } else if (result.error === "PERMISSION_DENIED_SHARED_VEHICLE") {
+          errorMessage = `This ${type} log belongs to a shared vehicle. You can view it but cannot modify or delete it.`;
+        } else if (result.error === "PERMISSION_DENIED_ACCESS") {
+          errorMessage = `You do not have permission to delete this ${type} log.`;
+        } else if (
+          result.error.includes("Access denied") ||
+          result.error.includes("not authenticated")
+        ) {
+          errorMessage = `You do not have permission to delete this ${type} log.`;
+        } else if (result.error.includes("Failed to delete")) {
+          errorMessage = `Unable to delete ${type} log. Please check your internet connection and try again.`;
+        }
+
+        showError("Couldn't delete log", { message: errorMessage });
+        await fetchAllLogs();
+      } else if (result?.data === true) {
+        await fetchAllLogs();
+        showSuccess(`${type} log deleted successfully`);
+      } else {
+        showWarning("Delete status unclear", {
+          message: `Couldn't confirm the ${type} log was deleted. Check the log list.`,
+        });
+        await fetchAllLogs();
+      }
+    } finally {
+      setDeleteLoading(false);
     }
-
-    setSelectedLog(null);
-  };
-
-  const showAlert = (
-    title: string,
-    message: string,
-    variant: "info" | "success" | "warning" | "error" = "info",
-  ) => {
-    setAlertTitle(title);
-    setAlertMessage(message);
-    setAlertVariant(variant);
-    setAlertModalVisible(true);
   };
 
   const handleViewServiceDetail = (serviceId: string) => {
@@ -1403,26 +1381,6 @@ export default function LogsScreen() {
         >
           <IconSymbol name="plus" size={24} color={theme.colors.white} />
         </TouchableOpacity>
-
-        <ConfirmModal
-          visible={deleteModalVisible}
-          title="Delete Log"
-          message={`Are you sure you want to delete this ${selectedLog?.type} log?\n\n${selectedLog?.description}`}
-          confirmText="Delete"
-          cancelText="Cancel"
-          onConfirm={handleConfirmDelete}
-          onClose={() => setDeleteModalVisible(false)}
-          loading={deleteLoading}
-          variant="danger"
-        />
-
-        <AlertModal
-          visible={alertModalVisible}
-          title={alertTitle}
-          message={alertMessage}
-          variant={alertVariant}
-          onClose={() => setAlertModalVisible(false)}
-        />
 
         {Platform.OS !== "web" && LogDetailsBottomSheet && (
           <LogDetailsBottomSheet

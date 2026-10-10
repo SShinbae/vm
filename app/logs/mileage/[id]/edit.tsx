@@ -6,9 +6,9 @@ import { Button } from "@/components/ui/Button";
 import { DatePicker } from "@/components/ui/DatePicker";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { Input } from "@/components/ui/Input";
-import { ConfirmModal } from "@/components/ui/Modal";
 import { SkeletonMileageLogEdit } from "@/components/ui/Skeleton";
 import { useToast } from "@/hooks/useToast";
+import { useDialog } from "@/lib/contexts/DialogContext";
 import { useAuth } from "@/lib/contexts/AuthContext";
 import { canUserAccessVehicle } from "@/lib/utils/serviceUtils";
 import { MileageLogService } from "@/lib/services/loggingService";
@@ -43,7 +43,7 @@ export default function EditMileageLogScreen() {
   const { showSuccess, showError } = useToast();
   const posthog = usePostHog();
   const [canModify, setCanModify] = useState(true);
-  const [deleteModalVisible, setDeleteModalVisible] = useState(false);
+  const { confirm } = useDialog();
   const [deleteLoading, setDeleteLoading] = useState(false);
   const { theme } = useStyles();
   const colorScheme = useColorScheme();
@@ -167,16 +167,20 @@ export default function EditMileageLogScreen() {
     }
   };
 
-  const handleDelete = () => {
-    setDeleteModalVisible(true);
-  };
+  const handleDelete = async () => {
+    if (deleteLoading) return;
+    const ok = await confirm({
+      title: "Delete Mileage Log",
+      message:
+        "Are you sure you want to delete this mileage log? This action cannot be undone.",
+      confirmText: "Delete",
+      destructive: true,
+    });
+    if (!ok) return;
 
-  const handleConfirmDelete = async () => {
     setDeleteLoading(true);
     try {
       const { error } = await MileageLogService.deleteMileageLog(id!);
-      setDeleteLoading(false);
-      setDeleteModalVisible(false);
 
       if (error) {
         showError(error);
@@ -187,9 +191,9 @@ export default function EditMileageLogScreen() {
       }
     } catch (error) {
       console.error("Error deleting mileage log:", error);
-      setDeleteLoading(false);
-      setDeleteModalVisible(false);
       showError("Failed to delete mileage log");
+    } finally {
+      setDeleteLoading(false);
     }
   };
 
@@ -470,18 +474,6 @@ export default function EditMileageLogScreen() {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
-
-      <ConfirmModal
-        visible={deleteModalVisible}
-        title="Delete Mileage Log"
-        message="Are you sure you want to delete this mileage log? This action cannot be undone."
-        confirmText="Delete"
-        cancelText="Cancel"
-        onConfirm={handleConfirmDelete}
-        onClose={() => setDeleteModalVisible(false)}
-        loading={deleteLoading}
-        variant="danger"
-      />
     </SafeAreaView>
   );
 }

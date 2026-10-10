@@ -4,13 +4,15 @@ import { useStyles } from "react-native-unistyles";
 import { ActionMenu, ActionMenuItem } from "@/components/ui/ActionMenu";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { PageHeader } from "@/components/ui/PageHeader";
-import { AlertModal, ConfirmModal, Modal } from "@/components/ui/Modal";
+import { Modal } from "@/components/ui/Modal";
 import { VehicleGroupSelector } from "@/components/VehicleGroupSelector";
 import { Group } from "@/types";
 import { Pagination } from "@/components/ui/Pagination";
 import { ServiceReceiptIndicator } from "@/components/ui/ReceiptViewer";
 import { SkeletonVehicleDetail } from "@/components/ui/Skeleton";
+import { toast, useToast } from "@/hooks/useToast";
 import { useAuth } from "@/lib/contexts/AuthContext";
+import { useDialog } from "@/lib/contexts/DialogContext";
 import {
   FuelLogService,
   MileageLogService,
@@ -63,24 +65,11 @@ export default function VehicleDetailScreen() {
   const [serviceCurrentPage, setServiceCurrentPage] = useState(1);
   const ITEMS_PER_PAGE = 5;
 
-  // Modal states
-  const [deleteModalVisible, setDeleteModalVisible] = useState(false);
+  // Deletion states
+  const { confirm } = useDialog();
+  const { showSuccess, showError } = useToast();
   const [deleteLoading, setDeleteLoading] = useState(false);
-  const [alertModalVisible, setAlertModalVisible] = useState(false);
-  const [alertMessage, setAlertMessage] = useState("");
-  const [alertTitle, setAlertTitle] = useState("");
-  const [alertVariant, setAlertVariant] = useState<
-    "info" | "success" | "warning" | "error"
-  >("info");
-
-  // Log deletion states
-  const [deleteLogModalVisible, setDeleteLogModalVisible] = useState(false);
   const [deleteLogLoading, setDeleteLogLoading] = useState(false);
-  const [selectedLog, setSelectedLog] = useState<{
-    type: LogTab;
-    id: string;
-    description: string;
-  } | null>(null);
   const [canModify, setCanModify] = useState(true);
   const { theme } = useStyles();
   const colorScheme = useColorScheme();
@@ -95,7 +84,7 @@ export default function VehicleDetailScreen() {
 
       if (vehicleResult.error) {
         console.error("Error fetching vehicle:", vehicleResult.error);
-        showAlert("Error", "Failed to load vehicle details", "error");
+        toast.error("Failed to load vehicle details");
         router.back();
       } else if (vehicleResult.data) {
         setVehicle(vehicleResult.data);
@@ -106,12 +95,12 @@ export default function VehicleDetailScreen() {
           setCanModify(canAccess);
         }
       } else {
-        showAlert("Error", "Vehicle not found", "error");
+        toast.error("Vehicle not found");
         router.back();
       }
     } catch (error) {
       console.error("Unexpected error fetching vehicle data:", error);
-      showAlert("Error", "Failed to load vehicle details", "error");
+      toast.error("Failed to load vehicle details");
       router.back();
     }
 
@@ -124,40 +113,67 @@ export default function VehicleDetailScreen() {
     setRefreshing(false);
   }, [fetchVehicleData]);
 
-  const handleDelete = () => {
-    if (!vehicle) return;
-    setDeleteModalVisible(true);
-  };
-
-  const handleConfirmDelete = async () => {
-    if (!vehicle) return;
+  const handleDelete = async () => {
+    if (!vehicle || deleteLoading) return;
+    const ok = await confirm({
+      title: "Delete Vehicle",
+      message: `Are you sure you want to delete ${vehicle.year} ${vehicle.make} ${vehicle.model}? This action cannot be undone and will delete all associated logs.`,
+      confirmText: "Delete",
+      destructive: true,
+    });
+    if (!ok) return;
 
     setDeleteLoading(true);
-    const { error } = await VehicleService.deleteVehicle(vehicle.id);
-    setDeleteLoading(false);
-    setDeleteModalVisible(false);
-
-    if (error) {
-      showAlert("Error", "Failed to delete vehicle", "error");
-    } else {
-      router.back();
+    try {
+      const { error } = await VehicleService.deleteVehicle(vehicle.id);
+      if (error) {
+        showError("Failed to delete vehicle");
+      } else {
+        router.back();
+      }
+    } finally {
+      setDeleteLoading(false);
     }
   };
 
-  const showAlert = (
-    title: string,
-    message: string,
-    variant: "info" | "success" | "warning" | "error" = "info",
+  const handleDeleteLog = async (
+    type: LogTab,
+    logId: string,
+    description: string,
   ) => {
-    setAlertTitle(title);
-    setAlertMessage(message);
-    setAlertVariant(variant);
-    setAlertModalVisible(true);
-  };
+    if (deleteLogLoading) return;
+    const ok = await confirm({
+      title: `Delete ${type} Log`,
+      message: `Are you sure you want to delete this ${type} log?\n\n${description}\n\nThis action cannot be undone.`,
+      confirmText: "Delete",
+      destructive: true,
+    });
+    if (!ok) return;
 
-  const handleDeleteLog = (type: LogTab, id: string, description: string) => {
-    setSelectedLog({ type, id, description });
-    setDeleteLogModalVisible(true);
+    setDeleteLogLoading(true);
+    try {
+      let result;
+      switch (type) {
+        case "mileage":
+          result = await MileageLogService.deleteMileageLog(logId);
+          break;
+        case "fuel":
+          result = await FuelLogService.deleteFuelLog(logId);
+          break;
+        case "service":
+          result = await ServiceLogService.deleteServiceLog(logId);
+          break;
+      }
+
+      if (result?.error) {
+        showError("Couldn't delete log", { message: result.error });
+      } else {
+        showSuccess(`${type} log deleted successfully`);
+        await fetchVehicleData(); // Refresh the vehicle data
+      }
+    } finally {
+      setDeleteLogLoading(false);
+    }
   };
 
   const handleEditLog = (type: LogTab, id: string) => {
@@ -172,41 +188,6 @@ export default function VehicleDetailScreen() {
         router.push(`/logs/service/${id}` as any);
         break;
     }
-  };
-
-  const handleConfirmLogDelete = async () => {
-    if (!selectedLog) return;
-
-    setDeleteLogLoading(true);
-
-    let result;
-    switch (selectedLog.type) {
-      case "mileage":
-        result = await MileageLogService.deleteMileageLog(selectedLog.id);
-        break;
-      case "fuel":
-        result = await FuelLogService.deleteFuelLog(selectedLog.id);
-        break;
-      case "service":
-        result = await ServiceLogService.deleteServiceLog(selectedLog.id);
-        break;
-    }
-
-    setDeleteLogLoading(false);
-    setDeleteLogModalVisible(false);
-
-    if (result?.error) {
-      showAlert("Error", result.error, "error");
-    } else {
-      showAlert(
-        "Success",
-        `${selectedLog.type} log deleted successfully`,
-        "success",
-      );
-      await fetchVehicleData(); // Refresh the vehicle data
-    }
-
-    setSelectedLog(null);
   };
 
   const openSharingModal = async () => {
@@ -1566,46 +1547,6 @@ export default function VehicleDetailScreen() {
             </View>
           </View>
         </ScrollView>
-
-        <ConfirmModal
-          visible={deleteModalVisible}
-          onClose={() => {
-            if (!deleteLoading) {
-              setDeleteModalVisible(false);
-            }
-          }}
-          onConfirm={handleConfirmDelete}
-          title="Delete Vehicle"
-          message={
-            vehicle
-              ? `Are you sure you want to delete ${vehicle.year} ${vehicle.make} ${vehicle.model}? This action cannot be undone and will delete all associated logs.`
-              : ""
-          }
-          confirmText="Delete"
-          cancelText="Cancel"
-          variant="danger"
-          loading={deleteLoading}
-        />
-
-        <AlertModal
-          visible={alertModalVisible}
-          onClose={() => setAlertModalVisible(false)}
-          title={alertTitle}
-          message={alertMessage}
-          variant={alertVariant}
-        />
-
-        <ConfirmModal
-          visible={deleteLogModalVisible}
-          title={`Delete ${selectedLog?.type} Log`}
-          message={`Are you sure you want to delete this ${selectedLog?.type} log?\n\n${selectedLog?.description}\n\nThis action cannot be undone.`}
-          confirmText="Delete"
-          cancelText="Cancel"
-          onConfirm={handleConfirmLogDelete}
-          onClose={() => setDeleteLogModalVisible(false)}
-          loading={deleteLogLoading}
-          variant="danger"
-        />
 
         {vehicle && (
           <Modal

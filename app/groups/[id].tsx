@@ -1,5 +1,5 @@
 import { withOpacity, spacing } from "@/src/design-system";
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import {
   View,
   TouchableOpacity,
@@ -19,6 +19,7 @@ import { IconSymbol } from "@/components/ui/icon-symbol";
 import { SkeletonGroupDetail } from "@/components/ui/Skeleton";
 import { useAuth } from "@/lib/contexts/AuthContext";
 import { useDialog } from "@/lib/contexts/DialogContext";
+import { toast } from "@/hooks/useToast";
 import { usePostHog } from "posthog-react-native";
 import { formatDateWithPrefix } from "@/lib/utils/dateUtils";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -66,7 +67,7 @@ export default function GroupDetailScreen() {
     ]);
 
     if (groupResult.error) {
-      dialog.showError("Error", "Failed to load group details");
+      toast.error("Failed to load group details");
       handleGoBack();
     } else if (groupResult.data) {
       setGroup(groupResult.data);
@@ -90,134 +91,131 @@ export default function GroupDetailScreen() {
     setRefreshing(false);
   }, [fetchGroupData]);
 
+  // Dialogs close on confirm, so guard against double taps while the action runs.
+  const [busy, setBusy] = useState(false);
+  const busyRef = useRef(false);
+  const runExclusive = async (fn: () => Promise<void>) => {
+    if (busyRef.current) return;
+    busyRef.current = true;
+    setBusy(true);
+    try {
+      await fn();
+    } finally {
+      busyRef.current = false;
+      setBusy(false);
+    }
+  };
+
   const handleRemoveMember = async (memberId: string, memberName: string) => {
     if (!group) return;
 
-    dialog.alert(
-      "Remove Member",
-      `Are you sure you want to remove ${memberName} from this group?`,
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Remove",
-          style: "destructive",
-          onPress: async () => {
-            const { error } = await GroupService.removeMember(
-              group.id,
-              memberId,
-            );
-            if (error) {
-              dialog.showError("Error", error);
-            } else {
-              posthog?.capture("group_member_removed");
-              await fetchGroupData();
-              dialog.showSuccess("Success", "Member removed successfully");
-            }
-            dialog.hideConfirm();
-          },
-        },
-      ],
-    );
+    const ok = await dialog.confirm({
+      title: "Remove Member",
+      message: `Are you sure you want to remove ${memberName} from this group?`,
+      confirmText: "Remove",
+      destructive: true,
+    });
+    if (!ok) return;
+
+    await runExclusive(async () => {
+      const { error } = await GroupService.removeMember(group.id, memberId);
+      if (error) {
+        toast.error("Couldn't remove member", { message: error });
+      } else {
+        posthog?.capture("group_member_removed");
+        await fetchGroupData();
+        toast.success("Member removed");
+      }
+    });
   };
 
   const handleCancelInvitation = async (
     invitationId: string,
     email: string,
   ) => {
-    dialog.alert(
-      "Cancel Invitation",
-      `Are you sure you want to cancel the invitation to ${email}?`,
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Cancel Invitation",
-          style: "destructive",
-          onPress: async () => {
-            const { error } =
-              await GroupInvitationService.cancelInvitation(invitationId);
-            if (error) {
-              dialog.showError("Error", error);
-            } else {
-              posthog?.capture("group_invitation_cancelled");
-              await fetchGroupData();
-              dialog.showSuccess("Success", "Invitation cancelled");
-            }
-            dialog.hideConfirm();
-          },
-        },
-      ],
-    );
+    const ok = await dialog.confirm({
+      title: "Cancel Invitation",
+      message: `Are you sure you want to cancel the invitation to ${email}?`,
+      confirmText: "Cancel Invitation",
+      cancelText: "Keep",
+      destructive: true,
+    });
+    if (!ok) return;
+
+    await runExclusive(async () => {
+      const { error } =
+        await GroupInvitationService.cancelInvitation(invitationId);
+      if (error) {
+        toast.error("Couldn't cancel invitation", { message: error });
+      } else {
+        posthog?.capture("group_invitation_cancelled");
+        await fetchGroupData();
+        toast.success("Invitation cancelled");
+      }
+    });
   };
 
   const handleResendInvitation = async (
     invitationId: string,
     email: string,
   ) => {
-    const { error } =
-      await GroupInvitationService.resendInvitation(invitationId);
-    if (error) {
-      dialog.showError("Error", error);
-    } else {
-      posthog?.capture("group_invitation_resent");
-      await fetchGroupData();
-      dialog.showSuccess("Success", `Invitation resent to ${email}`);
-    }
+    await runExclusive(async () => {
+      const { error } =
+        await GroupInvitationService.resendInvitation(invitationId);
+      if (error) {
+        toast.error("Couldn't resend invitation", { message: error });
+      } else {
+        posthog?.capture("group_invitation_resent");
+        await fetchGroupData();
+        toast.success(`Invitation resent to ${email}`);
+      }
+    });
   };
 
   const handleLeaveGroup = async () => {
     if (!group) return;
 
-    dialog.alert(
-      "Leave Group",
-      `Are you sure you want to leave "${group.name}"? You will no longer have access to shared vehicles and group information.`,
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Leave Group",
-          style: "destructive",
-          onPress: async () => {
-            const { error } = await GroupService.leaveGroup(group.id);
-            if (error) {
-              dialog.showError("Error", error);
-            } else {
-              posthog?.capture("group_left");
-              dialog.showSuccess("Success", "You have left the group", () =>
-                handleGoBack(),
-              );
-            }
-            dialog.hideConfirm();
-          },
-        },
-      ],
-    );
+    const ok = await dialog.confirm({
+      title: "Leave Group",
+      message: `Are you sure you want to leave "${group.name}"? You will no longer have access to shared vehicles and group information.`,
+      confirmText: "Leave Group",
+      destructive: true,
+    });
+    if (!ok) return;
+
+    await runExclusive(async () => {
+      const { error } = await GroupService.leaveGroup(group.id);
+      if (error) {
+        toast.error("Couldn't leave group", { message: error });
+      } else {
+        posthog?.capture("group_left");
+        toast.success("You have left the group");
+        handleGoBack();
+      }
+    });
   };
 
   const handleDeleteGroup = async () => {
     if (!group) return;
 
-    dialog.alert(
-      "Delete Group",
-      `Are you sure you want to delete "${group.name}"? This action cannot be undone. All members will be removed and shared vehicle access will be revoked.`,
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Delete Group",
-          style: "destructive",
-          onPress: async () => {
-            const { error } = await GroupService.deleteGroup(group.id);
-            if (error) {
-              dialog.showError("Error", error);
-            } else {
-              posthog?.capture("group_deleted");
-              dialog.showSuccess("Success", "Group deleted successfully", () =>
-                handleGoBack(),
-              );
-            }
-            dialog.hideConfirm();
-          },
-        },
-      ],
-    );
+    const ok = await dialog.confirm({
+      title: "Delete Group",
+      message: `Are you sure you want to delete "${group.name}"? This action cannot be undone. All members will be removed and shared vehicle access will be revoked.`,
+      confirmText: "Delete Group",
+      destructive: true,
+    });
+    if (!ok) return;
+
+    await runExclusive(async () => {
+      const { error } = await GroupService.deleteGroup(group.id);
+      if (error) {
+        toast.error("Couldn't delete group", { message: error });
+      } else {
+        posthog?.capture("group_deleted");
+        toast.success("Group deleted");
+        handleGoBack();
+      }
+    });
   };
 
   useEffect(() => {
@@ -772,6 +770,7 @@ export default function GroupDetailScreen() {
               alignItems: "center",
             }}
             onPress={handleLeaveGroup}
+            disabled={busy}
           >
             <Text color="error" weight="semibold">
               Leave Group
@@ -803,6 +802,7 @@ export default function GroupDetailScreen() {
               gap: theme.spacing.sm,
             }}
             onPress={handleDeleteGroup}
+            disabled={busy}
           >
             <IconSymbol name="trash" size={16} color={theme.colors.error} />
             <Text color="error" weight="semibold">

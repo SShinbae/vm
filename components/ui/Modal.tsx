@@ -49,6 +49,12 @@ interface ModalProps {
   containerStyle?: ViewStyle;
   contentStyle?: ViewStyle;
   titleStyle?: TextStyle;
+  /**
+   * Native only: draw in place (absolute full-screen) instead of inside an RN
+   * Modal. DialogProvider uses it on iOS inside FullWindowOverlay, because an
+   * RN Modal can't present while another one is already presented.
+   */
+  inline?: boolean;
 }
 
 interface ConfirmModalProps {
@@ -61,6 +67,7 @@ interface ConfirmModalProps {
   cancelText?: string;
   variant?: "default" | "danger";
   loading?: boolean;
+  inline?: boolean;
 }
 
 interface AlertModalProps {
@@ -70,6 +77,18 @@ interface AlertModalProps {
   message: string;
   buttonText?: string;
   variant?: "info" | "success" | "warning" | "error";
+  inline?: boolean;
+}
+
+interface ChoiceModalProps<T extends string = string> {
+  visible: boolean;
+  onClose: () => void;
+  onSelect: (value: T) => void;
+  title: string;
+  message?: string;
+  options: { label: string; value: T; destructive?: boolean }[];
+  cancelText?: string;
+  inline?: boolean;
 }
 
 // Web-specific Modal Component
@@ -289,6 +308,7 @@ export function Modal(props: ModalProps) {
     containerStyle,
     contentStyle,
     titleStyle,
+    inline = false,
   } = props;
 
   const getContainerStyle = (): ViewStyle[] => {
@@ -366,16 +386,33 @@ export function Modal(props: ModalProps) {
     }
   };
 
-  const ModalContent = () => (
+  const modalContent = (
     <View style={getContainerStyle()}>
-      <Pressable onPress={handleBackdropPress} style={styles.backdrop} />
+      <Pressable
+        testID="modal-backdrop"
+        onPress={handleBackdropPress}
+        style={styles.backdrop}
+      />
 
-      <View style={getContentStyle()}>
+      <View
+        style={getContentStyle()}
+        accessibilityViewIsModal
+        onAccessibilityEscape={onClose}
+      >
         {(title || showCloseButton) && (
           <View style={styles.header}>
-            {title && <Text style={getTitleStyle()}>{title}</Text>}
+            {title && (
+              <Text style={getTitleStyle()} accessibilityRole="header">
+                {title}
+              </Text>
+            )}
             {showCloseButton && (
-              <TouchableOpacity style={styles.closeButton} onPress={onClose}>
+              <TouchableOpacity
+                style={styles.closeButton}
+                onPress={onClose}
+                accessibilityRole="button"
+                accessibilityLabel="Close"
+              >
                 <IconSymbol name="xmark" size={20} color={colors.text} />
               </TouchableOpacity>
             )}
@@ -386,6 +423,12 @@ export function Modal(props: ModalProps) {
       </View>
     </View>
   );
+
+  if (inline) {
+    return visible ? (
+      <View style={StyleSheet.absoluteFill}>{modalContent}</View>
+    ) : null;
+  }
 
   if (variant === "fullscreen") {
     return (
@@ -423,7 +466,7 @@ export function Modal(props: ModalProps) {
       presentationStyle={presentationStyle}
       onRequestClose={onClose}
     >
-      <ModalContent />
+      {modalContent}
     </RNModal>
   );
 }
@@ -438,6 +481,7 @@ export function ConfirmModal({
   cancelText = "Cancel",
   variant = "default",
   loading = false,
+  inline,
 }: ConfirmModalProps) {
   const { theme } = useStyles();
   const colors = theme.colors;
@@ -455,6 +499,7 @@ export function ConfirmModal({
       title={title}
       size="small"
       closeOnBackdrop={!loading}
+      inline={inline}
     >
       <View style={styles.confirmContent}>
         <Text style={[styles.confirmMessage, { color: colors.text }]}>
@@ -490,6 +535,7 @@ export function AlertModal({
   message,
   buttonText = "OK",
   variant = "info",
+  inline,
 }: AlertModalProps) {
   const { theme } = useStyles();
   const colors = theme.colors;
@@ -521,7 +567,13 @@ export function AlertModal({
   };
 
   return (
-    <Modal visible={visible} onClose={onClose} title={title} size="small">
+    <Modal
+      visible={visible}
+      onClose={onClose}
+      title={title}
+      size="small"
+      inline={inline}
+    >
       <View style={styles.alertContent}>
         <View style={styles.alertIcon}>
           <IconSymbol name={getIconName()} size={48} color={getIconColor()} />
@@ -543,7 +595,56 @@ export function AlertModal({
   );
 }
 
+export function ChoiceModal<T extends string = string>({
+  visible,
+  onClose,
+  onSelect,
+  title,
+  message,
+  options,
+  cancelText = "Cancel",
+  inline,
+}: ChoiceModalProps<T>) {
+  const { theme } = useStyles();
+
+  return (
+    <Modal
+      visible={visible}
+      onClose={onClose}
+      title={title}
+      size="small"
+      inline={inline}
+    >
+      <View style={styles.choiceContent}>
+        {message ? (
+          <Text style={[styles.confirmMessage, { color: theme.colors.text }]}>
+            {message}
+          </Text>
+        ) : null}
+        {options.map((o) => (
+          <Button
+            key={o.value}
+            title={o.label}
+            onPress={() => onSelect(o.value)}
+            variant={o.destructive ? "danger" : "primary"}
+            fullWidth
+          />
+        ))}
+        <Button
+          title={cancelText}
+          onPress={onClose}
+          variant="outline"
+          fullWidth
+        />
+      </View>
+    </Modal>
+  );
+}
+
 const styles = StyleSheet.create({
+  choiceContent: {
+    gap: spacing.md,
+  },
   container: {
     flex: 1,
     justifyContent: "center",

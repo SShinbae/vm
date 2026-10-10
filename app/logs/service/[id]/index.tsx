@@ -5,10 +5,11 @@ import { ReceiptViewer } from "@/components/ui/ReceiptViewer";
 import { SkeletonCard } from "@/components/ui/Skeleton";
 import { ServiceLogService } from "@/lib/services/loggingService";
 import { OCRExtractedData, ServiceLog, ServiceType } from "@/types";
+import { toast, useToast } from "@/hooks/useToast";
+import { useDialog } from "@/lib/contexts/DialogContext";
 import { router, useLocalSearchParams } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
-  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -16,37 +17,6 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-
-// Cross-platform alert helper
-const showAlert = (
-  title: string,
-  message: string,
-  buttons?: { text: string; style?: string; onPress?: () => void }[],
-) => {
-  if (Platform.OS === "web") {
-    if (buttons && buttons.length > 1) {
-      // For confirmation dialogs
-      const confirmed = window.confirm(`${title}\n\n${message}`);
-      if (confirmed) {
-        const confirmButton = buttons.find(
-          (b) => b.style === "destructive" || b.text === "OK",
-        );
-        confirmButton?.onPress?.();
-      } else {
-        const cancelButton = buttons.find((b) => b.style === "cancel");
-        cancelButton?.onPress?.();
-      }
-    } else {
-      // For simple alerts
-      window.alert(`${title}\n\n${message}`);
-      buttons?.[0]?.onPress?.();
-    }
-  } else {
-    // Dynamic import for native Alert to avoid web issues
-    const { Alert } = require("react-native"); // eslint-disable-line @typescript-eslint/no-require-imports
-    Alert.alert(title, message, buttons as any);
-  }
-};
 
 const SERVICE_TYPE_LABELS: Record<ServiceType, string> = {
   oil_change: "Oil Change",
@@ -74,11 +44,13 @@ export default function ServiceLogDetailScreen() {
   const [loading, setLoading] = useState(true);
   const { theme } = useStyles();
   const colors = theme.colors;
+  const { showError, showSuccess, showWarning } = useToast();
+  const { confirm } = useDialog();
 
   useEffect(() => {
     const fetchServiceLog = async () => {
       if (!id) {
-        showAlert("Error", "Invalid service log ID");
+        toast.error("Invalid service log ID");
         router.back();
         return;
       }
@@ -86,14 +58,14 @@ export default function ServiceLogDetailScreen() {
       try {
         const { data: logs, error } = await ServiceLogService.getServiceLogs();
         if (error) {
-          showAlert("Error", "Failed to load service log");
+          toast.error("Failed to load service log");
           router.back();
           return;
         }
 
         const log = logs?.find((l) => l.id === id);
         if (!log) {
-          showAlert("Error", "Service log not found");
+          toast.error("Service log not found");
           router.back();
           return;
         }
@@ -101,7 +73,7 @@ export default function ServiceLogDetailScreen() {
         setServiceLog(log);
       } catch (error) {
         console.error("Error fetching service log:", error);
-        showAlert("Error", "Failed to load service log");
+        toast.error("Failed to load service log");
         router.back();
       }
 
@@ -115,9 +87,9 @@ export default function ServiceLogDetailScreen() {
     router.push(`/logs/service/${id}/edit` as any);
   };
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (!id) {
-      showAlert("Error", "Cannot delete: Invalid service log ID");
+      showError("Cannot delete: Invalid service log ID");
       return;
     }
 
@@ -140,47 +112,33 @@ export default function ServiceLogDetailScreen() {
             errorMessage =
               "This service log no longer exists. It may have been deleted already.";
           }
-          showAlert("Error", errorMessage);
+          showError("Couldn't delete service log", { message: errorMessage });
         } else if (result.data === true) {
-          showAlert("Success", "Service log deleted successfully", [
-            {
-              text: "OK",
-              onPress: () => router.back(),
-            },
-          ]);
+          showSuccess("Service log deleted");
+          router.back();
         } else {
-          showAlert(
-            "Warning",
-            "Delete operation completed but status is unclear. Please go back and check if the log was deleted.",
-            [
-              {
-                text: "OK",
-                onPress: () => router.back(),
-              },
-            ],
-          );
+          showWarning("Delete status unclear", {
+            message:
+              "Couldn't confirm the deletion. Check the service log list.",
+          });
+          router.back();
         }
       } catch (error) {
         console.error("Error deleting service log:", error);
-        showAlert(
-          "Error",
-          "Failed to delete service log. Please check your connection and try again.",
-        );
+        showError("Failed to delete service log", {
+          message: "Please check your connection and try again.",
+        });
       }
     };
 
-    showAlert(
-      "Delete Service Log",
-      "Are you sure you want to delete this service log? This action cannot be undone.",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Delete",
-          style: "destructive",
-          onPress: performDelete,
-        },
-      ],
-    );
+    const ok = await confirm({
+      title: "Delete service log?",
+      message:
+        "Are you sure you want to delete this service log? This action cannot be undone.",
+      confirmText: "Delete",
+      destructive: true,
+    });
+    if (ok) performDelete();
   };
 
   const formatDate = (dateString: string) => {

@@ -6,11 +6,8 @@ import {
   AuthInput,
   AuthLayout,
 } from "@/components/auth";
-import {
-  PasswordStrengthIndicator,
-  useAlert,
-  withWebAlert,
-} from "@/components/ui";
+import { PasswordStrengthIndicator } from "@/components/ui";
+import { toast } from "@/hooks/useToast";
 import { useAuth } from "@/lib/contexts/AuthContext";
 import { validatePassword } from "@/utils/validation";
 import { Ionicons } from "@expo/vector-icons";
@@ -18,13 +15,12 @@ import { router, useLocalSearchParams } from "expo-router";
 import React, { useEffect, useState } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
-function ResetPasswordScreen() {
+export default function ResetPasswordScreen() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [passwordUpdated, setPasswordUpdated] = useState(false);
   const { updatePassword, clearPasswordRecovery } = useAuth();
-  const { showError } = useAlert();
   const { theme } = useStyles();
   const colors = theme.colors;
   const params = useLocalSearchParams();
@@ -41,9 +37,9 @@ function ResetPasswordScreen() {
             : "Password reset link is invalid or has expired";
       }
 
-      showError("Reset Failed", errorMessage);
+      toast.error("Reset Failed", { message: errorMessage });
     }
-  }, [params.error, params.error_description, showError]);
+  }, [params.error, params.error_description]);
 
   const handleResetPassword = async () => {
     // Prevent double submission
@@ -55,21 +51,20 @@ function ResetPasswordScreen() {
     }
 
     if (!password.trim()) {
-      showError("Error", "Please enter a new password");
+      toast.error("Please enter a new password");
       return;
     }
 
     const passwordValidation = validatePassword(password);
     if (!passwordValidation.isValid) {
-      showError(
-        "Password Requirements",
-        `Your password needs:\n• ${passwordValidation.errors.join("\n• ")}`,
-      );
+      toast.error("Password Requirements", {
+        message: `Your password needs:\n• ${passwordValidation.errors.join("\n• ")}`,
+      });
       return;
     }
 
     if (password !== confirmPassword) {
-      showError("Error", "Passwords do not match");
+      toast.error("Passwords do not match");
       return;
     }
 
@@ -86,7 +81,7 @@ function ResetPasswordScreen() {
 
     if (error) {
       setLoading(false);
-      showError("Update Failed", error);
+      toast.error("Update Failed", { message: error });
     } else {
       // Show success first, then clear recovery state after a delay
       // This prevents AuthGuard from redirecting before success view shows
@@ -249,5 +244,3 @@ function ResetPasswordScreen() {
     </AuthLayout>
   );
 }
-
-export default withWebAlert(ResetPasswordScreen);

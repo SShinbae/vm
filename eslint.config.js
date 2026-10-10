@@ -32,6 +32,31 @@ module.exports = defineConfig([
     },
   },
   {
+    files: [
+      "app/**/*.{ts,tsx}",
+      "components/**/*.{ts,tsx}",
+      "hooks/**/*.{ts,tsx}",
+      "lib/**/*.{ts,tsx}",
+    ],
+    rules: {
+      "no-restricted-syntax": [
+        "error",
+        {
+          selector:
+            "CallExpression[callee.object.name='Alert'][callee.property.name='alert']",
+          message:
+            "Use toast.* for messages or dialog.confirm/alert/choose for decisions (see the centralized feedback page)",
+        },
+        {
+          selector:
+            "CallExpression[callee.object.name='window'][callee.property.name=/^(confirm|alert)$/]",
+          message:
+            "Use toast.* for messages or dialog.confirm/alert/choose for decisions (see the centralized feedback page)",
+        },
+      ],
+    },
+  },
+  {
     // Disable import plugin rules that require native bindings incompatible with Node 18
     rules: {
       "import/namespace": "off",

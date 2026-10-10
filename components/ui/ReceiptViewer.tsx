@@ -7,11 +7,11 @@ import {
   TouchableOpacity,
   StyleSheet,
   Modal,
-  Alert,
   ActivityIndicator,
 } from "react-native";
 import { Image } from "expo-image";
 import { IconSymbol } from "@/components/ui/icon-symbol";
+import { useDialog } from "@/lib/contexts/DialogContext";
 import { OCRExtractedData } from "@/types";
 
 interface ReceiptViewerProps {
@@ -32,24 +32,21 @@ export function ReceiptViewer({
   const [imageError, setImageError] = useState(false);
   const { theme } = useStyles();
   const colors = theme.colors;
+  const { confirm } = useDialog();
 
   if (!receiptImageUrl) {
     return null;
   }
 
-  const handleDeleteReceipt = () => {
-    Alert.alert(
-      "Delete Receipt",
-      "Are you sure you want to delete this receipt image? This action cannot be undone.",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Delete",
-          style: "destructive",
-          onPress: onDelete,
-        },
-      ],
-    );
+  const handleDeleteReceipt = async () => {
+    const ok = await confirm({
+      title: "Delete receipt?",
+      message:
+        "Are you sure you want to delete this receipt image? This action cannot be undone.",
+      confirmText: "Delete",
+      destructive: true,
+    });
+    if (ok) onDelete?.();
   };
 
   const formatConfidenceScore = (score?: number): string => {
