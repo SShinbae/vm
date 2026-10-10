@@ -2,10 +2,10 @@ import { withOpacity, spacing } from "@/src/design-system";
 import { useStyles } from "react-native-unistyles";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { VehicleService } from "@/lib/services/vehicleService";
+import { useToast } from "@/hooks/useToast";
 import { Group } from "@/types";
 import React, { useEffect, useState } from "react";
 import {
-  Alert,
   ScrollView,
   StyleSheet,
   Text,
@@ -30,6 +30,7 @@ export const VehicleGroupSelector: React.FC<VehicleGroupSelectorProps> = ({
   );
   const [loading, setLoading] = useState(false);
   const { theme } = useStyles();
+  const { showSuccess, showError } = useToast();
   const colors = theme.colors;
 
   useEffect(() => {
@@ -67,14 +68,14 @@ export const VehicleGroupSelector: React.FC<VehicleGroupSelectorProps> = ({
       );
 
       if (error) {
-        Alert.alert("Error", "Failed to update vehicle sharing");
+        showError("Couldn't update vehicle sharing");
         onSharingUpdate(false);
       } else {
-        Alert.alert("Success", "Vehicle sharing updated successfully");
+        showSuccess("Vehicle sharing updated");
         onSharingUpdate(true);
       }
     } catch {
-      Alert.alert("Error", "Failed to update vehicle sharing");
+      showError("Couldn't update vehicle sharing");
       onSharingUpdate(false);
     }
     setLoading(false);

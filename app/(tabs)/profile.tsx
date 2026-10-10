@@ -14,7 +14,6 @@ import { router, useLocalSearchParams } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
-  Alert,
   ScrollView,
   Text,
   TextInput,
@@ -29,8 +28,8 @@ type TabName = "Profile" | "Settings";
 export default function ProfileScreen() {
   const { user, updateProfile, signOut } = useAuth();
   const { themeMode, setThemeMode } = useTheme();
-  const { showConfirm, hideConfirm } = useDialog();
-  const { showError } = useToast();
+  const { confirm } = useDialog();
+  const { showSuccess, showError } = useToast();
   const { theme } = useStyles();
   const { isMobile, isWeb } = useResponsiveLayout();
   const { stats, loading: statsLoading } = useProfileStats();
@@ -39,6 +38,7 @@ export default function ProfileScreen() {
   const [username, setUsername] = useState(user?.profile?.username || "");
   const [avatarUrl, setAvatarUrl] = useState(user?.profile?.avatar_url || null);
   const [loading, setLoading] = useState(false);
+  const [signingOut, setSigningOut] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [activeTab, setActiveTab] = useState<TabName>("Profile");
@@ -78,7 +78,7 @@ export default function ProfileScreen() {
     if (success) {
       setIsEditing(false);
       setShowEditModal(false);
-      Alert.alert("Success", "Profile updated successfully");
+      showSuccess("Profile updated");
     }
   };
 
@@ -87,19 +87,28 @@ export default function ProfileScreen() {
   };
 
   const handleAvatarError = (error: string) => {
-    Alert.alert("Upload Error", error);
+    showError("Couldn't upload photo", { message: error });
   };
 
-  const handleSignOut = () => {
-    showConfirm("Sign Out", "Are you sure you want to sign out?", async () => {
-      const { error } = await signOut();
-      hideConfirm();
-      if (error) {
-        showError("Couldn't sign out. Check your connection and try again.");
-        return;
-      }
-      router.replace("/(auth)/login");
+  const handleSignOut = async () => {
+    if (signingOut) return;
+    const ok = await confirm({
+      title: "Sign out?",
+      message: "Are you sure you want to sign out?",
+      confirmText: "Sign out",
     });
+    if (!ok) return;
+
+    setSigningOut(true);
+    const { error } = await signOut();
+    if (error) {
+      setSigningOut(false);
+      showError("Couldn't sign out", {
+        message: "Check your connection and try again.",
+      });
+      return;
+    }
+    router.replace("/(auth)/login");
   };
 
   const formatJoinDate = (dateString: string) => {
@@ -692,6 +701,7 @@ export default function ProfileScreen() {
               backgroundColor: theme.colors.error,
             }}
             onPress={handleSignOut}
+            disabled={signingOut}
           >
             <IconSymbol name="arrow.right.square" size={16} color="white" />
             <Text
@@ -751,6 +761,7 @@ export default function ProfileScreen() {
                   backgroundColor: theme.colors.error,
                 }}
                 onPress={handleSignOut}
+                disabled={signingOut}
               >
                 <IconSymbol name="arrow.right.square" size={16} color="white" />
                 <Text

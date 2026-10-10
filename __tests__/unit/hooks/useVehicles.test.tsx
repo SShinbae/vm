@@ -20,14 +20,6 @@ jest.mock("@/lib/services/vehicleService", () => ({
   },
 }));
 
-jest.mock("@/lib/contexts/DialogContext", () => ({
-  useDialog: () => ({
-    showError: jest.fn(),
-    showConfirm: jest.fn(),
-    showSuccess: jest.fn(),
-  }),
-}));
-
 jest.mock("@react-navigation/native", () => {
   const actual = jest.requireActual("@react-navigation/native");
   return {

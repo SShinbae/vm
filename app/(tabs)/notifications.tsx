@@ -1,8 +1,6 @@
 import { withOpacity } from "@/src/design-system";
 import React from "react";
 import {
-  Alert,
-  Platform,
   RefreshControl,
   ScrollView,
   Text,
@@ -19,6 +17,7 @@ import { useResponsiveLayout } from "@/hooks/use-responsive-layout";
 import { useNotifications } from "@/lib/contexts/NotificationContext";
 import { GroupInvitationService } from "@/lib/services/groupService";
 import { useToast } from "@/hooks/useToast";
+import { useDialog } from "@/lib/contexts/DialogContext";
 import { getNotificationRoute } from "@/lib/utils/notificationNavigation";
 
 export default function NotificationsScreen() {
@@ -27,6 +26,7 @@ export default function NotificationsScreen() {
   const { unreadCount, notifications, markAllAsRead, refreshNotifications } =
     useNotifications();
   const { showSuccess, showError, showInfo } = useToast();
+  const { choose } = useDialog();
   const [refreshing, setRefreshing] = React.useState(false);
   const [invitations, setInvitations] = React.useState<
     { id: string; groups?: { name?: string } | null }[]
@@ -78,7 +78,7 @@ export default function NotificationsScreen() {
     }
   };
 
-  const handleNotificationPress = (notification: NotificationData) => {
+  const handleNotificationPress = async (notification: NotificationData) => {
     if (notification.notification_type === "group_invite") {
       const groupName = notification.body.split("join ")[1] || "this group";
       const invitationId = notification.data?.invitationId;
@@ -95,31 +95,17 @@ export default function NotificationsScreen() {
         return;
       }
 
-      if (Platform.OS === "web") {
-        const confirmed = window.confirm(`Do you want to join ${groupName}?`);
-        if (confirmed) {
-          handleAcceptInvitation(invitationId, groupName);
-        } else {
-          handleDeclineInvitation(invitationId);
-        }
-      } else {
-        Alert.alert(
-          "Group Invitation",
-          `Do you want to join ${groupName}?`,
-          [
-            {
-              text: "No",
-              style: "cancel",
-              onPress: () => handleDeclineInvitation(invitationId),
-            },
-            {
-              text: "Yes",
-              onPress: () => handleAcceptInvitation(invitationId, groupName),
-            },
-          ],
-          { cancelable: true },
-        );
-      }
+      const pick = await choose({
+        title: "Group invitation",
+        message: `Join ${groupName}?`,
+        options: [
+          { label: "Join", value: "join" },
+          { label: "Decline", value: "decline", destructive: true },
+        ],
+      });
+      // null (Cancel, backdrop, back): leave the invitation pending
+      if (pick === "join") handleAcceptInvitation(invitationId, groupName);
+      else if (pick === "decline") handleDeclineInvitation(invitationId);
       return;
     }
 

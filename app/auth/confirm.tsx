@@ -6,7 +6,6 @@ import React, { useState, useEffect } from "react";
 import {
   ActivityIndicator,
   Dimensions,
-  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -14,7 +13,7 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { supabase } from "../../services/supabaseClient";
+import { initialUrl, supabase } from "../../services/supabaseClient";
 import { parseVerifiedRedirect } from "@/lib/utils/authRedirect";
 
 const { width: screenWidth } = Dimensions.get("window");
@@ -49,13 +48,10 @@ export default function ConfirmEmailScreen() {
       };
 
       if (!token_hash || !type) {
-        const redirect =
-          Platform.OS === "web"
-            ? parseVerifiedRedirect(
-                window.location.search,
-                window.location.hash,
-              )
-            : null;
+        const redirect = parseVerifiedRedirect(
+          initialUrl.search,
+          initialUrl.hash,
+        );
         if (redirect?.status === "verified") {
           // Let the client finish any ?code= exchange before signing out.
           await supabase.auth.getSession();

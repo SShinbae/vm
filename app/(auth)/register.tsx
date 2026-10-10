@@ -7,8 +7,9 @@ import {
   AuthInput,
   AuthLayout,
   AuthLink,
+  GoogleSignInButton,
 } from "@/components/auth";
-import { PasswordStrengthIndicator, withWebAlert } from "@/components/ui";
+import { PasswordStrengthIndicator } from "@/components/ui";
 import { useAuth } from "@/lib/contexts/AuthContext";
 import { useToast } from "@/hooks/useToast";
 import { isValidEmail, validatePassword } from "@/utils/validation";
@@ -127,8 +128,22 @@ function RegisterScreen() {
 
   const termsLabel = (
     <Text style={styles.termsLabel}>
-      I agree to the <Text style={styles.termsLink}>Terms of Service</Text> and{" "}
-      <Text style={styles.termsLink}>Privacy Policy</Text>
+      I agree to the{" "}
+      <Text
+        style={styles.termsLink}
+        accessibilityRole="link"
+        onPress={() => router.push("/terms")}
+      >
+        Terms of Service
+      </Text>{" "}
+      and{" "}
+      <Text
+        style={styles.termsLink}
+        accessibilityRole="link"
+        onPress={() => router.push("/privacy")}
+      >
+        Privacy Policy
+      </Text>
     </Text>
   );
 
@@ -202,6 +217,8 @@ function RegisterScreen() {
         disabled={!isFormValid()}
       />
 
+      <GoogleSignInButton />
+
       {/* Login Section */}
       <AuthLink
         text="Already have an account?"
@@ -212,4 +229,4 @@ function RegisterScreen() {
   );
 }
 
-export default withWebAlert(RegisterScreen);
+export default RegisterScreen;

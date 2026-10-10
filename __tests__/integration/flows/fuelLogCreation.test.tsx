@@ -77,9 +77,9 @@ jest.mock("@/lib/contexts/AuthContext", () => ({
 
 jest.mock("@/lib/contexts/DialogContext", () => ({
   useDialog: () => ({
-    showError: jest.fn(),
-    showSuccess: jest.fn(),
-    showConfirm: jest.fn(),
+    confirm: jest.fn().mockResolvedValue(true),
+    alert: jest.fn().mockResolvedValue(undefined),
+    choose: jest.fn().mockResolvedValue(null),
   }),
 }));
 

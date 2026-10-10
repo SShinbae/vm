@@ -4,7 +4,6 @@ import * as ExpoImagePicker from "expo-image-picker";
 import React, { useState } from "react";
 import {
   ActivityIndicator,
-  Alert,
   Image,
   Platform,
   StyleSheet,
@@ -12,6 +11,8 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { useToast } from "@/hooks/useToast";
+import { useDialog } from "@/lib/contexts/DialogContext";
 import { IconSymbol } from "./icon-symbol";
 import { ImageCropModal } from "./ImageCropModal";
 
@@ -49,6 +50,8 @@ export function ImagePicker({
   const [tempImageUri, setTempImageUri] = useState<string>("");
   const { theme } = useStyles();
   const colors = theme.colors;
+  const { showError, showWarning } = useToast();
+  const { confirm, choose } = useDialog();
 
   // Ref for hidden file input on web
   const fileInputRef = React.useRef<HTMLInputElement>(null);
@@ -61,10 +64,10 @@ export function ImagePicker({
         await ExpoImagePicker.requestMediaLibraryPermissionsAsync();
 
       if (cameraStatus !== "granted" || mediaStatus !== "granted") {
-        Alert.alert(
-          "Permissions Required",
-          "Camera and photo library permissions are required to add photos.",
-        );
+        showWarning("Permission required", {
+          message:
+            "Camera and photo library permissions are required to add photos.",
+        });
         return false;
       }
     }
@@ -99,7 +102,7 @@ export function ImagePicker({
       }
     } catch (error) {
       console.error("Error picking image:", error);
-      Alert.alert("Error", "Failed to pick image. Please try again.");
+      showError("Couldn't pick image", { message: "Please try again." });
     } finally {
       setLoading(false);
     }
@@ -124,44 +127,43 @@ export function ImagePicker({
       }
     } catch (error) {
       console.error("Error taking photo:", error);
-      Alert.alert("Error", "Failed to take photo. Please try again.");
+      showError("Couldn't take photo", { message: "Please try again." });
     } finally {
       setLoading(false);
     }
   };
 
-  const showImageOptions = () => {
+  const showImageOptions = async () => {
     if (Platform.OS === "web") {
       // On web, directly open gallery
       pickImageFromGallery();
     } else {
       // On mobile, show options for camera or gallery
-      Alert.alert("Add Photo", "Choose an option", [
-        { text: "Take Photo", onPress: takePhoto },
-        { text: "Choose from Gallery", onPress: pickImageFromGallery },
-        { text: "Cancel", style: "cancel" },
-      ]);
+      const pick = await choose({
+        title: "Add photo",
+        message: "Choose an option",
+        options: [
+          { label: "Take photo", value: "camera" },
+          { label: "Choose from gallery", value: "gallery" },
+        ],
+      });
+      if (pick === "camera") takePhoto();
+      else if (pick === "gallery") pickImageFromGallery();
     }
   };
 
-  const removeImage = () => {
+  const removeImage = async () => {
     if (onRemove) {
       // Use custom remove handler if provided
       onRemove();
     } else {
-      // Default behavior: show native alert
-      Alert.alert(
-        "Remove Photo",
-        "Are you sure you want to remove this photo?",
-        [
-          { text: "Cancel", style: "cancel" },
-          {
-            text: "Remove",
-            style: "destructive",
-            onPress: () => onImageSelected(""),
-          },
-        ],
-      );
+      const ok = await confirm({
+        title: "Remove photo?",
+        message: "Are you sure you want to remove this photo?",
+        confirmText: "Remove",
+        destructive: true,
+      });
+      if (ok) onImageSelected("");
     }
   };
 
@@ -180,7 +182,7 @@ export function ImagePicker({
   };
 
   const handleCropError = (error: string) => {
-    Alert.alert("Crop Error", error);
+    showError("Couldn't crop image", { message: error });
     setShowCropModal(false);
     setTempImageUri("");
   };

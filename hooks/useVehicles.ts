@@ -2,7 +2,7 @@ import { useCallback, useState } from "react";
 import { useFocusEffect } from "@react-navigation/native";
 import { VehicleService } from "@/lib/services/vehicleService";
 import { VehicleWithDetails } from "@/types/database-v2";
-import { useDialog } from "@/lib/contexts/DialogContext";
+import { toast } from "@/hooks/useToast";
 
 /**
  * Custom hook for managing vehicle data fetching and state
@@ -12,7 +12,6 @@ export function useVehicles() {
   const [allVehicles, setAllVehicles] = useState<VehicleWithDetails[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const dialog = useDialog();
 
   /**
    * Fetch all vehicles (own and shared)
@@ -21,7 +20,7 @@ export function useVehicles() {
     const vehiclesResult = await VehicleService.getVehiclesSeparated();
 
     if (vehiclesResult.error) {
-      dialog.showError("Error", "Failed to load vehicles");
+      toast.error("Failed to load vehicles");
       console.error("Failed to fetch vehicles:", vehiclesResult.error);
       return { ownVehicles: [], sharedVehicles: [] };
     } else if (vehiclesResult.data) {
@@ -34,7 +33,7 @@ export function useVehicles() {
     }
 
     return { ownVehicles: [], sharedVehicles: [] };
-  }, [dialog]);
+  }, []);
 
   /**
    * Initial fetch with loading state

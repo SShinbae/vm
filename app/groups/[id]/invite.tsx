@@ -18,16 +18,15 @@ import { IconSymbol } from "@/components/ui/icon-symbol";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { Card, CardContent } from "@/components/ui/Card";
-import { AlertModal, ConfirmModal } from "@/components/ui/Modal";
+import { useToast } from "@/hooks/useToast";
+import { useDialog } from "@/lib/contexts/DialogContext";
 
 export default function InviteToGroupScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
-  const [showErrorModal, setShowErrorModal] = useState(false);
-  const [errorMessage, setErrorMessage] = useState("");
-  const [showSendAnotherConfirm, setShowSendAnotherConfirm] = useState(false);
-  const [lastSentEmail, setLastSentEmail] = useState("");
+  const { confirm } = useDialog();
+  const { showError } = useToast();
   const posthog = usePostHog();
   const { theme } = useStyles();
   const colors = theme.colors;
@@ -48,20 +47,17 @@ export default function InviteToGroupScreen() {
 
   const handleSendInvitation = async () => {
     if (!email.trim()) {
-      setErrorMessage("Please enter an email address");
-      setShowErrorModal(true);
+      showError("Please enter an email address");
       return;
     }
 
     if (!validateEmail(email.trim())) {
-      setErrorMessage("Please enter a valid email address");
-      setShowErrorModal(true);
+      showError("Please enter a valid email address");
       return;
     }
 
     if (!id) {
-      setErrorMessage("Group not found");
-      setShowErrorModal(true);
+      showError("Group not found");
       return;
     }
 
@@ -74,23 +70,20 @@ export default function InviteToGroupScreen() {
     setLoading(false);
 
     if (error) {
-      setErrorMessage(error);
-      setShowErrorModal(true);
+      showError("Couldn't send invitation", { message: error });
     } else {
       posthog?.capture("group_invitation_sent");
-      setLastSentEmail(email.trim());
-      setShowSendAnotherConfirm(true);
+      const sentTo = email.trim();
+      // Cancel/backdrop/back counts as "Done", same as before.
+      const another = await confirm({
+        title: "Invitation Sent",
+        message: `An invitation has been sent to ${sentTo}`,
+        confirmText: "Send Another",
+        cancelText: "Done",
+      });
+      if (another) setEmail("");
+      else handleGoBack();
     }
-  };
-
-  const handleSendAnother = () => {
-    setShowSendAnotherConfirm(false);
-    setEmail("");
-  };
-
-  const handleDone = () => {
-    setShowSendAnotherConfirm(false);
-    handleGoBack();
   };
 
   const getEmailValidationError = () => {
@@ -278,24 +271,6 @@ export default function InviteToGroupScreen() {
           </Card>
         </ScrollView>
       </KeyboardAvoidingView>
-
-      <ConfirmModal
-        visible={showSendAnotherConfirm}
-        onClose={handleDone}
-        onConfirm={handleSendAnother}
-        title="Invitation Sent"
-        message={`An invitation has been sent to ${lastSentEmail}`}
-        confirmText="Send Another"
-        cancelText="Done"
-      />
-
-      <AlertModal
-        visible={showErrorModal}
-        onClose={() => setShowErrorModal(false)}
-        title="Error"
-        message={errorMessage}
-        variant="error"
-      />
     </SafeAreaView>
   );
 }

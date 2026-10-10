@@ -14,4 +14,10 @@ describe("AuthGuard route classification", () => {
   it("still treats protected routes as non-auth pages", () => {
     expect(getRouteState(["(tabs)", "vehicles"]).isOnAuthPage).toBe(false);
   });
+
+  it("treats /privacy and /terms as public pages anyone can open", () => {
+    expect(getRouteState(["privacy"]).inPublicPage).toBe(true);
+    expect(getRouteState(["terms"]).inPublicPage).toBe(true);
+    expect(getRouteState(["(tabs)", "profile"]).inPublicPage).toBe(false);
+  });
 });

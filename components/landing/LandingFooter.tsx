@@ -1,8 +1,8 @@
 import { spacing } from "@/src/design-system";
 import { Image } from "expo-image";
-import { useRouter } from "expo-router";
+import { Link, useRouter } from "expo-router";
 import React from "react";
-import { Linking, Text, TouchableOpacity, View } from "react-native";
+import { Linking, Pressable, Text, TouchableOpacity, View } from "react-native";
 import { useStyles } from "react-native-unistyles";
 import { CONTACT_EMAIL, GITHUB_URL } from "./content";
 import { Section, useBreakpoint } from "./layout";
@@ -14,6 +14,7 @@ export function LandingFooter() {
 
   const links = [
     { label: "Privacy", onPress: () => router.push("/privacy") },
+    { label: "Terms", onPress: () => router.push("/terms") },
     { label: "GitHub", onPress: () => Linking.openURL(GITHUB_URL) },
     {
       label: "Contact",
@@ -46,21 +47,19 @@ export function LandingFooter() {
               marginBottom: spacing.xs,
             }}
           >
-            <Image
-              source={require("@/assets/images/vm_logo.webp")}
-              style={{ width: 24, height: 24 }}
-              contentFit="contain"
-              accessible={false}
-            />
-            <Text
-              style={{
-                fontSize: 16,
-                fontWeight: "700",
-                color: theme.colors.text,
-              }}
-            >
-              Vehicle Management
-            </Text>
+            <Link href="/" asChild>
+              <Pressable
+                accessibilityRole="link"
+                accessibilityLabel="Vehicle Management home"
+              >
+                <Image
+                  source={require("@/assets/images/vm_logo.webp")}
+                  style={{ width: 32, height: 32 }}
+                  contentFit="contain"
+                  accessible={false}
+                />
+              </Pressable>
+            </Link>
           </View>
           <Text style={{ fontSize: 14, color: theme.colors.textSecondary }}>
             Track. Monitor. Optimize.

@@ -10,7 +10,6 @@ export { Input } from "./Input";
 export { AlertModal, ConfirmModal, Modal } from "./Modal";
 export { PasswordStrengthIndicator } from "./PasswordStrengthIndicator";
 export { Tooltip } from "./Tooltip";
-export { WebAlertProvider, useAlert, withWebAlert } from "./WebAlertProvider";
 
 // Loading & State Components
 export { LoadingOverlay, LoadingSpinner } from "./LoadingSpinner";

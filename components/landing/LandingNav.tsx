@@ -1,8 +1,8 @@
 import { spacing, withOpacity } from "@/src/design-system";
 import { Image } from "expo-image";
-import { useRouter } from "expo-router";
+import { Link, useRouter } from "expo-router";
 import React from "react";
-import { Text, TouchableOpacity, View } from "react-native";
+import { Pressable, Text, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useStyles } from "react-native-unistyles";
 import { Section, useBreakpoint } from "./layout";
@@ -25,7 +25,7 @@ export function LandingNav({
 }) {
   const { theme } = useStyles();
   const router = useRouter();
-  const { isMobile, isDesktop } = useBreakpoint();
+  const { isDesktop } = useBreakpoint();
   // Edge-to-edge Android and iOS draw under the status bar; inset is 0 on web.
   const { top } = useSafeAreaInsets();
 
@@ -54,23 +54,19 @@ export function LandingNav({
             flex: 1,
           }}
         >
-          <Image
-            source={require("@/assets/images/vm_logo.webp")}
-            style={{ width: 32, height: 32 }}
-            contentFit="contain"
-            accessibilityLabel="Vehicle Management logo"
-          />
-          {!isMobile && (
-            <Text
-              style={{
-                fontSize: 17,
-                fontWeight: "700",
-                color: theme.colors.text,
-              }}
+          <Link href="/" asChild>
+            <Pressable
+              accessibilityRole="link"
+              accessibilityLabel="Vehicle Management home"
             >
-              Vehicle Management
-            </Text>
-          )}
+              <Image
+                source={require("@/assets/images/vm_logo.webp")}
+                style={{ width: 32, height: 32 }}
+                contentFit="contain"
+                accessible={false}
+              />
+            </Pressable>
+          </Link>
         </View>
 
         {isDesktop &&

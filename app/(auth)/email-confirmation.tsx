@@ -2,16 +2,16 @@ import { spacing } from "@/src/design-system";
 import { useStyles } from "react-native-unistyles";
 import { AuthButton, AuthLayout } from "@/components/auth";
 import { IconSymbol } from "@/components/ui/icon-symbol";
-import { useAlert, withWebAlert } from "@/components/ui";
+import { useDialog } from "@/lib/contexts/DialogContext";
 import { Link, router, useLocalSearchParams } from "expo-router";
 import React, { useEffect, useState } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
-function EmailConfirmationScreen() {
+export default function EmailConfirmationScreen() {
   const { email } = useLocalSearchParams<{ email: string }>();
   const [resendLoading, setResendLoading] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(0);
-  const { showConfirm } = useAlert();
+  const { confirm } = useDialog();
   const { theme } = useStyles();
   const colors = theme.colors;
 
@@ -38,17 +38,16 @@ function EmailConfirmationScreen() {
 
     // Note: Since we don't have access to the original password and full name,
     // we'll show a message to go back to registration for now
-    showConfirm(
-      "Resend Verification",
-      "To resend the verification email, please go back to the registration form and try again.",
-      () => router.replace("/(auth)/register"),
-      undefined,
-      "Go to Registration",
-      "Cancel",
-    );
+    const goToRegistration = await confirm({
+      title: "Resend Verification",
+      message:
+        "To resend the verification email, please go back to the registration form and try again.",
+      confirmText: "Go to Registration",
+    });
 
     setResendLoading(false);
     setResendCooldown(60); // 60 seconds cooldown
+    if (goToRegistration) router.replace("/(auth)/register");
   };
 
   const styles = StyleSheet.create({
@@ -248,5 +247,3 @@ function EmailConfirmationScreen() {
     </AuthLayout>
   );
 }
-
-export default withWebAlert(EmailConfirmationScreen);

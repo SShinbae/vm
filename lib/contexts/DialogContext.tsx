@@ -1,51 +1,192 @@
-import React, { createContext, useContext } from "react";
-import { WebAlertProvider } from "@/components/ui/WebAlertProvider";
-import { useWebAlert, AlertButton, AlertOptions } from "@/hooks/use-web-alert";
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import { Keyboard, Platform } from "react-native";
+import { FullWindowOverlay } from "react-native-screens";
+import { AlertModal, ChoiceModal, ConfirmModal } from "@/components/ui/Modal";
 
-interface DialogContextValue {
-  alert: (
-    title: string,
-    message?: string,
-    buttons?: AlertButton[],
-    options?: AlertOptions,
-  ) => void;
-  showSuccess: (title: string, message?: string, onPress?: () => void) => void;
-  showError: (title: string, message?: string, onPress?: () => void) => void;
-  showConfirm: (
-    title: string,
-    message: string,
-    onConfirm: () => void,
-    onCancel?: () => void,
-    confirmText?: string,
-    cancelText?: string,
-    destructive?: boolean,
-  ) => void;
-  hideConfirm: () => void;
+export interface ConfirmOptions {
+  title: string;
+  message?: string;
+  confirmText?: string;
+  cancelText?: string;
+  destructive?: boolean;
 }
 
-const DialogContext = createContext<DialogContextValue | undefined>(undefined);
+export interface DialogAlertOptions {
+  title: string;
+  message?: string;
+  variant?: "info" | "success" | "warning" | "error";
+  buttonText?: string;
+}
+
+export interface ChooseOptions<T extends string> {
+  title: string;
+  message?: string;
+  options: { label: string; value: T; destructive?: boolean }[];
+  cancelText?: string;
+}
+
+export interface DialogApi {
+  confirm(opts: ConfirmOptions): Promise<boolean>;
+  alert(opts: DialogAlertOptions): Promise<void>;
+  choose<T extends string>(opts: ChooseOptions<T>): Promise<T | null>;
+}
+
+type Request =
+  | { kind: "confirm"; opts: ConfirmOptions; resolve: (v: boolean) => void }
+  | { kind: "alert"; opts: DialogAlertOptions; resolve: () => void }
+  | {
+      kind: "choose";
+      opts: ChooseOptions<string>;
+      resolve: (v: string | null) => void;
+    };
+
+const cancel = (r: Request) =>
+  r.kind === "confirm"
+    ? r.resolve(false)
+    : r.kind === "choose"
+      ? r.resolve(null)
+      : r.resolve();
+
+const sameAs = (a: Request) => (b: Request) =>
+  a.kind === b.kind &&
+  a.opts.title === b.opts.title &&
+  a.opts.message === b.opts.message;
+
+// Registered by the mounted DialogProvider so non-React code can use `dialog`.
+let active: DialogApi | null = null;
+
+export const dialog: DialogApi = {
+  confirm: (opts) => active?.confirm(opts) ?? Promise.resolve(false),
+  choose: (opts) => active?.choose(opts) ?? Promise.resolve(null),
+  alert: (opts) => active?.alert(opts) ?? Promise.resolve(),
+};
+
+const DialogContext = createContext<DialogApi | undefined>(undefined);
 
 export function DialogProvider({ children }: { children: React.ReactNode }) {
-  const webAlert = useWebAlert();
+  const [queue, setQueue] = useState<Request[]>([]);
+  // Mirror of the queue, read outside state updaters so dedupe has no side
+  // effects inside setQueue.
+  const pending = useRef<Request[]>([]);
+  // An identical pending request (double tap) resolves as cancel at once.
+  const enqueue = useCallback((r: Request) => {
+    if (pending.current.some(sameAs(r))) return cancel(r);
+    pending.current.push(r);
+    // A dialog opened over a focused input would sit under the keyboard.
+    Keyboard.dismiss();
+    setQueue((q) => [...q, r]);
+  }, []);
+
+  const api = useMemo<DialogApi>(() => {
+    const confirm = (opts: ConfirmOptions) =>
+      new Promise<boolean>((resolve) =>
+        enqueue({ kind: "confirm", opts, resolve }),
+      );
+    const choose = <T extends string>(opts: ChooseOptions<T>) =>
+      new Promise<T | null>((resolve) =>
+        enqueue({
+          kind: "choose",
+          opts: opts as ChooseOptions<string>,
+          resolve: resolve as (v: string | null) => void,
+        }),
+      );
+    const alert = (opts: DialogAlertOptions) =>
+      new Promise<void>((resolve) => enqueue({ kind: "alert", opts, resolve }));
+
+    return { confirm, choose, alert };
+  }, [enqueue]);
+
+  useEffect(() => {
+    active = api;
+    return () => {
+      if (active === api) active = null;
+    };
+  }, [api]);
+
+  const head = queue[0];
+  // Dequeue by identity so a second resolve of the same head can't drop the next one.
+  const done = () => {
+    pending.current = pending.current.filter((r) => r !== head);
+    setQueue((q) => (q[0] === head ? q.slice(1) : q));
+  };
+  // iOS: an RN Modal can't present while another RN Modal is up (e.g. Edit
+  // Profile), which would hide the head and jam the queue. Draw the dialog in
+  // a window-level overlay instead. Android keeps RN Modal (back button), web
+  // keeps its portal.
+  const inline = Platform.OS === "ios";
+
+  const headEl = (
+    <>
+      {head?.kind === "confirm" && (
+        <ConfirmModal
+          visible
+          inline={inline}
+          title={head.opts.title}
+          message={head.opts.message ?? ""}
+          confirmText={head.opts.confirmText}
+          cancelText={head.opts.cancelText}
+          variant={head.opts.destructive ? "danger" : "default"}
+          onConfirm={() => {
+            head.resolve(true);
+            done();
+          }}
+          onClose={() => {
+            head.resolve(false);
+            done();
+          }}
+        />
+      )}
+      {head?.kind === "alert" && (
+        <AlertModal
+          visible
+          inline={inline}
+          title={head.opts.title}
+          message={head.opts.message ?? ""}
+          variant={head.opts.variant}
+          buttonText={head.opts.buttonText}
+          onClose={() => {
+            head.resolve();
+            done();
+          }}
+        />
+      )}
+      {head?.kind === "choose" && (
+        <ChoiceModal
+          visible
+          inline={inline}
+          title={head.opts.title}
+          message={head.opts.message}
+          options={head.opts.options}
+          cancelText={head.opts.cancelText}
+          onSelect={(v) => {
+            head.resolve(v);
+            done();
+          }}
+          onClose={() => {
+            head.resolve(null);
+            done();
+          }}
+        />
+      )}
+    </>
+  );
 
   return (
-    <DialogContext.Provider
-      value={{
-        alert: webAlert.alert,
-        showSuccess: webAlert.showSuccess,
-        showError: webAlert.showError,
-        showConfirm: webAlert.showConfirm,
-        hideConfirm: webAlert.hideConfirm,
-      }}
-    >
-      <WebAlertProvider
-        alertState={webAlert.alertState}
-        confirmState={webAlert.confirmState}
-        hideAlert={webAlert.hideAlert}
-        hideConfirm={webAlert.hideConfirm}
-      >
-        {children}
-      </WebAlertProvider>
+    <DialogContext.Provider value={api}>
+      {children}
+      {head && inline ? (
+        <FullWindowOverlay>{headEl}</FullWindowOverlay>
+      ) : (
+        headEl
+      )}
     </DialogContext.Provider>
   );
 }

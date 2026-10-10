@@ -1,12 +1,12 @@
 import { withOpacity, spacing } from "@/src/design-system";
 import { useStyles } from "react-native-unistyles";
 import { IconSymbol } from "@/components/ui/icon-symbol";
-import { ConfirmModal } from "@/components/ui/Modal";
 import { SidebarBadge } from "@/components/ui/SidebarBadge";
 import { Tooltip } from "@/components/ui/Tooltip";
 import { useResponsiveLayout } from "@/hooks/use-responsive-layout";
 import { useToast } from "@/hooks/useToast";
 import { useAuth } from "@/lib/contexts/AuthContext";
+import { useDialog } from "@/lib/contexts/DialogContext";
 import { useNotifications } from "@/lib/contexts/NotificationContext";
 import { useSidebar } from "@/lib/contexts/SidebarContext";
 import { Image } from "expo-image";
@@ -55,7 +55,8 @@ export function WebSidebar() {
   const { showError } = useToast();
   const { isOpen, toggle } = useSidebar();
   const { unreadCount } = useNotifications();
-  const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const { confirm } = useDialog();
+  const [signingOut, setSigningOut] = useState(false);
 
   // Hide sidebar on auth pages (login, register)
   const isAuthPage =
@@ -71,15 +72,22 @@ export function WebSidebar() {
   // Show as bottom bar on mobile web
   const showAsBottomBar = layout.isMobile;
 
-  const handleSignOutClick = () => {
-    setShowLogoutModal(true);
-  };
+  const handleSignOutClick = async () => {
+    if (signingOut) return;
+    const ok = await confirm({
+      title: "Sign out?",
+      message: "Are you sure you want to sign out?",
+      confirmText: "Sign out",
+    });
+    if (!ok) return;
 
-  const handleConfirmSignOut = async () => {
-    setShowLogoutModal(false);
+    setSigningOut(true);
     const { error } = await signOut();
     if (error) {
-      showError("Couldn't sign out. Check your connection and try again.");
+      setSigningOut(false);
+      showError("Couldn't sign out", {
+        message: "Check your connection and try again.",
+      });
       return;
     }
     router.replace("/(auth)/login");
@@ -435,17 +443,6 @@ export function WebSidebar() {
             <NavButton key={item.name} item={item} />
           ))}
         </View>
-
-        <ConfirmModal
-          visible={showLogoutModal}
-          onClose={() => setShowLogoutModal(false)}
-          onConfirm={handleConfirmSignOut}
-          title="Sign Out"
-          message="Are you sure you want to sign out?"
-          confirmText="Sign Out"
-          cancelText="Cancel"
-          variant="danger"
-        />
       </View>
     );
   }
@@ -575,17 +572,6 @@ export function WebSidebar() {
           </Tooltip>
         </View>
       </View>
-
-      <ConfirmModal
-        visible={showLogoutModal}
-        onClose={() => setShowLogoutModal(false)}
-        onConfirm={handleConfirmSignOut}
-        title="Sign Out"
-        message="Are you sure you want to sign out?"
-        confirmText="Sign Out"
-        cancelText="Cancel"
-        variant="danger"
-      />
     </View>
   );
 }
