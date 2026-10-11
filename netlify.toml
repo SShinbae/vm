@@ -77,6 +77,9 @@
 [functions."prune-push-tokens"]
   schedule = "0 3 * * *"
 
+[functions."purge-deleted-accounts"]
+  schedule = "0 2 * * *"
+
 # API routes for Netlify Functions
 [[redirects]]
   from = "/api/*"
