@@ -61,6 +61,7 @@ const MAPPING = {
   "chart.line.uptrend.xyaxis": "trending-up",
   "chart.bar.fill": "bar-chart",
   "person.badge.plus": "person-add",
+  crown: "workspace-premium",
 
   // Financial & Action Icons
   "dollarsign.circle.fill": "attach-money",

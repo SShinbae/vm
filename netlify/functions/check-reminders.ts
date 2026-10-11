@@ -25,7 +25,9 @@ export const handler: Handler = async () => {
       .select(
         "id, vehicle_id, user_id, service_type, next_service_due, next_service_mileage, vehicles(make, model, year, current_mileage)",
       )
-      .or("next_service_due.not.is.null,next_service_mileage.not.is.null");
+      .or("next_service_due.not.is.null,next_service_mileage.not.is.null")
+      // Authorless logs (author deleted their account) have no one to remind.
+      .not("user_id", "is", null);
     if (error) {
       return {
         statusCode: 500,

@@ -154,7 +154,7 @@ export interface Database {
         Row: {
           id: string;
           vehicle_id: string;
-          user_id: string;
+          user_id: string | null;
           odometer_reading: number;
           date: string;
           notes: string | null;
@@ -189,7 +189,7 @@ export interface Database {
         Row: {
           id: string;
           vehicle_id: string;
-          user_id: string;
+          user_id: string | null;
           liters_filled: number;
           cost: number | null;
           date: string;
@@ -227,7 +227,7 @@ export interface Database {
         Row: {
           id: string;
           vehicle_id: string;
-          user_id: string;
+          user_id: string | null;
           service_type: string;
           description: string;
           cost: number | null;

@@ -345,6 +345,41 @@ describe("Group Services", () => {
         expect(result.data).toBe(true);
       });
     });
+
+    describe("transferOwnership", () => {
+      it("calls the transfer RPC and returns true", async () => {
+        mockSupabase.rpc = jest
+          .fn()
+          .mockResolvedValue({ data: null, error: null });
+
+        const result = await GroupService.transferOwnership(
+          "group-1",
+          "user-2",
+        );
+
+        expect(mockSupabase.rpc).toHaveBeenCalledWith(
+          "transfer_group_ownership",
+          { p_group: "group-1", p_new_owner: "user-2" },
+        );
+        expect(result.error).toBeNull();
+        expect(result.data).toBe(true);
+      });
+
+      it("returns the database error message", async () => {
+        mockSupabase.rpc = jest.fn().mockResolvedValue({
+          data: null,
+          error: { message: "new owner must be a group member" },
+        });
+
+        const result = await GroupService.transferOwnership(
+          "group-1",
+          "user-9",
+        );
+
+        expect(result.data).toBeNull();
+        expect(result.error).toBe("new owner must be a group member");
+      });
+    });
   });
 
   // ==========================================================================
@@ -695,118 +730,6 @@ describe("Group Services", () => {
 
         expect(result.error).toBeNull();
         expect(result.data).toBe(true);
-      });
-    });
-
-    describe("transferOwnership", () => {
-      it("should transfer ownership to existing member", async () => {
-        const updateMock = jest.fn().mockReturnValue({
-          eq: jest.fn().mockResolvedValue({ data: null, error: null }),
-        });
-
-        mockSupabase.from.mockImplementation((table: string) => {
-          if (table === "groups") {
-            return {
-              ...createMockQueryBuilder(),
-              select: jest.fn().mockReturnThis(),
-              eq: jest.fn().mockReturnValue({
-                single: jest.fn().mockResolvedValue({
-                  data: { owner_id: "test-user-id", name: "Test Group" },
-                  error: null,
-                }),
-              }),
-              update: updateMock,
-            };
-          }
-          if (table === "group_members") {
-            return {
-              ...createMockQueryBuilder(),
-              select: jest.fn().mockReturnThis(),
-              eq: jest.fn().mockReturnValue({
-                eq: jest.fn().mockReturnValue({
-                  single: jest.fn().mockResolvedValue({
-                    data: { user_id: "new-owner-id" },
-                    error: null,
-                  }),
-                }),
-              }),
-            };
-          }
-          return createMockQueryBuilder();
-        });
-
-        const result = await GroupInvitationService.transferOwnership(
-          "group-1",
-          "new-owner-id",
-        );
-
-        expect(result.error).toBeNull();
-        expect(result.data).toBe(true);
-      });
-
-      it("should reject transfer to non-member", async () => {
-        mockSupabase.from.mockImplementation((table: string) => {
-          if (table === "groups") {
-            return {
-              ...createMockQueryBuilder(),
-              select: jest.fn().mockReturnThis(),
-              eq: jest.fn().mockReturnValue({
-                single: jest.fn().mockResolvedValue({
-                  data: { owner_id: "test-user-id", name: "Test Group" },
-                  error: null,
-                }),
-              }),
-            };
-          }
-          if (table === "group_members") {
-            return {
-              ...createMockQueryBuilder(),
-              select: jest.fn().mockReturnThis(),
-              eq: jest.fn().mockReturnValue({
-                eq: jest.fn().mockReturnValue({
-                  single: jest.fn().mockResolvedValue({
-                    data: null,
-                    error: { message: "Not found" },
-                  }),
-                }),
-              }),
-            };
-          }
-          return createMockQueryBuilder();
-        });
-
-        const result = await GroupInvitationService.transferOwnership(
-          "group-1",
-          "non-member-id",
-        );
-
-        expect(result.error).toBe("New owner must be a member of the group");
-      });
-
-      it("should only allow current owner to transfer", async () => {
-        mockSupabase.from.mockImplementation((table: string) => {
-          if (table === "groups") {
-            return {
-              select: jest.fn().mockReturnThis(),
-              eq: jest.fn().mockReturnValue({
-                single: jest.fn().mockResolvedValue({
-                  data: { owner_id: "different-user-id", name: "Test Group" },
-                  error: null,
-                }),
-              }),
-            };
-          }
-          return createMockQueryBuilder();
-        });
-
-        const result = await GroupInvitationService.transferOwnership(
-          "group-1",
-          "new-owner-id",
-        );
-
-        expect(result.error).toBe(
-          "Only the group owner can transfer ownership",
-        );
       });
     });
   });
