@@ -5,6 +5,7 @@ interface AppConfig {
   supabaseUrl: string;
   supabaseKey: string;
   siteUrl: string;
+  functionsUrl: string;
   sentryDsn: string;
   posthogApiKey: string;
   posthogHost: string;
@@ -33,8 +34,20 @@ export const config: Readonly<AppConfig> = {
   supabaseUrl: resolveLocalHostUrl(extra.supabaseUrl ?? ""),
   supabaseKey: extra.supabaseKey ?? "",
   siteUrl: extra.siteUrl ?? "",
+  functionsUrl: resolveLocalHostUrl(extra.functionsUrl ?? ""),
   sentryDsn: extra.sentryDsn || process.env.EXPO_PUBLIC_SENTRY_DSN || "",
   posthogApiKey:
     extra.posthogApiKey || process.env.EXPO_PUBLIC_POSTHOG_API_KEY || "",
   posthogHost: extra.posthogHost || process.env.EXPO_PUBLIC_POSTHOG_HOST || "",
 };
+
+/** URL of a Netlify function: dev override, relative on web, site URL on native. */
+export function functionUrl(
+  name: string,
+  os: string = Platform.OS,
+  base: string = config.functionsUrl,
+  siteUrl: string = config.siteUrl,
+): string {
+  if (base) return `${base.replace(/\/$/, "")}/${name}`;
+  return os === "web" ? `/api/${name}` : `${siteUrl}/api/${name}`;
+}

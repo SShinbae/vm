@@ -28,6 +28,14 @@ describe("LegalDocument", () => {
     expect(getByText(/Limited Use requirements/)).toBeTruthy();
   });
 
+  it("describes the real deletion path, grace period and what is kept", () => {
+    const { getByText } = render(<LegalDocument doc={PRIVACY_POLICY} />);
+    expect(getByText(/Profile → Delete account/)).toBeTruthy();
+    expect(getByText(/vm\.wanahnaf\.dev\/delete-account/)).toBeTruthy();
+    expect(getByText(/30 days/)).toBeTruthy();
+    expect(getByText(/receipt photos attached to them/)).toBeTruthy();
+  });
+
   it("can hide the title for the tabbed in-app screen", () => {
     const { queryByText } = render(
       <LegalDocument doc={TERMS_OF_SERVICE} showTitle={false} />,

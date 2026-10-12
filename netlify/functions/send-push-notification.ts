@@ -100,7 +100,9 @@ export function logChangeLabel(table: string): string {
   return `${table.replace("_logs", "").replace("_", " ")} log`;
 }
 
-async function handleLogChange(payload: WebhookPayload): Promise<boolean> {
+export async function handleLogChange(
+  payload: WebhookPayload,
+): Promise<boolean> {
   const record = payload.record || payload.old_record!;
   const { data: vehicle } = await supabase
     .from("vehicles")
@@ -115,21 +117,27 @@ async function handleLogChange(payload: WebhookPayload): Promise<boolean> {
     .eq("vehicle_id", record.vehicle_id);
   if (!shares?.length) return false;
 
-  const { data: members } = await supabase
+  let membersQuery = supabase
     .from("group_members")
     .select("user_id")
     .in(
       "group_id",
       shares.map((share) => share.group_id),
-    )
-    .neq("user_id", record.user_id);
+    );
+  // A deleted author leaves user_id NULL: no one to exclude or look up.
+  if (record.user_id) {
+    membersQuery = membersQuery.neq("user_id", record.user_id);
+  }
+  const { data: members } = await membersQuery;
   if (!members?.length) return false;
 
-  const { data: user } = await supabase
-    .from("profiles")
-    .select("full_name, email")
-    .eq("id", record.user_id)
-    .single();
+  const { data: user } = record.user_id
+    ? await supabase
+        .from("profiles")
+        .select("full_name, email")
+        .eq("id", record.user_id)
+        .single()
+    : { data: null };
   const userName = user?.full_name || user?.email || "Someone";
   const action =
     payload.type === "INSERT"

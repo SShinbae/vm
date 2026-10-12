@@ -19,6 +19,7 @@ export interface Database {
           avatar_url: string | null;
           created_at: string;
           updated_at: string;
+          deletion_scheduled_at: string | null;
         };
         Insert: {
           id: string;
@@ -33,6 +34,7 @@ export interface Database {
           username?: string | null;
           avatar_url?: string | null;
           updated_at?: string;
+          deletion_scheduled_at?: string | null;
         };
       };
       vehicles: {
@@ -163,7 +165,7 @@ export interface Database {
         Row: {
           id: string;
           vehicle_id: string;
-          user_id: string;
+          user_id: string | null;
           odometer_reading: number;
           date: string;
           notes: string | null;
@@ -198,7 +200,7 @@ export interface Database {
         Row: {
           id: string;
           vehicle_id: string;
-          user_id: string;
+          user_id: string | null;
           liters_filled: number;
           cost: number | null;
           date: string;
@@ -236,7 +238,7 @@ export interface Database {
         Row: {
           id: string;
           vehicle_id: string;
-          user_id: string;
+          user_id: string | null;
           service_type: string;
           description: string;
           cost: number | null;

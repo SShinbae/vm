@@ -4,6 +4,8 @@ import React, { useState } from "react";
 import { Platform, StyleSheet, Text, View } from "react-native";
 import { useToast } from "@/hooks/useToast";
 import { signInWithGoogle } from "@/lib/services/googleAuthService";
+import { rememberNext, safeNext } from "@/lib/utils/safeNext";
+import { useLocalSearchParams } from "expo-router";
 import { AuthButton } from "./AuthButton";
 
 /**
@@ -14,6 +16,7 @@ import { AuthButton } from "./AuthButton";
 export function GoogleSignInButton() {
   const [loading, setLoading] = useState(false);
   const { showError } = useToast();
+  const { next } = useLocalSearchParams<{ next?: string }>();
   const { theme } = useStyles();
   const colors = theme.colors;
 
@@ -23,6 +26,7 @@ export function GoogleSignInButton() {
   const handlePress = async () => {
     setLoading(true);
     try {
+      rememberNext(safeNext(next));
       const { error } = await signInWithGoogle();
       if (error) showError(error);
     } catch {

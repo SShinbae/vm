@@ -99,7 +99,7 @@ module.exports = {
           backgroundColor: "#FFFFFF",
           dark: {
             image: "./assets/images/splash-icon-dark.png",
-            backgroundColor: "#121212",
+            backgroundColor: "#1e292e",
           },
         },
       ],
@@ -131,6 +131,7 @@ module.exports = {
       supabaseUrl: process.env.SUPABASE_URL,
       supabaseKey: process.env.SUPABASE_KEY,
       siteUrl: process.env.SITE_URL,
+      functionsUrl: process.env.FUNCTIONS_URL,
       sentryDsn: process.env.SENTRY_DSN,
       posthogApiKey: process.env.POSTHOG_API_KEY,
       posthogHost: process.env.POSTHOG_HOST,

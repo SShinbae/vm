@@ -386,6 +386,66 @@ export class GroupService {
       return { data: null, error: "Failed to remove member", loading: false };
     }
   }
+
+  /** Groups the current user owns that still have at least one other member. */
+  static async getOwnedGroupsWithMembers(): Promise<
+    ApiResponse<{ id: string; name: string }[]>
+  > {
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user)
+        return { data: null, error: "User not authenticated", loading: false };
+      const { data, error } = await supabase
+        .from("groups")
+        .select("id, name, group_members(user_id)")
+        .eq("owner_id", user.id);
+      if (error) return { data: null, error: error.message, loading: false };
+      const blocking = (
+        (data || []) as {
+          id: string;
+          name: string;
+          group_members?: { user_id: string }[];
+        }[]
+      )
+        .filter((g) =>
+          (g.group_members || []).some((m) => m.user_id !== user.id),
+        )
+        .map((g) => ({ id: g.id, name: g.name }));
+      return { data: blocking, error: null, loading: false };
+    } catch {
+      return { data: null, error: "Failed to load groups", loading: false };
+    }
+  }
+
+  static async transferOwnership(
+    groupId: string,
+    newOwnerId: string,
+  ): Promise<ApiResponse<boolean>> {
+    try {
+      // Server-side: checks the caller owns the group and the new owner is a
+      // member, swaps owner_id and notifies the new owner in one transaction.
+      const { error } = await supabase.rpc("transfer_group_ownership", {
+        p_group: groupId,
+        p_new_owner: newOwnerId,
+      } as any);
+
+      if (error) {
+        logger.error("Error transferring group ownership:", error);
+        return { data: null, error: error.message, loading: false };
+      }
+
+      return { data: true, error: null, loading: false };
+    } catch (error) {
+      logger.error("Unexpected error transferring ownership:", error);
+      return {
+        data: null,
+        error: "Failed to transfer ownership",
+        loading: false,
+      };
+    }
+  }
 }
 
 export class GroupInvitationService {
@@ -993,100 +1053,6 @@ export class GroupInvitationService {
     } catch (error) {
       logger.error("Unexpected error leaving group:", error);
       return { data: null, error: "Failed to leave group", loading: false };
-    }
-  }
-
-  static async transferOwnership(
-    groupId: string,
-    newOwnerId: string,
-  ): Promise<ApiResponse<boolean>> {
-    try {
-      const {
-        data: { user },
-        error: userError,
-      } = await supabase.auth.getUser();
-
-      if (userError || !user) {
-        return { data: null, error: "User not authenticated", loading: false };
-      }
-
-      logger.log("👑 Transferring group ownership:", {
-        groupId,
-        fromUserId: user.id,
-        toUserId: newOwnerId,
-      });
-
-      // Verify current user is the owner
-      const { data: group, error: groupError } = (await supabase
-        .from("groups")
-        .select("owner_id, name")
-        .eq("id", groupId)
-        .single()) as {
-        data: { owner_id: string; name: string } | null;
-        error: any;
-      };
-
-      if (groupError || !group) {
-        logger.error("Error fetching group:", groupError);
-        return { data: null, error: "Group not found", loading: false };
-      }
-
-      if (group.owner_id !== user.id) {
-        return {
-          data: null,
-          error: "Only the group owner can transfer ownership",
-          loading: false,
-        };
-      }
-
-      // Verify new owner is a member of the group
-      const { error: membershipError } = await supabase
-        .from("group_members")
-        .select("*")
-        .eq("group_id", groupId)
-        .eq("user_id", newOwnerId)
-        .single();
-
-      if (membershipError) {
-        logger.error("Error checking new owner membership:", membershipError);
-        return {
-          data: null,
-          error: "New owner must be a member of the group",
-          loading: false,
-        };
-      }
-
-      // Transfer ownership
-      const { error: transferError } = await supabase
-        .from("groups")
-        // @ts-ignore - Supabase type inference issue with update (owner_id not in Update type)
-        .update({
-          owner_id: newOwnerId,
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", groupId);
-
-      if (transferError) {
-        logger.error("Error transferring ownership:", transferError);
-        return {
-          data: null,
-          error: "Failed to transfer ownership",
-          loading: false,
-        };
-      }
-
-      logger.log("✅ Group ownership transferred successfully:", {
-        groupName: group?.name,
-        newOwnerId,
-      });
-      return { data: true, error: null, loading: false };
-    } catch (error) {
-      logger.error("Unexpected error transferring ownership:", error);
-      return {
-        data: null,
-        error: "Failed to transfer ownership",
-        loading: false,
-      };
     }
   }
 }

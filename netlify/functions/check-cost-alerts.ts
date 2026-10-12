@@ -27,7 +27,8 @@ export const handler: Handler = async () => {
       .from("fuel_logs")
       .select("user_id, cost")
       .gte("date", monthStart)
-      .not("cost", "is", null);
+      .not("cost", "is", null)
+      .not("user_id", "is", null);
 
     if (costError) {
       console.error("Error querying fuel logs:", costError);
@@ -76,6 +77,7 @@ export const handler: Handler = async () => {
       .from("fuel_logs")
       .select("id, user_id, cost, liters_filled, date")
       .not("cost", "is", null)
+      .not("user_id", "is", null)
       .gt("liters_filled", 0)
       .order("date", { ascending: false })
       .limit(5000);

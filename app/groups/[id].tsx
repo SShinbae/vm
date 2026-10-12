@@ -129,6 +129,31 @@ export default function GroupDetailScreen() {
     });
   };
 
+  const handleMakeOwner = async (memberId: string, memberName: string) => {
+    if (!group) return;
+
+    const ok = await dialog.confirm({
+      title: "Make owner?",
+      message: `${memberName} will become the owner of ${group.name}. You'll stay in the group as a member and can no longer manage it.`,
+      confirmText: "Make owner",
+    });
+    if (!ok) return;
+
+    await runExclusive(async () => {
+      const { error } = await GroupService.transferOwnership(
+        group.id,
+        memberId,
+      );
+      if (error) {
+        toast.error("Couldn't transfer ownership", { message: error });
+      } else {
+        posthog?.capture("group_ownership_transferred");
+        await fetchGroupData();
+        toast.success(`${memberName} is now the owner`);
+      }
+    });
+  };
+
   const handleCancelInvitation = async (
     invitationId: string,
     email: string,
@@ -337,17 +362,38 @@ export default function GroupDetailScreen() {
             </Text>
           </View>
           {!isMemberOwner && !isCurrentUser && isOwner && (
-            <TouchableOpacity
-              style={{ padding: spacing.sm }}
-              onPress={() =>
-                handleRemoveMember(
-                  member.user_id,
-                  member.profiles?.full_name || member.profiles?.email,
-                )
-              }
-            >
-              <IconSymbol name="trash" size={16} color={theme.colors.error} />
-            </TouchableOpacity>
+            <View style={{ flexDirection: "row" }}>
+              <TouchableOpacity
+                style={{ padding: spacing.sm }}
+                accessibilityRole="button"
+                accessibilityLabel={`Make ${member.profiles?.full_name || member.profiles?.email} the owner`}
+                onPress={() =>
+                  handleMakeOwner(
+                    member.user_id,
+                    member.profiles?.full_name || member.profiles?.email,
+                  )
+                }
+              >
+                <IconSymbol
+                  name="crown"
+                  size={16}
+                  color={theme.colors.primary}
+                />
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={{ padding: spacing.sm }}
+                accessibilityRole="button"
+                accessibilityLabel={`Remove ${member.profiles?.full_name || member.profiles?.email}`}
+                onPress={() =>
+                  handleRemoveMember(
+                    member.user_id,
+                    member.profiles?.full_name || member.profiles?.email,
+                  )
+                }
+              >
+                <IconSymbol name="trash" size={16} color={theme.colors.error} />
+              </TouchableOpacity>
+            </View>
           )}
         </View>
       </View>

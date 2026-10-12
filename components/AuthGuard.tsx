@@ -1,12 +1,24 @@
-import { withOpacity, spacing } from "@/src/design-system";
+import {
+  darkTheme,
+  lightTheme,
+  spacing,
+  withOpacity,
+} from "@/src/design-system";
 import { useStyles } from "react-native-unistyles";
 import { Skeleton, SkeletonDashboard } from "@/components/ui/Skeleton";
 import { useResponsiveLayout } from "@/hooks/use-responsive-layout";
 import { useAuth } from "@/lib/contexts/AuthContext";
 import { useDemoMode } from "@/lib/contexts/DemoContext";
+import type { AuthUser } from "@/types";
 import { router, useSegments } from "expo-router";
-import React, { useEffect, useMemo, useState } from "react";
-import { Platform, StyleSheet, View } from "react-native";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import {
+  Image,
+  Platform,
+  StyleSheet,
+  useColorScheme,
+  View,
+} from "react-native";
 
 // ============================================================================
 // Constants
@@ -26,7 +38,7 @@ const AUTH_PAGES = [
 
 // Public pages: readable by anyone, signed in or not, with no loading gate
 // (their static HTML must carry the real text for crawlers and Google review).
-const PUBLIC_PAGES = ["privacy", "terms"] as const;
+const PUBLIC_PAGES = ["privacy", "terms", "delete-account"] as const;
 
 // Pages that should redirect to login when user is not authenticated
 const INVALID_AUTH_PAGES = [
@@ -117,6 +129,32 @@ function useAuthPageTracking(
   }, [lastAuthPageVisit, timeout]);
 
   return wasRecentlyOnAuthPage;
+}
+
+const PENDING_DELETION_ROUTE = "/account-pending-deletion";
+
+/** Where a signed-in user must go given their deletion state, or null. */
+export function pendingDeletionRedirect(
+  user: AuthUser | null,
+  segments: string[],
+): string | null {
+  if (!user?.profile) return null; // signed out, or profile not loaded yet
+  const onPendingPage = segments[0] === "account-pending-deletion";
+  const pending = !!user.profile.deletion_scheduled_at;
+  if (pending) {
+    if (onPendingPage || PUBLIC_PAGES.includes(segments[0] as PublicPage))
+      return null;
+    return PENDING_DELETION_ROUTE;
+  }
+  return onPendingPage ? "/(tabs)" : null;
+}
+
+/** A signed-in user whose profile failed to load gets one refetch per id. */
+export function shouldRetryProfile(
+  user: AuthUser | null,
+  lastTriedId: string | null,
+): boolean {
+  return !!user && !user.profile && user.id !== lastTriedId;
 }
 
 /**
@@ -215,10 +253,13 @@ export function AuthGuard({ children }: AuthGuardProps) {
   // ALL HOOKS MUST BE CALLED BEFORE ANY CONDITIONAL RETURNS
   // ============================================================================
 
-  const { user, loading, initialized, isPasswordRecovery } = useAuth();
+  const { user, loading, initialized, isPasswordRecovery, refreshProfile } =
+    useAuth();
+  const profileTriedFor = useRef<string | null>(null);
   const { isDemoMode } = useDemoMode();
   const segments = useSegments();
   const { theme } = useStyles();
+  const systemScheme = useColorScheme();
   const colors = theme.colors;
 
   const [redirectState, setRedirectState] = useState<RedirectState>({
@@ -300,6 +341,18 @@ export function AuthGuard({ children }: AuthGuardProps) {
     setForceShowContent(false);
   }, [user, inTabs, wasRecentlyOnAuthPage]);
 
+  // A failed/timed-out profile fetch leaves a user with no profile, which
+  // would let a pending-deletion user sit in the tabs. Retry once per user.
+  useEffect(() => {
+    if (
+      isPasswordRecovery ||
+      !shouldRetryProfile(user, profileTriedFor.current)
+    )
+      return;
+    profileTriedFor.current = user!.id;
+    refreshProfile().catch(() => {});
+  }, [user, isPasswordRecovery, refreshProfile]);
+
   // ============================================================================
   // Effect: Track Previous Path
   // ============================================================================
@@ -356,6 +409,14 @@ export function AuthGuard({ children }: AuthGuardProps) {
     if (!segmentPath) return; // Skip during transitions
     if (isPasswordRecovery) return; // Skip during password recovery
     if (inPublicPage) return; // Privacy/terms: open to everyone
+
+    // Pending deletion wins over the auth-page skip below, so a pending user
+    // who just signed in lands on the pending screen.
+    const deletionRoute = pendingDeletionRedirect(user, segments);
+    if (deletionRoute) {
+      navigate(deletionRoute);
+      return;
+    }
 
     // IMPORTANT: Never interfere with auth pages - let them handle their own redirects
     // This prevents flickering when auth state changes during login/register attempts
@@ -424,6 +485,7 @@ export function AuthGuard({ children }: AuthGuardProps) {
     loading,
     isPasswordRecovery,
     segmentPath,
+    segments,
     inAuthGroup,
     inRootIndex,
     isOnAuthPage,
@@ -462,6 +524,32 @@ export function AuthGuard({ children }: AuthGuardProps) {
    * Force stop loading after timeout to prevent infinite loading
    */
   if (shouldShowLoading) {
+    if (Platform.OS !== "web" && inRootIndex) {
+      return (
+        <View
+          style={{
+            flex: 1,
+            alignItems: "center",
+            justifyContent: "center",
+            backgroundColor:
+              systemScheme === "dark"
+                ? darkTheme.colors.background
+                : lightTheme.colors.background,
+          }}
+        >
+          <Image
+            source={
+              systemScheme === "dark"
+                ? require("@/assets/images/splash-icon-dark.png")
+                : require("@/assets/images/splash-icon-light.png")
+            }
+            resizeMode="contain"
+            style={{ width: 200, height: 200 }}
+            accessible={false}
+          />
+        </View>
+      );
+    }
     if (Platform.OS === "web" && !layout.isMobile) {
       return (
         <View
