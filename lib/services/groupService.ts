@@ -387,6 +387,38 @@ export class GroupService {
     }
   }
 
+  /** Groups the current user owns that still have at least one other member. */
+  static async getOwnedGroupsWithMembers(): Promise<
+    ApiResponse<{ id: string; name: string }[]>
+  > {
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user)
+        return { data: null, error: "User not authenticated", loading: false };
+      const { data, error } = await supabase
+        .from("groups")
+        .select("id, name, group_members(user_id)")
+        .eq("owner_id", user.id);
+      if (error) return { data: null, error: error.message, loading: false };
+      const blocking = (
+        (data || []) as {
+          id: string;
+          name: string;
+          group_members?: { user_id: string }[];
+        }[]
+      )
+        .filter((g) =>
+          (g.group_members || []).some((m) => m.user_id !== user.id),
+        )
+        .map((g) => ({ id: g.id, name: g.name }));
+      return { data: blocking, error: null, loading: false };
+    } catch {
+      return { data: null, error: "Failed to load groups", loading: false };
+    }
+  }
+
   static async transferOwnership(
     groupId: string,
     newOwnerId: string,

@@ -1,6 +1,10 @@
 jest.mock("@/lib/contexts/AuthContext", () => ({ useAuth: jest.fn() }));
 
-import { getRouteState } from "@/components/AuthGuard";
+import {
+  getRouteState,
+  pendingDeletionRedirect,
+  shouldRetryProfile,
+} from "@/components/AuthGuard";
 
 describe("AuthGuard route classification", () => {
   it("treats /auth/confirm as an auth page so signed-out users are not bounced to login", () => {
@@ -18,6 +22,65 @@ describe("AuthGuard route classification", () => {
   it("treats /privacy and /terms as public pages anyone can open", () => {
     expect(getRouteState(["privacy"]).inPublicPage).toBe(true);
     expect(getRouteState(["terms"]).inPublicPage).toBe(true);
+    expect(getRouteState(["delete-account"]).inPublicPage).toBe(true);
     expect(getRouteState(["(tabs)", "profile"]).inPublicPage).toBe(false);
+  });
+});
+
+describe("pendingDeletionRedirect", () => {
+  const user = (deletion_scheduled_at: string | null | undefined) =>
+    ({
+      id: "u",
+      email: "u@x",
+      username: null,
+      profile:
+        deletion_scheduled_at === undefined
+          ? undefined
+          : ({ deletion_scheduled_at } as never),
+    }) as never;
+
+  it("sends a pending user to the pending screen from anywhere, including auth pages", () => {
+    expect(
+      pendingDeletionRedirect(user("2026-11-10T00:00:00Z"), ["(tabs)"]),
+    ).toBe("/account-pending-deletion");
+    expect(
+      pendingDeletionRedirect(user("2026-11-10T00:00:00Z"), [
+        "(auth)",
+        "login",
+      ]),
+    ).toBe("/account-pending-deletion");
+  });
+  it("leaves a pending user on the pending screen and public pages", () => {
+    expect(
+      pendingDeletionRedirect(user("2026-11-10T00:00:00Z"), [
+        "account-pending-deletion",
+      ]),
+    ).toBeNull();
+    expect(
+      pendingDeletionRedirect(user("2026-11-10T00:00:00Z"), ["privacy"]),
+    ).toBeNull();
+  });
+  it("does nothing for active users, signed-out users, or while the profile is still loading", () => {
+    expect(pendingDeletionRedirect(user(null), ["(tabs)"])).toBeNull();
+    expect(pendingDeletionRedirect(null, ["(tabs)"])).toBeNull();
+    expect(pendingDeletionRedirect(user(undefined), ["(tabs)"])).toBeNull();
+  });
+  it("sends a user who is no longer pending away from the pending screen", () => {
+    expect(
+      pendingDeletionRedirect(user(null), ["account-pending-deletion"]),
+    ).toBe("/(tabs)");
+  });
+});
+
+describe("shouldRetryProfile", () => {
+  const u = (profile?: object) => ({ id: "u", profile }) as never;
+  it("retries once for a user whose profile never loaded", () => {
+    expect(shouldRetryProfile(u(), null)).toBe(true);
+    expect(shouldRetryProfile(u(), "other")).toBe(true);
+    expect(shouldRetryProfile(u(), "u")).toBe(false);
+  });
+  it("does not retry without a user or when a profile exists", () => {
+    expect(shouldRetryProfile(null, null)).toBe(false);
+    expect(shouldRetryProfile(u({}), null)).toBe(false);
   });
 });

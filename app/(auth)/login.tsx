@@ -11,8 +11,9 @@ import {
 } from "@/components/auth";
 import { useToast } from "@/hooks/useToast";
 import { useAuth } from "@/lib/contexts/AuthContext";
+import { safeNext, takeRememberedNext } from "@/lib/utils/safeNext";
 import { isValidEmail } from "@/utils/validation";
-import { Link, router } from "expo-router";
+import { Link, router, useLocalSearchParams } from "expo-router";
 import React, { useRef, useState } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
@@ -22,10 +23,13 @@ function LoginScreen() {
   const [loading, setLoading] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const loginAttempted = useRef(false);
+  const { next } = useLocalSearchParams<{ next?: string }>();
   const { signIn, user, initialized } = useAuth();
   const { showSuccess, showError } = useToast();
   const { theme } = useStyles();
   const colors = theme.colors;
+
+  const destination = () => safeNext(next) ?? takeRememberedNext() ?? "/(tabs)";
 
   // If user is already logged in before any login attempt, redirect to dashboard
   // This handles the case where user navigates to login while already authenticated
@@ -42,7 +46,7 @@ function LoginScreen() {
     // Only redirect if user was already logged in before they came to this page
     if (user) {
       console.log("Login - redirecting to tabs, user already logged in");
-      router.replace("/(tabs)");
+      router.replace(destination() as never);
     }
   }, [user, initialized]);
 
@@ -82,7 +86,7 @@ function LoginScreen() {
       // Success - navigate to dashboard
       console.log("Login successful, navigating to dashboard");
       showSuccess("Welcome back!");
-      router.replace("/(tabs)");
+      router.replace(destination() as never);
     } catch (err) {
       console.log("Login catch block:", err);
       showError("An unexpected error occurred. Please try again.");

@@ -31,6 +31,10 @@ describe("account deletion emails", () => {
     expect(html).toContain("Hi Ali,");
     expect(html).toContain("10 November 2026");
     expect(html).toContain("Cancel deletion");
+    expect(html).toContain("with any receipt photos attached to them");
+    expect(html).toContain("select Cancel deletion");
+    expect(html).toContain("Google");
+    expect(html).not.toContain("tap ");
     expect(html).toContain('href="https://vm.wanahnaf.dev/login"');
     expect(text).toContain("https://vm.wanahnaf.dev/login");
   });

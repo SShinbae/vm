@@ -10,6 +10,7 @@ export interface Database {
           avatar_url: string | null;
           created_at: string;
           updated_at: string;
+          deletion_scheduled_at: string | null;
         };
         Insert: {
           id: string;
@@ -24,6 +25,7 @@ export interface Database {
           username?: string | null;
           avatar_url?: string | null;
           updated_at?: string;
+          deletion_scheduled_at?: string | null;
         };
       };
       vehicles: {

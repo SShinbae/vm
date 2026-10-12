@@ -62,4 +62,8 @@ describe("Landing page", () => {
     const year = String(new Date().getFullYear());
     expect(getByText(new RegExp(`© ${year}`))).toBeTruthy();
   });
+  it("FAQ delete answer says family logs stay on the vehicles without your name", () => {
+    const deleteFaq = FAQS.find((f) => f.question === "Can I delete my data?");
+    expect(deleteFaq?.answer).toContain("without your name");
+  });
 });

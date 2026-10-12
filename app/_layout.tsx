@@ -59,6 +59,7 @@ const ROUTE_TITLES: Record<string, string> = {
   "/confirmation-success": "Email Confirmed",
   "/privacy": "Privacy Policy",
   "/terms": "Terms of Service",
+  "/delete-account": "Delete Your Account",
   "/vehicles": "My Vehicles",
   "/notifications": "Notifications",
   "/profile": "Profile",
@@ -69,6 +70,8 @@ const ROUTE_TITLES: Record<string, string> = {
   "/analytics/service": "Service Analytics",
   "/analytics/performance": "Performance Analytics",
   "/groups": "Groups",
+  "/account/delete": "Delete Account",
+  "/account-pending-deletion": "Account Scheduled for Deletion",
 };
 
 function getPageTitle(pathname: string): string {

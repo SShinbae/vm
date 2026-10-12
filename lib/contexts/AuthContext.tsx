@@ -30,6 +30,7 @@ interface AuthContextType extends AuthState {
   updateProfile: (
     updates: Partial<Profile>,
   ) => Promise<{ error: string | null }>;
+  refreshProfile: () => Promise<void>;
   isPasswordRecovery: boolean;
   clearPasswordRecovery: () => void;
 }
@@ -551,8 +552,36 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
   };
 
+  // Bypasses fetchUserProfile's in-flight guard (which would silently skip) and
+  // merges into the current user so a failure never drops a loaded profile.
+  const userId = state.user?.id;
+  const refreshProfile = useCallback(async () => {
+    if (!userId) return;
+    const { data: profile, error } = (await supabase
+      .from("profiles")
+      .select("*")
+      .eq("id", userId)
+      .single()) as { data: Profile | null; error: any };
+    if (error || !profile) {
+      throw new Error(error?.message ?? "Failed to refresh profile");
+    }
+    setState((prev) =>
+      prev.user?.id === userId
+        ? {
+            ...prev,
+            user: {
+              ...prev.user,
+              profile,
+              username: profile.username ?? prev.user.username,
+            },
+          }
+        : prev,
+    );
+  }, [userId]);
+
   const value = {
     ...state,
+    refreshProfile,
     signUp,
     signIn,
     signOut,

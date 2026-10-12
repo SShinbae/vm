@@ -447,6 +447,12 @@ export default function ProfileScreen() {
           subtitle="View privacy policy and terms of service"
           onPress={() => router.push("/privacy")}
         />
+        <QuickActionRow
+          icon="trash"
+          label="Delete account"
+          subtitle="Permanently delete your account and data"
+          onPress={() => router.push("/account/delete" as never)}
+        />
       </View>
     </>
   );

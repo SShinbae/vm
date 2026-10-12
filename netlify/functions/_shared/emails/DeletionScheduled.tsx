@@ -34,17 +34,18 @@ export default function DeletionScheduled({
       </Heading>
       <Text style={styles.paragraph}>Hi {name || "there"},</Text>
       <Text style={styles.paragraph}>
-        Your account and all your vehicles, logs, receipts and images will be
+        Your account and your own vehicles, logs, receipts and images will be
         permanently deleted on {deletionDate}. Logs you added to family
-        members&apos; vehicles will stay on those vehicles without your name.
+        members&apos; vehicles will stay on those vehicles without your name,
+        with any receipt photos attached to them.
       </Text>
       <Text style={styles.paragraph}>
-        Changed your mind? Sign in before then and tap Cancel deletion.
+        Changed your mind? Sign in before then and select Cancel deletion.
       </Text>
       <ActionButton href={signInUrl}>Sign in to cancel deletion</ActionButton>
       <Text style={styles.muted}>
         If you didn&apos;t ask for this, sign in and cancel, then change your
-        password.
+        password, or secure your Google account if you sign in with Google.
       </Text>
     </Layout>
   );

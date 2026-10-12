@@ -19,7 +19,7 @@ const SITE = "vm.wanahnaf.dev";
 // in-app screen. Update lastUpdated whenever the text changes.
 export const PRIVACY_POLICY: LegalDocumentData = {
   title: "Privacy Policy",
-  lastUpdated: "11 October 2026",
+  lastUpdated: "12 October 2026",
   intro: `Vehicle Management ("the app", "we", "us") is a personal project run by Wan Ahnaf. This policy explains what information the app collects when you use it on the web at ${SITE} or on iOS and Android, how it is used, and the choices you have.`,
   sections: [
     {
@@ -89,7 +89,9 @@ export const PRIVACY_POLICY: LegalDocumentData = {
       bullets: [
         "We keep your account and vehicle data for as long as your account exists.",
         "Push notification tokens that have not been used for 60 days are deleted automatically.",
-        `To delete your account and all associated vehicles, logs, receipts and images, email ${CONTACT_EMAIL} from the email address on your account. We will confirm and complete the deletion within 30 days.`,
+        "To delete your account, go to Profile → Delete account in the app, or visit vm.wanahnaf.dev/delete-account. Your account is deleted 30 days later; sign in before then to cancel.",
+        "Deletion removes your profile, vehicles, logs, receipts, photos and notification settings. Logs you added to family members' vehicles stay on those vehicles without your name, with any receipt photos attached to them, so their history stays complete.",
+        `If you can't sign in, email ${CONTACT_EMAIL} from the address on your account and we will delete it for you.`,
       ],
     },
     {
@@ -97,7 +99,7 @@ export const PRIVACY_POLICY: LegalDocumentData = {
       bullets: [
         "View and update your profile details in the app at any time.",
         "Turn notifications off in the app's notification settings or in your device settings.",
-        "Ask for a copy of your data, a correction, or deletion by emailing us.",
+        "Ask for a copy of your data or a correction by emailing us, or delete your account yourself (see Retention and deletion).",
       ],
     },
     {
@@ -123,7 +125,7 @@ export const PRIVACY_POLICY: LegalDocumentData = {
 
 export const TERMS_OF_SERVICE: LegalDocumentData = {
   title: "Terms of Service",
-  lastUpdated: "11 October 2026",
+  lastUpdated: "12 October 2026",
   intro: `These terms apply to your use of Vehicle Management ("the app", "we", "us"), a personal project run by Wan Ahnaf, on the web at ${SITE} and on iOS and Android. By creating an account or using the app, you agree to these terms.`,
   sections: [
     {
@@ -183,7 +185,7 @@ export const TERMS_OF_SERVICE: LegalDocumentData = {
     {
       heading: "Ending your use",
       paragraphs: [
-        `You can stop using the app at any time and ask us to delete your account by emailing ${CONTACT_EMAIL}. We may suspend or close accounts that break these terms.`,
+        "You can stop using the app at any time and delete your account from Profile → Delete account or at vm.wanahnaf.dev/delete-account. We may suspend or close accounts that break these terms.",
       ],
     },
     {

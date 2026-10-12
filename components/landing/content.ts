@@ -82,6 +82,7 @@ export const FAQS: { question: string; answer: string }[] = [
   },
   {
     question: "Can I delete my data?",
-    answer: `Yes. Email ${CONTACT_EMAIL} from your account address and your account and all associated vehicles, logs and receipts will be permanently deleted. The privacy policy covers retention in more detail.`,
+    answer:
+      "Yes. Go to Profile → Delete account in the app, or visit /delete-account. Your account and its vehicles, logs and receipts are deleted 30 days later, and you can cancel by signing in before then. Logs you added to family members' vehicles stay on them without your name.",
   },
 ];
