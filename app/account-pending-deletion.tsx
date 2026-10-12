@@ -94,9 +94,22 @@ export default function AccountPendingDeletionScreen() {
               lineHeight: 24,
             }}
           >
-            {when
-              ? `It will be permanently deleted on ${when}. Cancel to keep your account and everything in it.`
-              : "Cancel to keep your account and everything in it."}
+            {when ? (
+              <>
+                It will be permanently deleted on{" "}
+                <Text
+                  style={{
+                    fontWeight: theme.fontWeight.bold,
+                    color: theme.colors.text,
+                  }}
+                >
+                  {when}
+                </Text>
+                . Cancel to keep your account and everything in it.
+              </>
+            ) : (
+              "Cancel to keep your account and everything in it."
+            )}
           </Text>
           <Button
             title="Cancel deletion"

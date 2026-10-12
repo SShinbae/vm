@@ -163,12 +163,18 @@ export const handler: Handler = async (event: HandlerEvent) => {
   if (updateError) return json(500, { error: updateError.message }, cors);
 
   await supabaseAdmin.from("push_tokens").delete().eq("user_id", user.id);
+  // "others", not "global": global also kills the requesting session, so the
+  // app's own local signOut then gets 400 AuthSessionMissingError and keeps
+  // the stored session. The app clears this device itself.
   const { error: signOutError } = await supabaseAdmin.auth.admin.signOut(
     token,
-    "global",
+    "others",
   );
   if (signOutError)
-    console.error("account-deletion: global sign-out failed", signOutError);
+    console.error(
+      "account-deletion: sign-out of other sessions failed",
+      signOutError,
+    );
 
   if (user.email) {
     await sendEmail(

@@ -171,7 +171,7 @@ describe("account-deletion", () => {
     expect(JSON.parse(res.body)).toEqual({ scheduledFor: expected });
     expect(mockUpdates).toEqual([{ deletion_scheduled_at: expected }]);
     expect(mockTokenDeletes).toEqual(["u1"]);
-    expect(mockSignOut).toHaveBeenCalledWith("tok", "global");
+    expect(mockSignOut).toHaveBeenCalledWith("tok", "others");
     expect(mockSendEmail).toHaveBeenCalledTimes(1);
     expect(mockSendEmail.mock.calls[0][0].to).toEqual([
       { email: "ali@example.com", name: "Ali" },

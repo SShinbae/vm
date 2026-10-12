@@ -29,8 +29,8 @@ const formatDate = (d: Date) =>
 
 export default function DeleteAccountScreen() {
   const { theme } = useStyles();
-  const { showSuccess, showError } = useToast();
-  const { confirm } = useDialog();
+  const { showError } = useToast();
+  const { confirm, alert } = useDialog();
   const [typed, setTyped] = useState("");
   const [blocking, setBlocking] = useState<{ id: string; name: string }[]>([]);
   const [busy, setBusy] = useState(false);
@@ -47,29 +47,66 @@ export default function DeleteAccountScreen() {
     }, [loadBlocking]),
   );
 
+  const bold = {
+    fontWeight: theme.fontWeight.bold,
+    color: theme.colors.text,
+  };
   const deletionDate = formatDate(new Date(Date.now() + GRACE_DAYS * 86400000));
   const canDelete = typed === "DELETE" && blocking.length === 0 && !busy;
-
-  const leave = async () => {
-    // The server already revoked every session; clear this device without a
-    // network call (works offline too).
-    await supabase.auth.signOut({ scope: "local" });
-    router.replace(Platform.OS === "web" ? "/" : "/(auth)/login");
-  };
 
   const handleDelete = async () => {
     if (!canDelete || inFlight.current) return;
     inFlight.current = true;
     setBusy(true);
     try {
+      const sure = await confirm({
+        title: "Delete your account?",
+        message: (
+          <>
+            Your account and data will be permanently deleted on{" "}
+            <Text style={bold}>{deletionDate}</Text>. You&apos;ll be signed out
+            on all devices. You can cancel by signing in before then.
+          </>
+        ),
+        confirmText: "Delete account",
+        cancelText: "Cancel",
+        destructive: true,
+      });
+      if (!sure) return;
       const r = await AccountDeletionService.schedule();
       if (r.kind === "scheduled") {
-        showSuccess("Account scheduled for deletion", {
-          message: r.scheduledFor
-            ? `It will be deleted on ${formatDate(new Date(r.scheduledFor))}. Sign in before then to cancel.`
-            : "Sign in within 30 days to cancel.",
+        await alert({
+          title: "Account scheduled for deletion",
+          message: (
+            <>
+              {r.scheduledFor ? (
+                <>
+                  It will be deleted on{" "}
+                  <Text style={bold}>
+                    {formatDate(new Date(r.scheduledFor))}
+                  </Text>
+                  .
+                </>
+              ) : (
+                "Your account will be deleted in 30 days."
+              )}{" "}
+              You&apos;ll be signed out now. Sign in before then if you change
+              your mind.
+            </>
+          ),
+          buttonText: "OK",
+          variant: "success",
         });
-        await leave();
+        // The server kept this session alive ("others"), so a local sign-out
+        // works; if it still fails, don't navigate into a signed-in app.
+        const { error } = await supabase.auth.signOut({ scope: "local" });
+        if (error) {
+          showError("Couldn't sign you out", {
+            message: "Close and reopen the app to finish signing out.",
+          });
+        } else {
+          router.replace(Platform.OS === "web" ? "/" : "/(auth)/login");
+        }
       } else if (r.kind === "reauth") {
         const ok = await confirm({
           title: "Sign in again",
@@ -148,8 +185,9 @@ export default function DeleteAccountScreen() {
           </Text>
 
           <Text style={text}>
-            Your account will be deleted on {deletionDate}. Until then you can
-            sign in and cancel.
+            Your account will be deleted on{" "}
+            <Text style={bold}>{deletionDate}</Text>. Until then you can sign in
+            and cancel.
           </Text>
 
           <Text style={heading}>What will be deleted</Text>
@@ -205,7 +243,11 @@ export default function DeleteAccountScreen() {
           )}
 
           <Input
-            label="Type DELETE to confirm"
+            label={
+              <>
+                Type <Text style={bold}>DELETE</Text> to confirm
+              </>
+            }
             accessibilityLabel="Type DELETE to confirm"
             value={typed}
             onChangeText={setTyped}
