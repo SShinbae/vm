@@ -1,4 +1,9 @@
-import { withOpacity, spacing } from "@/src/design-system";
+import {
+  darkTheme,
+  lightTheme,
+  spacing,
+  withOpacity,
+} from "@/src/design-system";
 import { useStyles } from "react-native-unistyles";
 import { Skeleton, SkeletonDashboard } from "@/components/ui/Skeleton";
 import { useResponsiveLayout } from "@/hooks/use-responsive-layout";
@@ -7,7 +12,13 @@ import { useDemoMode } from "@/lib/contexts/DemoContext";
 import type { AuthUser } from "@/types";
 import { router, useSegments } from "expo-router";
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { Platform, StyleSheet, View } from "react-native";
+import {
+  Image,
+  Platform,
+  StyleSheet,
+  useColorScheme,
+  View,
+} from "react-native";
 
 // ============================================================================
 // Constants
@@ -248,6 +259,7 @@ export function AuthGuard({ children }: AuthGuardProps) {
   const { isDemoMode } = useDemoMode();
   const segments = useSegments();
   const { theme } = useStyles();
+  const systemScheme = useColorScheme();
   const colors = theme.colors;
 
   const [redirectState, setRedirectState] = useState<RedirectState>({
@@ -512,6 +524,32 @@ export function AuthGuard({ children }: AuthGuardProps) {
    * Force stop loading after timeout to prevent infinite loading
    */
   if (shouldShowLoading) {
+    if (Platform.OS !== "web" && inRootIndex) {
+      return (
+        <View
+          style={{
+            flex: 1,
+            alignItems: "center",
+            justifyContent: "center",
+            backgroundColor:
+              systemScheme === "dark"
+                ? darkTheme.colors.background
+                : lightTheme.colors.background,
+          }}
+        >
+          <Image
+            source={
+              systemScheme === "dark"
+                ? require("@/assets/images/splash-icon-dark.png")
+                : require("@/assets/images/splash-icon-light.png")
+            }
+            resizeMode="contain"
+            style={{ width: 200, height: 200 }}
+            accessible={false}
+          />
+        </View>
+      );
+    }
     if (Platform.OS === "web" && !layout.isMobile) {
       return (
         <View

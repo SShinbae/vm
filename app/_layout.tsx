@@ -4,16 +4,17 @@ import {
   ThemeProvider as NavigationThemeProvider,
 } from "@react-navigation/native";
 import { useFonts } from "expo-font";
-import { Stack, usePathname } from "expo-router";
+import { Stack, usePathname, useSegments } from "expo-router";
 import Head from "expo-router/head";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
-import { useCallback, useEffect } from "react";
+import { useEffect } from "react";
 import { Platform, View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import Toast from "react-native-toast-message";
 
 import { toastConfig } from "@/components/ui/ToastConfig";
+import { skipWelcomeAnimation } from "@/components/landing/NativeWelcome";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 
 // Import unistyles - theme configuration (already wrapped in try-catch in unistyles.ts)
@@ -130,19 +131,20 @@ function RootLayoutContent() {
   });
 
   const pathname = usePathname();
-
-  const onLayoutRootView = useCallback(async () => {
-    if (fontsLoaded || fontError) {
-      // Hide splash screen once fonts are loaded or if there's an error
-      await SplashScreen.hideAsync();
-    }
-  }, [fontsLoaded, fontError]);
+  const segments = useSegments();
+  const topSegment = segments[0];
 
   useEffect(() => {
-    if (fontsLoaded || fontError) {
-      onLayoutRootView();
+    if (!fontsLoaded && !fontError) return;
+    if (Platform.OS === "web" || pathname !== "/" || topSegment === "(tabs)") {
+      if (Platform.OS !== "web") skipWelcomeAnimation();
+      void SplashScreen.hideAsync();
+      return;
     }
-  }, [fontsLoaded, fontError, onLayoutRootView]);
+    // Native root waits for the signed-out welcome or signed-in redirect.
+    const fallback = setTimeout(() => void SplashScreen.hideAsync(), 8000);
+    return () => clearTimeout(fallback);
+  }, [fontsLoaded, fontError, pathname, topSegment]);
 
   // Don't render anything until fonts are loaded
   if (!fontsLoaded && !fontError) {

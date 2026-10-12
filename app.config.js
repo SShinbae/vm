@@ -99,7 +99,7 @@ module.exports = {
           backgroundColor: "#FFFFFF",
           dark: {
             image: "./assets/images/splash-icon-dark.png",
-            backgroundColor: "#121212",
+            backgroundColor: "#1e292e",
           },
         },
       ],

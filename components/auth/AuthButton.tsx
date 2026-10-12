@@ -98,6 +98,7 @@ export function AuthButton({
   return (
     <TouchableOpacity
       style={[styles.button, isDisabled && styles.buttonDisabled, style]}
+      accessibilityRole="button"
       onPress={onPress}
       disabled={isDisabled}
       activeOpacity={0.8}
