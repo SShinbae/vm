@@ -62,7 +62,7 @@ interface ConfirmModalProps {
   onClose: () => void;
   onConfirm: () => void;
   title: string;
-  message: string;
+  message: React.ReactNode;
   confirmText?: string;
   cancelText?: string;
   variant?: "default" | "danger";
@@ -74,7 +74,7 @@ interface AlertModalProps {
   visible: boolean;
   onClose: () => void;
   title: string;
-  message: string;
+  message: React.ReactNode;
   buttonText?: string;
   variant?: "info" | "success" | "warning" | "error";
   inline?: boolean;
@@ -85,7 +85,7 @@ interface ChoiceModalProps<T extends string = string> {
   onClose: () => void;
   onSelect: (value: T) => void;
   title: string;
-  message?: string;
+  message?: React.ReactNode;
   options: { label: string; value: T; destructive?: boolean }[];
   cancelText?: string;
   inline?: boolean;

@@ -13,7 +13,7 @@ import { AlertModal, ChoiceModal, ConfirmModal } from "@/components/ui/Modal";
 
 export interface ConfirmOptions {
   title: string;
-  message?: string;
+  message?: React.ReactNode;
   confirmText?: string;
   cancelText?: string;
   destructive?: boolean;
@@ -21,14 +21,14 @@ export interface ConfirmOptions {
 
 export interface DialogAlertOptions {
   title: string;
-  message?: string;
+  message?: React.ReactNode;
   variant?: "info" | "success" | "warning" | "error";
   buttonText?: string;
 }
 
 export interface ChooseOptions<T extends string> {
   title: string;
-  message?: string;
+  message?: React.ReactNode;
   options: { label: string; value: T; destructive?: boolean }[];
   cancelText?: string;
 }
@@ -58,6 +58,8 @@ const cancel = (r: Request) =>
 const sameAs = (a: Request) => (b: Request) =>
   a.kind === b.kind &&
   a.opts.title === b.opts.title &&
+  // JSX messages are fresh objects each call, so they never match (callers
+  // with JSX messages need their own in-flight guard).
   a.opts.message === b.opts.message;
 
 // Registered by the mounted DialogProvider so non-React code can use `dialog`.

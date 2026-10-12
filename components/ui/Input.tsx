@@ -14,7 +14,7 @@ import {
 import { IconSymbol } from "./icon-symbol";
 
 interface InputProps extends Omit<TextInputProps, "style"> {
-  label?: string;
+  label?: React.ReactNode;
   placeholder?: string;
   value: string;
   onChangeText: (text: string) => void;
