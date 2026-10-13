@@ -77,10 +77,11 @@ describe("DatePicker", () => {
     });
 
     it("should not show required indicator when not required", () => {
-      render(<DatePicker {...defaultProps} required={false} />);
+      const { queryByText } = render(
+        <DatePicker {...defaultProps} required={false} />,
+      );
 
-      // The asterisk should not be present
-      // Note: This test might need adjustment based on actual implementation
+      expect(queryByText("*")).toBeNull();
     });
 
     it("should show placeholder when no value", () => {
@@ -137,6 +138,8 @@ describe("DatePicker", () => {
 
       // Press the date button (which shows placeholder or current value)
       fireEvent.press(getByTestId("icon-calendar").parent!);
+
+      expect(getByTestId("date-time-picker")).toBeTruthy();
     });
 
     it("should call onDateChange with YYYY-MM-DD format", () => {
@@ -186,18 +189,20 @@ describe("DatePicker", () => {
 
   describe("Modal Behavior", () => {
     it("should close modal after date selection", () => {
-      const { getByText, getByTestId } = render(
+      const { getByText, getByTestId, queryByTestId } = render(
         <DatePicker {...defaultProps} />,
       );
 
       // Open picker
       fireEvent.press(getByText(defaultProps.placeholder));
+      expect(getByTestId("date-time-picker")).toBeTruthy();
 
-      // Select date
+      // Select date and confirm
       fireEvent.press(getByTestId("select-date-button"));
+      fireEvent.press(getByText("Confirm"));
 
       // Modal should be closed (picker should not be visible)
-      // Note: This depends on implementation details
+      expect(queryByTestId("date-time-picker")).toBeNull();
     });
   });
 
@@ -215,11 +220,13 @@ describe("DatePicker", () => {
 
   describe("Edge Cases", () => {
     it("should handle invalid date gracefully", () => {
-      // Invalid date should fall back to current date or placeholder
-      render(<DatePicker {...defaultProps} value="invalid-date" />);
+      // An unparseable value falls back to the placeholder.
+      const { getByText, queryByText } = render(
+        <DatePicker {...defaultProps} value="invalid-date" />,
+      );
 
-      // Should show placeholder or handle gracefully
-      // Exact behavior depends on implementation
+      expect(queryByText("Invalid Date")).toBeNull();
+      expect(getByText(defaultProps.placeholder)).toBeTruthy();
     });
 
     it("should handle leap year date", () => {

@@ -154,6 +154,17 @@ export interface ServiceTemplateWithItems extends ServiceTemplate {
   items: ServiceTemplateItem[];
 }
 
+// Shape returned by VehicleService.getServiceTemplates (mapped, with items).
+export interface ServiceTemplateView {
+  id: string;
+  name: string;
+  description: string;
+  items: { id: string; description: string; price: number; order: number }[];
+  total_cost: number;
+  created_at: string;
+  updated_at: string;
+}
+
 // ============================================================================
 // Form Data Types
 // ============================================================================

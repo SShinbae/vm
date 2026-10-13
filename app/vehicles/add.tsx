@@ -93,10 +93,6 @@ export default function AddVehicleScreen() {
     setImageUri(url);
   };
 
-  const handleImageError = (error: string) => {
-    showError(error);
-  };
-
   const validateMake = (value: string) => {
     if (!value.trim()) return "Make is required";
     return undefined;
@@ -280,7 +276,6 @@ export default function AddVehicleScreen() {
                 type="avatar"
                 currentImageUrl={imageUri}
                 onUploadComplete={handleImageUpload}
-                onUploadError={handleImageError}
                 placeholder="Add Vehicle Photo"
                 style={styles.avatarUpload}
               />

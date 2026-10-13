@@ -601,10 +601,6 @@ export const ImageGallery: React.FC<ImageGalleryProps> = ({
     onImageAdded?.();
   };
 
-  const handleImageError = (error: string) => {
-    showError("Couldn't upload image", { message: error });
-  };
-
   const styles = StyleSheet.create({
     container: {
       marginVertical: spacing.lg,
@@ -643,7 +639,6 @@ export const ImageGallery: React.FC<ImageGalleryProps> = ({
             type="vehicle_gallery"
             vehicleId={vehicleId}
             onUploadComplete={handleImageUpload}
-            onUploadError={handleImageError}
           />
         )}
 

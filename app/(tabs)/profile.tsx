@@ -18,6 +18,7 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
+  useWindowDimensions,
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -29,10 +30,11 @@ export default function ProfileScreen() {
   const { user, updateProfile } = useAuth();
   const { signOut, signingOut } = useSignOut();
   const { themeMode, setThemeMode } = useTheme();
-  const { showSuccess, showError } = useToast();
+  const { showSuccess } = useToast();
   const { theme } = useStyles();
   const { isMobile, isWeb } = useResponsiveLayout();
   const { stats, loading: statsLoading } = useProfileStats();
+  const { width: windowWidth, height: windowHeight } = useWindowDimensions();
 
   const [fullName, setFullName] = useState(user?.profile?.full_name || "");
   const [username, setUsername] = useState(user?.profile?.username || "");
@@ -83,10 +85,6 @@ export default function ProfileScreen() {
 
   const handleAvatarUpload = (url: string) => {
     setAvatarUrl(url);
-  };
-
-  const handleAvatarError = (error: string) => {
-    showError("Couldn't upload photo", { message: error });
   };
 
   const handleSignOut = () => signOut({ confirm: true });
@@ -328,7 +326,6 @@ export default function ProfileScreen() {
           type="avatar"
           currentImageUrl={avatarUrl}
           onUploadComplete={handleAvatarUpload}
-          onUploadError={handleAvatarError}
           style={{ width: 100, height: 100, borderRadius: 50 }}
         />
         <Text
@@ -337,6 +334,9 @@ export default function ProfileScreen() {
             fontWeight: theme.fontWeight.bold,
             color: theme.colors.text,
             marginTop: theme.spacing.lg,
+            textAlign: "center",
+            alignSelf: "stretch",
+            paddingHorizontal: theme.spacing.lg,
           }}
         >
           {user?.profile?.full_name || "Name not provided"}
@@ -718,7 +718,10 @@ export default function ProfileScreen() {
   if (!user) return null;
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.background }}>
+    <SafeAreaView
+      style={{ flex: 1, backgroundColor: theme.colors.background }}
+      edges={["top"]}
+    >
       <MaxWidthContainer>
         <View
           style={{
@@ -775,8 +778,20 @@ export default function ProfileScreen() {
         </ScrollView>
       </MaxWidthContainer>
 
-      <Modal visible={showEditModal} onClose={() => setShowEditModal(false)}>
-        <View style={{ padding: theme.spacing.xl }}>
+      <Modal
+        visible={showEditModal}
+        onClose={() => setShowEditModal(false)}
+        showCloseButton={false}
+        contentStyle={{
+          width: Math.min(480, windowWidth - theme.spacing.xl * 2),
+          maxHeight: windowHeight * 0.9,
+        }}
+      >
+        <ScrollView
+          style={{ maxHeight: windowHeight * 0.9 - theme.spacing.xl * 2 }}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
           <Text
             style={{
               fontSize: theme.fontSize.xl,
@@ -795,7 +810,6 @@ export default function ProfileScreen() {
               type="avatar"
               currentImageUrl={avatarUrl}
               onUploadComplete={handleAvatarUpload}
-              onUploadError={handleAvatarError}
               style={{ width: 100, height: 100, borderRadius: 50 }}
             />
           </View>
@@ -911,7 +925,7 @@ export default function ProfileScreen() {
               )}
             </TouchableOpacity>
           </View>
-        </View>
+        </ScrollView>
       </Modal>
     </SafeAreaView>
   );
