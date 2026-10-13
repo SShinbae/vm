@@ -638,13 +638,27 @@ export class VehicleService {
         }
       }
 
-      // Check for duplicate license plate if updating
+      // Check for duplicate license plate if updating, against the owner's vehicles
       if (updates.license_plate) {
+        const { data: owner } = await supabase
+          .from("vehicles")
+          .select("user_id")
+          .eq("id", id)
+          .single<{ user_id: string }>();
+
+        if (!owner) {
+          return {
+            data: null,
+            error: "You do not have permission to edit this vehicle",
+            loading: false,
+          };
+        }
+
         const { data: existing } = await supabase
           .from("vehicles")
           .select("id")
           .eq("license_plate", updates.license_plate)
-          .eq("user_id", user.id)
+          .eq("user_id", owner.user_id)
           .neq("id", id);
 
         if (existing && existing.length > 0) {
@@ -673,6 +687,14 @@ export class VehicleService {
 
       if (vehicleError || !vehicle) {
         logger.error("Error updating vehicle:", vehicleError);
+        // No row updated: RLS blocked the write (PGRST116 = no rows to return)
+        if (!vehicleError || vehicleError.code === "PGRST116") {
+          return {
+            data: null,
+            error: "You do not have permission to edit this vehicle",
+            loading: false,
+          };
+        }
         return { data: null, error: vehicleError.message, loading: false };
       }
 

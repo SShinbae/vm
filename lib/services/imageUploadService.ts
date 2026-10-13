@@ -278,10 +278,11 @@ export class ImageUploadService {
         return { data: null, error: "Vehicle not found", loading: false };
       }
 
-      if (vehicle.user_id !== user.id) {
+      // Members may only add the main photo; gallery photos stay owner-only
+      if (vehicle.user_id !== user.id && imageType !== "vehicle_main") {
         return {
           data: null,
-          error: "You can only upload images for your own vehicles",
+          error: "Only the vehicle owner can add gallery photos",
           loading: false,
         };
       }
@@ -293,8 +294,9 @@ export class ImageUploadService {
       }
 
       // Generate filename
+      // Owner's folder, so the photo stays with the vehicle if a member leaves
       const fileName = this.generateFileName(
-        user.id,
+        vehicle.user_id,
         `vehicle_${vehicleId}`,
         file.name,
       );
@@ -369,7 +371,17 @@ export class ImageUploadService {
             "Error updating vehicle main image:",
             vehicleUpdateError,
           );
-          // Continue anyway, the image record was created successfully
+          // Roll back so the vehicle and its image rows stay consistent
+          await supabase
+            .from("vehicle_images")
+            .delete()
+            .eq("id", (imageRecord as any).id);
+          await supabase.storage.from("vehicle-images").remove([fileName]);
+          return {
+            data: null,
+            error: vehicleUpdateError.message,
+            loading: false,
+          };
         }
       }
 
@@ -420,10 +432,11 @@ export class ImageUploadService {
         return { data: null, error: "Vehicle not found", loading: false };
       }
 
-      if (vehicle.user_id !== user.id) {
+      // Members may only add the main photo; gallery photos stay owner-only
+      if (vehicle.user_id !== user.id && imageType !== "vehicle_main") {
         return {
           data: null,
-          error: "You can only upload images for your own vehicles",
+          error: "Only the vehicle owner can add gallery photos",
           loading: false,
         };
       }
@@ -446,8 +459,9 @@ export class ImageUploadService {
 
       // Get file extension from URI or default to jpg
       const fileExtension = uri.split(".").pop()?.toLowerCase() || "jpg";
+      // Owner's folder, so the photo stays with the vehicle if a member leaves
       const fileName = this.generateFileName(
-        user.id,
+        vehicle.user_id,
         `vehicle_${vehicleId}`,
         `image.${fileExtension}`,
       );
@@ -529,7 +543,17 @@ export class ImageUploadService {
             "Error updating vehicle main image:",
             vehicleUpdateError,
           );
-          // Continue anyway, the image record was created successfully
+          // Roll back so the vehicle and its image rows stay consistent
+          await supabase
+            .from("vehicle_images")
+            .delete()
+            .eq("id", (imageRecord as any).id);
+          await supabase.storage.from("vehicle-images").remove([fileName]);
+          return {
+            data: null,
+            error: vehicleUpdateError.message,
+            loading: false,
+          };
         }
       }
 
