@@ -43,7 +43,7 @@ export default function DashboardScreen() {
   // Error state - only show if we have no cached data
   if (error && vehicles.length === 0 && !isInitialLoading) {
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={styles.container} edges={["top"]}>
         <MaxWidthContainer>
           {/* Header - rendered immediately for fast LCP */}
           <View style={styles.header}>
@@ -73,7 +73,7 @@ export default function DashboardScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={["top"]}>
       <MaxWidthContainer>
         {/* Header - rendered immediately for fast LCP */}
         <View style={styles.header}>

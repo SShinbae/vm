@@ -1,6 +1,16 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import React, { createContext, useContext, useEffect, useState } from "react";
-import { Platform, useColorScheme as useNativeColorScheme } from "react-native";
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
+import {
+  AppState,
+  Platform,
+  useColorScheme as useNativeColorScheme,
+} from "react-native";
 import { darkTheme, lightTheme } from "@/src/design-system";
 
 // Safely import UnistylesRuntime to prevent production crashes
@@ -50,25 +60,40 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [hasHydrated, setHasHydrated] = useState(false);
 
+  // The OS can report null/"light" for a moment when the app resumes from a
+  // notification tap; keep the last real value instead of flipping to light.
+  const lastSystemScheme = useRef<ColorScheme>("light");
+  if (systemColorScheme) lastSystemScheme.current = systemColorScheme;
+
   // Determine the actual color scheme to use
   const colorScheme: ColorScheme =
     themeMode === "system"
-      ? (systemColorScheme ?? "light")
+      ? lastSystemScheme.current
       : themeMode === "dark"
         ? "dark"
         : "light";
 
-  // Sync unistyles theme with color scheme (safely)
+  // Sync unistyles theme with color scheme (safely). Re-applied on resume:
+  // the native runtime can fall back to initialTheme ("light") after the app
+  // is brought back from a notification, with no React state change to re-run
+  // this effect.
   useEffect(() => {
-    try {
-      if (UnistylesRuntime) {
-        UnistylesRuntime.setTheme(colorScheme);
+    const apply = () => {
+      try {
+        if (UnistylesRuntime && UnistylesRuntime.themeName !== colorScheme) {
+          UnistylesRuntime.setTheme(colorScheme);
+        }
+      } catch (error) {
+        if (__DEV__) {
+          console.error("Failed to set Unistyles theme:", error);
+        }
       }
-    } catch (error) {
-      if (__DEV__) {
-        console.error("Failed to set Unistyles theme:", error);
-      }
-    }
+    };
+    apply();
+    const sub = AppState.addEventListener("change", (state) => {
+      if (state === "active") apply();
+    });
+    return () => sub.remove();
   }, [colorScheme]);
 
   // Handle hydration for web

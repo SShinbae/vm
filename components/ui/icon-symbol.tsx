@@ -83,6 +83,11 @@ const MAPPING = {
   // Menu Icons
   ellipsis: "more-vert",
 
+  // Theme Icons
+  sparkles: "auto-awesome",
+  "sun.max": "light-mode",
+  moon: "dark-mode",
+
   // Notifications
   "bell.fill": "notifications",
   bell: "notifications-none",
