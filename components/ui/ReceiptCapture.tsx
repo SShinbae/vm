@@ -86,11 +86,11 @@ export function ReceiptCapture({
             "Network error. Please check your internet connection and try again.";
         }
 
-        toast.error("Error", { message: errorMessage });
+        toast.error("Couldn't scan receipt", { message: errorMessage });
       }
     } catch (error) {
       console.error("Camera capture error:", error);
-      toast.error("Error", {
+      toast.error("Couldn't scan receipt", {
         message:
           "An unexpected error occurred while capturing the receipt. Please try again.",
       });
@@ -135,11 +135,11 @@ export function ReceiptCapture({
             "No text was found in the image. Please try a clearer photo of your receipt.";
         }
 
-        toast.error("Error", { message: errorMessage });
+        toast.error("Couldn't scan receipt", { message: errorMessage });
       }
     } catch (error) {
       console.error("Gallery pick error:", error);
-      toast.error("Error", {
+      toast.error("Couldn't scan receipt", {
         message:
           "An unexpected error occurred while processing the receipt. Please try again.",
       });
@@ -174,11 +174,11 @@ export function ReceiptCapture({
         if (errorMessage.includes("cancelled")) {
           return;
         }
-        toast.error("Error", { message: errorMessage });
+        toast.error("Couldn't save picture", { message: errorMessage });
       }
     } catch (error) {
       console.error("Picture only camera error:", error);
-      toast.error("Error", {
+      toast.error("Couldn't save picture", {
         message:
           "An unexpected error occurred while taking the picture. Please try again.",
       });
@@ -214,11 +214,11 @@ export function ReceiptCapture({
         if (errorMessage.includes("cancelled")) {
           return;
         }
-        toast.error("Error", { message: errorMessage });
+        toast.error("Couldn't save picture", { message: errorMessage });
       }
     } catch (error) {
       console.error("Picture only gallery error:", error);
-      toast.error("Error", {
+      toast.error("Couldn't save picture", {
         message:
           "An unexpected error occurred while selecting the picture. Please try again.",
       });

@@ -4,14 +4,13 @@ import { IconSymbol } from "@/components/ui/icon-symbol";
 import { SidebarBadge } from "@/components/ui/SidebarBadge";
 import { Tooltip } from "@/components/ui/Tooltip";
 import { useResponsiveLayout } from "@/hooks/use-responsive-layout";
-import { useToast } from "@/hooks/useToast";
+import { useSignOut } from "@/hooks/useSignOut";
 import { useAuth } from "@/lib/contexts/AuthContext";
-import { useDialog } from "@/lib/contexts/DialogContext";
 import { useNotifications } from "@/lib/contexts/NotificationContext";
 import { useSidebar } from "@/lib/contexts/SidebarContext";
 import { Image } from "expo-image";
 import { router, usePathname } from "expo-router";
-import React, { useState } from "react";
+import React from "react";
 import {
   Platform,
   StyleSheet,
@@ -51,12 +50,10 @@ export function WebSidebar() {
   const { theme } = useStyles();
   const colors = theme.colors;
   const pathname = usePathname();
-  const { user, signOut } = useAuth();
-  const { showError } = useToast();
+  const { user } = useAuth();
+  const { signOut } = useSignOut();
   const { isOpen, toggle } = useSidebar();
   const { unreadCount } = useNotifications();
-  const { confirm } = useDialog();
-  const [signingOut, setSigningOut] = useState(false);
 
   // Hide sidebar on auth pages (login, register)
   const isAuthPage =
@@ -72,26 +69,7 @@ export function WebSidebar() {
   // Show as bottom bar on mobile web
   const showAsBottomBar = layout.isMobile;
 
-  const handleSignOutClick = async () => {
-    if (signingOut) return;
-    const ok = await confirm({
-      title: "Sign out?",
-      message: "Are you sure you want to sign out?",
-      confirmText: "Sign out",
-    });
-    if (!ok) return;
-
-    setSigningOut(true);
-    const { error } = await signOut();
-    if (error) {
-      setSigningOut(false);
-      showError("Couldn't sign out", {
-        message: "Check your connection and try again.",
-      });
-      return;
-    }
-    router.replace("/(auth)/login");
-  };
+  const handleSignOutClick = () => signOut({ confirm: true });
 
   const NavButton = ({ item }: { item: NavItem }) => {
     const isActive =

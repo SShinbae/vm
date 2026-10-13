@@ -153,8 +153,9 @@ export function pendingDeletionRedirect(
 export function shouldRetryProfile(
   user: AuthUser | null,
   lastTriedId: string | null,
+  settled: boolean,
 ): boolean {
-  return !!user && !user.profile && user.id !== lastTriedId;
+  return settled && !!user && !user.profile && user.id !== lastTriedId;
 }
 
 /**
@@ -344,14 +345,19 @@ export function AuthGuard({ children }: AuthGuardProps) {
   // A failed/timed-out profile fetch leaves a user with no profile, which
   // would let a pending-deletion user sit in the tabs. Retry once per user.
   useEffect(() => {
+    if (!user) profileTriedFor.current = null;
     if (
       isPasswordRecovery ||
-      !shouldRetryProfile(user, profileTriedFor.current)
+      !shouldRetryProfile(
+        user,
+        profileTriedFor.current,
+        initialized && !loading,
+      )
     )
       return;
     profileTriedFor.current = user!.id;
     refreshProfile().catch(() => {});
-  }, [user, isPasswordRecovery, refreshProfile]);
+  }, [user, isPasswordRecovery, refreshProfile, initialized, loading]);
 
   // ============================================================================
   // Effect: Track Previous Path

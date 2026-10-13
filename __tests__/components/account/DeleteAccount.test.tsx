@@ -17,10 +17,10 @@ jest.mock("@/lib/services/accountDeletionService", () => ({
 jest.mock("@/services/supabaseClient", () => ({
   supabase: { auth: { signOut: (o: unknown) => mockSignOutLocal(o) } },
 }));
+const mockGroups = jest.fn();
 jest.mock("@/lib/services/groupService", () => ({
   GroupService: {
-    getOwnedGroupsWithMembers: () =>
-      Promise.resolve({ data: mockOwned.current, error: null }),
+    getOwnedGroupsWithMembers: () => mockGroups(),
   },
 }));
 jest.mock("expo-router", () => ({
@@ -34,6 +34,32 @@ jest.mock("expo-router", () => ({
     mockFocus.current = cb;
     require("react").useEffect(() => cb(), []);
   },
+  useLocalSearchParams: () => ({}),
+}));
+jest.mock("@/components/ui/icon-symbol", () => {
+  const React = require("react");
+  const { Text } = require("react-native");
+  return {
+    IconSymbol: ({ name, color }: { name: string; color?: string }) =>
+      React.createElement(Text, { testID: `icon-${name}`, style: { color } }),
+  };
+});
+jest.mock("@/components/ui/ImageUpload", () => ({ ImageUpload: () => null }));
+jest.mock("@/components/ui/Modal", () => ({ Modal: () => null }));
+jest.mock("@/components/notifications/NotificationPreferencesForm", () => ({
+  NotificationPreferencesForm: () => null,
+}));
+jest.mock("@/hooks/use-responsive-layout", () => ({
+  useResponsiveLayout: () => ({ isMobile: true, isWeb: false }),
+}));
+jest.mock("@/hooks/useProfileStats", () => ({
+  useProfileStats: () => ({
+    stats: { activeGroups: 0, daysActive: 0, totalLogs: 0 },
+    loading: false,
+  }),
+}));
+jest.mock("@/lib/contexts/ThemeContext", () => ({
+  useTheme: () => ({ themeMode: "system", setThemeMode: jest.fn() }),
 }));
 jest.mock("@/lib/contexts/DialogContext", () => ({
   useDialog: () => ({ confirm: mockConfirm, alert: mockAlert }),
@@ -53,13 +79,17 @@ jest.mock("react-native-unistyles", () => {
   return { useStyles: () => ({ theme: lightTheme }) };
 });
 
-import { lightTheme } from "@/src/design-system";
+import { lightTheme, withOpacity } from "@/src/design-system";
 import DeleteAccountScreen from "@/app/account/delete";
+import ProfileScreen from "@/app/(tabs)/profile";
 
 describe("Delete account screen", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockOwned.current = [];
+    mockGroups.mockImplementation(() =>
+      Promise.resolve({ data: mockOwned.current, error: null }),
+    );
     mockConfirm.mockResolvedValue(true);
     mockAlert.mockResolvedValue(undefined);
     mockSignOutLocal.mockResolvedValue({ error: null });
@@ -201,5 +231,74 @@ describe("Delete account screen", () => {
     await waitFor(() => expect(queryByText("Family Fleet")).toBeNull());
     fireEvent.press(getByText("Delete my account"));
     await waitFor(() => expect(mockSchedule).toHaveBeenCalled());
+  });
+
+  it("disables the delete button until the group check resolves", async () => {
+    let resolveGroups: (v: unknown) => void = () => {};
+    mockGroups.mockImplementationOnce(
+      () => new Promise((r) => (resolveGroups = r)),
+    );
+    const { getByLabelText, getByRole, getByText, queryByText } = render(
+      <DeleteAccountScreen />,
+    );
+    fireEvent.changeText(getByLabelText("Type DELETE to confirm"), "DELETE");
+    expect(getByText("Checking your groups…")).toBeTruthy();
+    expect(getByRole("button", { name: "Delete my account" })).toBeDisabled();
+
+    await act(async () => {
+      resolveGroups({ data: [], error: null });
+    });
+    expect(queryByText("Checking your groups…")).toBeNull();
+    expect(
+      getByRole("button", { name: "Delete my account" }),
+    ).not.toBeDisabled();
+  });
+
+  it("shows a group-check error and keeps the delete button enabled", async () => {
+    mockGroups.mockResolvedValue({ data: null, error: "network down" });
+    const { findByText, getByLabelText, getByRole } = render(
+      <DeleteAccountScreen />,
+    );
+    expect(
+      await findByText("Couldn't check your groups. Pull back and try again."),
+    ).toBeTruthy();
+    fireEvent.changeText(getByLabelText("Type DELETE to confirm"), "DELETE");
+    const button = getByRole("button", { name: "Delete my account" });
+    expect(button).not.toBeDisabled();
+    fireEvent.press(button);
+    await waitFor(() => expect(mockSchedule).toHaveBeenCalled());
+  });
+});
+
+describe("Profile delete account row", () => {
+  const backgroundOf = (node: any) => {
+    let n = node.parent;
+    while (n && !n.props.style?.backgroundColor) n = n.parent;
+    return n?.props.style?.backgroundColor;
+  };
+
+  it("uses the error colour for the Delete account row only", () => {
+    const { getByText, getByTestId } = render(<ProfileScreen />);
+    const { error, primary, text } = lightTheme.colors;
+
+    expect(getByText("Delete account").props.style).toEqual(
+      expect.objectContaining({ color: error }),
+    );
+    expect(getByTestId("icon-trash").props.style).toEqual(
+      expect.objectContaining({ color: error }),
+    );
+    expect(backgroundOf(getByTestId("icon-trash"))).toEqual(
+      withOpacity(error, 0.08),
+    );
+
+    expect(getByText("Edit Profile").props.style).toEqual(
+      expect.objectContaining({ color: text }),
+    );
+    expect(getByTestId("icon-pencil").props.style).toEqual(
+      expect.objectContaining({ color: primary }),
+    );
+    expect(backgroundOf(getByTestId("icon-pencil"))).toEqual(
+      withOpacity(primary, 0.08),
+    );
   });
 });

@@ -5,9 +5,9 @@ import { Modal } from "@/components/ui/Modal";
 import { NotificationPreferencesForm } from "@/components/notifications/NotificationPreferencesForm";
 import { useResponsiveLayout } from "@/hooks/use-responsive-layout";
 import { useProfileStats } from "@/hooks/useProfileStats";
+import { useSignOut } from "@/hooks/useSignOut";
 import { useToast } from "@/hooks/useToast";
 import { useAuth } from "@/lib/contexts/AuthContext";
-import { useDialog } from "@/lib/contexts/DialogContext";
 import { useTheme } from "@/lib/contexts/ThemeContext";
 import { MaxWidthContainer } from "@/components/layout/MaxWidthContainer";
 import { router, useLocalSearchParams } from "expo-router";
@@ -26,9 +26,9 @@ import { useStyles } from "react-native-unistyles";
 type TabName = "Profile" | "Settings";
 
 export default function ProfileScreen() {
-  const { user, updateProfile, signOut } = useAuth();
+  const { user, updateProfile } = useAuth();
+  const { signOut, signingOut } = useSignOut();
   const { themeMode, setThemeMode } = useTheme();
-  const { confirm } = useDialog();
   const { showSuccess, showError } = useToast();
   const { theme } = useStyles();
   const { isMobile, isWeb } = useResponsiveLayout();
@@ -38,7 +38,6 @@ export default function ProfileScreen() {
   const [username, setUsername] = useState(user?.profile?.username || "");
   const [avatarUrl, setAvatarUrl] = useState(user?.profile?.avatar_url || null);
   const [loading, setLoading] = useState(false);
-  const [signingOut, setSigningOut] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [activeTab, setActiveTab] = useState<TabName>("Profile");
@@ -90,26 +89,7 @@ export default function ProfileScreen() {
     showError("Couldn't upload photo", { message: error });
   };
 
-  const handleSignOut = async () => {
-    if (signingOut) return;
-    const ok = await confirm({
-      title: "Sign out?",
-      message: "Are you sure you want to sign out?",
-      confirmText: "Sign out",
-    });
-    if (!ok) return;
-
-    setSigningOut(true);
-    const { error } = await signOut();
-    if (error) {
-      setSigningOut(false);
-      showError("Couldn't sign out", {
-        message: "Check your connection and try again.",
-      });
-      return;
-    }
-    router.replace("/(auth)/login");
-  };
+  const handleSignOut = () => signOut({ confirm: true });
 
   const formatJoinDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -265,11 +245,13 @@ export default function ProfileScreen() {
     label,
     subtitle,
     onPress,
+    destructive = false,
   }: {
     icon: string;
     label: string;
     subtitle: string;
     onPress: () => void;
+    destructive?: boolean;
   }) => (
     <TouchableOpacity
       style={{
@@ -287,20 +269,27 @@ export default function ProfileScreen() {
           width: 40,
           height: 40,
           borderRadius: 20,
-          backgroundColor: withOpacity(theme.colors.primary, 0.08),
+          backgroundColor: withOpacity(
+            destructive ? theme.colors.error : theme.colors.primary,
+            0.08,
+          ),
           alignItems: "center",
           justifyContent: "center",
           marginRight: theme.spacing.md,
         }}
       >
-        <IconSymbol name={icon as any} size={20} color={theme.colors.primary} />
+        <IconSymbol
+          name={icon as any}
+          size={20}
+          color={destructive ? theme.colors.error : theme.colors.primary}
+        />
       </View>
       <View style={{ flex: 1 }}>
         <Text
           style={{
             fontSize: theme.fontSize.base,
             fontWeight: theme.fontWeight.semibold,
-            color: theme.colors.text,
+            color: destructive ? theme.colors.error : theme.colors.text,
             marginBottom: theme.spacing.xs,
           }}
         >
@@ -451,6 +440,7 @@ export default function ProfileScreen() {
           icon="trash"
           label="Delete account"
           subtitle="Permanently delete your account and data"
+          destructive
           onPress={() => router.push("/account/delete" as never)}
         />
       </View>

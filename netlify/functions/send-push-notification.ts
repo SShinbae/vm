@@ -104,6 +104,24 @@ export async function handleLogChange(
   payload: WebhookPayload,
 ): Promise<boolean> {
   const record = payload.record || payload.old_record!;
+  // record.user_id is the log's creator; the person who made this change is
+  // recorded by the zz_record_log_change_actor trigger. Fall back to the creator
+  // for changes made outside a user session (service role / SQL).
+  const { data: actorRow, error: actorError } = await supabase
+    .from("log_change_actors")
+    .select("actor")
+    .eq("table_name", payload.table)
+    .eq("row_id", record.id)
+    .eq("op", payload.type)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (actorError) {
+    // Falls back to the creator below; log so a wrong name is traceable.
+    console.error("push: actor lookup failed", actorError);
+  }
+  const actorId: string | null = actorRow?.actor ?? record.user_id ?? null;
+
   const { data: vehicle } = await supabase
     .from("vehicles")
     .select("make, model, year")
@@ -124,18 +142,18 @@ export async function handleLogChange(
       "group_id",
       shares.map((share) => share.group_id),
     );
-  // A deleted author leaves user_id NULL: no one to exclude or look up.
-  if (record.user_id) {
-    membersQuery = membersQuery.neq("user_id", record.user_id);
+  // No known actor (deleted account, system change): exclude and name nobody.
+  if (actorId) {
+    membersQuery = membersQuery.neq("user_id", actorId);
   }
   const { data: members } = await membersQuery;
   if (!members?.length) return false;
 
-  const { data: user } = record.user_id
+  const { data: user } = actorId
     ? await supabase
         .from("profiles")
         .select("full_name, email")
-        .eq("id", record.user_id)
+        .eq("id", actorId)
         .single()
     : { data: null };
   const userName = user?.full_name || user?.email || "Someone";
@@ -166,7 +184,7 @@ export async function handleLogChange(
           type: "log_update",
           action: payload.type,
           userName,
-          performedBy: record.user_id,
+          performedBy: actorId,
           logType: payload.table.replace("_logs", ""),
           vehicleId: record.vehicle_id,
           logId: record.id,

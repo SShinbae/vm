@@ -75,12 +75,15 @@ describe("pendingDeletionRedirect", () => {
 describe("shouldRetryProfile", () => {
   const u = (profile?: object) => ({ id: "u", profile }) as never;
   it("retries once for a user whose profile never loaded", () => {
-    expect(shouldRetryProfile(u(), null)).toBe(true);
-    expect(shouldRetryProfile(u(), "other")).toBe(true);
-    expect(shouldRetryProfile(u(), "u")).toBe(false);
+    expect(shouldRetryProfile(u(), null, true)).toBe(true);
+    expect(shouldRetryProfile(u(), "other", true)).toBe(true);
+    expect(shouldRetryProfile(u(), "u", true)).toBe(false);
   });
   it("does not retry without a user or when a profile exists", () => {
-    expect(shouldRetryProfile(null, null)).toBe(false);
-    expect(shouldRetryProfile(u({}), null)).toBe(false);
+    expect(shouldRetryProfile(null, null, true)).toBe(false);
+    expect(shouldRetryProfile(u({}), null, true)).toBe(false);
+  });
+  it("waits until auth has settled", () => {
+    expect(shouldRetryProfile(u(), null, false)).toBe(false);
   });
 });

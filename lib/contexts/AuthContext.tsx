@@ -239,6 +239,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
           }
         } else if (event === "SIGNED_OUT") {
           setState((prev) => ({ ...prev, user: null, loading: false }));
+          // Single place for every sign-out path (manual, revoked, Google, local)
+          sentryService.clearUser();
+          posthog?.reset();
           isPasswordRecoveryRef.current = false;
           setIsPasswordRecovery(false);
         } else if (event === "USER_UPDATED") {
@@ -363,6 +366,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
         console.log("Needs email confirmation:", needsEmailConfirmation);
       }
 
+      // Before signOut(): its SIGNED_OUT event resets PostHog identity.
+      posthog?.capture("user_signed_up");
+
       // Sign out immediately to prevent auto-login for unconfirmed users
       // This ensures the onAuthStateChange listener doesn't pick up the session
       if (needsEmailConfirmation && data?.session) {
@@ -377,7 +383,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
           "Signup successful, user should receive email confirmation",
         );
       }
-      posthog?.capture("user_signed_up");
       setState((prev) => ({ ...prev, loading: false }));
       return { error: null };
     } catch (error) {
@@ -449,6 +454,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
     try {
       await pushService.onLogout();
 
+      // Before signOut(): its SIGNED_OUT event resets PostHog first. A failed
+      // sign-out over-counts one event, which is acceptable.
+      posthog?.capture("user_signed_out");
       const { error } = await supabase.auth.signOut();
       if (error) {
         // Still signed in: put this device's push token back.
@@ -456,10 +464,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
         return { error: error.message };
       }
 
-      posthog?.capture("user_signed_out");
-      // Clear Sentry and PostHog user on logout
-      sentryService.clearUser();
-      posthog?.reset();
       return { error: null };
     } catch (error) {
       if (__DEV__) {
@@ -557,11 +561,32 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const userId = state.user?.id;
   const refreshProfile = useCallback(async () => {
     if (!userId) return;
-    const { data: profile, error } = (await supabase
-      .from("profiles")
-      .select("*")
-      .eq("id", userId)
-      .single()) as { data: Profile | null; error: any };
+    const controller = new AbortController();
+    // Race the abort too: a hung request may never settle on its own.
+    const timedOut = new Promise<never>((_, reject) => {
+      controller.signal.addEventListener("abort", () =>
+        reject(new Error("Profile refresh timed out")),
+      );
+    });
+    const timeoutId = setTimeout(() => controller.abort(), 5000);
+    let result: { data: Profile | null; error: any };
+    try {
+      result = await Promise.race([
+        supabase
+          .from("profiles")
+          .select("*")
+          .eq("id", userId)
+          .abortSignal(controller.signal)
+          .single() as unknown as Promise<{
+          data: Profile | null;
+          error: any;
+        }>,
+        timedOut,
+      ]);
+    } finally {
+      clearTimeout(timeoutId);
+    }
+    const { data: profile, error } = result;
     if (error || !profile) {
       throw new Error(error?.message ?? "Failed to refresh profile");
     }

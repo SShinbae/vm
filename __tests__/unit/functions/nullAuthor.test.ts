@@ -23,6 +23,7 @@ function mockChain(table: string) {
     };
   }
   q.single = () => Promise.resolve(mockResults[table]);
+  q.maybeSingle = () => Promise.resolve(mockResults[table]);
   q.then = (resolve: any, reject: any) =>
     Promise.resolve(mockResults[table]).then(resolve, reject);
   return q;
@@ -53,6 +54,7 @@ describe("logs with a deleted author (user_id NULL)", () => {
       data: [{ user_id: "m1" }, { user_id: "m2" }],
     };
     mockResults.profiles = { data: null };
+    mockResults.log_change_actors = { data: null };
   });
 
   it("notifies every member and never filters or looks up a null author", async () => {

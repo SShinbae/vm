@@ -108,7 +108,7 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
         await processImageUri(result.assets[0].uri);
       }
     } catch (error: any) {
-      showError("Camera error", {
+      showError("Couldn't open camera", {
         message: error.message || "Failed to access camera",
       });
     }
@@ -229,7 +229,7 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
       }
     } catch (error: any) {
       onUploadError?.(error.message);
-      showError("Upload error", { message: error.message });
+      showError("Couldn't upload image", { message: error.message });
       setLocalImageUri(null);
     } finally {
       setUploading(false);
@@ -355,7 +355,7 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
     } catch (error: any) {
       console.error("❌ Upload error:", error);
       onUploadError?.(error.message);
-      showError("Upload error", { message: error.message });
+      showError("Couldn't upload image", { message: error.message });
       setLocalImageUri(null);
     } finally {
       console.log("🏁 Upload process complete, resetting uploading state");
@@ -602,7 +602,7 @@ export const ImageGallery: React.FC<ImageGalleryProps> = ({
   };
 
   const handleImageError = (error: string) => {
-    showError("Upload error", { message: error });
+    showError("Couldn't upload image", { message: error });
   };
 
   const styles = StyleSheet.create({

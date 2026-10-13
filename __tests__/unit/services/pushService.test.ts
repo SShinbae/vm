@@ -10,6 +10,7 @@ const mockError = jest.fn();
 const mockRpc = jest.fn().mockResolvedValue({ error: null });
 const mockDeleteEq = jest.fn().mockResolvedValue({ error: null });
 const mockPush = jest.fn();
+const mockGetSession = jest.fn();
 
 jest.mock("expo-notifications", () => ({
   getPermissionsAsync: (...a: unknown[]) => mockGetPermissions(...a),
@@ -38,6 +39,7 @@ jest.mock("expo-router", () => ({
 }));
 jest.mock("@/services/supabaseClient", () => ({
   supabase: {
+    auth: { getSession: (...a: unknown[]) => mockGetSession(...a) },
     rpc: (...a: unknown[]) => mockRpc(...a),
     from: () => ({
       delete: () => ({ eq: (...a: unknown[]) => mockDeleteEq(...a) }),
@@ -50,6 +52,7 @@ import { pushService } from "@/lib/services/pushService";
 
 beforeEach(() => {
   jest.clearAllMocks();
+  mockGetSession.mockResolvedValue({ data: { session: { user: {} } } });
   mockGetToken.mockResolvedValue({ data: "ExponentPushToken[abc]" });
   mockGetPermissions.mockResolvedValue({ granted: false, canAskAgain: true });
 });
@@ -78,6 +81,14 @@ describe("pushService", () => {
       p_token: "ExponentPushToken[abc]",
       p_device_type: "ios",
     });
+  });
+
+  it("does not register or log an error when there is no session", async () => {
+    mockGetSession.mockResolvedValue({ data: { session: null } });
+    mockRequestPermissions.mockResolvedValue({ granted: true });
+    await expect(pushService.requestPermission()).resolves.toBe(true);
+    expect(mockRpc).not.toHaveBeenCalled();
+    expect(mockError).not.toHaveBeenCalled();
   });
 
   it("does not register when permission is denied", async () => {

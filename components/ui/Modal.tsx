@@ -91,6 +91,9 @@ interface ChoiceModalProps<T extends string = string> {
   inline?: boolean;
 }
 
+// Open web modals, bottom to top. Escape is handled by the top one only.
+const escapeStack: (() => void)[] = [];
+
 // Web-specific Modal Component
 function WebModal({
   visible,
@@ -194,14 +197,47 @@ function WebModal({
     }
   };
 
+  // Escape closes (same rule as the backdrop); focus moves into the dialog
+  // and returns to the trigger on close. Only the top open modal reacts.
+  const backdropPressRef = React.useRef(handleBackdropPress);
+  backdropPressRef.current = handleBackdropPress;
+  const dialogRef = React.useRef<any>(null);
+  React.useEffect(() => {
+    if (!visible || Platform.OS !== "web" || typeof document === "undefined") {
+      return;
+    }
+    const previous = document.activeElement as HTMLElement | null;
+    dialogRef.current?.focus?.();
+    const handler = () => backdropPressRef.current();
+    escapeStack.push(handler);
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (
+        e.key === "Escape" &&
+        escapeStack[escapeStack.length - 1] === handler
+      ) {
+        handler();
+      }
+    };
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("keydown", onKeyDown);
+      escapeStack.splice(escapeStack.indexOf(handler), 1);
+      previous?.focus?.();
+    };
+  }, [visible]);
+
   if (!visible) return null;
 
   const modalContent = (
     <View
+      ref={dialogRef}
+      // @ts-ignore - Web-specific props
+      tabIndex={-1}
       // @ts-ignore - Web-specific className
       style={[
         {
           position: "fixed" as any,
+          outlineStyle: "none" as any,
           top: 0,
           left: 0,
           right: 0,

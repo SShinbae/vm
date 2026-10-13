@@ -156,11 +156,28 @@ export const handler: Handler = async (event: HandlerEvent) => {
   const scheduledFor = new Date(
     Date.now() + GRACE_DAYS * 86400000,
   ).toISOString();
-  const { error: updateError } = await supabaseAdmin
+  // Conditional, so two concurrent POSTs cannot both win and send two emails.
+  const { data: scheduled, error: updateError } = await supabaseAdmin
     .from("profiles")
     .update({ deletion_scheduled_at: scheduledFor })
-    .eq("id", user.id);
+    .eq("id", user.id)
+    .is("deletion_scheduled_at", null)
+    .select("deletion_scheduled_at");
   if (updateError) return json(500, { error: updateError.message }, cors);
+  if (!scheduled?.length) {
+    // Another request scheduled first: return its date, no side effects.
+    const { data: existing, error: rereadError } = await supabaseAdmin
+      .from("profiles")
+      .select("deletion_scheduled_at")
+      .eq("id", user.id)
+      .single();
+    if (rereadError) return json(500, { error: rereadError.message }, cors);
+    if (!existing?.deletion_scheduled_at) {
+      // Cancelled between the two requests. Let the client retry.
+      return json(500, { error: "Deletion changed; try again" }, cors);
+    }
+    return json(200, { scheduledFor: existing.deletion_scheduled_at }, cors);
+  }
 
   await supabaseAdmin.from("push_tokens").delete().eq("user_id", user.id);
   // "others", not "global": global also kills the requesting session, so the
