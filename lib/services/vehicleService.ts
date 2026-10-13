@@ -17,7 +17,6 @@ import {
   VehicleUpdate,
   VehicleWithDetails,
 } from "../../types/database-v2";
-import { uploadImage } from "../utils/imageUpload";
 // Service templates now use Supabase database storage
 
 export class VehicleService {
@@ -521,7 +520,6 @@ export class VehicleService {
   static async createVehicle(
     vehicleData: Omit<VehicleInsert, "user_id">,
     sharedGroupIds?: string[],
-    imageUri?: string,
   ): Promise<ApiResponse<Vehicle>> {
     try {
       const {
@@ -548,27 +546,11 @@ export class VehicleService {
         };
       }
 
-      // Upload image if provided
-      let imageUrl: string | undefined;
-      if (imageUri) {
-        const uploadResult = await uploadImage(
-          imageUri,
-          "vehicles",
-          `vehicle_${user.id}`,
-        );
-        if (uploadResult.success && uploadResult.url) {
-          imageUrl = uploadResult.url;
-        } else {
-          logger.warn("Failed to upload vehicle image:", uploadResult.error);
-        }
-      }
-
       // Create vehicle
       const vehicleResult = await supabase
         .from("vehicles")
         .insert({
           ...vehicleData,
-          main_image_url: imageUrl,
           user_id: user.id,
         } as any)
         .select()

@@ -1,10 +1,12 @@
 import React from "react";
 import { fireEvent, render, waitFor } from "@testing-library/react-native";
-import { ImageGallery } from "@/components/ui/ImageUpload";
+import { ImageGallery, ImageUpload } from "@/components/ui/ImageUpload";
 
 const mockShowError = jest.fn();
 const mockChoose = jest.fn();
 const mockUploadFromUri = jest.fn();
+const mockUploadAvatarFromUri = jest.fn();
+const mockUploadVehicleImage = jest.fn();
 
 jest.mock("@/hooks/useToast", () => ({
   useToast: () => ({
@@ -20,6 +22,9 @@ jest.mock("@/lib/contexts/DialogContext", () => ({
 jest.mock("@/lib/services/imageUploadService", () => ({
   ImageUploadService: {
     uploadVehicleImageFromUri: (...a: unknown[]) => mockUploadFromUri(...a),
+    uploadProfileAvatarFromUri: (...a: unknown[]) =>
+      mockUploadAvatarFromUri(...a),
+    uploadVehicleImage: (...a: unknown[]) => mockUploadVehicleImage(...a),
   },
 }));
 jest.mock("expo-image-picker", () => ({
@@ -59,5 +64,62 @@ describe("ImageGallery upload error feedback", () => {
     expect(mockShowError).toHaveBeenCalledWith("Upload failed", {
       message: "Too big",
     });
+  });
+});
+
+describe("ImageUpload select-only mode (onImageSelected)", () => {
+  it("hands the picked image to the parent and uploads nothing", async () => {
+    const onImageSelected = jest.fn();
+    const { getByText } = render(
+      <ImageUpload
+        type="vehicle_main"
+        circular
+        placeholder="Add Vehicle Photo"
+        onImageSelected={onImageSelected}
+      />,
+    );
+
+    fireEvent.press(getByText("Add Vehicle Photo"));
+
+    await waitFor(() =>
+      expect(onImageSelected).toHaveBeenCalledWith({
+        uri: "file:///photo.jpg",
+      }),
+    );
+    expect(mockUploadFromUri).not.toHaveBeenCalled();
+    expect(mockUploadAvatarFromUri).not.toHaveBeenCalled();
+    expect(mockUploadVehicleImage).not.toHaveBeenCalled();
+    expect(mockShowError).not.toHaveBeenCalled();
+  });
+});
+
+describe("ImageUpload without onImageSelected", () => {
+  it("still uploads the picked image as a vehicle photo", async () => {
+    mockUploadFromUri.mockResolvedValue({
+      data: { image_url: "https://x/y.jpg" },
+      error: null,
+    });
+    const onUploadComplete = jest.fn();
+    const { getByText } = render(
+      <ImageUpload
+        type="vehicle_main"
+        vehicleId="v1"
+        placeholder="Add Vehicle Photo"
+        onUploadComplete={onUploadComplete}
+      />,
+    );
+
+    fireEvent.press(getByText("Add Vehicle Photo"));
+
+    await waitFor(() =>
+      expect(mockUploadFromUri).toHaveBeenCalledWith(
+        "v1",
+        "file:///photo.jpg",
+        "vehicle_main",
+      ),
+    );
+    await waitFor(() =>
+      expect(onUploadComplete).toHaveBeenCalledWith("https://x/y.jpg"),
+    );
   });
 });
