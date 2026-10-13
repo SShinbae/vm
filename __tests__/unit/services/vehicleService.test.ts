@@ -18,13 +18,6 @@ jest.mock("@/services/supabaseClient", () => ({
   supabase: {},
 }));
 
-// Mock image upload
-jest.mock("@/lib/utils/imageUpload", () => ({
-  uploadImage: jest
-    .fn()
-    .mockResolvedValue({ success: true, url: "https://test.url/image.jpg" }),
-}));
-
 type QueryLog = { table: string; method: string; args: unknown[] }[];
 
 // Thenable query builder whose result depends on the chained methods, so one
@@ -251,6 +244,37 @@ describe("VehicleService", () => {
 
       expect(result.error).toBeNull();
       expect(result.data).toBeDefined();
+    });
+
+    it("creates the vehicle without a photo and never touches storage", async () => {
+      const newVehicle = MockDataBuilders.vehicle();
+      const insert = jest.fn().mockReturnValue({
+        select: jest.fn().mockReturnValue({
+          single: jest
+            .fn()
+            .mockResolvedValue({ data: newVehicle, error: null }),
+        }),
+      });
+      mockSupabase.from.mockImplementation(() => ({
+        select: jest.fn().mockReturnThis(),
+        eq: jest.fn().mockReturnValue({
+          eq: jest.fn().mockResolvedValue({ data: [], error: null }),
+        }),
+        insert,
+      }));
+      const storageFrom = jest.fn();
+      mockSupabase.storage = { from: storageFrom };
+
+      const result = await VehicleService.createVehicle({
+        make: "Toyota",
+        model: "Camry",
+        year: 2022,
+        license_plate: "PHO123",
+      });
+
+      expect(result.error).toBeNull();
+      expect(insert.mock.calls[0][0]).not.toHaveProperty("main_image_url");
+      expect(storageFrom).not.toHaveBeenCalled();
     });
 
     it("should reject duplicate license plate", async () => {

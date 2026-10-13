@@ -29,7 +29,7 @@ begin
   -- ponytail: drop the loose "any folder" upload policy for this transaction
   -- only (rolled back) so case j exercises the new storage policy for real.
   -- Takes an ACCESS EXCLUSIVE lock on storage.objects until rollback.
-  drop policy "Allow authenticated uploads to vehicle-images" on storage.objects;
+  drop policy if exists "Allow authenticated uploads to vehicle-images" on storage.objects;
 
   -- ===== as member m =====
   perform set_config('request.jwt.claims', json_build_object('sub', m, 'role', 'authenticated')::text, true);

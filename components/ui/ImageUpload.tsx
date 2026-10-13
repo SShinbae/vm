@@ -24,6 +24,9 @@ interface ImageUploadProps {
   currentImageUrl?: string | null;
   onUploadComplete?: (imageUrl: string) => void;
   onUploadError?: (error: string) => void;
+  // Select-only mode: the picked image is previewed and handed to the parent,
+  // which uploads it later (e.g. once a vehicle exists). No upload and no toast.
+  onImageSelected?: (image: { uri: string; file?: File }) => void;
   maxSize?: number; // in MB
   disabled?: boolean;
   placeholder?: string;
@@ -38,6 +41,7 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
   currentImageUrl,
   onUploadComplete,
   onUploadError,
+  onImageSelected,
   maxSize = 5,
   disabled = false,
   placeholder,
@@ -144,6 +148,11 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
   };
 
   const processImageUri = async (uri: string) => {
+    if (onImageSelected) {
+      setLocalImageUri(uri);
+      onImageSelected({ uri });
+      return;
+    }
     try {
       setUploading(true);
       setLocalImageUri(uri);
@@ -310,6 +319,13 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
           console.warn("⚠️ Compression failed, using original:", compressError);
           // Continue with original file if compression fails
         }
+      }
+
+      if (onImageSelected) {
+        const uri = URL.createObjectURL(finalFile);
+        setLocalImageUri(uri);
+        onImageSelected({ uri, file: finalFile });
+        return;
       }
 
       console.log("✅ Starting upload...");

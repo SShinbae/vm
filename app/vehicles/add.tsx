@@ -6,6 +6,7 @@ import { IconSymbol } from "@/components/ui/icon-symbol";
 import { ImageUpload } from "@/components/ui/ImageUpload";
 import { Input } from "@/components/ui/Input";
 import { YearPicker } from "@/components/ui/YearPicker";
+import { ImageUploadService } from "@/lib/services/imageUploadService";
 import { VehicleService } from "@/lib/services/vehicleService";
 import { useToast } from "@/hooks/useToast";
 import { VehicleFormData } from "@/types";
@@ -31,9 +32,12 @@ export default function AddVehicleScreen() {
     license_plate: "",
     vin: "",
   });
-  const [imageUri, setImageUri] = useState<string>("");
+  const [pendingImage, setPendingImage] = useState<{
+    uri: string;
+    file?: File;
+  } | null>(null);
   const [loading, setLoading] = useState(false);
-  const { showSuccess, showError } = useToast();
+  const { showSuccess, showError, showWarning } = useToast();
   const posthog = usePostHog();
   const { theme } = useStyles();
   const colorScheme = useColorScheme();
@@ -69,11 +73,25 @@ export default function AddVehicleScreen() {
       vin: formData.vin?.trim() || undefined,
     };
 
-    const { error } = await VehicleService.createVehicle(
-      vehicleData,
-      undefined, // sharedGroupIds
-      imageUri || undefined, // imageUri
-    );
+    const { data: vehicle, error } =
+      await VehicleService.createVehicle(vehicleData);
+
+    // The photo goes in after the vehicle exists, since its path needs the id.
+    let photoError: string | undefined;
+    if (vehicle && pendingImage) {
+      const upload = pendingImage.file
+        ? await ImageUploadService.uploadVehicleImage(
+            vehicle.id,
+            pendingImage.file,
+            "vehicle_main",
+          )
+        : await ImageUploadService.uploadVehicleImageFromUri(
+            vehicle.id,
+            pendingImage.uri,
+            "vehicle_main",
+          );
+      photoError = upload.error ?? undefined;
+    }
     setLoading(false);
 
     if (error) {
@@ -84,13 +102,15 @@ export default function AddVehicleScreen() {
         model: vehicleData.model,
         year: vehicleData.year,
       });
-      showSuccess("Vehicle added successfully!");
+      if (photoError) {
+        showWarning("Vehicle added", {
+          message: "The photo couldn't be uploaded. Add it from Edit vehicle.",
+        });
+      } else {
+        showSuccess("Vehicle added successfully!");
+      }
       router.push("/(tabs)/vehicles");
     }
-  };
-
-  const handleImageUpload = (url: string) => {
-    setImageUri(url);
   };
 
   const validateMake = (value: string) => {
@@ -273,11 +293,12 @@ export default function AddVehicleScreen() {
             {/* Circular Vehicle Photo */}
             <View style={styles.avatarContainer}>
               <ImageUpload
-                type="avatar"
-                currentImageUrl={imageUri}
-                onUploadComplete={handleImageUpload}
+                type="vehicle_main"
+                circular
+                onImageSelected={setPendingImage}
                 placeholder="Add Vehicle Photo"
                 style={styles.avatarUpload}
+                showDeleteButton={false}
               />
               <Text style={styles.avatarLabel}>Vehicle Photo (Optional)</Text>
             </View>
