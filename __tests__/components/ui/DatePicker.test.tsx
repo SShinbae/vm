@@ -7,7 +7,6 @@
 
 import React from "react";
 import { render, fireEvent } from "@testing-library/react-native";
-import { View, Text, TouchableOpacity } from "react-native";
 
 import { DatePicker } from "@/components/ui/DatePicker";
 
@@ -18,11 +17,13 @@ jest.mock("@/hooks/use-color-scheme", () => ({
 
 jest.mock("@/components/ui/icon-symbol", () => ({
   IconSymbol: ({ name, testID }: { name: string; testID?: string }) => {
+    const { Text } = jest.requireActual("react-native");
     return <Text testID={testID || `icon-${name}`}>{name}</Text>;
   },
 }));
 
 jest.mock("react-native-ui-datepicker", () => {
+  const { View, Text, TouchableOpacity } = jest.requireActual("react-native");
   return {
     __esModule: true,
     default: ({
@@ -147,9 +148,12 @@ describe("DatePicker", () => {
       // Open picker by pressing the button
       fireEvent.press(getByText(defaultProps.placeholder));
 
-      // Select a date from the mocked picker
+      // Select a date from the mocked picker, then confirm it
       fireEvent.press(getByTestId("select-date-button"));
+      expect(onDateChange).not.toHaveBeenCalled();
+      fireEvent.press(getByText("Confirm"));
 
+      expect(onDateChange).toHaveBeenCalledTimes(1);
       expect(onDateChange).toHaveBeenCalledWith("2024-06-15");
     });
   });

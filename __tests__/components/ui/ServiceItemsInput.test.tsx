@@ -7,7 +7,6 @@
 
 import React from "react";
 import { render, fireEvent } from "@testing-library/react-native";
-import { Text } from "react-native";
 
 import { ServiceItemsInput } from "@/components/ui/ServiceItemsInput";
 
@@ -18,6 +17,7 @@ jest.mock("@/hooks/use-color-scheme", () => ({
 
 jest.mock("@/components/ui/icon-symbol", () => ({
   IconSymbol: ({ name, testID }: { name: string; testID?: string }) => {
+    const { Text } = jest.requireActual("react-native");
     return <Text testID={testID || `icon-${name}`}>{name}</Text>;
   },
 }));
