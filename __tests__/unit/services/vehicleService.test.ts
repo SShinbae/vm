@@ -25,6 +25,29 @@ jest.mock("@/lib/utils/imageUpload", () => ({
     .mockResolvedValue({ success: true, url: "https://test.url/image.jpg" }),
 }));
 
+type QueryLog = { table: string; method: string; args: unknown[] }[];
+
+// Thenable query builder whose result depends on the chained methods, so one
+// table can answer its select, update and duplicate-check queries differently.
+function queryBuilder(
+  table: string,
+  log: QueryLog,
+  resolveFor: (methods: string[]) => unknown,
+) {
+  const methods: string[] = [];
+  const query: any = {};
+  for (const method of ["select", "eq", "neq", "in", "single", "update"]) {
+    query[method] = jest.fn((...args: unknown[]) => {
+      methods.push(method);
+      log.push({ table, method, args });
+      return query;
+    });
+  }
+  query.then = (resolve: any, reject: any) =>
+    Promise.resolve(resolveFor(methods)).then(resolve, reject);
+  return query;
+}
+
 describe("VehicleService", () => {
   let mockSupabase: ReturnType<typeof createSupabaseMock>;
 
@@ -387,6 +410,68 @@ describe("VehicleService", () => {
       expect(result.error).toBe(
         "A vehicle with this license plate already exists",
       );
+    });
+
+    it("returns a friendly error when the update matches no rows", async () => {
+      mockSupabase.from.mockImplementation((table: string) =>
+        queryBuilder(table, [], (methods) => {
+          if (table === "vehicle_group_shares")
+            return { data: [], error: null };
+          if (methods.includes("update")) {
+            return {
+              data: null,
+              error: {
+                code: "PGRST116",
+                message: "Cannot coerce the result to a single JSON object",
+              },
+            };
+          }
+          return { data: { user_id: "test-user-id" }, error: null };
+        }),
+      );
+
+      const result = await VehicleService.updateVehicle("vehicle-1", {
+        color: "Red",
+      });
+
+      expect(result.error).toBe(
+        "You do not have permission to edit this vehicle",
+      );
+    });
+
+    it("checks the duplicate license plate against the owner's vehicles", async () => {
+      const log: QueryLog = [];
+      mockSupabase.from.mockImplementation((table: string) =>
+        queryBuilder(table, log, (methods) => {
+          if (table === "vehicle_group_shares") {
+            return { data: [{ group_id: "group-1" }], error: null };
+          }
+          if (table === "group_members") {
+            return { data: [{ group_id: "group-1" }], error: null };
+          }
+          if (methods.includes("update")) {
+            return { data: { id: "vehicle-1" }, error: null };
+          }
+          if (methods.includes("neq")) return { data: [], error: null };
+          return { data: { user_id: "owner-id" }, error: null };
+        }),
+      );
+
+      const result = await VehicleService.updateVehicle("vehicle-1", {
+        license_plate: "NEW123",
+      });
+
+      expect(result.error).toBeNull();
+      expect(log).toContainEqual({
+        table: "vehicles",
+        method: "eq",
+        args: ["user_id", "owner-id"],
+      });
+      expect(log).not.toContainEqual({
+        table: "vehicles",
+        method: "eq",
+        args: ["user_id", "test-user-id"],
+      });
     });
   });
 
