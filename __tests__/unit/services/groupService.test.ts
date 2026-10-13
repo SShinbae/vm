@@ -579,7 +579,7 @@ describe("Group Services", () => {
           ...MockDataBuilders.groupInvitation(),
           groups: { name: "Test Group" },
         };
-        const memberInsertMock = jest
+        const memberUpsertMock = jest
           .fn()
           .mockResolvedValue({ data: null, error: null });
 
@@ -619,7 +619,7 @@ describe("Group Services", () => {
             };
           }
           if (table === "group_members") {
-            return { ...createMockQueryBuilder(), insert: memberInsertMock };
+            return { ...createMockQueryBuilder(), upsert: memberUpsertMock };
           }
           return createMockQueryBuilder();
         });
@@ -629,7 +629,13 @@ describe("Group Services", () => {
 
         expect(result.error).toBeNull();
         expect(result.data?.groupName).toBe("Test Group");
-        expect(memberInsertMock).toHaveBeenCalled();
+        expect(memberUpsertMock).toHaveBeenCalledWith(
+          expect.objectContaining({
+            group_id: "group-1",
+            user_id: "test-user-id",
+          }),
+          { onConflict: "group_id,user_id", ignoreDuplicates: true },
+        );
       });
 
       it("should reject expired invitations", async () => {

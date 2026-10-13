@@ -7,7 +7,6 @@
 
 import React from "react";
 import { render, fireEvent } from "@testing-library/react-native";
-import { Text, TouchableOpacity } from "react-native";
 
 import { VehicleSelector } from "@/components/forms/VehicleSelector";
 
@@ -101,6 +100,7 @@ jest.mock("../../../components/forms/VehicleOption", () => ({
     isSelected: boolean;
     onPress: () => void;
   }) => {
+    const { Text, TouchableOpacity } = jest.requireActual("react-native");
     return (
       <TouchableOpacity
         testID={`vehicle-option-${vehicle.id}`}

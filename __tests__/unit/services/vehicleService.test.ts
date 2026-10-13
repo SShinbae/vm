@@ -610,7 +610,14 @@ describe("VehicleService", () => {
         expect(result.error).toBeNull();
         expect(result.data).toHaveLength(1);
         expect(result.data?.[0].name).toBe("Oil Change");
-        expect(result.data?.[0].service_template_items).toHaveLength(2);
+        // The service returns the mapped shape (items), but its declared type
+        // is the DB row type, which has no `items`. Cast in the test only.
+        const template = result.data?.[0] as unknown as { items: unknown };
+        expect(template.items).toEqual([
+          { id: "item-1", description: "Oil filter", price: 25, order: 1 },
+          { id: "item-2", description: "Labor", price: 50, order: 2 },
+        ]);
+        expect(result.data?.[0].total_cost).toBe(75);
       });
     });
 
