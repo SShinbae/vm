@@ -18,6 +18,9 @@ jest.mock("@/lib/services/accountDeletionService", () => ({
 jest.mock("expo-router", () => ({
   router: { replace: (...a: unknown[]) => mockReplace(...a) },
 }));
+jest.mock("@/lib/contexts/DialogContext", () => ({
+  useDialog: () => ({ confirm: jest.fn() }),
+}));
 jest.mock("@/hooks/useToast", () => ({
   useToast: () => ({ showSuccess: mockShowSuccess, showError: mockShowError }),
 }));

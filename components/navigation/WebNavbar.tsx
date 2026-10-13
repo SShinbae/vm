@@ -1,11 +1,10 @@
 import { spacing } from "@/src/design-system";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { useResponsiveLayout } from "@/hooks/use-responsive-layout";
-import { useToast } from "@/hooks/useToast";
+import { useSignOut } from "@/hooks/useSignOut";
 import { useAuth } from "@/lib/contexts/AuthContext";
-import { useDialog } from "@/lib/contexts/DialogContext";
 import { router, usePathname } from "expo-router";
-import React, { useState } from "react";
+import React from "react";
 import { Platform, Text, TouchableOpacity, View } from "react-native";
 import { createStyleSheet, useStyles } from "react-native-unistyles";
 import type { SFSymbols6_0 } from "sf-symbols-typescript";
@@ -28,10 +27,8 @@ const NAV_ITEMS: NavItem[] = [
 export function WebNavbar() {
   const layout = useResponsiveLayout();
   const pathname = usePathname();
-  const { user, signOut } = useAuth();
-  const { showError } = useToast();
-  const { confirm } = useDialog();
-  const [signingOut, setSigningOut] = useState(false);
+  const { user } = useAuth();
+  const { signOut } = useSignOut();
   const { styles, theme } = useStyles(stylesheet);
 
   // Only render on web and larger screens
@@ -39,26 +36,7 @@ export function WebNavbar() {
     return null;
   }
 
-  const handleSignOutClick = async () => {
-    if (signingOut) return;
-    const ok = await confirm({
-      title: "Sign out?",
-      message: "Are you sure you want to sign out?",
-      confirmText: "Sign out",
-    });
-    if (!ok) return;
-
-    setSigningOut(true);
-    const { error } = await signOut();
-    if (error) {
-      setSigningOut(false);
-      showError("Couldn't sign out", {
-        message: "Check your connection and try again.",
-      });
-      return;
-    }
-    router.replace("/(auth)/login");
-  };
+  const handleSignOutClick = () => signOut({ confirm: true });
 
   const NavButton = ({ item }: { item: NavItem }) => {
     const isActive =

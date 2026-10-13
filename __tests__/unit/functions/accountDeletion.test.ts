@@ -4,6 +4,8 @@ const mockGetUser = jest.fn();
 const mockSignOut = jest.fn();
 const mockProfile = { current: null as null | Record<string, unknown> };
 const mockProfileError = { current: null as null | { message: string } };
+// Queued reads take precedence over mockProfile (first read, then re-read).
+const mockProfileReads: Record<string, unknown>[] = [];
 const mockUpdated = { current: [{ id: "u1" }] as unknown[] };
 const mockOwnedGroups = { current: [] as unknown[] };
 const mockUpdates: Record<string, unknown>[] = [];
@@ -22,7 +24,9 @@ jest.mock("@/netlify/functions/_shared/supabaseAdmin", () => ({
             eq: () => ({
               single: () =>
                 Promise.resolve({
-                  data: mockProfileError.current ? null : mockProfile.current,
+                  data: mockProfileError.current
+                    ? null
+                    : (mockProfileReads.shift() ?? mockProfile.current),
                   error: mockProfileError.current,
                 }),
             }),
@@ -100,6 +104,7 @@ describe("account-deletion", () => {
     mockSendEmail.mockReset().mockResolvedValue(true);
     mockProfile.current = { full_name: "Ali", deletion_scheduled_at: null };
     mockProfileError.current = null;
+    mockProfileReads.length = 0;
     mockUpdated.current = [{ id: "u1" }];
     mockOwnedGroups.current = [];
     mockUpdates.length = 0;
@@ -189,6 +194,22 @@ describe("account-deletion", () => {
       scheduledFor: "2026-11-01T00:00:00.000Z",
     });
     expect(mockUpdates).toHaveLength(0);
+    expect(mockSignOut).not.toHaveBeenCalled();
+    expect(mockSendEmail).not.toHaveBeenCalled();
+  });
+
+  it("a concurrent schedule that wins the race returns its date with no side effects", async () => {
+    const winner = "2026-11-01T00:00:00.000Z";
+    // First read: nothing pending. Re-read after the conditional update: the winner's date.
+    mockProfileReads.push(
+      { full_name: "Ali", deletion_scheduled_at: null },
+      { full_name: "Ali", deletion_scheduled_at: winner },
+    );
+    mockUpdated.current = [];
+    const res = await call("POST", { confirm: "DELETE" });
+    expect(res.statusCode).toBe(200);
+    expect(JSON.parse(res.body)).toEqual({ scheduledFor: winner });
+    expect(mockTokenDeletes).toEqual([]);
     expect(mockSignOut).not.toHaveBeenCalled();
     expect(mockSendEmail).not.toHaveBeenCalled();
   });

@@ -11,6 +11,8 @@ import {
 } from "@/components/auth";
 import { useToast } from "@/hooks/useToast";
 import { useAuth } from "@/lib/contexts/AuthContext";
+import { postLoginRoute } from "@/lib/utils/postLoginRoute";
+import { supabase } from "@/services/supabaseClient";
 import { safeNext, takeRememberedNext } from "@/lib/utils/safeNext";
 import { isValidEmail } from "@/utils/validation";
 import { Link, router, useLocalSearchParams } from "expo-router";
@@ -23,6 +25,7 @@ function LoginScreen() {
   const [loading, setLoading] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const loginAttempted = useRef(false);
+  const redirected = useRef(false);
   const { next } = useLocalSearchParams<{ next?: string }>();
   const { signIn, user, initialized } = useAuth();
   const { showSuccess, showError } = useToast();
@@ -44,10 +47,15 @@ function LoginScreen() {
     }
 
     // Only redirect if user was already logged in before they came to this page
-    if (user) {
-      console.log("Login - redirecting to tabs, user already logged in");
-      router.replace(destination() as never);
+    // One-shot: a later profile load must not navigate again (and eat `next`).
+    if (user && !redirected.current) {
+      redirected.current = true;
+      void (async () => {
+        router.replace((await postLoginRoute(user.id, destination())) as never);
+      })();
     }
+    // destination() only reads `next`/storage; the redirected ref makes this one-shot.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, initialized]);
 
   const handleEmailChange = (text: string) => {
@@ -78,6 +86,7 @@ function LoginScreen() {
 
       if (error) {
         console.log("Login error received:", error);
+        loginAttempted.current = false;
         showError(error);
         setLoading(false);
         return;
@@ -86,9 +95,14 @@ function LoginScreen() {
       // Success - navigate to dashboard
       console.log("Login successful, navigating to dashboard");
       showSuccess("Welcome back!");
-      router.replace(destination() as never);
+      const { data } = await supabase.auth.getSession();
+      const uid = data.session?.user.id;
+      const dest = destination();
+      redirected.current = true;
+      router.replace((uid ? await postLoginRoute(uid, dest) : dest) as never);
     } catch (err) {
       console.log("Login catch block:", err);
+      loginAttempted.current = false;
       showError("An unexpected error occurred. Please try again.");
       setLoading(false);
     }

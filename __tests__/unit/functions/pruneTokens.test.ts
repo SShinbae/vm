@@ -1,7 +1,8 @@
 const mockSelect = jest.fn();
 const mockLt = jest.fn(() => ({ select: mockSelect }));
 const mockDelete = jest.fn(() => ({ lt: mockLt }));
-const mockActorLt = jest.fn();
+const mockActorSelect = jest.fn();
+const mockActorLt = jest.fn(() => ({ select: mockActorSelect }));
 const mockActorDelete = jest.fn(() => ({ lt: mockActorLt }));
 
 jest.mock("@/netlify/functions/_shared/supabaseAdmin", () => ({
@@ -28,7 +29,7 @@ describe("prune-push-tokens", () => {
     jest.useFakeTimers().setSystemTime(NOW);
     jest.spyOn(console, "log").mockImplementation(() => {});
     jest.spyOn(console, "error").mockImplementation(() => {});
-    mockActorLt.mockResolvedValue({ error: null });
+    mockActorSelect.mockResolvedValue({ data: [], error: null });
   });
 
   afterEach(() => {
@@ -82,9 +83,19 @@ describe("prune-push-tokens", () => {
     );
   });
 
+  it("a token delete error still runs the actor cleanup", async () => {
+    mockSelect.mockResolvedValue({ data: null, error: { message: "db down" } });
+    const res = await handler({} as never, {} as never);
+    expect(res).toMatchObject({ statusCode: 500 });
+    expect(mockActorLt).toHaveBeenCalledWith(
+      "created_at",
+      "2026-10-07T03:00:00.000Z",
+    );
+  });
+
   it("a failing actor cleanup does not fail token pruning", async () => {
     mockSelect.mockResolvedValue({ data: [{ id: "a" }], error: null });
-    mockActorLt.mockResolvedValue({ error: { message: "boom" } });
+    mockActorSelect.mockResolvedValue({ error: { message: "boom" } });
     const res = await handler({} as never, {} as never);
     expect(res).toEqual({
       statusCode: 200,

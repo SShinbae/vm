@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/Button";
 import { MaxWidthContainer } from "@/components/layout/MaxWidthContainer";
+import { useSignOut } from "@/hooks/useSignOut";
 import { useToast } from "@/hooks/useToast";
 import { useAuth } from "@/lib/contexts/AuthContext";
 import { AccountDeletionService } from "@/lib/services/accountDeletionService";
@@ -12,7 +13,8 @@ import { useStyles } from "react-native-unistyles";
 
 export default function AccountPendingDeletionScreen() {
   const { theme } = useStyles();
-  const { user, signOut, refreshProfile } = useAuth();
+  const { user, refreshProfile } = useAuth();
+  const { signOut } = useSignOut({ redirectTo: null });
   const { showSuccess, showError } = useToast();
   const [busy, setBusy] = useState(false);
   const inFlight = useRef(false);
@@ -61,10 +63,7 @@ export default function AccountPendingDeletionScreen() {
     }
   };
 
-  const handleSignOut = async () => {
-    const { error } = await signOut();
-    if (error) showError("Couldn't sign out", { message: error });
-  };
+  const handleSignOut = () => signOut();
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.background }}>

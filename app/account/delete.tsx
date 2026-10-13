@@ -33,12 +33,21 @@ export default function DeleteAccountScreen() {
   const { confirm, alert } = useDialog();
   const [typed, setTyped] = useState("");
   const [blocking, setBlocking] = useState<{ id: string; name: string }[]>([]);
+  const [blockingStatus, setBlockingStatus] = useState<
+    "loading" | "ready" | "error"
+  >("loading");
   const [busy, setBusy] = useState(false);
   const inFlight = useRef(false);
 
   const loadBlocking = useCallback(async () => {
-    const { data } = await GroupService.getOwnedGroupsWithMembers();
+    const { data, error } = await GroupService.getOwnedGroupsWithMembers();
+    // On error keep the last list. The server's 409 still guards deletion.
+    if (error) {
+      setBlockingStatus("error");
+      return;
+    }
     setBlocking(data ?? []);
+    setBlockingStatus("ready");
   }, []);
   // Refocus (not just mount): the user may hand a group over and come back.
   useFocusEffect(
@@ -52,7 +61,9 @@ export default function DeleteAccountScreen() {
     color: theme.colors.text,
   };
   const deletionDate = formatDate(new Date(Date.now() + GRACE_DAYS * 86400000));
-  const canDelete = typed === "DELETE" && blocking.length === 0 && !busy;
+  const checkingGroups = blockingStatus === "loading";
+  const canDelete =
+    typed === "DELETE" && blocking.length === 0 && !checkingGroups && !busy;
 
   const handleDelete = async () => {
     if (!canDelete || inFlight.current) return;
@@ -254,6 +265,18 @@ export default function DeleteAccountScreen() {
             autoCapitalize="characters"
             autoCorrect={false}
           />
+
+          {checkingGroups && <Text style={text}>Checking your groups…</Text>}
+          {blockingStatus === "error" && (
+            <Text
+              style={{
+                color: theme.colors.error,
+                fontSize: theme.fontSize.base,
+              }}
+            >
+              Couldn&apos;t check your groups. Pull back and try again.
+            </Text>
+          )}
 
           <Button
             title="Delete my account"

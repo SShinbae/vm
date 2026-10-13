@@ -39,6 +39,19 @@ module.exports = defineConfig([
       "lib/**/*.{ts,tsx}",
     ],
     rules: {
+      "no-restricted-globals": [
+        "error",
+        {
+          name: "alert",
+          message:
+            "Use toast.* for messages or dialog.confirm/alert/choose for decisions (see the centralized feedback page)",
+        },
+        {
+          name: "confirm",
+          message:
+            "Use toast.* for messages or dialog.confirm/alert/choose for decisions (see the centralized feedback page)",
+        },
+      ],
       "no-restricted-syntax": [
         "error",
         {
@@ -85,6 +98,8 @@ module.exports = defineConfig([
     },
     rules: {
       "@typescript-eslint/no-require-imports": "off",
+      // Imports after jest.mock() are deliberate (mocks set up first).
+      "import/first": "off",
     },
   },
 ]);

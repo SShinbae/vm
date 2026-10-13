@@ -3,11 +3,12 @@ import { LandingFooter } from "@/components/landing/LandingFooter";
 import { LandingNav } from "@/components/landing/LandingNav";
 import { Section, useBreakpoint } from "@/components/landing/layout";
 import { Button } from "@/components/ui/Button";
+import { IconSymbol } from "@/components/ui/icon-symbol";
 import { useAuth } from "@/lib/contexts/AuthContext";
-import { router } from "expo-router";
+import { Link, router } from "expo-router";
 import Head from "expo-router/head";
 import React from "react";
-import { Linking, ScrollView, Text, View } from "react-native";
+import { ScrollView, Text, View } from "react-native";
 import { useStyles } from "react-native-unistyles";
 
 export default function DeleteAccountPage() {
@@ -48,6 +49,34 @@ export default function DeleteAccountPage() {
               gap: theme.spacing.lg,
             }}
           >
+            <Link
+              href="/"
+              accessibilityLabel="Back to home"
+              style={{ alignSelf: "flex-start" }}
+            >
+              <View
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  gap: theme.spacing.xs,
+                }}
+              >
+                <IconSymbol
+                  name="chevron.left"
+                  size={16}
+                  color={theme.colors.primary}
+                />
+                <Text
+                  style={{
+                    fontSize: theme.fontSize.base,
+                    fontWeight: theme.fontWeight.medium,
+                    color: theme.colors.primary,
+                  }}
+                >
+                  Back to home
+                </Text>
+              </View>
+            </Link>
             <Text
               accessibilityRole="header"
               aria-level={1}
@@ -68,7 +97,9 @@ export default function DeleteAccountPage() {
               3. Type DELETE and confirm.
             </Text>
             <Button
-              title="Sign in to delete my account"
+              title={
+                user ? "Delete my account" : "Sign in to delete my account"
+              }
               variant="danger"
               onPress={() =>
                 router.push(
@@ -94,13 +125,12 @@ export default function DeleteAccountPage() {
             </Text>
             <Text style={body}>
               Email{" "}
-              <Text
+              <Link
+                href={`mailto:${CONTACT_EMAIL}`}
                 style={{ color: theme.colors.primary }}
-                accessibilityRole="link"
-                onPress={() => Linking.openURL(`mailto:${CONTACT_EMAIL}`)}
               >
                 {CONTACT_EMAIL}
-              </Text>{" "}
+              </Link>{" "}
               from the email address on your account and we&apos;ll delete it
               for you.
             </Text>

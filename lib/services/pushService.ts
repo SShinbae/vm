@@ -47,6 +47,8 @@ function ensureHandlers() {
 }
 
 async function registerToken(): Promise<void> {
+  const { data } = await supabase.auth.getSession();
+  if (!data.session) return;
   const projectId =
     Constants.expoConfig?.extra?.eas?.projectId ??
     Constants.easConfig?.projectId;

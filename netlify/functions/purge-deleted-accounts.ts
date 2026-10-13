@@ -7,6 +7,7 @@ import AccountDeleted, {
 } from "./_shared/emails/AccountDeleted";
 
 export const STORAGE_BATCH = 100;
+export const PURGE_BATCH = 20;
 
 type DueAccount = {
   id: string;
@@ -107,7 +108,11 @@ export const handler: Handler = async () => {
     .from("profiles")
     .select("id, email, full_name")
     .not("deletion_scheduled_at", "is", null)
-    .lte("deletion_scheduled_at", new Date().toISOString());
+    .lte("deletion_scheduled_at", new Date().toISOString())
+    // The rest are processed on the next daily run, which keeps the function
+    // within its scheduled-function time limit.
+    .order("deletion_scheduled_at", { ascending: true })
+    .limit(PURGE_BATCH);
   if (error) {
     console.error("purge: query failed", error);
     return { statusCode: 500, body: JSON.stringify({ error: error.message }) };

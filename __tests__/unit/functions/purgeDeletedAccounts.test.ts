@@ -6,6 +6,8 @@ const mockRemove = jest.fn();
 const mockDue = { current: [] as unknown[] };
 const mockOwned: Record<string, unknown[]> = {};
 const mockLte: unknown[] = [];
+const mockOrder: unknown[] = [];
+const mockLimit: unknown[] = [];
 
 jest.mock("@/netlify/functions/_shared/supabaseAdmin", () => ({
   supabaseAdmin: {
@@ -23,7 +25,20 @@ jest.mock("@/netlify/functions/_shared/supabaseAdmin", () => ({
             not: () => ({
               lte: (...a: unknown[]) => {
                 mockLte.push(a);
-                return Promise.resolve({ data: mockDue.current, error: null });
+                return {
+                  order: (...o: unknown[]) => {
+                    mockOrder.push(o);
+                    return {
+                      limit: (n: number) => {
+                        mockLimit.push(n);
+                        return Promise.resolve({
+                          data: mockDue.current,
+                          error: null,
+                        });
+                      },
+                    };
+                  },
+                };
               },
             }),
           }),
@@ -50,6 +65,7 @@ jest.mock("@/netlify/functions/_shared/email", () => ({
 
 import {
   handler,
+  PURGE_BATCH,
   STORAGE_BATCH,
 } from "@/netlify/functions/purge-deleted-accounts";
 
@@ -78,6 +94,8 @@ describe("purge-deleted-accounts", () => {
     mockDue.current = [];
     for (const k of Object.keys(mockOwned)) delete mockOwned[k];
     mockLte.length = 0;
+    mockOrder.length = 0;
+    mockLimit.length = 0;
     jest.spyOn(console, "error").mockImplementation(() => {});
     jest.spyOn(console, "log").mockImplementation(() => {});
   });
@@ -89,6 +107,13 @@ describe("purge-deleted-accounts", () => {
   it("selects only accounts whose deletion date has passed", async () => {
     await run();
     expect(mockLte).toEqual([["deletion_scheduled_at", NOW.toISOString()]]);
+  });
+
+  it("caps each run at PURGE_BATCH, oldest deletion date first", async () => {
+    await run();
+    expect(PURGE_BATCH).toBe(20);
+    expect(mockOrder).toEqual([["deletion_scheduled_at", { ascending: true }]]);
+    expect(mockLimit).toEqual([20]);
   });
 
   it("purges in order: transfer, purge data, storage, delete user, email", async () => {
