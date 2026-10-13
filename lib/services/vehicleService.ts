@@ -1,6 +1,10 @@
 import { logger } from "@/lib/utils/logger";
 import { supabase } from "../../services/supabaseClient";
-import { ServiceTemplate, ServiceTemplateFormData } from "../../types";
+import {
+  ServiceTemplate,
+  ServiceTemplateFormData,
+  ServiceTemplateView,
+} from "../../types";
 import {
   ApiResponse,
   FuelLog,
@@ -1278,7 +1282,9 @@ export class VehicleService {
   /**
    * Get all service templates
    */
-  static async getServiceTemplates(): Promise<ApiResponse<ServiceTemplate[]>> {
+  static async getServiceTemplates(): Promise<
+    ApiResponse<ServiceTemplateView[]>
+  > {
     try {
       const {
         data: { user },
@@ -1311,7 +1317,7 @@ export class VehicleService {
       }
 
       // Transform the data to match our ServiceTemplate interface
-      const serviceTemplates: ServiceTemplate[] = (templates || []).map(
+      const serviceTemplates: ServiceTemplateView[] = (templates || []).map(
         (template: any) => ({
           id: template.id,
           name: template.name,

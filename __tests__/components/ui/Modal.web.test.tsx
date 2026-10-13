@@ -90,3 +90,63 @@ describe("WebModal stacking", () => {
     expect(onCloseB).toHaveBeenCalledTimes(1);
   });
 });
+
+describe("WebModal focus trap", () => {
+  // The dialog ref is the (mocked) View instance; the modal reads its
+  // querySelectorAll and focus at Tab time, so stub them on that instance.
+  const focusable = () => ({ focus: jest.fn() });
+  const renderWithDialog = (items: any[], props = {}) => {
+    const result = modal(props);
+    const view = render(result);
+    const dialog = view.UNSAFE_getByProps({ tabIndex: -1 }).instance;
+    dialog.focus = jest.fn();
+    dialog.querySelectorAll = jest.fn(() => items);
+    return view;
+  };
+  const tab = (shiftKey = false) => {
+    const event = { key: "Tab", shiftKey, preventDefault: jest.fn() };
+    dispatch("keydown", event);
+    return event;
+  };
+
+  it("Tab from the last element moves focus to the first", () => {
+    const first = focusable();
+    const last = focusable();
+    renderWithDialog([first, last]);
+    (global as any).document.activeElement = last;
+
+    const event = tab();
+
+    expect(event.preventDefault).toHaveBeenCalledTimes(1);
+    expect(first.focus).toHaveBeenCalledTimes(1);
+  });
+
+  it("Shift+Tab from the first element moves focus to the last", () => {
+    const first = focusable();
+    const last = focusable();
+    renderWithDialog([first, last]);
+    (global as any).document.activeElement = first;
+
+    const event = tab(true);
+
+    expect(event.preventDefault).toHaveBeenCalledTimes(1);
+    expect(last.focus).toHaveBeenCalledTimes(1);
+  });
+
+  it("only the top modal traps Tab when two are stacked", () => {
+    const lowerFirst = focusable();
+    const lowerLast = focusable();
+    const topFirst = focusable();
+    const topLast = focusable();
+    renderWithDialog([lowerFirst, lowerLast]);
+    renderWithDialog([topFirst, topLast]);
+    (global as any).document.activeElement = topLast;
+
+    const event = tab();
+
+    expect(event.preventDefault).toHaveBeenCalledTimes(1);
+    expect(topFirst.focus).toHaveBeenCalledTimes(1);
+    expect(lowerFirst.focus).not.toHaveBeenCalled();
+    expect(lowerLast.focus).not.toHaveBeenCalled();
+  });
+});

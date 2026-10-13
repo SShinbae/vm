@@ -138,10 +138,6 @@ export default function EditVehicleScreen() {
     showSuccess("Vehicle picture updated successfully!");
   };
 
-  const handleImageError = (error: string) => {
-    showError(`Failed to update vehicle picture: ${error}`);
-  };
-
   const validateMake = (value: string) => {
     if (!value.trim()) return "Make is required";
     return undefined;
@@ -392,7 +388,6 @@ export default function EditVehicleScreen() {
                 vehicleId={vehicle?.id}
                 currentImageUrl={imageUri}
                 onUploadComplete={handleImageUpload}
-                onUploadError={handleImageError}
                 placeholder="Add Vehicle Photo"
                 style={styles.avatarUpload}
                 showDeleteButton={false}

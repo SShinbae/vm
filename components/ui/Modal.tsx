@@ -93,6 +93,8 @@ interface ChoiceModalProps<T extends string = string> {
 
 // Open web modals, bottom to top. Escape is handled by the top one only.
 const escapeStack: (() => void)[] = [];
+const FOCUSABLE_SELECTOR =
+  'a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])';
 
 // Web-specific Modal Component
 function WebModal({
@@ -211,11 +213,29 @@ function WebModal({
     const handler = () => backdropPressRef.current();
     escapeStack.push(handler);
     const onKeyDown = (e: KeyboardEvent) => {
-      if (
-        e.key === "Escape" &&
-        escapeStack[escapeStack.length - 1] === handler
-      ) {
+      if (escapeStack[escapeStack.length - 1] !== handler) return;
+      if (e.key === "Escape") {
         handler();
+      } else if (e.key === "Tab") {
+        // Keep Tab inside the dialog: wrap at either end.
+        const dialog = dialogRef.current;
+        const items: HTMLElement[] = dialog
+          ? Array.from(dialog.querySelectorAll(FOCUSABLE_SELECTOR))
+          : [];
+        if (items.length === 0) {
+          e.preventDefault();
+          return;
+        }
+        const first = items[0];
+        const last = items[items.length - 1];
+        const active = document.activeElement;
+        if (e.shiftKey && (active === first || active === dialog)) {
+          e.preventDefault();
+          last.focus();
+        } else if (!e.shiftKey && active === last) {
+          e.preventDefault();
+          first.focus();
+        }
       }
     };
     document.addEventListener("keydown", onKeyDown);

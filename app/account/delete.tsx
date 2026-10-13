@@ -269,12 +269,13 @@ export default function DeleteAccountScreen() {
           {checkingGroups && <Text style={text}>Checking your groups…</Text>}
           {blockingStatus === "error" && (
             <Text
+              accessibilityRole="alert"
               style={{
                 color: theme.colors.error,
                 fontSize: theme.fontSize.base,
               }}
             >
-              Couldn&apos;t check your groups. Pull back and try again.
+              Couldn&apos;t check your groups. Go back and try again.
             </Text>
           )}
 

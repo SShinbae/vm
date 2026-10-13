@@ -260,8 +260,9 @@ describe("Delete account screen", () => {
       <DeleteAccountScreen />,
     );
     expect(
-      await findByText("Couldn't check your groups. Pull back and try again."),
+      await findByText("Couldn't check your groups. Go back and try again."),
     ).toBeTruthy();
+    expect(getByRole("alert")).toBeTruthy();
     fireEvent.changeText(getByLabelText("Type DELETE to confirm"), "DELETE");
     const button = getByRole("button", { name: "Delete my account" });
     expect(button).not.toBeDisabled();
