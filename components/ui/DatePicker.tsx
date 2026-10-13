@@ -179,14 +179,16 @@ export function DatePicker({
 
   // Initialize temp date when picker opens
   const handleOpenPicker = () => {
-    const initialDate = value ? parseDate(value) : dayjs();
+    const parsed = value ? parseDate(value) : null;
+    const initialDate = parsed?.isValid() ? parsed : dayjs();
     setTempSelectedDate(initialDate);
     setPickerKey((prev) => prev + 1); // New key = fresh DateTimePicker instance
     setShowPicker(true);
   };
 
-  const displayValue = value
-    ? formatDisplayDate(parseDate(value))
+  const parsedValue = value ? parseDate(value) : null;
+  const displayValue = parsedValue?.isValid()
+    ? formatDisplayDate(parsedValue)
     : placeholder;
 
   const styles = StyleSheet.create({

@@ -63,7 +63,7 @@ export const grayDark = {
 export const semanticColors = {
   success: "#10B981", // Emerald 500
   warning: "#F59E0B", // Amber 500
-  error: "#EF4444", // Red 500
+  error: "#DC2626", // Red 600 — 4.83:1 on white (WCAG AA)
   info: "#3B82F6", // Blue 500
   infoDark: "#60A5FA", // Blue 400 (for dark mode)
 } as const;
