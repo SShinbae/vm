@@ -47,7 +47,8 @@ function VehicleTableRow({ vehicle }: { vehicle: VehicleWithShares }) {
             {String(vehicleName)}
           </Text>
           <Text style={styles.vehicleSubText} numberOfLines={1}>
-            {vehicle.license_plate ? String(vehicle.license_plate) : "N/A"}
+            {[vehicle.make, vehicle.model].filter(Boolean).join(" ") ||
+              "Vehicle"}
           </Text>
         </View>
       </View>
@@ -72,15 +73,32 @@ function VehicleTableRow({ vehicle }: { vehicle: VehicleWithShares }) {
       <View style={styles.statusColumn}>
         {vehicle.isSharedWithMe ? (
           <View style={styles.sharedWithMeBadge}>
-            <Text style={styles.badgeText}>Shared with me</Text>
+            <IconSymbol
+              name="person.2.fill"
+              size={14}
+              color={theme.colors.warning}
+            />
+            <Text style={[styles.badgeText, styles.sharedWithMeText]}>
+              Shared with me
+            </Text>
           </View>
         ) : vehicle.shareCount > 0 ? (
           <View style={styles.sharedBadge}>
-            <Text style={styles.badgeText}>Shared</Text>
+            <IconSymbol
+              name="person.2.fill"
+              size={14}
+              color={theme.colors.primary}
+            />
+            <Text style={[styles.badgeText, styles.sharedText]}>Shared</Text>
           </View>
         ) : (
           <View style={styles.activeBadge}>
-            <Text style={styles.badgeText}>Active</Text>
+            <IconSymbol
+              name="checkmark.circle.fill"
+              size={14}
+              color={theme.colors.success}
+            />
+            <Text style={[styles.badgeText, styles.activeText]}>Active</Text>
           </View>
         )}
       </View>
@@ -133,14 +151,16 @@ export function VehicleTable({ vehicles }: VehicleTableProps) {
 
 const stylesheet = createStyleSheet((theme) => ({
   container: {
-    backgroundColor: theme.colors.surface,
-    borderRadius: theme.borderRadius.xl,
+    backgroundColor: theme.colors.background,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    borderRadius: theme.borderRadius.lg,
     overflow: "hidden",
   },
   headerRow: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: theme.colors.background,
+    backgroundColor: withOpacity(theme.colors.textSecondary, 0.06),
     paddingVertical: theme.spacing.md,
     paddingHorizontal: theme.spacing.lg,
   },
@@ -152,20 +172,20 @@ const stylesheet = createStyleSheet((theme) => ({
   row: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: theme.spacing.md,
+    paddingVertical: theme.spacing.lg,
     paddingHorizontal: theme.spacing.lg,
     borderBottomWidth: 1,
     borderBottomColor: withOpacity(theme.colors.textSecondary, 0.12),
   },
   vehicleColumn: {
-    flex: 35,
+    flex: 31,
     flexDirection: "row",
     alignItems: "center",
     gap: theme.spacing.sm,
     paddingRight: theme.spacing.sm,
   },
   plateColumn: {
-    flex: 15,
+    flex: 14,
     paddingRight: theme.spacing.sm,
   },
   mileageColumn: {
@@ -173,22 +193,22 @@ const stylesheet = createStyleSheet((theme) => ({
     paddingRight: theme.spacing.sm,
   },
   statusColumn: {
-    flex: 15,
+    flex: 22,
     paddingRight: theme.spacing.sm,
   },
   actionsColumn: {
-    flex: 20,
+    flex: 18,
     alignItems: "flex-end",
   },
   vehicleImage: {
-    width: 40,
-    height: 40,
+    width: 52,
+    height: 52,
     borderRadius: theme.borderRadius.md,
     backgroundColor: theme.colors.disabled,
   },
   vehiclePlaceholder: {
-    width: 40,
-    height: 40,
+    width: 52,
+    height: 52,
     borderRadius: theme.borderRadius.md,
     backgroundColor: withOpacity(theme.colors.primary, 0.08),
     alignItems: "center",
@@ -212,31 +232,48 @@ const stylesheet = createStyleSheet((theme) => ({
     color: theme.colors.text,
   },
   sharedBadge: {
-    backgroundColor: theme.colors.primary,
+    backgroundColor: withOpacity(theme.colors.primary, 0.1),
+    borderWidth: 1,
+    borderColor: withOpacity(theme.colors.primary, 0.35),
     paddingHorizontal: theme.spacing.sm,
     paddingVertical: theme.spacing.xs,
     borderRadius: theme.borderRadius.sm,
     alignSelf: "flex-start",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: theme.spacing.xs,
   },
   activeBadge: {
-    backgroundColor: theme.colors.success,
+    backgroundColor: withOpacity(theme.colors.success, 0.1),
+    borderWidth: 1,
+    borderColor: withOpacity(theme.colors.success, 0.35),
     paddingHorizontal: theme.spacing.sm,
     paddingVertical: theme.spacing.xs,
     borderRadius: theme.borderRadius.sm,
     alignSelf: "flex-start",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: theme.spacing.xs,
   },
   sharedWithMeBadge: {
-    backgroundColor: theme.colors.warning,
+    backgroundColor: withOpacity(theme.colors.warning, 0.1),
+    borderWidth: 1,
+    borderColor: withOpacity(theme.colors.warning, 0.55),
     paddingHorizontal: theme.spacing.sm,
     paddingVertical: theme.spacing.xs,
     borderRadius: theme.borderRadius.sm,
     alignSelf: "flex-start",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: theme.spacing.xs,
   },
   badgeText: {
     fontSize: theme.fontSize.xs,
     fontWeight: theme.fontWeight.semibold,
-    color: theme.colors.white,
   },
+  sharedWithMeText: { color: theme.colors.warning },
+  sharedText: { color: theme.colors.primary },
+  activeText: { color: theme.colors.success },
   viewButton: {
     backgroundColor: theme.colors.surface,
     borderWidth: 1,

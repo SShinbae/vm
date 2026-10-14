@@ -45,7 +45,7 @@ function TabLayoutContent() {
           styles.content,
           { backgroundColor: theme.colors.background },
           // Desktop web: add margin for sidebar
-          isDesktopWeb && { marginLeft: isOpen ? 240 : 60 },
+          isDesktopWeb && { marginLeft: isOpen ? 240 : 96 },
         ]}
       >
         <Tabs

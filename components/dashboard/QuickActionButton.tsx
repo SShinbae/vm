@@ -1,6 +1,7 @@
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import React from "react";
 import { Text, TouchableOpacity, View } from "react-native";
+import { withOpacity } from "@/src/design-system";
 import { createStyleSheet, useStyles } from "react-native-unistyles";
 
 type QuickActionButtonProps = {
@@ -8,6 +9,7 @@ type QuickActionButtonProps = {
   icon: string;
   color: string;
   onPress: () => void;
+  description?: string;
 };
 
 export function QuickActionButton({
@@ -15,36 +17,80 @@ export function QuickActionButton({
   icon,
   color,
   onPress,
+  description,
 }: QuickActionButtonProps) {
-  const { styles } = useStyles(stylesheet);
+  const { styles, theme } = useStyles(stylesheet);
 
   return (
-    <View style={styles.container}>
-      <TouchableOpacity
-        style={styles.circle}
-        onPress={onPress}
-        accessibilityLabel={title}
-        accessibilityRole="button"
+    <TouchableOpacity
+      style={[styles.container, description && styles.desktopContainer]}
+      onPress={onPress}
+      accessibilityLabel={title}
+      accessibilityRole="button"
+    >
+      <View
+        style={[
+          description && styles.iconTile,
+          description && { backgroundColor: withOpacity(color, 0.16) },
+        ]}
       >
-        <IconSymbol name={icon as any} size={28} color={color} />
-      </TouchableOpacity>
-      <Text style={styles.title}>{title}</Text>
-    </View>
+        <IconSymbol name={icon as any} size={22} color={color} />
+      </View>
+      <View style={description && styles.labelGroup}>
+        <Text
+          style={[styles.title, description && styles.desktopTitle]}
+          numberOfLines={1}
+        >
+          {title}
+        </Text>
+        {!!description && (
+          <Text style={styles.description} numberOfLines={2}>
+            {description}
+          </Text>
+        )}
+      </View>
+      {!!description && (
+        <IconSymbol
+          name="chevron.right"
+          size={15}
+          color={theme.colors.textSecondary}
+        />
+      )}
+    </TouchableOpacity>
   );
 }
 
 const stylesheet = createStyleSheet((theme) => ({
   container: {
-    alignItems: "center",
-    gap: theme.spacing.sm,
-  },
-  circle: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: theme.colors.surface,
+    minHeight: 56,
+    paddingHorizontal: theme.spacing.md,
+    flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
+    gap: theme.spacing.sm,
+    backgroundColor: theme.colors.surface,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    borderRadius: theme.borderRadius.lg,
+  },
+  desktopContainer: {
+    minHeight: 86,
+    justifyContent: "flex-start",
+    paddingHorizontal: theme.spacing.sm,
+    gap: theme.spacing.sm,
+  },
+  iconTile: {
+    width: 38,
+    height: 38,
+    borderRadius: theme.borderRadius.md,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  labelGroup: { flex: 1, gap: 2 },
+  desktopTitle: { textAlign: "left" },
+  description: {
+    color: theme.colors.textSecondary,
+    fontSize: theme.fontSize.xs,
   },
   title: {
     fontSize: theme.fontSize.sm,

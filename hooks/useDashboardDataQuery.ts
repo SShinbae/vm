@@ -1,7 +1,12 @@
 import { useAuth } from "@/lib/contexts/AuthContext";
-import { useQueries } from "@tanstack/react-query";
+import { useQueries, useQuery } from "@tanstack/react-query";
 import { supabase } from "@/services/supabaseClient";
 import { Database } from "@/types/database";
+import {
+  ReminderLog,
+  selectServiceReminders,
+} from "@/lib/dashboard/serviceReminders";
+import { buildFuelCostTrend } from "@/lib/dashboard/homeOverview";
 
 // Import types from original hook
 type Vehicle = Database["public"]["Tables"]["vehicles"]["Row"];
@@ -26,6 +31,7 @@ export interface ActivityItem {
   id: string;
   type: "mileage" | "fuel" | "service";
   date: string;
+  createdAt?: string;
   vehicleName: string;
   primaryValue: string;
   icon: "speedometer" | "fuelpump.fill" | "wrench.and.screwdriver.fill";
@@ -59,6 +65,7 @@ const processActivityLogs = (
       id: log.id,
       type: "mileage",
       date: log.date,
+      createdAt: log.created_at,
       vehicleName: `${log.vehicles?.year} ${log.vehicles?.make} ${log.vehicles?.model}`,
       primaryValue: `${log.odometer_reading.toLocaleString()} km`,
       icon: "speedometer",
@@ -71,6 +78,7 @@ const processActivityLogs = (
       id: log.id,
       type: "fuel",
       date: log.date,
+      createdAt: log.created_at,
       vehicleName: `${log.vehicles?.year} ${log.vehicles?.make} ${log.vehicles?.model}`,
       primaryValue: `RM${log.cost.toFixed(2)}`,
       icon: "fuelpump.fill",
@@ -82,17 +90,22 @@ const processActivityLogs = (
     activities.push({
       id: log.id,
       type: "service",
-      date: log.service_date,
+      date: log.date,
+      createdAt: log.created_at,
       vehicleName: `${log.vehicles?.year} ${log.vehicles?.make} ${log.vehicles?.model}`,
-      primaryValue: `RM${log.cost.toFixed(2)}`,
+      primaryValue: `RM${(log.cost || 0).toFixed(2)}`,
       icon: "wrench.and.screwdriver.fill",
       addedBy: log.profiles?.full_name ?? "Unknown",
     });
   });
 
   return activities
-    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-    .slice(0, 10);
+    .sort(
+      (a, b) =>
+        b.date.localeCompare(a.date) ||
+        (b.createdAt || "").localeCompare(a.createdAt || ""),
+    )
+    .slice(0, 5);
 };
 
 /**
@@ -241,18 +254,21 @@ async function fetchRecentActivity(userId: string): Promise<ActivityItem[]> {
       .select("*, vehicles(year, make, model), profiles(full_name)")
       .in("vehicle_id", vehicleIds)
       .order("date", { ascending: false })
+      .order("created_at", { ascending: false })
       .limit(10),
     supabase
       .from("fuel_logs")
       .select("*, vehicles(year, make, model), profiles(full_name)")
       .in("vehicle_id", vehicleIds)
       .order("date", { ascending: false })
+      .order("created_at", { ascending: false })
       .limit(10),
     supabase
       .from("service_logs")
       .select("*, vehicles(year, make, model), profiles(full_name)")
       .in("vehicle_id", vehicleIds)
       .order("date", { ascending: false })
+      .order("created_at", { ascending: false })
       .limit(10),
   ]);
 
@@ -261,6 +277,58 @@ async function fetchRecentActivity(userId: string): Promise<ActivityItem[]> {
     fuelPromise.data || [],
     servicePromise.data || [],
   );
+}
+
+async function fetchServiceReminders(vehicles: VehicleWithShares[]) {
+  if (!vehicles.length) return [];
+
+  const logs: ReminderLog[] = [];
+  for (let offset = 0; ; offset += 1000) {
+    const { data, error } = await supabase
+      .from("service_logs")
+      .select(
+        "id,vehicle_id,service_type,date,created_at,next_service_due,next_service_mileage",
+      )
+      .in(
+        "vehicle_id",
+        vehicles.map((vehicle) => vehicle.id),
+      )
+      .order("date", { ascending: false })
+      .order("created_at", { ascending: false })
+      .range(offset, offset + 999);
+    if (error) throw new Error(error.message);
+    logs.push(...(data || []));
+    if (!data || data.length < 1000) break;
+  }
+
+  return selectServiceReminders(logs, vehicles);
+}
+
+async function fetchFuelCostTrend(
+  vehicles: VehicleWithShares[],
+  months: 6 | 12,
+) {
+  if (!vehicles.length) return buildFuelCostTrend([], months);
+  const now = new Date();
+  const start = new Date(now.getFullYear(), now.getMonth() - months + 1, 1);
+  const fromDate = `${start.getFullYear()}-${String(start.getMonth() + 1).padStart(2, "0")}-01`;
+  const logs: { date: string; cost: number | null }[] = [];
+  for (let offset = 0; ; offset += 1000) {
+    const { data, error } = await supabase
+      .from("fuel_logs")
+      .select("date,cost")
+      .in(
+        "vehicle_id",
+        vehicles.map((vehicle) => vehicle.id),
+      )
+      .gte("date", fromDate)
+      .order("date", { ascending: false })
+      .range(offset, offset + 999);
+    if (error) throw new Error(error.message);
+    logs.push(...(data || []));
+    if (!data || data.length < 1000) break;
+  }
+  return buildFuelCostTrend(logs, months, now);
 }
 
 /**
@@ -274,7 +342,7 @@ async function fetchRecentActivity(userId: string): Promise<ActivityItem[]> {
  * - Optimistic updates support
  * - Parallel query execution for faster initial load
  */
-export const useDashboardDataQuery = () => {
+export const useDashboardDataQuery = (fuelTrendMonths: 6 | 12 = 6) => {
   const { user } = useAuth();
 
   const queries = useQueries({
@@ -310,6 +378,27 @@ export const useDashboardDataQuery = () => {
   });
 
   const [statsQuery, vehiclesQuery, activityQuery] = queries;
+  const remindersQuery = useQuery({
+    queryKey: ["dashboard", "reminders", user?.id, vehiclesQuery.dataUpdatedAt],
+    queryFn: () => fetchServiceReminders(vehiclesQuery.data || []),
+    enabled: !!user && vehiclesQuery.data !== undefined,
+    staleTime: 2 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+  });
+  const fuelTrendQuery = useQuery({
+    queryKey: [
+      "dashboard",
+      "fuelTrend",
+      user?.id,
+      vehiclesQuery.dataUpdatedAt,
+      fuelTrendMonths,
+    ],
+    queryFn: () =>
+      fetchFuelCostTrend(vehiclesQuery.data || [], fuelTrendMonths),
+    enabled: !!user && vehiclesQuery.data !== undefined,
+    staleTime: 2 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+  });
 
   // Combined loading state
   const loading = queries.some((q) => q.isLoading);
@@ -320,13 +409,23 @@ export const useDashboardDataQuery = () => {
 
   // Manual refresh function
   const onRefresh = async () => {
-    await Promise.all(queries.map((q) => q.refetch()));
+    await Promise.all([
+      ...queries.map((q) => q.refetch()),
+      remindersQuery.refetch(),
+      fuelTrendQuery.refetch(),
+    ]);
   };
 
   return {
     stats: statsQuery.data || defaultStats,
     vehicles: vehiclesQuery.data || [],
     recentActivity: activityQuery.data || [],
+    serviceReminders: remindersQuery.data || [],
+    remindersLoading: remindersQuery.isLoading,
+    remindersError: remindersQuery.error ? String(remindersQuery.error) : null,
+    fuelCostTrend: fuelTrendQuery.data || [],
+    fuelTrendLoading: fuelTrendQuery.isLoading,
+    fuelTrendError: fuelTrendQuery.error ? String(fuelTrendQuery.error) : null,
     loading,
     refreshing,
     error: error ? String(error) : null,

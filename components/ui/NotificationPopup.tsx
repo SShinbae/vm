@@ -11,6 +11,7 @@ import {
   Text,
   TouchableOpacity,
   View,
+  useWindowDimensions,
 } from "react-native";
 import { createStyleSheet, useStyles } from "react-native-unistyles";
 import { useNotifications } from "../../lib/contexts/NotificationContext";
@@ -22,9 +23,6 @@ import {
 import { getNotificationRoute } from "../../lib/utils/notificationNavigation";
 import { formatDistanceToNow } from "../../lib/utils/dateUtils";
 import { IconSymbol } from "./icon-symbol";
-import { GroupInvitationService } from "../../lib/services/groupService";
-import { useToast } from "../../hooks/useToast";
-import { useDialog } from "@/lib/contexts/DialogContext";
 
 interface NotificationPopupProps {
   visible: boolean;
@@ -52,6 +50,8 @@ function PopupNotificationItem({
   return (
     <TouchableOpacity
       onPress={handlePress}
+      accessibilityRole="button"
+      accessibilityLabel={formatNotificationTitle(notification.title)}
       style={[styles.item, !notification.read && styles.unreadItem]}
       activeOpacity={0.7}
     >
@@ -119,17 +119,16 @@ const itemStylesheet = createStyleSheet((theme) => ({
 export function NotificationPopup({
   visible,
   onClose,
+  anchorPosition,
 }: NotificationPopupProps) {
   const { styles, theme } = useStyles(popupStylesheet);
-  const {
-    notifications,
-    isInitialized,
-    markAllAsRead,
-    unreadCount,
-    refreshNotifications,
-  } = useNotifications();
-  const { showSuccess, showError, showInfo } = useToast();
-  const { choose } = useDialog();
+  const { notifications, isInitialized, markAllAsRead, unreadCount } =
+    useNotifications();
+  const { width, height } = useWindowDimensions();
+  const popupWidth = Math.min(360, width - 24);
+  const popupTop = anchorPosition
+    ? Math.max(12, Math.min(anchorPosition.top, height - 200))
+    : 48;
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(-10)).current;
   const reduceMotion = useReducedMotion();
@@ -154,71 +153,7 @@ export function NotificationPopup({
     }
   }, [visible, fadeAnim, slideAnim, reduceMotion]);
 
-  const handleAcceptInvitation = async (
-    invitationId: string,
-    groupName: string,
-  ) => {
-    try {
-      console.log("🔄 Accepting invitation:", { invitationId, groupName });
-      const result =
-        await GroupInvitationService.acceptInvitation(invitationId);
-      console.log("✅ Accept invitation result:", result);
-
-      if (result.error) {
-        console.error("❌ Error accepting invitation:", result.error);
-        showError(result.error);
-      } else {
-        console.log("✅ Successfully joined group!");
-        showSuccess(`You joined ${groupName}!`);
-        await refreshNotifications();
-      }
-    } catch {
-      console.error("❌ Exception accepting invitation");
-      showError("Failed to accept invitation");
-    }
-  };
-
-  const handleDeclineInvitation = async (invitationId: string) => {
-    try {
-      const result =
-        await GroupInvitationService.declineInvitation(invitationId);
-
-      if (result.error) {
-        showError(result.error);
-      } else {
-        showInfo("Invitation declined");
-        await refreshNotifications();
-      }
-    } catch {
-      showError("Failed to decline invitation");
-    }
-  };
-
-  const handleNotificationPress = async (notification: NotificationData) => {
-    if (notification.notification_type === "group_invite") {
-      // Extract group name from notification body
-      const groupName = notification.body.split("join ")[1] || "this group";
-      const invitationId = notification.data?.invitationId;
-
-      if (!invitationId) {
-        showError("Invalid invitation");
-        return;
-      }
-
-      const pick = await choose({
-        title: "Group invitation",
-        message: `Join ${groupName}?`,
-        options: [
-          { label: "Join", value: "join" },
-          { label: "Decline", value: "decline", destructive: true },
-        ],
-      });
-      // null (Cancel, backdrop, back): leave the invitation pending
-      if (pick === "join") handleAcceptInvitation(invitationId, groupName);
-      else if (pick === "decline") handleDeclineInvitation(invitationId);
-      return;
-    }
-
+  const handleNotificationPress = (notification: NotificationData) => {
     const route = getNotificationRoute(notification);
     if (route) {
       onClose();
@@ -240,10 +175,32 @@ export function NotificationPopup({
       animationType="none"
       onRequestClose={onClose}
     >
-      <Pressable style={styles.overlay} onPress={onClose}>
+      <Pressable
+        style={[
+          styles.overlay,
+          anchorPosition && {
+            paddingTop: 0,
+            paddingLeft: 0,
+            backgroundColor: "transparent",
+          },
+        ]}
+        onPress={onClose}
+        accessibilityRole="button"
+        accessibilityLabel="Dismiss notifications"
+      >
         <Animated.View
           style={[
             styles.popup,
+            anchorPosition && {
+              position: "absolute",
+              top: popupTop,
+              left: Math.max(
+                12,
+                Math.min(anchorPosition.left, width - popupWidth - 12),
+              ),
+              width: popupWidth,
+              maxHeight: height - popupTop - 12,
+            },
             {
               opacity: fadeAnim,
               transform: [{ translateY: slideAnim }],
@@ -265,10 +222,24 @@ export function NotificationPopup({
                 <TouchableOpacity
                   onPress={markAllAsRead}
                   style={styles.markAllButton}
+                  accessibilityRole="button"
+                  accessibilityLabel="Mark all notifications as read"
                 >
                   <Text style={styles.markAllText}>Mark all read</Text>
                 </TouchableOpacity>
               )}
+              <TouchableOpacity
+                onPress={onClose}
+                style={styles.markAllButton}
+                accessibilityRole="button"
+                accessibilityLabel="Close notifications"
+              >
+                <IconSymbol
+                  name="xmark"
+                  size={18}
+                  color={theme.colors.textSecondary}
+                />
+              </TouchableOpacity>
             </View>
 
             {/* Content */}
@@ -288,7 +259,12 @@ export function NotificationPopup({
               </View>
             ) : (
               <ScrollView
-                style={styles.list}
+                style={[
+                  styles.list,
+                  anchorPosition && {
+                    maxHeight: Math.max(80, height - popupTop - 140),
+                  },
+                ]}
                 showsVerticalScrollIndicator={false}
               >
                 {displayedNotifications.map((notification) => (
@@ -303,7 +279,12 @@ export function NotificationPopup({
 
             {/* Footer */}
             {notifications.length > 0 && (
-              <TouchableOpacity style={styles.footer} onPress={handleViewAll}>
+              <TouchableOpacity
+                style={styles.footer}
+                onPress={handleViewAll}
+                accessibilityRole="button"
+                accessibilityLabel="View all notifications"
+              >
                 <Text style={styles.footerText}>View all notifications</Text>
                 <IconSymbol
                   name="chevron.right"

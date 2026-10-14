@@ -11,6 +11,8 @@ interface LineChartProps {
   height?: number;
   color?: string;
   showArea?: boolean;
+  embedded?: boolean;
+  width?: number;
   formatY?: (value: number) => string;
 }
 
@@ -20,6 +22,8 @@ export function LineChart({
   height = 200,
   color,
   showArea = false,
+  embedded = false,
+  width,
   formatY = (value: number) => `RM${value.toFixed(0)}`,
 }: LineChartProps) {
   const { theme } = useStyles();
@@ -30,11 +34,11 @@ export function LineChart({
 
   const styles = StyleSheet.create({
     container: {
-      backgroundColor: colors.surface,
-      borderRadius: 12,
-      padding: spacing.lg,
-      marginBottom: spacing.lg,
-      borderWidth: 1,
+      backgroundColor: embedded ? "transparent" : colors.surface,
+      borderRadius: embedded ? 0 : 12,
+      padding: embedded ? 0 : spacing.lg,
+      marginBottom: embedded ? 0 : spacing.lg,
+      borderWidth: embedded ? 0 : 1,
       borderColor: colors.border,
     },
     title: {
@@ -60,7 +64,7 @@ export function LineChart({
   if (!data || data.length === 0) {
     return (
       <View style={styles.container}>
-        <Text style={styles.title}>{title}</Text>
+        {!embedded && <Text style={styles.title}>{title}</Text>}
         <View style={styles.emptyState}>
           <Text style={styles.emptyText}>No data available</Text>
         </View>
@@ -100,14 +104,15 @@ export function LineChart({
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>{title}</Text>
+      {!embedded && <Text style={styles.title}>{title}</Text>}
       <View style={styles.chartContainer}>
         <RNLineChart
           data={chartData}
-          width={screenWidth - 64}
+          width={width || screenWidth - 64}
           height={height}
           chartConfig={chartConfig}
           bezier={!showArea}
+          withShadow={showArea}
           style={{
             marginVertical: spacing.sm,
             borderRadius: 16,

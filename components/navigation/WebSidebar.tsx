@@ -8,11 +8,14 @@ import { useSignOut } from "@/hooks/useSignOut";
 import { useAuth } from "@/lib/contexts/AuthContext";
 import { useNotifications } from "@/lib/contexts/NotificationContext";
 import { useSidebar } from "@/lib/contexts/SidebarContext";
+import { useTheme } from "@/lib/contexts/ThemeContext";
+import { profileInitials } from "@/lib/utils/profileInitials";
 import { Image } from "expo-image";
 import { router, usePathname } from "expo-router";
 import React from "react";
 import {
   Platform,
+  Pressable,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -51,9 +54,19 @@ export function WebSidebar() {
   const colors = theme.colors;
   const pathname = usePathname();
   const { user } = useAuth();
+  const { colorScheme } = useTheme();
   const { signOut } = useSignOut();
   const { isOpen, toggle } = useSidebar();
   const { unreadCount } = useNotifications();
+  const [avatarError, setAvatarError] = React.useState(false);
+  const avatarUrl = user?.profile?.avatar_url;
+  const profileName =
+    user?.profile?.full_name?.trim() ||
+    user?.profile?.username ||
+    user?.email?.split("@")[0] ||
+    "User";
+
+  React.useEffect(() => setAvatarError(false), [avatarUrl]);
 
   // Hide sidebar on auth pages (login, register)
   const isAuthPage =
@@ -68,10 +81,15 @@ export function WebSidebar() {
 
   // Show as bottom bar on mobile web
   const showAsBottomBar = layout.isMobile;
+  const logoWidth = isOpen ? 72 : 40;
+  const logoHeight = isOpen ? 42 : 28;
+  // Fit the dark artwork's visible bounds, excluding its transparent padding.
+  const darkLogoScale = Math.min(logoWidth / 834, logoHeight / 547);
 
   const handleSignOutClick = () => signOut({ confirm: true });
 
   const NavButton = ({ item }: { item: NavItem }) => {
+    const [hovered, setHovered] = React.useState(false);
     const isActive =
       pathname === item.path || pathname.startsWith(item.path + "/");
 
@@ -81,12 +99,21 @@ export function WebSidebar() {
         position={showAsBottomBar ? "top" : "right"}
         disabled={showAsBottomBar ? true : isOpen} // Always show label on bottom bar, tooltip on collapsed sidebar
       >
-        <TouchableOpacity
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={item.label}
+          accessibilityState={{ selected: isActive }}
+          onHoverIn={() => setHovered(true)}
+          onHoverOut={() => setHovered(false)}
           style={[
             styles.navButton,
             showAsBottomBar && isActive && styles.navButtonActiveBottom,
             !showAsBottomBar && {
-              backgroundColor: isActive ? colors.primary : "transparent",
+              backgroundColor: isActive
+                ? colors.primary
+                : hovered
+                  ? withOpacity(colors.primary, 0.08)
+                  : "transparent",
               justifyContent: isOpen ? "flex-start" : "center",
               paddingHorizontal: isOpen ? 16 : 12,
             },
@@ -107,7 +134,7 @@ export function WebSidebar() {
                 isActive
                   ? showAsBottomBar
                     ? colors.primary
-                    : theme.colors.white
+                    : colors.white
                   : colors.textSecondary
               }
             />
@@ -130,7 +157,7 @@ export function WebSidebar() {
                   color: isActive
                     ? showAsBottomBar
                       ? colors.primary
-                      : theme.colors.white
+                      : colors.white
                     : colors.textSecondary,
                   fontWeight: isActive ? "600" : "500",
                 },
@@ -151,7 +178,7 @@ export function WebSidebar() {
                 <SidebarBadge count={unreadCount} variant="full" />
               </View>
             )}
-        </TouchableOpacity>
+        </Pressable>
       </Tooltip>
     );
   };
@@ -161,7 +188,7 @@ export function WebSidebar() {
       ? {
           width: "100%",
           height: 64,
-          backgroundColor: colors.background,
+          backgroundColor: colors.surface,
           borderTopWidth: 1,
           borderTopColor: colors.border,
           paddingVertical: spacing.sm,
@@ -177,9 +204,9 @@ export function WebSidebar() {
           }),
         }
       : {
-          width: isOpen ? 240 : 60,
+          width: isOpen ? 240 : 96,
           height: "100%",
-          backgroundColor: colors.background,
+          backgroundColor: colors.surface,
           borderRightWidth: 1,
           borderRightColor: withOpacity(colors.textSecondary, 0.12),
           paddingVertical: spacing.xl,
@@ -195,13 +222,16 @@ export function WebSidebar() {
             },
           }),
         },
-    toggleButton: {
+    togglePosition: {
       position: "absolute",
-      top: 36, // Align with "Vehicle Manager" text
-      right: -15,
-      width: 30,
-      height: 30,
-      borderRadius: 15,
+      right: -16,
+      top: isOpen ? 37 : 30,
+      zIndex: 101,
+    },
+    toggleButton: {
+      width: 32,
+      height: 32,
+      borderRadius: 8,
       backgroundColor: colors.background,
       borderWidth: 1,
       borderColor: withOpacity(colors.textSecondary, 0.12),
@@ -218,7 +248,7 @@ export function WebSidebar() {
     brand: {
       flexDirection: "row",
       alignItems: "center",
-      marginBottom: spacing.xxl,
+      marginBottom: spacing.lg,
       paddingHorizontal: isOpen ? 8 : 0,
       justifyContent: isOpen ? "flex-start" : "center",
       paddingVertical: spacing.sm,
@@ -230,11 +260,17 @@ export function WebSidebar() {
         },
       }),
     },
-    brandText: {
-      fontSize: 18,
-      fontWeight: "bold",
-      color: colors.text,
-      marginLeft: spacing.sm,
+    brandImage: {
+      width: logoWidth,
+      height: logoHeight,
+      overflow: "hidden",
+    },
+    darkBrandImage: {
+      position: "absolute",
+      width: 2048 * darkLogoScale,
+      height: 2048 * darkLogoScale,
+      left: (logoWidth - 834 * darkLogoScale) / 2 - 608 * darkLogoScale,
+      top: (logoHeight - 547 * darkLogoScale) / 2 - 746 * darkLogoScale,
     },
     nav: showAsBottomBar
       ? {
@@ -247,6 +283,21 @@ export function WebSidebar() {
           flex: 1,
           gap: spacing.xs,
         },
+    navGroupLabel: {
+      color: colors.textSecondary,
+      fontSize: 11,
+      fontWeight: "600",
+      letterSpacing: 1.6,
+      paddingHorizontal: 16,
+      marginTop: spacing.md,
+      marginBottom: spacing.sm,
+    },
+    navDivider: {
+      height: 1,
+      backgroundColor: withOpacity(colors.textSecondary, 0.16),
+      marginVertical: spacing.lg,
+      marginHorizontal: isOpen ? 8 : 4,
+    },
     navButton: showAsBottomBar
       ? {
           flexDirection: "column",
@@ -323,9 +374,11 @@ export function WebSidebar() {
     },
     signOutButton: {
       width: isOpen ? "100%" : 32,
-      height: 32,
-      borderRadius: 16,
-      backgroundColor: theme.colors.error,
+      height: isOpen ? 40 : 32,
+      borderRadius: 8,
+      backgroundColor: "transparent",
+      borderWidth: 1,
+      borderColor: theme.colors.error,
       flexDirection: "row",
       alignItems: "center",
       justifyContent: "center",
@@ -338,7 +391,7 @@ export function WebSidebar() {
       }),
     },
     signOutText: {
-      color: "white",
+      color: theme.colors.error,
       fontSize: 14,
       fontWeight: "500",
     },
@@ -363,9 +416,9 @@ export function WebSidebar() {
       justifyContent: "center",
     },
     avatar: {
-      width: 32,
-      height: 32,
-      borderRadius: 16,
+      width: 38,
+      height: 38,
+      borderRadius: 19,
       backgroundColor: colors.background,
       borderWidth: 2,
       borderColor: colors.primary,
@@ -375,8 +428,14 @@ export function WebSidebar() {
       flexShrink: 0,
     },
     avatarImage: {
+      position: "absolute",
       width: "100%",
       height: "100%",
+    },
+    avatarInitials: {
+      color: colors.primary,
+      fontSize: 12,
+      fontWeight: "700",
     },
     userDetails: {
       flex: 1,
@@ -428,79 +487,60 @@ export function WebSidebar() {
   // Desktop sidebar layout
   return (
     <View style={styles.sidebar}>
-      {/* Toggle Button */}
-      <Tooltip
-        content={`${isOpen ? "Collapse" : "Expand"} sidebar (Ctrl+B)`}
-        position="right"
-      >
-        <TouchableOpacity
-          style={styles.toggleButton}
-          onPress={toggle}
-          activeOpacity={0.7}
-        >
-          <IconSymbol
-            name={isOpen ? "chevron.left" : "chevron.right"}
-            size={16}
-            color={colors.text}
-          />
-        </TouchableOpacity>
-      </Tooltip>
-
       {/* Brand Section */}
-      <Tooltip content="Vehicle Management" position="right" disabled={isOpen}>
-        <View style={styles.brand}>
-          <IconSymbol name="car.fill" size={24} color={colors.primary} />
-          {isOpen && (
-            <Text
-              style={[
-                styles.brandText,
-                Platform.OS === "web" && {
-                  // @ts-ignore - web-specific class
-                  className: "text-fade-transition",
-                },
-              ]}
-            >
-              Vehicle Manager
-            </Text>
-          )}
+      <View style={styles.brand}>
+        <View style={styles.brandImage}>
+          <Image
+            source={
+              colorScheme === "dark"
+                ? require("@/assets/images/vm_dark.png")
+                : require("@/assets/images/vm_logo.png")
+            }
+            style={
+              colorScheme === "dark" ? styles.darkBrandImage : styles.brandImage
+            }
+            contentFit="contain"
+            tintColor={colorScheme === "dark" ? undefined : colors.primary}
+            accessibilityLabel="VM logo"
+          />
         </View>
-      </Tooltip>
+      </View>
+      <View style={styles.togglePosition}>
+        <Tooltip
+          content={`${isOpen ? "Collapse" : "Expand"} sidebar (Ctrl+B)`}
+          position="right"
+        >
+          <TouchableOpacity
+            style={styles.toggleButton}
+            onPress={toggle}
+            activeOpacity={0.7}
+            accessibilityRole="button"
+            accessibilityLabel={isOpen ? "Collapse sidebar" : "Expand sidebar"}
+          >
+            <IconSymbol
+              name={isOpen ? "chevron.left" : "chevron.right"}
+              size={16}
+              color={colors.text}
+            />
+          </TouchableOpacity>
+        </Tooltip>
+      </View>
 
       {/* Navigation */}
       <View style={styles.nav}>
-        {NAV_ITEMS.map((item) => (
+        {isOpen && <Text style={styles.navGroupLabel}>MAIN</Text>}
+        {NAV_ITEMS.slice(0, 4).map((item) => (
+          <NavButton key={item.name} item={item} />
+        ))}
+        <View style={styles.navDivider} />
+        {isOpen && <Text style={styles.navGroupLabel}>ACCOUNT</Text>}
+        {NAV_ITEMS.slice(4).map((item) => (
           <NavButton key={item.name} item={item} />
         ))}
       </View>
 
       {/* User Section */}
       <View style={styles.userSection}>
-        {/* Sign Out Button */}
-        <View style={styles.signOutButtonContainer}>
-          <Tooltip content="Sign Out" position="right" disabled={isOpen}>
-            <TouchableOpacity
-              style={styles.signOutButton}
-              onPress={handleSignOutClick}
-              activeOpacity={0.8}
-            >
-              <IconSymbol name="arrow.right.square" size={14} color="white" />
-              {isOpen && (
-                <Text
-                  style={[
-                    styles.signOutText,
-                    Platform.OS === "web" && {
-                      // @ts-ignore - web-specific class
-                      className: "text-fade-transition",
-                    },
-                  ]}
-                >
-                  Sign Out
-                </Text>
-              )}
-            </TouchableOpacity>
-          </Tooltip>
-        </View>
-
         {/* User Info */}
         <View style={styles.userInfoRow}>
           <Tooltip content="Profile" position="right" disabled={isOpen}>
@@ -512,20 +552,18 @@ export function WebSidebar() {
               <View style={styles.userAvatarRow}>
                 {/* Avatar */}
                 <View style={styles.avatar}>
-                  {user?.profile?.avatar_url ? (
+                  <Text style={styles.avatarInitials}>
+                    {profileInitials(profileName)}
+                  </Text>
+                  {avatarUrl && !avatarError ? (
                     <Image
-                      source={{ uri: user.profile.avatar_url }}
+                      source={{ uri: avatarUrl }}
                       style={styles.avatarImage}
                       contentFit="cover"
                       cachePolicy="memory-disk"
+                      onError={() => setAvatarError(true)}
                     />
-                  ) : (
-                    <IconSymbol
-                      name="person.fill"
-                      size={16}
-                      color={colors.primary}
-                    />
-                  )}
+                  ) : null}
                 </View>
 
                 {/* User Details - only show when expanded */}
@@ -540,12 +578,30 @@ export function WebSidebar() {
                     ]}
                   >
                     <Text style={styles.userName}>
-                      {user?.profile?.username || user?.email?.split("@")[0]}
+                      {user?.profile?.username || profileName}
                     </Text>
                     <Text style={styles.userEmail}>{user?.email}</Text>
                   </View>
                 )}
               </View>
+            </TouchableOpacity>
+          </Tooltip>
+        </View>
+
+        {/* Sign Out Button */}
+        <View style={styles.signOutButtonContainer}>
+          <Tooltip content="Sign Out" position="right" disabled={isOpen}>
+            <TouchableOpacity
+              style={styles.signOutButton}
+              onPress={handleSignOutClick}
+              activeOpacity={0.8}
+            >
+              <IconSymbol
+                name="arrow.right.square"
+                size={18}
+                color={theme.colors.error}
+              />
+              {isOpen && <Text style={styles.signOutText}>Sign Out</Text>}
             </TouchableOpacity>
           </Tooltip>
         </View>
