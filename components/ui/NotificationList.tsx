@@ -1,3 +1,4 @@
+import { useResponsiveLayout } from "@/hooks/use-responsive-layout";
 import { baseColors, withOpacity, spacing } from "@/src/design-system";
 import React, { useEffect, useMemo, useState } from "react";
 import { Modal as RNModal, Text, TouchableOpacity, View } from "react-native";
@@ -22,6 +23,8 @@ interface NotificationItemProps {
 function NotificationItem({ notification, onPress }: NotificationItemProps) {
   const { styles, theme } = useStyles(itemStylesheet);
   const { markAsRead } = useNotifications();
+  const { isWeb, isMobile } = useResponsiveLayout();
+  const isWebPage = isWeb && !isMobile;
   const [showSnooze, setShowSnooze] = useState(false);
 
   const handlePress = () => {
@@ -62,7 +65,13 @@ function NotificationItem({ notification, onPress }: NotificationItemProps) {
   return (
     <TouchableOpacity
       onPress={handlePress}
-      style={[styles.container, !notification.read && styles.unreadContainer]}
+      accessibilityRole="button"
+      accessibilityLabel={`${notification.read ? "Read" : "Unread"}: ${formatNotificationTitle(notification.title)}`}
+      style={[
+        styles.container,
+        !notification.read && styles.unreadContainer,
+        isWebPage && styles.webContainer,
+      ]}
       activeOpacity={0.7}
     >
       <View style={styles.content}>
@@ -70,11 +79,16 @@ function NotificationItem({ notification, onPress }: NotificationItemProps) {
           <View style={styles.titleContainer}>
             <Text
               style={[styles.title, notification.read && styles.readTitle]}
-              numberOfLines={1}
+              numberOfLines={isWebPage ? undefined : 1}
             >
               {formatNotificationTitle(notification.title)}
             </Text>
-            {!notification.read && <View style={styles.unreadDot} />}
+            {!notification.read &&
+              (isWebPage ? (
+                <Text style={styles.unreadLabel}>Unread</Text>
+              ) : (
+                <View style={styles.unreadDot} />
+              ))}
           </View>
           {action && (
             <View
@@ -92,7 +106,7 @@ function NotificationItem({ notification, onPress }: NotificationItemProps) {
 
         <Text
           style={[styles.message, notification.read && styles.readMessage]}
-          numberOfLines={2}
+          numberOfLines={isWebPage ? undefined : 2}
         >
           {formatNotificationText(notification.body)}
         </Text>
@@ -103,7 +117,10 @@ function NotificationItem({ notification, onPress }: NotificationItemProps) {
           </Text>
 
           <TouchableOpacity
-            onPress={() => setShowSnooze(true)}
+            onPress={(event) => {
+              event.stopPropagation();
+              setShowSnooze(true);
+            }}
             style={styles.snoozeButton}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             accessibilityRole="button"
@@ -156,8 +173,23 @@ const itemStylesheet = createStyleSheet((theme) => ({
     borderWidth: 1,
     borderColor: theme.colors.border,
   },
+  webContainer: {
+    marginHorizontal: 0,
+    marginVertical: 0,
+    marginBottom: theme.spacing.md,
+  },
+  unreadLabel: {
+    color: theme.colors.primary,
+    backgroundColor: withOpacity(theme.colors.primary, 0.12),
+    paddingHorizontal: theme.spacing.sm,
+    paddingVertical: theme.spacing.xs,
+    borderRadius: theme.borderRadius.full,
+    fontSize: theme.fontSize.xs,
+    fontWeight: theme.fontWeight.semibold,
+    marginLeft: theme.spacing.sm,
+  },
   unreadContainer: {
-    backgroundColor: theme.colors.primary + "08",
+    backgroundColor: withOpacity(theme.colors.primary, 0.03),
     borderColor: withOpacity(theme.colors.primary, 0.19),
   },
   content: {
@@ -234,25 +266,35 @@ const itemStylesheet = createStyleSheet((theme) => ({
 }));
 
 interface NotificationListProps {
+  unreadOnly?: boolean;
   onNotificationPress?: (notification: NotificationData) => void;
 }
 
 const ITEMS_PER_PAGE = 5;
 
 export function NotificationList({
+  unreadOnly = false,
   onNotificationPress,
 }: NotificationListProps) {
   const { styles, theme } = useStyles(listStylesheet);
   const { notifications, isInitialized } = useNotifications();
+  const { isWeb, isMobile } = useResponsiveLayout();
+  const filteredNotifications = useMemo(
+    () =>
+      unreadOnly
+        ? notifications.filter((notification) => !notification.read)
+        : notifications,
+    [notifications, unreadOnly],
+  );
 
   const [currentPage, setCurrentPage] = useState(1);
 
-  const totalPages = Math.ceil(notifications.length / ITEMS_PER_PAGE);
+  const totalPages = Math.ceil(filteredNotifications.length / ITEMS_PER_PAGE);
 
   const paginatedNotifications = useMemo(() => {
     const start = (currentPage - 1) * ITEMS_PER_PAGE;
-    return notifications.slice(start, start + ITEMS_PER_PAGE);
-  }, [notifications, currentPage]);
+    return filteredNotifications.slice(start, start + ITEMS_PER_PAGE);
+  }, [filteredNotifications, currentPage]);
 
   // Clamp currentPage when notifications shrink (e.g. mark-all-read shifts state, realtime deletions)
   useEffect(() => {
@@ -272,7 +314,7 @@ export function NotificationList({
     );
   }
 
-  if (notifications.length === 0) {
+  if (filteredNotifications.length === 0) {
     return (
       <View style={styles.emptyContainer}>
         <View style={styles.emptyIconContainer}>
@@ -282,10 +324,13 @@ export function NotificationList({
             color={theme.colors.textSecondary}
           />
         </View>
-        <Text style={styles.emptyTitle}>You&apos;re all caught up</Text>
+        <Text style={styles.emptyTitle}>
+          {unreadOnly ? "No unread notifications" : "You're all caught up"}
+        </Text>
         <Text style={styles.emptyDescription}>
-          Updates from your shared vehicles will show up here. Adjust how often
-          you get pinged in your notification preferences.
+          {unreadOnly
+            ? "Switch to All to see your earlier notifications."
+            : "Updates from your shared vehicles will show up here. Adjust how often you get pinged in your notification preferences."}
         </Text>
         <TouchableOpacity
           onPress={() => router.push("/profile?tab=Settings" as any)}
@@ -303,7 +348,12 @@ export function NotificationList({
 
   return (
     <View style={styles.container}>
-      <View style={styles.listContainer}>
+      <View
+        style={[
+          styles.listContainer,
+          isWeb && !isMobile && { paddingVertical: 0 },
+        ]}
+      >
         {paginatedNotifications.map((notification) => (
           <NotificationItem
             key={notification.id}
@@ -316,7 +366,7 @@ export function NotificationList({
       <Pagination
         currentPage={currentPage}
         totalPages={totalPages}
-        totalItems={notifications.length}
+        totalItems={filteredNotifications.length}
         pageSize={ITEMS_PER_PAGE}
         onPageChange={setCurrentPage}
       />

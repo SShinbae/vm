@@ -87,6 +87,10 @@ it("changes page title, closes menus, and clears vehicle lookup on navigation", 
   mockPathname = "/logs";
   rerender(<WebPageHeader />);
   expect(screen.getByText("Logs")).toBeTruthy();
+  mockPathname = "/notifications";
+  rerender(<WebPageHeader />);
+  expect(screen.getByText("Notifications")).toBeTruthy();
+  expect(screen.getByText("Updates, reminders, and invitations")).toBeTruthy();
 });
 
 it("opens notifications from the shared header without navigating", () => {

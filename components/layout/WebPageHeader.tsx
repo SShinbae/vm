@@ -51,17 +51,21 @@ export function WebPageHeader() {
       ? "Vehicles"
       : pathname === "/logs"
         ? "Logs"
-        : isAnalytics
-          ? "Analytics"
-          : `Welcome back${firstName ? `, ${firstName}` : ""}`;
+        : pathname === "/notifications"
+          ? "Notifications"
+          : isAnalytics
+            ? "Analytics"
+            : `Welcome back${firstName ? `, ${firstName}` : ""}`;
   const subtitle =
     pathname === "/vehicles"
       ? "Manage your fleet and maintenance"
       : pathname === "/logs"
         ? "Track mileage, fuel, and service history"
-        : isAnalytics
-          ? "Track costs, fuel, and maintenance"
-          : "Your vehicles at a glance";
+        : pathname === "/notifications"
+          ? "Updates, reminders, and invitations"
+          : isAnalytics
+            ? "Track costs, fuel, and maintenance"
+            : "Your vehicles at a glance";
 
   useEffect(() => setAvatarError(false), [avatarUrl]);
   useEffect(() => {

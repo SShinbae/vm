@@ -51,7 +51,7 @@ function TabLayoutContent() {
         ]}
       >
         {isDesktopWeb &&
-          (["/", "/vehicles", "/logs"].includes(pathname) ||
+          (["/", "/vehicles", "/logs", "/notifications"].includes(pathname) ||
             pathname === "/analytics" ||
             pathname.startsWith("/analytics/")) && <WebPageHeader />}
         <Tabs

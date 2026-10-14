@@ -1,3 +1,5 @@
+import { webPageStyles } from "@/components/layout/webPageStyles";
+import { WebFilterButton } from "@/components/ui/WebFilterButton";
 import { withOpacity } from "@/src/design-system";
 import React from "react";
 import {
@@ -22,7 +24,10 @@ import { getNotificationRoute } from "@/lib/utils/notificationNavigation";
 
 export default function NotificationsScreen() {
   const { styles, theme } = useStyles(stylesheet);
-  const { isDesktop } = useResponsiveLayout();
+  const { styles: web } = useStyles(webPageStyles);
+  const { isWeb, isMobile, isDesktop } = useResponsiveLayout();
+  const isWebPage = isWeb && !isMobile;
+  const [unreadOnly, setUnreadOnly] = React.useState(false);
   const { unreadCount, notifications, markAllAsRead, refreshNotifications } =
     useNotifications();
   const { showSuccess, showError, showInfo } = useToast();
@@ -117,8 +122,13 @@ export default function NotificationsScreen() {
 
   const onRefresh = async () => {
     setRefreshing(true);
-    await Promise.all([refreshNotifications(), loadInvitations()]);
-    setRefreshing(false);
+    try {
+      await Promise.all([refreshNotifications(), loadInvitations()]);
+    } catch {
+      showError("Failed to refresh notifications");
+    } finally {
+      setRefreshing(false);
+    }
   };
 
   const hasNotifications = notifications.length > 0;
@@ -129,40 +139,93 @@ export default function NotificationsScreen() {
         <View
           style={[
             styles.contentContainer,
-            isDesktop && styles.contentContainerDesktop,
+            isDesktop && !isWebPage && styles.contentContainerDesktop,
+            isWebPage && web.frame,
           ]}
         >
-          <View style={styles.header}>
-            <View style={styles.headerTitleContainer}>
-              <Text style={styles.headerTitle}>Notifications</Text>
-              {unreadCount > 0 && (
-                <View style={styles.unreadBadge}>
-                  <Text style={styles.unreadBadgeText}>
-                    {unreadCount > 99 ? "99+" : unreadCount}
+          {isWebPage ? (
+            <View style={web.toolbar}>
+              <View style={web.filters}>
+                <WebFilterButton
+                  label={`All (${notifications.length})`}
+                  selected={!unreadOnly}
+                  onPress={() => setUnreadOnly(false)}
+                />
+                <WebFilterButton
+                  label={`Unread (${unreadCount})`}
+                  selected={unreadOnly}
+                  onPress={() => setUnreadOnly(true)}
+                />
+              </View>
+              <View style={web.filters}>
+                <TouchableOpacity
+                  onPress={onRefresh}
+                  disabled={refreshing}
+                  accessibilityRole="button"
+                  accessibilityLabel="Refresh notifications"
+                  accessibilityState={{ disabled: refreshing }}
+                  style={[styles.markAllButton, styles.webActionButton]}
+                >
+                  <Text style={styles.markAllText}>
+                    {refreshing ? "Refreshing..." : "Refresh"}
                   </Text>
-                </View>
+                </TouchableOpacity>
+                {unreadCount > 0 && (
+                  <TouchableOpacity
+                    onPress={markAllAsRead}
+                    style={[styles.markAllButton, styles.webActionButton]}
+                    accessibilityRole="button"
+                    accessibilityLabel="Mark all as read"
+                  >
+                    <IconSymbol
+                      name="checkmark"
+                      size={16}
+                      color={theme.colors.primary}
+                    />
+                    <Text style={styles.markAllText}>Mark all as read</Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+            </View>
+          ) : (
+            <View style={styles.header}>
+              <View style={styles.headerTitleContainer}>
+                <Text style={styles.headerTitle}>Notifications</Text>
+                {unreadCount > 0 && (
+                  <View style={styles.unreadBadge}>
+                    <Text style={styles.unreadBadgeText}>
+                      {unreadCount > 99 ? "99+" : unreadCount}
+                    </Text>
+                  </View>
+                )}
+              </View>
+              {hasNotifications && unreadCount > 0 && (
+                <TouchableOpacity
+                  onPress={markAllAsRead}
+                  style={styles.markAllButton}
+                  accessibilityRole="button"
+                  accessibilityLabel="Mark all as read"
+                >
+                  <IconSymbol
+                    name="checkmark"
+                    size={16}
+                    color={theme.colors.primary}
+                  />
+                  <Text style={styles.markAllText}>Mark all read</Text>
+                </TouchableOpacity>
               )}
             </View>
-            {hasNotifications && unreadCount > 0 && (
-              <TouchableOpacity
-                onPress={markAllAsRead}
-                style={styles.markAllButton}
-                accessibilityRole="button"
-                accessibilityLabel="Mark all as read"
-              >
-                <IconSymbol
-                  name="checkmark"
-                  size={16}
-                  color={theme.colors.primary}
-                />
-                <Text style={styles.markAllText}>Mark all read</Text>
-              </TouchableOpacity>
-            )}
-          </View>
+          )}
 
           <ScrollView
             style={styles.scrollView}
-            contentContainerStyle={styles.scrollContent}
+            contentContainerStyle={[
+              styles.scrollContent,
+              isWebPage && {
+                paddingHorizontal: theme.spacing.xl,
+                paddingBottom: theme.spacing.xl,
+              },
+            ]}
             refreshControl={
               <RefreshControl
                 refreshing={refreshing}
@@ -174,12 +237,24 @@ export default function NotificationsScreen() {
             showsVerticalScrollIndicator={false}
           >
             {invitations.length > 0 && (
-              <View style={styles.invitationsSection}>
+              <View
+                style={[
+                  styles.invitationsSection,
+                  isWebPage && {
+                    paddingHorizontal: 0,
+                    paddingTop: 0,
+                    marginBottom: theme.spacing.lg,
+                  },
+                ]}
+              >
                 <Text style={styles.sectionTitle}>Invitations</Text>
                 {invitations.map((invitation) => {
                   const groupName = invitation.groups?.name || "a group";
                   return (
-                    <View key={invitation.id} style={styles.invitationCard}>
+                    <View
+                      key={invitation.id}
+                      style={[styles.invitationCard, isWebPage && web.panel]}
+                    >
                       <Text style={styles.invitationText}>
                         {"You've been invited to join "}
                         <Text style={styles.invitationGroup}>{groupName}</Text>
@@ -212,7 +287,11 @@ export default function NotificationsScreen() {
                 })}
               </View>
             )}
-            <NotificationList onNotificationPress={handleNotificationPress} />
+            <NotificationList
+              key={isWebPage && unreadOnly ? "unread" : "all"}
+              unreadOnly={isWebPage && unreadOnly}
+              onNotificationPress={handleNotificationPress}
+            />
           </ScrollView>
         </View>
       </View>
@@ -269,6 +348,12 @@ const stylesheet = createStyleSheet((theme) => ({
     paddingHorizontal: theme.spacing.md,
     borderRadius: theme.borderRadius.md,
     backgroundColor: withOpacity(theme.colors.primary, 0.08),
+  },
+  webActionButton: {
+    minHeight: 36,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    backgroundColor: theme.colors.surface,
   },
   markAllText: {
     color: theme.colors.primary,
