@@ -10,6 +10,24 @@ jest.mock("@/lib/services/googleVisionService", () => ({
   GoogleVisionService: { extractTextFromImage: jest.fn() },
 }));
 
+const mockGetUser = jest.fn();
+const mockUpload = jest.fn();
+const mockGetPublicUrl = jest.fn();
+
+jest.mock("@/services/supabaseClient", () => ({
+  supabase: {
+    auth: {
+      getUser: (...args: unknown[]) => mockGetUser(...args),
+    },
+    storage: {
+      from: () => ({
+        upload: (...args: unknown[]) => mockUpload(...args),
+        getPublicUrl: (...args: unknown[]) => mockGetPublicUrl(...args),
+      }),
+    },
+  },
+}));
+
 const receiptText = [
   "Jiffy Lube",
   "Oil Change and Filter",
@@ -49,5 +67,45 @@ describe("OCRService", () => {
       raw_text: receiptText,
       extracted_fields: { cost: 89.5, service_type: "oil_change" },
     });
+  });
+});
+
+describe("OCRService.uploadReceiptImage", () => {
+  let fetchSpy: jest.SpyInstance;
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockGetUser.mockResolvedValue({
+      data: { user: { id: "uid" } },
+      error: null,
+    });
+    mockUpload.mockResolvedValue({
+      data: { path: "uid/123_receipt.jpg" },
+      error: null,
+    });
+    mockGetPublicUrl.mockReturnValue({
+      data: { publicUrl: "https://proj.supabase.co/public/uid/123.jpg" },
+    });
+    fetchSpy = jest.spyOn(global, "fetch").mockResolvedValue({
+      arrayBuffer: async () => new ArrayBuffer(1),
+    } as unknown as Response);
+  });
+
+  afterEach(() => {
+    fetchSpy.mockRestore();
+  });
+
+  it("returns the storage path and never builds a public URL", async () => {
+    const result = await OCRService.uploadReceiptImage(
+      "file://receipt.jpg",
+      "receipt.jpg",
+    );
+
+    expect(result).toEqual({
+      data: "uid/123_receipt.jpg",
+      error: null,
+      loading: false,
+    });
+    expect(mockGetPublicUrl).not.toHaveBeenCalled();
   });
 });

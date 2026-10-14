@@ -1,6 +1,6 @@
 import { baseColors, withOpacity, spacing } from "@/src/design-system";
 import { useStyles } from "react-native-unistyles";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -12,6 +12,10 @@ import {
 import { Image } from "expo-image";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { useDialog } from "@/lib/contexts/DialogContext";
+import {
+  ReceiptStorageService,
+  isLocalUri,
+} from "@/lib/services/receiptStorageService";
 import { OCRExtractedData } from "@/types";
 
 interface ReceiptViewerProps {
@@ -19,6 +23,46 @@ interface ReceiptViewerProps {
   ocrData?: OCRExtractedData;
   showOcrData?: boolean;
   onDelete?: () => void;
+}
+
+/**
+ * Resolve a receipt value to a displayable URI. Local URIs pass through;
+ * stored paths (or legacy URLs) are signed. A result for an older value is ignored.
+ */
+export function useReceiptDisplayUri(value?: string): {
+  uri?: string;
+  loading: boolean;
+  error: string | null;
+} {
+  const [signed, setSigned] = useState<{
+    source: string;
+    uri: string | null;
+    error: string | null;
+  } | null>(null);
+
+  useEffect(() => {
+    if (!value || isLocalUri(value)) return;
+    let cancelled = false;
+    ReceiptStorageService.getReceiptSignedUrl(value).then((res) => {
+      if (cancelled) return;
+      setSigned({ source: value, uri: res.data, error: res.error });
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [value]);
+
+  if (!value) return { uri: undefined, loading: false, error: null };
+  if (isLocalUri(value)) return { uri: value, loading: false, error: null };
+  if (!signed || signed.source !== value) {
+    return { uri: undefined, loading: true, error: null };
+  }
+  if (signed.uri) return { uri: signed.uri, loading: false, error: null };
+  return {
+    uri: undefined,
+    loading: false,
+    error: signed.error ?? "Unable to load receipt image",
+  };
 }
 
 export function ReceiptViewer({
@@ -33,10 +77,15 @@ export function ReceiptViewer({
   const { theme } = useStyles();
   const colors = theme.colors;
   const { confirm } = useDialog();
+  const receipt = useReceiptDisplayUri(receiptImageUrl);
 
   if (!receiptImageUrl) {
     return null;
   }
+
+  const displayUri = receipt.uri;
+  const failed = imageError || !!receipt.error;
+  const showLoading = !failed && (receipt.loading || imageLoading);
 
   const handleDeleteReceipt = async () => {
     const ok = await confirm({
@@ -231,16 +280,16 @@ export function ReceiptViewer({
         onPress={() => setShowFullscreen(true)}
         activeOpacity={0.8}
       >
-        {imageLoading && (
+        {showLoading && (
           <View style={styles.loadingContainer}>
             <ActivityIndicator size="small" color={colors.primary} />
           </View>
         )}
 
-        {!imageError ? (
+        {!failed && displayUri ? (
           <>
             <Image
-              source={{ uri: receiptImageUrl }}
+              source={{ uri: displayUri }}
               style={styles.receiptImage}
               contentFit="cover"
               cachePolicy="memory-disk"
@@ -259,7 +308,7 @@ export function ReceiptViewer({
               </View>
             )}
           </>
-        ) : (
+        ) : failed ? (
           <View style={styles.errorContainer}>
             <IconSymbol
               name="exclamationmark.triangle"
@@ -268,7 +317,7 @@ export function ReceiptViewer({
             />
             <Text style={styles.errorText}>Unable to load receipt image</Text>
           </View>
-        )}
+        ) : null}
       </TouchableOpacity>
 
       {showOcrData && ocrData && (
@@ -320,13 +369,15 @@ export function ReceiptViewer({
         onRequestClose={() => setShowFullscreen(false)}
       >
         <View style={styles.fullscreenModal}>
-          <Image
-            source={{ uri: receiptImageUrl }}
-            style={styles.fullscreenImage}
-            contentFit="contain"
-            cachePolicy="memory-disk"
-            transition={200}
-          />
+          {displayUri && (
+            <Image
+              source={{ uri: displayUri }}
+              style={styles.fullscreenImage}
+              contentFit="contain"
+              cachePolicy="memory-disk"
+              transition={200}
+            />
+          )}
           <View style={styles.fullscreenControls}>
             <TouchableOpacity
               style={styles.fullscreenButton}
