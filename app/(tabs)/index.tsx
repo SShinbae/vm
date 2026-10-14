@@ -1,14 +1,10 @@
-import { storageImageUrl } from "@/lib/utils/storagePath";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { SkeletonDashboard } from "@/components/ui/Skeleton";
 import { useFocusEffect } from "@react-navigation/native";
 import { useQueryClient } from "@tanstack/react-query";
 import { router } from "expo-router";
-import { Image } from "expo-image";
 import React, { useCallback, useRef, useState } from "react";
 import {
-  Modal,
-  Pressable,
   RefreshControl,
   ScrollView,
   Text,
@@ -26,34 +22,20 @@ import { VehicleTable } from "@/components/dashboard/VehicleTable";
 import { ServiceAttentionPanel } from "@/components/dashboard/ServiceAttentionPanel";
 import { useDashboardDataQuery } from "@/hooks/useDashboardDataQuery";
 import { useResponsiveLayout } from "@/hooks/use-responsive-layout";
+import { webPageStyles } from "@/components/layout/webPageStyles";
+import { WebPageHeader } from "@/components/layout/WebPageHeader";
 import { MaxWidthContainer } from "@/components/layout/MaxWidthContainer";
 import { ResponsiveGrid } from "@/components/layout/ResponsiveGrid";
 import { HomeVehicleSearch } from "@/components/dashboard/HomeVehicleSearch";
 import { HomeFuelTrend } from "@/components/dashboard/HomeFuelTrend";
-import { useNotifications } from "@/lib/contexts/NotificationContext";
-import { NotificationPopup } from "@/components/ui/NotificationPopup";
-import { SidebarBadge } from "@/components/ui/SidebarBadge";
-import { profileInitials } from "@/lib/utils/profileInitials";
 
 export default function DashboardScreen() {
   const { styles, theme } = useStyles(stylesheet);
+  const { styles: web } = useStyles(webPageStyles);
   const layout = useResponsiveLayout();
+  const isWebPage = layout.isWeb && !layout.isMobile;
   const queryClient = useQueryClient();
-  const { unreadCount } = useNotifications();
-  const notificationButtonRef =
-    useRef<React.ElementRef<typeof TouchableOpacity>>(null);
-  const [notificationAnchor, setNotificationAnchor] = useState<{
-    top: number;
-    left: number;
-  } | null>(null);
-  const profileButtonRef =
-    useRef<React.ElementRef<typeof TouchableOpacity>>(null);
-  const [profileAnchor, setProfileAnchor] = useState<{
-    top: number;
-    left: number;
-  } | null>(null);
   const [fuelTrendMonths, setFuelTrendMonths] = useState<6 | 12>(6);
-  const [avatarError, setAvatarError] = useState(false);
   const hasFocused = useRef(false);
   const {
     stats,
@@ -72,15 +54,6 @@ export default function DashboardScreen() {
     onRefresh,
   } = useDashboardDataQuery(fuelTrendMonths);
   const firstName = user?.profile?.full_name?.split(" ")[0];
-  const avatarUrl = user?.profile?.avatar_url;
-  const profileName =
-    user?.profile?.full_name?.trim() ||
-    user?.profile?.username ||
-    user?.email?.split("@")[0] ||
-    "User";
-
-  React.useEffect(() => setAvatarError(false), [avatarUrl]);
-
   useFocusEffect(
     useCallback(() => {
       if (hasFocused.current) {
@@ -99,14 +72,20 @@ export default function DashboardScreen() {
   if (error && vehicles.length === 0 && !isInitialLoading) {
     return (
       <SafeAreaView style={styles.container} edges={["top"]}>
-        <MaxWidthContainer fullWidth style={styles.pageWidth}>
+        <MaxWidthContainer
+          fullWidth
+          style={isWebPage ? web.frame : styles.pageWidth}
+        >
           {/* Header - rendered immediately for fast LCP */}
-          <View style={styles.header}>
-            <Text style={styles.greeting}>
-              Welcome back{firstName ? `, ${firstName}` : ""}
-            </Text>
-            <Text style={styles.subtitle}>Your vehicles at a glance</Text>
-          </View>
+          {!layout.isWeb && layout.isDesktop && <WebPageHeader />}
+          {!isWebPage && !layout.isDesktop && (
+            <View style={styles.header}>
+              <Text style={styles.greeting}>
+                Welcome back{firstName ? `, ${firstName}` : ""}
+              </Text>
+              <Text style={styles.subtitle}>Your vehicles at a glance</Text>
+            </View>
+          )}
           <View style={styles.errorContainer}>
             <IconSymbol
               name="exclamationmark.triangle"
@@ -125,149 +104,29 @@ export default function DashboardScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
-      <MaxWidthContainer fullWidth style={styles.pageWidth}>
+      <MaxWidthContainer
+        fullWidth
+        style={isWebPage ? web.frame : styles.pageWidth}
+      >
         {/* Header - rendered immediately for fast LCP */}
-        <View style={styles.header}>
-          <View style={styles.headerRow}>
-            <View>
-              <Text style={styles.greeting}>
-                Welcome back{firstName ? `, ${firstName}` : ""}
-              </Text>
-              <Text style={styles.subtitle}>Your vehicles at a glance</Text>
+        {!layout.isWeb && layout.isDesktop && <WebPageHeader />}
+        {!isWebPage && !layout.isDesktop && (
+          <View style={styles.header}>
+            <View style={styles.headerRow}>
+              <View>
+                <Text style={styles.greeting}>
+                  Welcome back{firstName ? `, ${firstName}` : ""}
+                </Text>
+                <Text style={styles.subtitle}>Your vehicles at a glance</Text>
+              </View>
             </View>
-            {layout.isDesktop && (
-              <View style={styles.headerControls}>
-                {!!vehicles.length && (
-                  <View style={styles.desktopSearch}>
-                    <HomeVehicleSearch vehicles={vehicles} />
-                  </View>
-                )}
-                <TouchableOpacity
-                  ref={notificationButtonRef}
-                  style={styles.headerIconButton}
-                  accessibilityRole="button"
-                  accessibilityLabel={`Notifications${unreadCount > 0 ? `, ${unreadCount} unread` : ""}`}
-                  accessibilityState={{ expanded: notificationAnchor !== null }}
-                  onPress={() =>
-                    notificationButtonRef.current?.measureInWindow(
-                      (x, y, width, height) =>
-                        setNotificationAnchor({
-                          top: y + height + 8,
-                          left: x + width - 360,
-                        }),
-                    )
-                  }
-                >
-                  <IconSymbol
-                    name="bell.fill"
-                    size={20}
-                    color={theme.colors.textSecondary}
-                  />
-                  {unreadCount > 0 && (
-                    <View style={styles.notificationBadge}>
-                      <SidebarBadge count={unreadCount} />
-                    </View>
-                  )}
-                </TouchableOpacity>
-                {notificationAnchor && (
-                  <NotificationPopup
-                    visible
-                    anchorPosition={notificationAnchor}
-                    onClose={() => setNotificationAnchor(null)}
-                  />
-                )}
-                <TouchableOpacity
-                  ref={profileButtonRef}
-                  style={styles.profileButton}
-                  accessibilityRole="button"
-                  accessibilityLabel="Profile menu"
-                  accessibilityState={{ expanded: profileAnchor !== null }}
-                  onPress={() =>
-                    profileButtonRef.current?.measureInWindow(
-                      (x, y, width, height) =>
-                        setProfileAnchor({
-                          top: y + height + 8,
-                          left: Math.max(
-                            12,
-                            Math.min(x + width - 280, layout.screenWidth - 292),
-                          ),
-                        }),
-                    )
-                  }
-                >
-                  <View style={styles.avatar}>
-                    <Text style={styles.avatarInitials}>
-                      {profileInitials(profileName)}
-                    </Text>
-                    {avatarUrl && !avatarError && (
-                      <Image
-                        source={{
-                          uri: storageImageUrl("profile-avatars", avatarUrl),
-                        }}
-                        style={styles.avatarImage}
-                        contentFit="cover"
-                        onError={() => setAvatarError(true)}
-                      />
-                    )}
-                  </View>
-                </TouchableOpacity>
-                <Modal
-                  visible={profileAnchor !== null}
-                  transparent
-                  animationType="none"
-                  onRequestClose={() => setProfileAnchor(null)}
-                >
-                  <Pressable
-                    style={styles.menuOverlay}
-                    onPress={() => setProfileAnchor(null)}
-                  >
-                    <Pressable
-                      style={[
-                        styles.profileMenu,
-                        profileAnchor && {
-                          top: profileAnchor.top,
-                          left: profileAnchor.left,
-                        },
-                      ]}
-                      onPress={(event) => event.stopPropagation()}
-                    >
-                      <View style={styles.profileMenuIdentity}>
-                        <Text style={styles.profileMenuText}>
-                          {profileName}
-                        </Text>
-                        <Text style={styles.profileMenuEmail}>
-                          {user?.email}
-                        </Text>
-                      </View>
-                      {(["Profile", "Settings"] as const).map((tab) => (
-                        <TouchableOpacity
-                          key={tab}
-                          style={styles.profileMenuItem}
-                          accessibilityRole="button"
-                          accessibilityLabel={tab}
-                          onPress={() => {
-                            setProfileAnchor(null);
-                            router.push({
-                              pathname: "/profile",
-                              params: { tab },
-                            });
-                          }}
-                        >
-                          <Text style={styles.profileMenuText}>{tab}</Text>
-                        </TouchableOpacity>
-                      ))}
-                    </Pressable>
-                  </Pressable>
-                </Modal>
+            {!layout.isDesktop && !!vehicles.length && (
+              <View style={styles.mobileSearch}>
+                <HomeVehicleSearch vehicles={vehicles} />
               </View>
             )}
           </View>
-          {!layout.isDesktop && !!vehicles.length && (
-            <View style={styles.mobileSearch}>
-              <HomeVehicleSearch vehicles={vehicles} />
-            </View>
-          )}
-        </View>
+        )}
 
         {isInitialLoading ? (
           <SkeletonDashboard />
@@ -285,7 +144,7 @@ export default function DashboardScreen() {
             showsVerticalScrollIndicator={false}
           >
             {vehicles.length === 0 ? (
-              <View style={styles.section}>
+              <View style={[styles.section, isWebPage && web.section]}>
                 <View style={styles.emptyState}>
                   <IconSymbol
                     name="car.fill"
@@ -318,12 +177,12 @@ export default function DashboardScreen() {
                 {!remindersLoading &&
                   !remindersError &&
                   serviceReminders.length > 0 && (
-                    <View style={styles.section}>
+                    <View style={[styles.section, isWebPage && web.section]}>
                       <ServiceAttentionPanel reminders={serviceReminders} />
                     </View>
                   )}
 
-                <View style={styles.section}>
+                <View style={[styles.section, isWebPage && web.section]}>
                   <ResponsiveGrid
                     columns={{
                       mobile: 2,
@@ -378,6 +237,7 @@ export default function DashboardScreen() {
                     <View
                       style={[
                         styles.actionsCard,
+                        isWebPage && web.panel,
                         layout.isDesktop && styles.actionsCardFill,
                       ]}
                     >
@@ -454,6 +314,7 @@ export default function DashboardScreen() {
                       styles.section,
                       styles.vehiclesColumn,
                       layout.isDesktop && styles.vehiclesPanel,
+                      isWebPage && web.panel,
                     ]}
                   >
                     <View style={styles.sectionHeader}>
@@ -506,7 +367,9 @@ export default function DashboardScreen() {
                   {/* Recent Activity */}
                   {recentActivity.length > 0 && (
                     <View style={[styles.section, styles.activityColumn]}>
-                      <View style={styles.activityCard}>
+                      <View
+                        style={[styles.activityCard, isWebPage && web.panel]}
+                      >
                         <Text style={styles.sectionTitle}>Recent Activity</Text>
                         <View style={styles.activityTimeline}>
                           {recentActivity.slice(0, 5).map((item) => (
@@ -585,83 +448,7 @@ const stylesheet = createStyleSheet((theme) => ({
     justifyContent: "space-between",
     gap: theme.spacing.lg,
   },
-  headerControls: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: theme.spacing.md,
-  },
-  desktopSearch: { width: 290 },
   mobileSearch: { marginTop: theme.spacing.md },
-  headerIconButton: {
-    width: 44,
-    height: 44,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    borderRadius: theme.borderRadius.lg,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: theme.colors.surface,
-  },
-  notificationBadge: {
-    position: "absolute",
-    top: -5,
-    right: -5,
-  },
-  profileButton: {
-    minHeight: 44,
-    minWidth: 44,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  menuOverlay: { flex: 1 },
-  profileMenu: {
-    position: "absolute",
-    width: 280,
-    padding: theme.spacing.xs,
-    backgroundColor: theme.colors.surface,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    borderRadius: theme.borderRadius.lg,
-  },
-  profileMenuItem: {
-    minHeight: 44,
-    justifyContent: "center",
-    paddingHorizontal: theme.spacing.md,
-    borderRadius: theme.borderRadius.md,
-  },
-  profileMenuText: {
-    color: theme.colors.text,
-    fontSize: theme.fontSize.sm,
-    fontWeight: theme.fontWeight.semibold,
-  },
-  profileMenuIdentity: {
-    padding: theme.spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: theme.colors.border,
-    marginBottom: theme.spacing.xs,
-  },
-  profileMenuEmail: {
-    color: theme.colors.textSecondary,
-    fontSize: theme.fontSize.xs,
-    marginTop: theme.spacing.xs,
-  },
-  avatar: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: theme.colors.surface,
-    borderWidth: 1,
-    borderColor: theme.colors.primary,
-    alignItems: "center",
-    justifyContent: "center",
-    overflow: "hidden",
-  },
-  avatarImage: { position: "absolute", width: "100%", height: "100%" },
-  avatarInitials: {
-    color: theme.colors.primary,
-    fontSize: theme.fontSize.xs,
-    fontWeight: theme.fontWeight.bold,
-  },
   featureRow: {
     flexDirection: { xs: "column" as const, lg: "row" as const },
     gap: theme.spacing.md,

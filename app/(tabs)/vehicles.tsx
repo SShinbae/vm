@@ -1,3 +1,4 @@
+import { useQueryClient } from "@tanstack/react-query";
 import { router } from "expo-router";
 import React, { useCallback, useRef, useState } from "react";
 import { RefreshControl, ScrollView, Text, View, Platform } from "react-native";
@@ -5,7 +6,10 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { createStyleSheet, useStyles } from "react-native-unistyles";
 
-import { WebLayout } from "@/components/layout/WebLayout";
+import { MaxWidthContainer } from "@/components/layout/MaxWidthContainer";
+import { webPageStyles } from "@/components/layout/webPageStyles";
+import { VehicleTable } from "@/components/dashboard/VehicleTable";
+import { Button } from "@/components/ui/Button";
 import { FloatingActionButton } from "@/components/ui/FloatingActionButton";
 import { SkeletonVehicleList } from "@/components/ui/Skeleton";
 import { VehicleFilters } from "@/components/vehicles/VehicleFilters";
@@ -41,7 +45,10 @@ if (Platform.OS !== "web") {
  */
 export default function VehiclesScreen() {
   const { styles, theme } = useStyles(stylesheet);
+  const queryClient = useQueryClient();
   const layout = useResponsiveLayout();
+  const isWebPage = layout.isWeb && !layout.isMobile;
+  const { styles: web } = useStyles(webPageStyles);
 
   // Custom hooks for state management
   const { allVehicles, loading, refreshing, onRefresh } = useVehicles();
@@ -83,49 +90,11 @@ export default function VehiclesScreen() {
   if (loading) {
     return (
       <SafeAreaView style={styles.container}>
-        <WebLayout>
-          <View style={[styles.header, layout.isMobile && styles.headerMobile]}>
-            <Text
-              style={[
-                styles.greeting,
-                layout.isMobile && styles.greetingMobile,
-                layout.isTablet && styles.greetingTablet,
-              ]}
-            >
-              Vehicles
-            </Text>
-            <Text
-              style={[
-                styles.subtitle,
-                layout.isMobile && styles.subtitleMobile,
-              ]}
-            >
-              Loading your fleet...
-            </Text>
-          </View>
-          <SkeletonVehicleList itemCount={4} />
-        </WebLayout>
-      </SafeAreaView>
-    );
-  }
-
-  return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
-      <SafeAreaView style={styles.container}>
-        <WebLayout>
-          <ScrollView
-            style={styles.content}
-            contentContainerStyle={styles.scrollContent}
-            refreshControl={
-              <RefreshControl
-                refreshing={refreshing}
-                onRefresh={onRefresh}
-                tintColor={theme.colors.primary}
-              />
-            }
-            showsVerticalScrollIndicator={false}
-          >
-            {/* Header */}
+        <MaxWidthContainer
+          fullWidth={isWebPage}
+          style={isWebPage ? web.frame : undefined}
+        >
+          {!isWebPage && (
             <View
               style={[styles.header, layout.isMobile && styles.headerMobile]}
             >
@@ -144,13 +113,73 @@ export default function VehiclesScreen() {
                   layout.isMobile && styles.subtitleMobile,
                 ]}
               >
-                Manage your fleet and maintenance
+                Loading your fleet...
               </Text>
             </View>
+          )}
+          <SkeletonVehicleList itemCount={4} />
+        </MaxWidthContainer>
+      </SafeAreaView>
+    );
+  }
+
+  return (
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <SafeAreaView style={styles.container}>
+        <MaxWidthContainer
+          fullWidth={isWebPage}
+          style={isWebPage ? web.frame : undefined}
+        >
+          <ScrollView
+            style={styles.content}
+            contentContainerStyle={styles.scrollContent}
+            refreshControl={
+              <RefreshControl
+                refreshing={refreshing}
+                onRefresh={async () => {
+                  await onRefresh();
+                  if (isWebPage)
+                    await queryClient.invalidateQueries({
+                      queryKey: ["dashboard", "vehicles"],
+                    });
+                }}
+                tintColor={theme.colors.primary}
+              />
+            }
+            showsVerticalScrollIndicator={false}
+          >
+            {/* Header */}
+            {!isWebPage && (
+              <View
+                style={[styles.header, layout.isMobile && styles.headerMobile]}
+              >
+                <Text
+                  style={[
+                    styles.greeting,
+                    layout.isMobile && styles.greetingMobile,
+                    layout.isTablet && styles.greetingTablet,
+                  ]}
+                >
+                  Vehicles
+                </Text>
+                <Text
+                  style={[
+                    styles.subtitle,
+                    layout.isMobile && styles.subtitleMobile,
+                  ]}
+                >
+                  Manage your fleet and maintenance
+                </Text>
+              </View>
+            )}
 
             {/* Statistics Summary */}
             <View
-              style={[styles.section, layout.isMobile && styles.sectionMobile]}
+              style={[
+                styles.section,
+                layout.isMobile && styles.sectionMobile,
+                isWebPage && web.section,
+              ]}
             >
               <Text
                 style={[
@@ -164,19 +193,41 @@ export default function VehiclesScreen() {
               <VehicleStatsGrid stats={stats} />
             </View>
 
-            {/* Search Bar */}
             <View
-              style={[styles.section, layout.isMobile && styles.sectionMobile]}
+              style={
+                isWebPage
+                  ? web.toolbar
+                  : [styles.section, layout.isMobile && styles.sectionMobile]
+              }
             >
-              <VehicleSearchBar
-                searchQuery={searchQuery}
-                onSearchChange={setSearchQuery}
-              />
+              <View
+                style={
+                  isWebPage
+                    ? { flex: 1, maxWidth: 560, minWidth: 220 }
+                    : undefined
+                }
+              >
+                <VehicleSearchBar
+                  searchQuery={searchQuery}
+                  onSearchChange={setSearchQuery}
+                />
+              </View>
+              {isWebPage && (
+                <Button
+                  title="Add Vehicle"
+                  icon="plus"
+                  onPress={() => router.push("/vehicles/add")}
+                />
+              )}
             </View>
 
             {/* Filter Chips */}
             <View
-              style={[styles.section, layout.isMobile && styles.sectionMobile]}
+              style={[
+                styles.section,
+                layout.isMobile && styles.sectionMobile,
+                isWebPage && web.section,
+              ]}
             >
               <VehicleFilters
                 activeFilter={activeFilter}
@@ -186,22 +237,60 @@ export default function VehiclesScreen() {
 
             {/* Vehicles Grid/List */}
             <View
-              style={[styles.section, layout.isMobile && styles.sectionMobile]}
+              style={[
+                styles.section,
+                layout.isMobile && styles.sectionMobile,
+                isWebPage && web.section,
+              ]}
             >
-              <VehicleList
-                vehicles={filteredVehicles}
-                filterLabel={filterLabel}
-                onVehiclePress={handleOpenBottomSheet}
-                isDesktop={layout.isDesktop}
-              />
+              {isWebPage && layout.isDesktop && filteredVehicles.length > 0 ? (
+                <View style={web.panel}>
+                  <Text style={web.heading}>
+                    {filterLabel} ({filteredVehicles.length})
+                  </Text>
+                  <VehicleTable
+                    vehicles={filteredVehicles.map((vehicle) => ({
+                      ...vehicle,
+                      isSharedWithMe: !vehicle.is_own_vehicle,
+                      shareCount:
+                        vehicle.sharing_info?.total_shares ??
+                        vehicle.shared_groups?.length ??
+                        0,
+                    }))}
+                  />
+                </View>
+              ) : isWebPage &&
+                allVehicles.length > 0 &&
+                filteredVehicles.length === 0 ? (
+                <View style={web.panel}>
+                  <Text style={web.heading}>No matching vehicles</Text>
+                  <Button
+                    title="Clear filters"
+                    variant="outline"
+                    onPress={() => {
+                      setSearchQuery("");
+                      setActiveFilter("all");
+                    }}
+                  />
+                </View>
+              ) : (
+                <VehicleList
+                  vehicles={filteredVehicles}
+                  filterLabel={filterLabel}
+                  onVehiclePress={handleOpenBottomSheet}
+                  isDesktop={layout.isDesktop}
+                />
+              )}
             </View>
           </ScrollView>
 
           {/* Floating Action Button */}
-          <FloatingActionButton
-            onPress={() => router.push("/vehicles/add")}
-            icon="plus"
-          />
+          {!isWebPage && (
+            <FloatingActionButton
+              onPress={() => router.push("/vehicles/add")}
+              icon="plus"
+            />
+          )}
 
           {/* Bottom Sheet Modal - Native only */}
           {Platform.OS !== "web" && VehicleDetailsBottomSheet && (
@@ -211,7 +300,7 @@ export default function VehiclesScreen() {
               onClose={handleCloseBottomSheet}
             />
           )}
-        </WebLayout>
+        </MaxWidthContainer>
       </SafeAreaView>
     </GestureHandlerRootView>
   );

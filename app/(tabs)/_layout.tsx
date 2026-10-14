@@ -1,10 +1,11 @@
 import { useStyles } from "react-native-unistyles";
-import { router, Tabs } from "expo-router";
+import { router, Tabs, usePathname } from "expo-router";
 import React, { useEffect } from "react";
 import { Platform, StyleSheet, View } from "react-native";
 
 import { ResponsiveTabBar } from "@/components/navigation/ResponsiveTabBar";
 import { WebSidebar } from "@/components/navigation/WebSidebar";
+import { WebPageHeader } from "@/components/layout/WebPageHeader";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { useKeyboardShortcuts } from "@/hooks/use-keyboard-shortcuts";
 import { useResponsiveLayout } from "@/hooks/use-responsive-layout";
@@ -15,6 +16,7 @@ import { SidebarProvider, useSidebar } from "@/lib/contexts/SidebarContext";
 function TabLayoutContent() {
   const { theme } = useStyles();
   const layout = useResponsiveLayout();
+  const pathname = usePathname();
   const { toggle, isOpen } = useSidebar();
   const { unreadCount } = useNotifications();
 
@@ -48,6 +50,9 @@ function TabLayoutContent() {
           isDesktopWeb && { marginLeft: isOpen ? 240 : 96 },
         ]}
       >
+        {isDesktopWeb && ["/", "/vehicles", "/logs"].includes(pathname) && (
+          <WebPageHeader />
+        )}
         <Tabs
           tabBar={(props) =>
             showTabBar ? <ResponsiveTabBar {...props} /> : null

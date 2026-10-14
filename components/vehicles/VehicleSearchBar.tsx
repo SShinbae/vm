@@ -19,13 +19,17 @@ export function VehicleSearchBar({
   onSearchChange,
 }: VehicleSearchBarProps) {
   const { styles, theme } = useStyles(stylesheet);
-  const { isMobile } = useResponsiveLayout();
+  const { isMobile, isWeb } = useResponsiveLayout();
 
   const iconSize = isMobile ? 18 : 20;
 
   return (
     <View
-      style={[styles.searchContainer, isMobile && styles.searchContainerMobile]}
+      style={[
+        styles.searchContainer,
+        isMobile && styles.searchContainerMobile,
+        isWeb && !isMobile && styles.webSearch,
+      ]}
     >
       <IconSymbol
         name="magnifyingglass"
@@ -33,6 +37,7 @@ export function VehicleSearchBar({
         color={theme.colors.textSecondary}
       />
       <TextInput
+        accessibilityLabel="Filter vehicles"
         style={[styles.searchInput, isMobile && styles.searchInputMobile]}
         placeholder="Search vehicles by make, model, plate..."
         placeholderTextColor={theme.colors.textSecondary}
@@ -61,6 +66,12 @@ const stylesheet = createStyleSheet((theme) => ({
     paddingHorizontal: theme.spacing.lg,
     paddingVertical: theme.spacing.md,
     gap: theme.spacing.sm,
+  },
+  webSearch: {
+    minHeight: 44,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    paddingVertical: theme.spacing.sm,
   },
   searchContainerMobile: {
     paddingHorizontal: theme.spacing.md,

@@ -1,7 +1,5 @@
 import DashboardScreen from "@/app/(tabs)/index";
-import { fireEvent, render, screen } from "@testing-library/react-native";
-import { router } from "expo-router";
-import { TouchableOpacity } from "react-native";
+import { render, screen } from "@testing-library/react-native";
 import React from "react";
 
 const mockLayout = { isDesktop: false, isWeb: false };
@@ -35,6 +33,12 @@ jest.mock("react-native-unistyles", () => ({
   }),
 }));
 jest.mock("@/components/ui/icon-symbol", () => ({ IconSymbol: () => null }));
+jest.mock("@/components/layout/WebPageHeader", () => ({
+  WebPageHeader: () => {
+    const { Text } = require("react-native");
+    return <Text>Shared Home header</Text>;
+  },
+}));
 jest.mock("@/components/ui/Skeleton", () => ({
   SkeletonDashboard: () => null,
 }));
@@ -118,29 +122,12 @@ it("limits Home vehicles to three and shows five recent activities", () => {
   expect(screen.getByText("activity-5")).toBeTruthy();
 });
 
-it.each(["Profile", "Settings"])(
-  "opens the avatar menu and navigates to the %s tab",
-  (tab) => {
-    mockLayout.isDesktop = true;
-    render(<DashboardScreen />);
-    const button = screen
-      .UNSAFE_getAllByType(TouchableOpacity)
-      .find((node) => node.props.accessibilityLabel === "Profile menu");
-    button!.props.ref.current.measureInWindow = (
-      callback: (...bounds: number[]) => void,
-    ) => callback(200, 100, 32, 44);
-    fireEvent.press(screen.getAllByLabelText("Profile menu")[0]);
-    expect(screen.getByText("Profile")).toBeTruthy();
-    expect(screen.getByText("Settings")).toBeTruthy();
-    fireEvent.press(screen.getByText(tab));
-    expect(router.push).toHaveBeenCalledWith({
-      pathname: "/profile",
-      params: { tab },
-    });
-    expect(screen.queryByText("Settings")).toBeNull();
-    mockLayout.isDesktop = false;
-  },
-);
+it("retains header controls on a large native Home layout", () => {
+  mockLayout.isDesktop = true;
+  render(<DashboardScreen />);
+  expect(screen.getByText("Shared Home header")).toBeTruthy();
+  mockLayout.isDesktop = false;
+});
 
 it("hides stale reminders during loading and after a failed refresh", () => {
   mockServiceReminders = [{ id: "reminder-1" }];

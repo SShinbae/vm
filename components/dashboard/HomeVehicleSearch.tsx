@@ -14,8 +14,14 @@ import { createStyleSheet, useStyles } from "react-native-unistyles";
 
 export function HomeVehicleSearch({
   vehicles,
+  loading = false,
+  error,
+  onRetry,
 }: {
   vehicles: VehicleWithShares[];
+  loading?: boolean;
+  error?: string;
+  onRetry?: () => void;
 }) {
   const { styles, theme } = useStyles(stylesheet);
   const [query, setQuery] = useState("");
@@ -53,7 +59,21 @@ export function HomeVehicleSearch({
       </View>
       {!!query.trim() && (
         <ScrollView style={styles.results} keyboardShouldPersistTaps="always">
-          {matches.length ? (
+          {loading ? (
+            <Text style={styles.noResults}>Loading vehicles...</Text>
+          ) : error ? (
+            <View>
+              <Text style={styles.noResults}>{error}</Text>
+              <TouchableOpacity
+                onPress={onRetry}
+                accessibilityRole="button"
+                accessibilityLabel="Retry vehicle lookup"
+                style={styles.result}
+              >
+                <Text style={styles.resultName}>Retry</Text>
+              </TouchableOpacity>
+            </View>
+          ) : matches.length ? (
             matches.map((vehicle) => (
               <TouchableOpacity
                 key={vehicle.id}

@@ -1,6 +1,8 @@
 import { withOpacity } from "@/src/design-system";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { storageImageUrl } from "@/lib/utils/storagePath";
+import { useResponsiveLayout } from "@/hooks/use-responsive-layout";
+import { webPageStyles } from "@/components/layout/webPageStyles";
 import React, { useState } from "react";
 import { Animated, Pressable, Text, View } from "react-native";
 import { Image } from "expo-image";
@@ -22,6 +24,8 @@ interface VehicleCardProps {
 export const VehicleCard = React.memo(
   ({ vehicle, onPress }: VehicleCardProps) => {
     const { styles, theme } = useStyles(stylesheet);
+    const { styles: web } = useStyles(webPageStyles);
+    const layout = useResponsiveLayout();
     const [imageError, setImageError] = useState(false);
     const scaleAnim = useState(new Animated.Value(1))[0];
     const reduceMotion = useReducedMotion();
@@ -58,7 +62,10 @@ export const VehicleCard = React.memo(
     return (
       <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
         <Pressable
-          style={styles.vehicleCard}
+          style={[
+            styles.vehicleCard,
+            layout.isWeb && !layout.isMobile && web.panel,
+          ]}
           onPress={() => onPress(vehicle)}
           onPressIn={handlePressIn}
           onPressOut={handlePressOut}

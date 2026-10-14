@@ -24,7 +24,7 @@ export const isAutoMileageLog = (logType: string | null, log: object | null) =>
 export class MileageLogService {
   static async getMileageLogs(
     vehicleId?: string,
-    options?: { limit?: number; offset?: number },
+    options?: { limit?: number; offset?: number; ascending?: boolean },
   ): Promise<ApiResponse<MileageLog[]>> {
     try {
       const {
@@ -50,7 +50,7 @@ export class MileageLogService {
         `,
         )
         .eq("vehicles.user_id", user.id)
-        .order("date", { ascending: false })
+        .order("date", { ascending: options?.ascending ?? false })
         .range(offset, offset + limit - 1);
 
       if (vehicleId) {
@@ -101,7 +101,7 @@ export class MileageLogService {
           `,
               )
               .in("vehicle_id", sharedVehicleIds)
-              .order("date", { ascending: false })
+              .order("date", { ascending: options?.ascending ?? false })
               .range(offset, offset + limit - 1)
           : Promise.resolve({ data: [], error: null }),
       ]);
@@ -141,9 +141,11 @@ export class MileageLogService {
         (log, index, self) => index === self.findIndex((l) => l.id === log.id),
       );
 
-      // Sort by date descending
+      // Keep the combined owned/shared results in the requested date order.
       uniqueLogs.sort(
-        (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
+        (a, b) =>
+          (new Date(b.date).getTime() - new Date(a.date).getTime()) *
+          (options?.ascending ? -1 : 1),
       );
 
       return { data: uniqueLogs, error: null, loading: false };

@@ -82,10 +82,14 @@ jest.mock("@/services/supabaseClient", () => ({
   },
 }));
 
+const clients: QueryClient[] = [];
+afterEach(() => clients.splice(0).forEach((client) => client.clear()));
+
 function createWrapper() {
   const client = new QueryClient({
     defaultOptions: { queries: { retry: false, gcTime: 0 } },
   });
+  clients.push(client);
   return function Wrapper({ children }: { children: React.ReactNode }) {
     return (
       <QueryClientProvider client={client}>{children}</QueryClientProvider>

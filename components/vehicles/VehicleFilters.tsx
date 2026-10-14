@@ -1,4 +1,5 @@
 import React from "react";
+import { useResponsiveLayout } from "@/hooks/use-responsive-layout";
 import { View } from "react-native";
 import { createStyleSheet, useStyles } from "react-native-unistyles";
 import { FilterChip } from "./FilterChip";
@@ -19,6 +20,7 @@ export function VehicleFilters({
   onFilterChange,
 }: VehicleFiltersProps) {
   const { styles } = useStyles(stylesheet);
+  const layout = useResponsiveLayout();
 
   const filters: { filter: FilterType; label: string }[] = [
     { filter: "all", label: "All Vehicles" },
@@ -30,7 +32,12 @@ export function VehicleFilters({
   ];
 
   return (
-    <View style={styles.filterChipsWrapper}>
+    <View
+      style={[
+        styles.filterChipsWrapper,
+        layout.isWeb && !layout.isMobile && { justifyContent: "flex-start" },
+      ]}
+    >
       {filters.map(({ filter, label }) => (
         <FilterChip
           key={filter}

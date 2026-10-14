@@ -1,5 +1,8 @@
 import { LineChart } from "@/components/charts/LineChart";
 import { FuelCostPoint } from "@/lib/dashboard/homeOverview";
+import { WebFilterButton } from "@/components/ui/WebFilterButton";
+import { webPageStyles } from "@/components/layout/webPageStyles";
+import { useResponsiveLayout } from "@/hooks/use-responsive-layout";
 import React, { useState } from "react";
 import { ActivityIndicator, Text, TouchableOpacity, View } from "react-native";
 import { createStyleSheet, useStyles } from "react-native-unistyles";
@@ -20,38 +23,50 @@ export function HomeFuelTrend({
   error,
 }: Props) {
   const { styles, theme } = useStyles(stylesheet);
+  const { styles: web } = useStyles(webPageStyles);
+  const layout = useResponsiveLayout();
+  const isWebPage = layout.isWeb && !layout.isMobile;
   const [chartWidth, setChartWidth] = useState(0);
   const hasCosts = points.some((point) => point.value > 0);
 
   return (
-    <View style={styles.card}>
+    <View style={[styles.card, isWebPage && web.panel]}>
       <View style={styles.header}>
         <View style={styles.titleGroup}>
           <Text style={styles.title}>Fuel cost trend</Text>
           <Text style={styles.subtitle}>Monthly fuel expenses</Text>
         </View>
         <View style={styles.range}>
-          {([6, 12] as const).map((option) => (
-            <TouchableOpacity
-              key={option}
-              accessibilityRole="button"
-              accessibilityState={{ selected: months === option }}
-              onPress={() => onMonthsChange(option)}
-              style={[
-                styles.rangeButton,
-                months === option && styles.rangeButtonActive,
-              ]}
-            >
-              <Text
+          {([6, 12] as const).map((option) =>
+            isWebPage ? (
+              <WebFilterButton
+                key={option}
+                label={`${option} months`}
+                selected={months === option}
+                onPress={() => onMonthsChange(option)}
+              />
+            ) : (
+              <TouchableOpacity
+                key={option}
+                accessibilityRole="button"
+                accessibilityState={{ selected: months === option }}
+                onPress={() => onMonthsChange(option)}
                 style={[
-                  styles.rangeText,
-                  months === option && styles.rangeTextActive,
+                  styles.rangeButton,
+                  months === option && styles.rangeButtonActive,
                 ]}
               >
-                {option} months
-              </Text>
-            </TouchableOpacity>
-          ))}
+                <Text
+                  style={[
+                    styles.rangeText,
+                    months === option && styles.rangeTextActive,
+                  ]}
+                >
+                  {option} months
+                </Text>
+              </TouchableOpacity>
+            ),
+          )}
         </View>
       </View>
       <View

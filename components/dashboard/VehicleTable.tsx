@@ -5,14 +5,24 @@ import { VehicleWithShares } from "@/hooks/useDashboardDataQuery";
 import { Image } from "expo-image";
 import { router } from "expo-router";
 import React, { useState } from "react";
-import { Text, TouchableOpacity, View } from "react-native";
+import { ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { createStyleSheet, useStyles } from "react-native-unistyles";
 
-type VehicleTableProps = {
-  vehicles: VehicleWithShares[];
-};
+export type VehicleTableItem = Pick<
+  VehicleWithShares,
+  | "id"
+  | "year"
+  | "make"
+  | "model"
+  | "main_image_url"
+  | "license_plate"
+  | "current_mileage"
+  | "isSharedWithMe"
+  | "shareCount"
+>;
+type VehicleTableProps = { vehicles: VehicleTableItem[] };
 
-function VehicleTableRow({ vehicle }: { vehicle: VehicleWithShares }) {
+function VehicleTableRow({ vehicle }: { vehicle: VehicleTableItem }) {
   const { styles, theme } = useStyles(stylesheet);
   const [imageError, setImageError] = useState(false);
 
@@ -122,32 +132,40 @@ function VehicleTableRow({ vehicle }: { vehicle: VehicleWithShares }) {
 
 export function VehicleTable({ vehicles }: VehicleTableProps) {
   const { styles } = useStyles(stylesheet);
+  const [width, setWidth] = useState(0);
 
   return (
-    <View style={styles.container}>
-      {/* Header Row */}
-      <View style={styles.headerRow}>
-        <View style={styles.vehicleColumn}>
-          <Text style={styles.headerText}>Vehicle</Text>
-        </View>
-        <View style={styles.plateColumn}>
-          <Text style={styles.headerText}>Plate Number</Text>
-        </View>
-        <View style={styles.mileageColumn}>
-          <Text style={styles.headerText}>Mileage</Text>
-        </View>
-        <View style={styles.statusColumn}>
-          <Text style={styles.headerText}>Status</Text>
-        </View>
-        <View style={styles.actionsColumn}>
-          <Text style={styles.headerText}>Actions</Text>
-        </View>
-      </View>
+    <View
+      style={styles.container}
+      onLayout={(event) => setWidth(event.nativeEvent.layout.width)}
+    >
+      <ScrollView horizontal showsHorizontalScrollIndicator>
+        <View style={{ width: Math.max(width - 2, 760) }}>
+          {/* Header Row */}
+          <View style={styles.headerRow}>
+            <View style={styles.vehicleColumn}>
+              <Text style={styles.headerText}>Vehicle</Text>
+            </View>
+            <View style={styles.plateColumn}>
+              <Text style={styles.headerText}>Plate Number</Text>
+            </View>
+            <View style={styles.mileageColumn}>
+              <Text style={styles.headerText}>Mileage</Text>
+            </View>
+            <View style={styles.statusColumn}>
+              <Text style={styles.headerText}>Status</Text>
+            </View>
+            <View style={styles.actionsColumn}>
+              <Text style={styles.headerText}>Actions</Text>
+            </View>
+          </View>
 
-      {/* Data Rows */}
-      {vehicles.map((vehicle) => (
-        <VehicleTableRow key={vehicle.id} vehicle={vehicle} />
-      ))}
+          {/* Data Rows */}
+          {vehicles.map((vehicle) => (
+            <VehicleTableRow key={vehicle.id} vehicle={vehicle} />
+          ))}
+        </View>
+      </ScrollView>
     </View>
   );
 }
