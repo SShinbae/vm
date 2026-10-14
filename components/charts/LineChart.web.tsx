@@ -1,3 +1,4 @@
+import { useResponsiveLayout } from "@/hooks/use-responsive-layout";
 import { spacing } from "@/src/design-system";
 import { useStyles } from "react-native-unistyles";
 import React from "react";
@@ -37,6 +38,7 @@ export function LineChart({
 }: LineChartProps) {
   const { theme } = useStyles();
   const colors = theme.colors;
+  const { isMobile } = useResponsiveLayout();
 
   const chartColor = color || colors.analytics.fuel;
   const Chart = showArea ? RechartsAreaChart : RechartsLineChart;
@@ -44,7 +46,7 @@ export function LineChart({
   const styles = StyleSheet.create({
     container: {
       backgroundColor: embedded ? "transparent" : colors.surface,
-      borderRadius: embedded ? 0 : 12,
+      borderRadius: embedded ? 0 : isMobile ? 12 : theme.borderRadius.xl,
       padding: embedded ? 0 : spacing.lg,
       marginBottom: embedded ? 0 : spacing.lg,
       borderWidth: embedded ? 0 : 1,

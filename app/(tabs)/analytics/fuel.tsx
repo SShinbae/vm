@@ -1,6 +1,7 @@
 import {
   EmptyAnalytics,
   MetricCard,
+  StatCard,
   PeriodSelector,
   LazyTrendLineChart,
   VehicleFilter,
@@ -13,12 +14,14 @@ import {
 } from "@/hooks/useAnalytics";
 import { useResponsiveLayout } from "@/hooks/use-responsive-layout";
 import React, { useMemo } from "react";
+import { ResponsiveGrid } from "@/components/layout/ResponsiveGrid";
 import { RefreshControl, ScrollView, Text, View } from "react-native";
 import { useStyles } from "react-native-unistyles";
 
 export default function FuelTab() {
   const { theme } = useStyles();
-  const { isMobile, isTablet } = useResponsiveLayout();
+  const { isWeb, isMobile, isTablet } = useResponsiveLayout();
+  const isWebPage = isWeb && !isMobile;
   const { period, setPeriod, periods } = usePeriodSelector();
   const {
     vehicles,
@@ -42,6 +45,148 @@ export default function FuelTab() {
   const { trendData, trendAnalysis } = useAnalyticsTrends(filters, "fuel");
 
   const hasData = fuelMetrics && fuelMetrics.fuelUps > 0;
+
+  if (isWebPage) {
+    return (
+      <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
+        <ScrollView
+          contentContainerStyle={{
+            paddingHorizontal: theme.spacing.xl,
+            paddingBottom: theme.spacing.xl,
+          }}
+          refreshControl={
+            <RefreshControl refreshing={loading} onRefresh={refetch} />
+          }
+        >
+          <View style={{ marginBottom: theme.spacing.lg }}>
+            <VehicleFilter
+              vehicles={vehicles}
+              selectedVehicleIds={selectedVehicleIds}
+              onToggleVehicle={toggleVehicle}
+              onSelectAll={selectAll}
+              onClearAll={clearAll}
+              periodControl={
+                <PeriodSelector
+                  selectedPeriod={period}
+                  onPeriodChange={setPeriod}
+                  periods={periods}
+                  placement="toolbar"
+                  onCustomRangeSelect={(startDate, endDate) =>
+                    setPeriod({
+                      label: `${startDate.toLocaleDateString()} – ${endDate.toLocaleDateString()}`,
+                      days: Math.ceil(
+                        (endDate.getTime() - startDate.getTime()) / 86400000,
+                      ),
+                      startDate,
+                      endDate,
+                    })
+                  }
+                />
+              }
+            />
+          </View>
+          {loading || vehiclesLoading ? (
+            <Text
+              style={{
+                color: theme.colors.textSecondary,
+                padding: theme.spacing.lg,
+              }}
+            >
+              Loading fuel analytics...
+            </Text>
+          ) : error ? (
+            <EmptyAnalytics
+              icon="alert-circle-outline"
+              title="Error Loading Data"
+              message="Failed to load fuel analytics. Please try again."
+            />
+          ) : !hasData ? (
+            <EmptyAnalytics
+              icon="water-outline"
+              title="No Fuel Data"
+              message="Start logging your fuel fill-ups to see analytics here."
+            />
+          ) : (
+            <>
+              <ResponsiveGrid
+                columns={{ tablet: 2, desktop: 3, largeDesktop: 3 }}
+                spacing={theme.spacing.md}
+                style={{ marginBottom: theme.spacing.sm }}
+              >
+                <MetricCard
+                  title="Total Fuel Cost"
+                  value={`RM${costMetrics?.totalFuelCost.toFixed(2) || "0.00"}`}
+                  subtitle={period.label}
+                  icon="cash-outline"
+                  color={theme.colors.analytics.cost}
+                />
+                <MetricCard
+                  title="Average Consumption"
+                  value={fuelMetrics.averageConsumption.toFixed(1)}
+                  subtitle="L/100km"
+                  icon="speedometer-outline"
+                  color={theme.colors.analytics.fuel}
+                  trend={trendAnalysis || undefined}
+                />
+                <MetricCard
+                  title="Total Fill-ups"
+                  value={fuelMetrics.fuelUps}
+                  subtitle={period.label}
+                  icon="water-outline"
+                  color={theme.colors.analytics.fuel}
+                />
+              </ResponsiveGrid>
+              <LazyTrendLineChart
+                data={trendData}
+                title="Fuel Consumption Over Time (L/100km)"
+                color={theme.colors.analytics.fuel}
+                height={280}
+              />
+              <Text
+                style={{
+                  fontSize: theme.fontSize.xl,
+                  fontWeight: theme.fontWeight.bold,
+                  color: theme.colors.text,
+                  marginBottom: theme.spacing.md,
+                }}
+              >
+                Fuel Statistics
+              </Text>
+              <ResponsiveGrid
+                columns={{ tablet: 2, desktop: 3, largeDesktop: 3 }}
+                spacing={theme.spacing.md}
+              >
+                <StatCard
+                  value={`${fuelMetrics.totalDistance.toFixed(0)} km`}
+                  label="Total Distance"
+                />
+                <StatCard
+                  value={`${fuelMetrics.totalLitersFilled.toFixed(0)} L`}
+                  label="Liters Filled"
+                />
+                <StatCard
+                  value={`RM${fuelMetrics.averageFuelPrice.toFixed(2)}`}
+                  label="Average Price per Liter"
+                />
+                <StatCard
+                  value={`${fuelMetrics.bestEfficiency.toFixed(1)} L/100km`}
+                  label="Best Efficiency"
+                />
+                <StatCard
+                  value={`${fuelMetrics.worstEfficiency.toFixed(1)} L/100km`}
+                  label="Worst Efficiency"
+                />
+                <StatCard
+                  value={`${(fuelMetrics.totalDistance / fuelMetrics.fuelUps).toFixed(0)} km`}
+                  label="Distance per Fill-up"
+                />
+              </ResponsiveGrid>
+            </>
+          )}
+        </ScrollView>
+      </View>
+    );
+  }
 
   // Loading state
   if (loading || vehiclesLoading) {
@@ -107,7 +252,9 @@ export default function FuelTab() {
             </Text>
           </View>
           <View
-            style={{ padding: isMobile ? theme.spacing.md : theme.spacing.lg }}
+            style={{
+              padding: isMobile ? theme.spacing.md : theme.spacing.lg,
+            }}
           >
             <EmptyAnalytics
               icon="alert-circle-outline"
@@ -155,7 +302,9 @@ export default function FuelTab() {
             </Text>
           </View>
           <View
-            style={{ padding: isMobile ? theme.spacing.md : theme.spacing.lg }}
+            style={{
+              padding: isMobile ? theme.spacing.md : theme.spacing.lg,
+            }}
           >
             <View
               style={{
@@ -228,7 +377,9 @@ export default function FuelTab() {
         </View>
 
         <View
-          style={{ padding: isMobile ? theme.spacing.md : theme.spacing.lg }}
+          style={{
+            padding: isMobile ? theme.spacing.md : theme.spacing.lg,
+          }}
         >
           {/* Filters */}
           <View

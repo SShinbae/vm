@@ -50,9 +50,10 @@ function TabLayoutContent() {
           isDesktopWeb && { marginLeft: isOpen ? 240 : 96 },
         ]}
       >
-        {isDesktopWeb && ["/", "/vehicles", "/logs"].includes(pathname) && (
-          <WebPageHeader />
-        )}
+        {isDesktopWeb &&
+          (["/", "/vehicles", "/logs"].includes(pathname) ||
+            pathname === "/analytics" ||
+            pathname.startsWith("/analytics/")) && <WebPageHeader />}
         <Tabs
           tabBar={(props) =>
             showTabBar ? <ResponsiveTabBar {...props} /> : null

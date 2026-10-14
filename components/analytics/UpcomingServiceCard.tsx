@@ -1,4 +1,6 @@
-import { spacing } from "@/src/design-system";
+import { useResponsiveLayout } from "@/hooks/use-responsive-layout";
+import { webPageStyles } from "@/components/layout/webPageStyles";
+import { spacing, withOpacity } from "@/src/design-system";
 import { Ionicons } from "@expo/vector-icons";
 import React from "react";
 import { Text, View } from "react-native";
@@ -49,14 +51,44 @@ export function UpcomingServiceCard({ service }: UpcomingServiceCardProps) {
 
   const otherServicesText = formatOtherServices((service as any).other);
 
+  const { isWeb, isMobile } = useResponsiveLayout();
+
+  const { styles: web } = useStyles(webPageStyles);
+  const isWebPage = isWeb && !isMobile;
+  const statusLabel = {
+    overdue: "Overdue",
+    due_soon: "Due soon",
+    upcoming: "Upcoming",
+  }[service.status];
+  const statusColor =
+    service.status === "overdue"
+      ? theme.colors.error
+      : service.status === "due_soon"
+        ? theme.colors.warning
+        : theme.colors.primary;
   return (
-    <View style={styles.container}>
+    <View
+      style={[
+        styles.container,
+        isWebPage && [
+          web.panel,
+          {
+            shadowOpacity: 0,
+            elevation: 0,
+            flexDirection: "column",
+            alignItems: "stretch",
+            gap: theme.spacing.md,
+            marginBottom: 0,
+          },
+        ],
+      ]}
+    >
       <View style={styles.content}>
         <View style={styles.iconContainer}>
           <Ionicons
             name="build-outline"
             size={20}
-            color={theme.colors.warning}
+            color={isWebPage ? statusColor : theme.colors.warning}
           />
         </View>
         <View style={styles.textContainer}>
@@ -64,6 +96,11 @@ export function UpcomingServiceCard({ service }: UpcomingServiceCardProps) {
             {formatServiceType(service.serviceType)}
           </Text>
           <Text style={styles.vehicleName}>{service.vehicleName}</Text>
+          {isWebPage && Number.isFinite(service.serviceDueAt) && (
+            <Text style={styles.odometer}>
+              Due at {service.serviceDueAt.toLocaleString("en-US")} km
+            </Text>
+          )}
           {otherServicesText && (
             <Text style={styles.otherServices}>{otherServicesText}</Text>
           )}
@@ -75,7 +112,43 @@ export function UpcomingServiceCard({ service }: UpcomingServiceCardProps) {
           )}
         </View>
       </View>
-      <Text style={styles.dueDate}>{formatDate(service.daysUntilDue)}</Text>
+      {isWebPage ? (
+        <View
+          style={{
+            flexDirection: "row",
+            flexWrap: "wrap",
+            justifyContent: "space-between",
+            alignItems: "center",
+            gap: theme.spacing.sm,
+          }}
+        >
+          <View
+            style={{
+              backgroundColor: withOpacity(statusColor, 0.12),
+              borderRadius: theme.borderRadius.full,
+              paddingHorizontal: theme.spacing.sm,
+              paddingVertical: theme.spacing.xs,
+            }}
+          >
+            <Text
+              style={{
+                color: statusColor,
+                fontSize: theme.fontSize.sm,
+                fontWeight: theme.fontWeight.medium,
+              }}
+            >
+              {statusLabel}
+            </Text>
+          </View>
+          {Number.isFinite(service.daysUntilDue) && (
+            <Text style={styles.dueDate}>
+              Due {formatDate(service.daysUntilDue)}
+            </Text>
+          )}
+        </View>
+      ) : (
+        <Text style={styles.dueDate}>{formatDate(service.daysUntilDue)}</Text>
+      )}
     </View>
   );
 }

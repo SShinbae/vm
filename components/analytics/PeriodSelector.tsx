@@ -1,3 +1,4 @@
+import { ActionMenu } from "@/components/ui/ActionMenu";
 import { baseColors, withOpacity } from "@/src/design-system";
 import React, { useState } from "react";
 import { View, Text, TouchableOpacity, Modal, FlatList } from "react-native";
@@ -13,6 +14,7 @@ interface PeriodSelectorProps {
   periods: AnalyticsPeriod[];
   allowCustomRange?: boolean;
   onCustomRangeSelect?: (startDate: Date, endDate: Date) => void;
+  placement?: "inline" | "toolbar";
 }
 
 export function PeriodSelector({
@@ -21,9 +23,10 @@ export function PeriodSelector({
   periods,
   allowCustomRange = true,
   onCustomRangeSelect,
+  placement = "inline",
 }: PeriodSelectorProps) {
   const { styles, theme } = useStyles(stylesheet);
-  const { isMobile } = useResponsiveLayout();
+  const { isWeb, isMobile } = useResponsiveLayout();
   const [modalVisible, setModalVisible] = useState(false);
   const [dateRangePickerVisible, setDateRangePickerVisible] = useState(false);
 
@@ -39,6 +42,38 @@ export function PeriodSelector({
       onCustomRangeSelect(startDate, endDate);
     }
   };
+
+  if (isWeb && !isMobile)
+    return placement === "toolbar" ? (
+      <View style={{ alignSelf: "flex-start" }}>
+        <ActionMenu
+          label={selectedPeriod.label}
+          items={[
+            ...periods.map((period) => ({
+              label: period.label,
+              icon: "calendar",
+              onPress: () => onPeriodChange(period),
+            })),
+            ...(allowCustomRange
+              ? [
+                  {
+                    label: "Custom Range",
+                    icon: "calendar",
+                    onPress: handleCustomRangeClick,
+                  },
+                ]
+              : []),
+          ]}
+        />
+        <DateRangePicker
+          visible={dateRangePickerVisible}
+          onClose={() => setDateRangePickerVisible(false)}
+          onConfirm={handleCustomRangeConfirm}
+          initialStartDate={selectedPeriod.startDate}
+          initialEndDate={selectedPeriod.endDate}
+        />
+      </View>
+    ) : null;
 
   return (
     <>

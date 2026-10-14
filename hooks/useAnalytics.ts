@@ -1,4 +1,15 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  createContext,
+  createElement,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+  type ReactNode,
+  type Dispatch,
+  type SetStateAction,
+} from "react";
 import {
   calculateCostMetrics,
   calculateFuelEfficiency,
@@ -115,7 +126,7 @@ export function useAnalyticsData(filters: AnalyticsFilters) {
  */
 export function useAnalyticsTrends(
   filters: AnalyticsFilters,
-  metric: "fuel" | "service" | "cost",
+  metric: "fuel" | "service" | "service_cost" | "cost",
 ) {
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
@@ -145,8 +156,9 @@ export function useAnalyticsTrends(
             metricType = "efficiency";
             break;
           case "service":
+          case "service_cost":
             logs = data.serviceLogs;
-            metricType = "frequency";
+            metricType = metric === "service_cost" ? "cost" : "frequency";
             break;
           case "cost":
             logs = [...data.fuelLogs, ...data.serviceLogs];
@@ -215,11 +227,39 @@ export function useAnalyticsTrends(
 /**
  * Hook for period selector state management
  */
+const AnalyticsPeriodContext = createContext<{
+  period: AnalyticsPeriod;
+  setPeriod: Dispatch<SetStateAction<AnalyticsPeriod>>;
+  periods: AnalyticsPeriod[];
+} | null>(null);
+
+export function AnalyticsPeriodProvider({
+  children,
+  enabled = true,
+}: {
+  children: ReactNode;
+  enabled?: boolean;
+}) {
+  const periods = useMemo(() => getPeriodOptions(), []);
+  const [period, setPeriod] = useState<AnalyticsPeriod>(periods[1]);
+  if (!enabled) return children;
+  return createElement(
+    AnalyticsPeriodContext.Provider,
+    { value: { period, setPeriod, periods } },
+    children,
+  );
+}
+
 export function usePeriodSelector() {
   const periods = useMemo(() => getPeriodOptions(), []);
-  const [period, setPeriod] = useState<AnalyticsPeriod>(periods[1]); // Default to 30 days
-
-  return { period, setPeriod, periods };
+  const [localPeriod, setLocalPeriod] = useState<AnalyticsPeriod>(periods[1]);
+  return (
+    useContext(AnalyticsPeriodContext) || {
+      period: localPeriod,
+      setPeriod: setLocalPeriod,
+      periods,
+    }
+  );
 }
 
 /**

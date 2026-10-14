@@ -20,7 +20,8 @@ import { useStyles } from "react-native-unistyles";
 
 export default function OverviewTab() {
   const { theme } = useStyles();
-  const { isMobile, isTablet } = useResponsiveLayout();
+  const { isWeb, isMobile, isTablet } = useResponsiveLayout();
+  const isWebPage = isWeb && !isMobile;
   const { period, setPeriod, periods } = usePeriodSelector();
   const {
     vehicles,
@@ -66,6 +67,7 @@ export default function OverviewTab() {
             style={{
               paddingHorizontal: isMobile ? theme.spacing.lg : theme.spacing.xl,
               paddingVertical: isMobile ? theme.spacing.md : theme.spacing.lg,
+              ...(isWebPage && { display: "none" }),
             }}
           >
             <Text
@@ -92,7 +94,13 @@ export default function OverviewTab() {
             </Text>
           </View>
           <View
-            style={{ padding: isMobile ? theme.spacing.md : theme.spacing.lg }}
+            style={{
+              padding: isMobile ? theme.spacing.md : theme.spacing.lg,
+              ...(isWebPage && {
+                paddingHorizontal: theme.spacing.xl,
+                paddingTop: 0,
+              }),
+            }}
           >
             <EmptyAnalytics
               icon="alert-circle-outline"
@@ -114,6 +122,7 @@ export default function OverviewTab() {
             style={{
               paddingHorizontal: isMobile ? theme.spacing.lg : theme.spacing.xl,
               paddingVertical: isMobile ? theme.spacing.md : theme.spacing.lg,
+              ...(isWebPage && { display: "none" }),
             }}
           >
             <Text
@@ -140,7 +149,13 @@ export default function OverviewTab() {
             </Text>
           </View>
           <View
-            style={{ padding: isMobile ? theme.spacing.md : theme.spacing.lg }}
+            style={{
+              padding: isMobile ? theme.spacing.md : theme.spacing.lg,
+              ...(isWebPage && {
+                paddingHorizontal: theme.spacing.xl,
+                paddingTop: 0,
+              }),
+            }}
           >
             <PeriodSelector
               selectedPeriod={period}
@@ -183,6 +198,7 @@ export default function OverviewTab() {
           style={{
             paddingHorizontal: isMobile ? theme.spacing.lg : theme.spacing.xl,
             paddingVertical: isMobile ? theme.spacing.md : theme.spacing.lg,
+            ...(isWebPage && { display: "none" }),
             backgroundColor: theme.colors.background,
           }}
         >
@@ -211,7 +227,13 @@ export default function OverviewTab() {
         </View>
 
         <View
-          style={{ padding: isMobile ? theme.spacing.md : theme.spacing.lg }}
+          style={{
+            padding: isMobile ? theme.spacing.md : theme.spacing.lg,
+            ...(isWebPage && {
+              paddingHorizontal: theme.spacing.xl,
+              paddingTop: 0,
+            }),
+          }}
         >
           {/* Filters */}
           <PeriodSelector
@@ -228,21 +250,51 @@ export default function OverviewTab() {
           />
 
           {/* Summary Section */}
-          <Text
-            style={{
-              fontSize: isMobile
-                ? theme.fontSize.xl
-                : isTablet
+          {isWebPage ? (
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "baseline",
+                gap: theme.spacing.md,
+                marginTop: theme.spacing.md,
+                marginBottom: theme.spacing.sm,
+              }}
+            >
+              <Text
+                style={{
+                  fontSize: theme.fontSize.xl,
+                  fontWeight: theme.fontWeight.bold,
+                  color: theme.colors.text,
+                }}
+              >
+                Summary
+              </Text>
+              <Text
+                style={{
+                  fontSize: theme.fontSize.xs,
+                  color: theme.colors.textSecondary,
+                }}
+              >
+                Key metrics for the selected vehicle in the last {period.label}
+              </Text>
+            </View>
+          ) : (
+            <Text
+              style={{
+                fontSize: isMobile
                   ? theme.fontSize.xl
-                  : theme.fontSize["2xl"],
-              fontWeight: theme.fontWeight.bold,
-              color: theme.colors.text,
-              marginBottom: isMobile ? theme.spacing.sm : theme.spacing.md,
-              marginTop: isMobile ? theme.spacing.md : theme.spacing.lg,
-            }}
-          >
-            Summary
-          </Text>
+                  : isTablet
+                    ? theme.fontSize.xl
+                    : theme.fontSize["2xl"],
+                fontWeight: theme.fontWeight.bold,
+                color: theme.colors.text,
+                marginBottom: isMobile ? theme.spacing.sm : theme.spacing.md,
+                marginTop: isMobile ? theme.spacing.md : theme.spacing.lg,
+              }}
+            >
+              Summary
+            </Text>
+          )}
 
           {/* Metric Cards Grid */}
           <View
@@ -323,21 +375,51 @@ export default function OverviewTab() {
           />
 
           {/* Quick Stats Section */}
-          <Text
-            style={{
-              fontSize: isMobile
-                ? theme.fontSize.xl
-                : isTablet
+          {isWebPage ? (
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "baseline",
+                gap: theme.spacing.md,
+                marginTop: theme.spacing.md,
+                marginBottom: theme.spacing.sm,
+              }}
+            >
+              <Text
+                style={{
+                  fontSize: theme.fontSize.xl,
+                  fontWeight: theme.fontWeight.bold,
+                  color: theme.colors.text,
+                }}
+              >
+                Quick Stats
+              </Text>
+              <Text
+                style={{
+                  fontSize: theme.fontSize.xs,
+                  color: theme.colors.textSecondary,
+                }}
+              >
+                Additional insights for the selected vehicle
+              </Text>
+            </View>
+          ) : (
+            <Text
+              style={{
+                fontSize: isMobile
                   ? theme.fontSize.xl
-                  : theme.fontSize["2xl"],
-              fontWeight: theme.fontWeight.bold,
-              color: theme.colors.text,
-              marginBottom: isMobile ? theme.spacing.sm : theme.spacing.md,
-              marginTop: isMobile ? theme.spacing.md : theme.spacing.lg,
-            }}
-          >
-            Quick Stats
-          </Text>
+                  : isTablet
+                    ? theme.fontSize.xl
+                    : theme.fontSize["2xl"],
+                fontWeight: theme.fontWeight.bold,
+                color: theme.colors.text,
+                marginBottom: isMobile ? theme.spacing.sm : theme.spacing.md,
+                marginTop: isMobile ? theme.spacing.md : theme.spacing.lg,
+              }}
+            >
+              Quick Stats
+            </Text>
+          )}
           <View
             style={{
               flexDirection: "row",

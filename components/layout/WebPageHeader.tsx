@@ -44,18 +44,24 @@ export function WebPageHeader() {
     user?.email?.split("@")[0] ||
     "User";
   const firstName = user?.profile?.full_name?.split(" ")[0];
+  const isAnalytics =
+    pathname === "/analytics" || pathname.startsWith("/analytics/");
   const title =
     pathname === "/vehicles"
       ? "Vehicles"
       : pathname === "/logs"
         ? "Logs"
-        : `Welcome back${firstName ? `, ${firstName}` : ""}`;
+        : isAnalytics
+          ? "Analytics"
+          : `Welcome back${firstName ? `, ${firstName}` : ""}`;
   const subtitle =
     pathname === "/vehicles"
       ? "Manage your fleet and maintenance"
       : pathname === "/logs"
         ? "Track mileage, fuel, and service history"
-        : "Your vehicles at a glance";
+        : isAnalytics
+          ? "Track costs, fuel, and maintenance"
+          : "Your vehicles at a glance";
 
   useEffect(() => setAvatarError(false), [avatarUrl]);
   useEffect(() => {

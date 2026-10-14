@@ -15,6 +15,7 @@ import { withOpacity } from "@/src/design-system";
 interface CostLineChartProps {
   data: CostChartDataPoint[];
   title: string;
+  subtitle?: string;
   height?: number;
   showLegend?: boolean;
 }
@@ -22,6 +23,7 @@ interface CostLineChartProps {
 export function CostLineChart({
   data,
   title,
+  subtitle,
   height = 250,
   showLegend = true,
 }: CostLineChartProps) {
@@ -41,6 +43,16 @@ export function CostLineChart({
         >
           {title}
         </Text>
+        {subtitle && (
+          <Text
+            style={{
+              color: theme.colors.textSecondary,
+              marginBottom: theme.spacing.md,
+            }}
+          >
+            {subtitle}
+          </Text>
+        )}
         <View style={[styles.emptyContainer, { height }]}>
           <Text style={[styles.emptyText, isMobile && styles.emptyTextMobile]}>
             No data available
@@ -108,6 +120,16 @@ export function CostLineChart({
       >
         {title}
       </Text>
+      {subtitle && (
+        <Text
+          style={{
+            color: theme.colors.textSecondary,
+            marginBottom: theme.spacing.md,
+          }}
+        >
+          {subtitle}
+        </Text>
+      )}
       <LineChart
         data={chartData}
         width={screenWidth - 32}

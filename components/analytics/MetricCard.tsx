@@ -1,3 +1,4 @@
+import { webPageStyles } from "@/components/layout/webPageStyles";
 import { withOpacity, spacing } from "@/src/design-system";
 import { Ionicons } from "@expo/vector-icons";
 import React from "react";
@@ -50,13 +51,24 @@ export function MetricCard({
   color,
 }: MetricCardProps) {
   const { styles, theme } = useStyles(stylesheet);
-  const { isMobile, isTablet } = useResponsiveLayout();
+  const { isWeb, isMobile, isTablet } = useResponsiveLayout();
   const iconColors = getIconColors(icon, theme);
 
   const iconSize = isMobile ? 20 : 24;
 
+  const { styles: web } = useStyles(webPageStyles);
+  const isWebPage = isWeb && !isMobile;
   return (
-    <View style={[styles.container, isMobile && styles.containerMobile]}>
+    <View
+      style={[
+        styles.container,
+        isMobile && styles.containerMobile,
+        isWebPage && [
+          web.panel,
+          { shadowOpacity: 0, elevation: 0, minHeight: 120, padding: 20 },
+        ],
+      ]}
+    >
       <View style={styles.content}>
         {icon && (
           <View

@@ -1,3 +1,5 @@
+import { useResponsiveLayout } from "@/hooks/use-responsive-layout";
+import { webPageStyles } from "@/components/layout/webPageStyles";
 import React from "react";
 import { Text, View } from "react-native";
 import { createStyleSheet, useStyles } from "react-native-unistyles";
@@ -19,8 +21,17 @@ export function CostBreakdownCard({
   const fuelPercentage = (fuelCost / safeTotal) * 100;
   const servicePercentage = (serviceCost / safeTotal) * 100;
 
+  const { isWeb, isMobile } = useResponsiveLayout();
+
+  const { styles: web } = useStyles(webPageStyles);
+  const isWebPage = isWeb && !isMobile;
   return (
-    <View style={styles.container}>
+    <View
+      style={[
+        styles.container,
+        isWebPage && [web.panel, { shadowOpacity: 0, elevation: 0 }],
+      ]}
+    >
       {/* Horizontal Bar */}
       <View style={styles.barContainer}>
         <View

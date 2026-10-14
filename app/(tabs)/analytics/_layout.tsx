@@ -1,5 +1,14 @@
 import { createMaterialTopTabNavigator } from "@react-navigation/material-top-tabs";
 import React from "react";
+import { View } from "react-native";
+import { useResponsiveLayout } from "@/hooks/use-responsive-layout";
+import { webPageStyles } from "@/components/layout/webPageStyles";
+import { WebFilterButton } from "@/components/ui/WebFilterButton";
+import { PeriodSelector } from "@/components/analytics/PeriodSelector";
+import {
+  AnalyticsPeriodProvider,
+  usePeriodSelector,
+} from "@/hooks/useAnalytics";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useStyles } from "react-native-unistyles";
 
@@ -14,16 +23,73 @@ import ServiceTab from "./service";
 
 const Tab = createMaterialTopTabNavigator();
 
-export default function AnalyticsLayout() {
+function AnalyticsTabs() {
   const { theme } = useStyles();
+  const { styles: web } = useStyles(webPageStyles);
+  const { isWeb, isMobile } = useResponsiveLayout();
+  const isWebPage = isWeb && !isMobile;
+  const { period, setPeriod, periods } = usePeriodSelector();
+  const handleCustomRange = (startDate: Date, endDate: Date) => {
+    setPeriod({
+      label: `${startDate.toLocaleDateString()} – ${endDate.toLocaleDateString()}`,
+      days: Math.ceil((endDate.getTime() - startDate.getTime()) / 86400000),
+      startDate,
+      endDate,
+    });
+  };
 
   return (
     <SafeAreaView
       style={{ flex: 1, backgroundColor: theme.colors.background }}
       edges={["top"]}
     >
-      <MaxWidthContainer>
+      <MaxWidthContainer
+        fullWidth={isWebPage}
+        style={isWebPage ? web.frame : undefined}
+      >
         <Tab.Navigator
+          tabBar={
+            isWebPage
+              ? ({ state, descriptors, navigation }) => (
+                  <View style={web.toolbar}>
+                    <View style={web.filters}>
+                      {state.routes.map((route, index) => (
+                        <WebFilterButton
+                          key={route.key}
+                          label={String(
+                            descriptors[route.key].options.tabBarLabel ||
+                              route.name,
+                          )}
+                          selected={state.index === index}
+                          onPress={() => {
+                            const event = navigation.emit({
+                              type: "tabPress",
+                              target: route.key,
+                              canPreventDefault: true,
+                            });
+                            if (
+                              state.index !== index &&
+                              !event.defaultPrevented
+                            )
+                              navigation.navigate(route.name);
+                          }}
+                        />
+                      ))}
+                    </View>
+                    {state.routes[state.index].name === "overview" && (
+                      <PeriodSelector
+                        selectedPeriod={period}
+                        onPeriodChange={setPeriod}
+                        periods={periods}
+                        allowCustomRange
+                        onCustomRangeSelect={handleCustomRange}
+                        placement="toolbar"
+                      />
+                    )}
+                  </View>
+                )
+              : undefined
+          }
           screenOptions={{
             tabBarActiveTintColor: theme.colors.primary,
             tabBarInactiveTintColor: theme.colors.textSecondary,
@@ -78,5 +144,14 @@ export default function AnalyticsLayout() {
         </Tab.Navigator>
       </MaxWidthContainer>
     </SafeAreaView>
+  );
+}
+
+export default function AnalyticsLayout() {
+  const { isWeb, isMobile } = useResponsiveLayout();
+  return (
+    <AnalyticsPeriodProvider enabled={isWeb && !isMobile}>
+      <AnalyticsTabs />
+    </AnalyticsPeriodProvider>
   );
 }
