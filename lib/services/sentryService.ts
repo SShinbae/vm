@@ -31,13 +31,11 @@ class SentryService {
     }
   }
 
-  identifyUser(userId: string, email?: string): void {
+  // ID only: no email or other PII leaves the app (store privacy labels).
+  identifyUser(userId: string): void {
     if (!this.initialized) return;
 
-    Sentry.setUser({
-      id: userId,
-      email: email || undefined,
-    });
+    Sentry.setUser({ id: userId });
   }
 
   clearUser(): void {

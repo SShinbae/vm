@@ -5,6 +5,8 @@ const mockSingle = jest.fn();
 const mockClearUser = jest.fn();
 const mockOrder: string[] = [];
 const mockReset = jest.fn(() => mockOrder.push("reset"));
+const mockIdentify = jest.fn();
+const mockIdentifyUser = jest.fn();
 let mockAuthCb: any;
 jest.mock("@/services/supabaseClient", () => {
   const q: any = {
@@ -42,14 +44,17 @@ jest.mock("posthog-react-native", () => ({
   usePostHog: () => ({
     reset: mockReset,
     capture: (e: string) => mockOrder.push(`capture:${e}`),
-    identify: jest.fn(),
+    identify: (...a: unknown[]) => mockIdentify(...a),
   }),
 }));
 jest.mock("@/lib/services/pushService", () => ({
   pushService: { syncUser: jest.fn(), onLogout: jest.fn() },
 }));
 jest.mock("@/lib/services/sentryService", () => ({
-  sentryService: { identifyUser: jest.fn(), clearUser: () => mockClearUser() },
+  sentryService: {
+    identifyUser: (...a: unknown[]) => mockIdentifyUser(...a),
+    clearUser: () => mockClearUser(),
+  },
 }));
 
 import { AuthProvider, useAuth } from "@/lib/contexts/AuthContext";
@@ -119,6 +124,16 @@ describe("refreshProfile timeout", () => {
     } finally {
       jest.useRealTimers();
     }
+  });
+});
+
+describe("analytics identify", () => {
+  it("sends only the user id to Sentry and PostHog, never the email", async () => {
+    await setup();
+    expect(mockIdentifyUser).toHaveBeenCalledWith("u");
+    expect(mockIdentify).toHaveBeenCalledWith("u");
+    expect(JSON.stringify(mockIdentifyUser.mock.calls)).not.toContain("u@x");
+    expect(JSON.stringify(mockIdentify.mock.calls)).not.toContain("u@x");
   });
 });
 

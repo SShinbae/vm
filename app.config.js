@@ -58,11 +58,17 @@ module.exports = {
       },
       edgeToEdgeEnabled: true,
       predictiveBackGestureEnabled: false,
-      permissions: [
-        "CAMERA",
-        "READ_EXTERNAL_STORAGE",
-        "WRITE_EXTERNAL_STORAGE",
-        "READ_MEDIA_IMAGES",
+      permissions: ["CAMERA"],
+      // Play photo/video policy: the system photo picker needs no media
+      // permission on Android 13+. expo-image-picker still adds
+      // READ/WRITE_EXTERNAL_STORAGE itself for Android 12 and below.
+      blockedPermissions: [
+        "android.permission.READ_MEDIA_IMAGES",
+        "android.permission.READ_MEDIA_VIDEO",
+        "android.permission.READ_MEDIA_AUDIO",
+        "android.permission.READ_MEDIA_VISUAL_USER_SELECTED",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.SYSTEM_ALERT_WINDOW",
       ],
     },
     web: {
@@ -90,6 +96,7 @@ module.exports = {
         },
       ],
       "expo-web-browser",
+      ["expo-image-picker", { microphonePermission: false }],
       [
         "expo-splash-screen",
         {

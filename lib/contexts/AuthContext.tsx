@@ -273,13 +273,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
                 loading: false,
               }));
               // Identify user in Sentry and PostHog
-              sentryService.identifyUser(
-                session.user.id,
-                session.user.email || undefined,
-              );
-              posthog?.identify(session.user.id, {
-                email: session.user.email ?? null,
-              });
+              sentryService.identifyUser(session.user.id);
+              posthog?.identify(session.user.id);
               // Defer profile fetch to run AFTER callback returns and lock is released
               setTimeout(() => {
                 fetchUserProfile(session.user)
@@ -422,13 +417,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
         data: { user: signedInUser },
       } = await supabase.auth.getUser();
       if (signedInUser) {
-        sentryService.identifyUser(
-          signedInUser.id,
-          signedInUser.email || undefined,
-        );
-        posthog?.identify(signedInUser.id, {
-          email: signedInUser.email ?? null,
-        });
+        sentryService.identifyUser(signedInUser.id);
+        posthog?.identify(signedInUser.id);
       }
 
       posthog?.capture("user_signed_in");

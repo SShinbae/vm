@@ -1,6 +1,6 @@
 import { spacing } from "@/src/design-system";
 import { Image } from "expo-image";
-import { Link, useRouter } from "expo-router";
+import { Link } from "expo-router";
 import React from "react";
 import { Linking, Pressable, Text, TouchableOpacity, View } from "react-native";
 import { useStyles } from "react-native-unistyles";
@@ -9,18 +9,25 @@ import { Section, useBreakpoint } from "./layout";
 
 export function LandingFooter() {
   const { theme } = useStyles();
-  const router = useRouter();
   const { isMobile } = useBreakpoint();
 
+  const pageLinks = [
+    { label: "Privacy", href: "/privacy" },
+    { label: "Terms", href: "/terms" },
+  ] as const;
   const links = [
-    { label: "Privacy", onPress: () => router.push("/privacy") },
-    { label: "Terms", onPress: () => router.push("/terms") },
     { label: "GitHub", onPress: () => Linking.openURL(GITHUB_URL) },
     {
       label: "Contact",
       onPress: () => Linking.openURL(`mailto:${CONTACT_EMAIL}`),
     },
   ];
+
+  const linkTextStyle = {
+    fontSize: 15,
+    fontWeight: "500" as const,
+    color: theme.colors.text,
+  };
 
   return (
     <Section
@@ -51,6 +58,11 @@ export function LandingFooter() {
               <Pressable
                 accessibilityRole="link"
                 accessibilityLabel="Vehicle Management home"
+                style={{
+                  minHeight: 44,
+                  minWidth: 44,
+                  justifyContent: "center",
+                }}
               >
                 <Image
                   source={require("@/assets/images/vm_logo.webp")}
@@ -61,27 +73,33 @@ export function LandingFooter() {
               </Pressable>
             </Link>
           </View>
-          <Text style={{ fontSize: 14, color: theme.colors.textSecondary }}>
-            Track. Monitor. Optimize.
+          <Text style={{ fontSize: 14, color: theme.colors.text }}>
+            A clearer picture of car ownership.
           </Text>
         </View>
 
-        <View style={{ flexDirection: "row", gap: spacing.xl }}>
+        <View
+          style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing.lg }}
+        >
+          {/* Real <a href> on web: Google OAuth verification needs a crawlable privacy link. */}
+          {pageLinks.map((link) => (
+            <Link key={link.label} href={link.href} asChild>
+              <Pressable
+                accessibilityRole="link"
+                style={{ minHeight: 44, justifyContent: "center" }}
+              >
+                <Text style={linkTextStyle}>{link.label}</Text>
+              </Pressable>
+            </Link>
+          ))}
           {links.map((link) => (
             <TouchableOpacity
               key={link.label}
               onPress={link.onPress}
               accessibilityRole="link"
+              style={{ minHeight: 44, justifyContent: "center" }}
             >
-              <Text
-                style={{
-                  fontSize: 15,
-                  fontWeight: "500",
-                  color: theme.colors.textSecondary,
-                }}
-              >
-                {link.label}
-              </Text>
+              <Text style={linkTextStyle}>{link.label}</Text>
             </TouchableOpacity>
           ))}
         </View>
@@ -90,7 +108,7 @@ export function LandingFooter() {
       <Text
         style={{
           fontSize: 13,
-          color: theme.colors.textSecondary,
+          color: theme.colors.text,
           marginTop: spacing.xl,
         }}
       >
