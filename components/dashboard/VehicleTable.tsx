@@ -1,3 +1,4 @@
+import { storageImageUrl } from "@/lib/utils/storagePath";
 import { withOpacity, spacing } from "@/src/design-system";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { VehicleWithShares } from "@/hooks/useDashboardDataQuery";
@@ -26,7 +27,9 @@ function VehicleTableRow({ vehicle }: { vehicle: VehicleWithShares }) {
       <View style={styles.vehicleColumn}>
         {vehicle.main_image_url && !imageError ? (
           <Image
-            source={{ uri: vehicle.main_image_url }}
+            source={{
+              uri: storageImageUrl("vehicle-images", vehicle.main_image_url),
+            }}
             style={styles.vehicleImage}
             contentFit="cover"
             cachePolicy="memory-disk"

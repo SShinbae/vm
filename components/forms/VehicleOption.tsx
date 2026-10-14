@@ -1,3 +1,4 @@
+import { storageImageUrl } from "@/lib/utils/storagePath";
 import { withOpacity } from "@/src/design-system";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { VehicleWithDetails } from "@/types/database-v2";
@@ -34,7 +35,9 @@ export function VehicleOption({
     >
       {vehicle.main_image_url && !imageError ? (
         <Image
-          source={{ uri: vehicle.main_image_url }}
+          source={{
+            uri: storageImageUrl("vehicle-images", vehicle.main_image_url),
+          }}
           style={styles.vehicleIcon}
           contentFit="cover"
           onError={() => setImageError(true)}

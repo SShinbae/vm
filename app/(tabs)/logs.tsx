@@ -1,3 +1,4 @@
+import { storageImageUrl } from "@/lib/utils/storagePath";
 import { withOpacity, spacing } from "@/src/design-system";
 import { LogDetailsBottomSheet } from "@/components/logs";
 import { MaxWidthContainer } from "@/components/layout/MaxWidthContainer";
@@ -522,7 +523,9 @@ export default function LogsScreen() {
       >
         {vehicle?.main_image_url && !imageError ? (
           <Image
-            source={{ uri: vehicle.main_image_url }}
+            source={{
+              uri: storageImageUrl("vehicle-images", vehicle.main_image_url),
+            }}
             style={{
               width: 36,
               height: 36,

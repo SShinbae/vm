@@ -7,6 +7,19 @@ const mockChoose = jest.fn();
 const mockUploadFromUri = jest.fn();
 const mockUploadAvatarFromUri = jest.fn();
 const mockUploadVehicleImage = jest.fn();
+const mockImage = jest.fn((_props?: unknown) => null);
+
+jest.mock("@/services/supabaseClient", () => ({
+  supabase: {
+    storage: {
+      from: (bucket: string) => ({
+        getPublicUrl: (path: string) => ({
+          data: { publicUrl: `https://cdn.test/${bucket}/${path}` },
+        }),
+      }),
+    },
+  },
+}));
 
 jest.mock("@/hooks/useToast", () => ({
   useToast: () => ({
@@ -37,7 +50,9 @@ jest.mock("expo-image-picker", () => ({
     assets: [{ uri: "file:///photo.jpg" }],
   }),
 }));
-jest.mock("expo-image", () => ({ Image: () => null }));
+jest.mock("expo-image", () => ({
+  Image: (props: unknown) => mockImage(props),
+}));
 jest.mock("@/components/ui/ImageCropModal", () => ({
   ImageCropModal: () => null,
 }));
@@ -90,6 +105,43 @@ describe("ImageUpload select-only mode (onImageSelected)", () => {
     expect(mockUploadAvatarFromUri).not.toHaveBeenCalled();
     expect(mockUploadVehicleImage).not.toHaveBeenCalled();
     expect(mockShowError).not.toHaveBeenCalled();
+  });
+});
+
+describe("ImageUpload image source", () => {
+  it("renders a stored avatar path as its public URL", () => {
+    render(<ImageUpload type="avatar" currentImageUrl="uid/avatar_1.jpg" />);
+
+    expect(mockImage).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        source: { uri: "https://cdn.test/profile-avatars/uid/avatar_1.jpg" },
+      }),
+    );
+  });
+
+  it("renders a stored vehicle path as its public URL", () => {
+    render(
+      <ImageUpload
+        type="vehicle_main"
+        vehicleId="v1"
+        currentImageUrl="uid/v.jpg"
+      />,
+    );
+
+    expect(mockImage).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        source: { uri: "https://cdn.test/vehicle-images/uid/v.jpg" },
+      }),
+    );
+  });
+
+  it("leaves an external https URL unchanged", () => {
+    const google = "https://lh3.googleusercontent.com/a/abc=s96-c";
+    render(<ImageUpload type="avatar" currentImageUrl={google} />);
+
+    expect(mockImage).toHaveBeenLastCalledWith(
+      expect.objectContaining({ source: { uri: google } }),
+    );
   });
 });
 

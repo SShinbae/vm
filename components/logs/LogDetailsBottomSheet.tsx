@@ -1,3 +1,4 @@
+import { storageImageUrl } from "@/lib/utils/storagePath";
 import { withOpacity, spacing } from "@/src/design-system";
 import { Button } from "@/components/ui/Button";
 import { IconSymbol } from "@/components/ui/icon-symbol";
@@ -320,7 +321,12 @@ export const LogDetailsBottomSheet = forwardRef<
               <View style={styles.vehicleCardContent}>
                 {vehicle.main_image_url ? (
                   <Image
-                    source={{ uri: vehicle.main_image_url }}
+                    source={{
+                      uri: storageImageUrl(
+                        "vehicle-images",
+                        vehicle.main_image_url,
+                      ),
+                    }}
                     style={styles.vehicleImage}
                     contentFit="cover"
                     cachePolicy="memory-disk"

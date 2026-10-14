@@ -1,6 +1,7 @@
 import { baseColors, withOpacity, spacing } from "@/src/design-system";
 import { useStyles } from "react-native-unistyles";
 import { ImageUploadService } from "@/lib/services/imageUploadService";
+import { storageImageUrl } from "@/lib/utils/storagePath";
 import { Image } from "expo-image";
 import * as ImagePicker from "expo-image-picker";
 import { MediaTypeOptions } from "expo-image-picker";
@@ -445,7 +446,12 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
     }
   };
 
-  const imageSource = localImageUri || currentImageUrl;
+  const imageSource =
+    localImageUri ||
+    storageImageUrl(
+      type === "avatar" ? "profile-avatars" : "vehicle-images",
+      currentImageUrl,
+    );
   const imageSize = getImageSize();
 
   const styles = StyleSheet.create({
@@ -662,7 +668,9 @@ export const ImageGallery: React.FC<ImageGalleryProps> = ({
         {images.map((image) => (
           <View key={image.id} style={styles.imageItem}>
             <Image
-              source={{ uri: image.image_url }}
+              source={{
+                uri: storageImageUrl("vehicle-images", image.image_url),
+              }}
               style={{ width: 100, height: 100, borderRadius: 8 }}
               contentFit="cover"
               cachePolicy="memory-disk"

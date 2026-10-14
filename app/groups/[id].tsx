@@ -1,3 +1,4 @@
+import { storageImageUrl } from "@/lib/utils/storagePath";
 import { withOpacity, spacing } from "@/src/design-system";
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import {
@@ -298,7 +299,12 @@ export default function GroupDetailScreen() {
         <View style={{ flexDirection: "row", alignItems: "flex-start" }}>
           {member.profiles?.avatar_url ? (
             <Image
-              source={{ uri: member.profiles.avatar_url }}
+              source={{
+                uri: storageImageUrl(
+                  "profile-avatars",
+                  member.profiles.avatar_url,
+                ),
+              }}
               style={{
                 width: 40,
                 height: 40,
@@ -491,7 +497,9 @@ export default function GroupDetailScreen() {
       <View style={{ flexDirection: "row", alignItems: "center" }}>
         {vehicle.main_image_url ? (
           <Image
-            source={{ uri: vehicle.main_image_url }}
+            source={{
+              uri: storageImageUrl("vehicle-images", vehicle.main_image_url),
+            }}
             style={{
               width: 60,
               height: 60,

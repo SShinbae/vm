@@ -159,6 +159,29 @@ describe("vehicleSchema", () => {
     });
   });
 
+  describe("main_image_url", () => {
+    const base = {
+      make: "Toyota",
+      model: "Camry",
+      year: 2022,
+      license_plate: "ABC123",
+    };
+
+    it("accepts a stored bucket path", () => {
+      const result = vehicleSchema.safeParse({
+        ...base,
+        main_image_url: "uid/vehicle_v1_1791952672430.jpg",
+      });
+      expect(result.success).toBe(true);
+    });
+
+    it("accepts an empty value", () => {
+      expect(
+        vehicleSchema.safeParse({ ...base, main_image_url: "" }).success,
+      ).toBe(true);
+    });
+  });
+
   describe("default values", () => {
     it("should have correct default values", () => {
       expect(vehicleDefaultValues.make).toBe("");

@@ -1,3 +1,4 @@
+import { storageImageUrl } from "@/lib/utils/storagePath";
 import { withOpacity, spacing } from "@/src/design-system";
 import { useStyles } from "react-native-unistyles";
 import { IconSymbol } from "@/components/ui/icon-symbol";
@@ -557,7 +558,9 @@ export function WebSidebar() {
                   </Text>
                   {avatarUrl && !avatarError ? (
                     <Image
-                      source={{ uri: avatarUrl }}
+                      source={{
+                        uri: storageImageUrl("profile-avatars", avatarUrl),
+                      }}
                       style={styles.avatarImage}
                       contentFit="cover"
                       cachePolicy="memory-disk"

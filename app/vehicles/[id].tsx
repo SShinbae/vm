@@ -1,3 +1,4 @@
+import { storageImageUrl } from "@/lib/utils/storagePath";
 import { baseColors, withOpacity, spacing } from "@/src/design-system";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useStyles } from "react-native-unistyles";
@@ -1072,7 +1073,12 @@ export default function VehicleDetailScreen() {
             {vehicle.main_image_url && !imageError ? (
               <>
                 <Image
-                  source={{ uri: vehicle.main_image_url }}
+                  source={{
+                    uri: storageImageUrl(
+                      "vehicle-images",
+                      vehicle.main_image_url,
+                    ),
+                  }}
                   style={styles.heroBackground}
                   contentFit="cover"
                   cachePolicy="memory-disk"
@@ -1093,7 +1099,12 @@ export default function VehicleDetailScreen() {
                   {vehicle.main_image_url && !imageError ? (
                     <View style={{ position: "relative" }}>
                       <Image
-                        source={{ uri: vehicle.main_image_url }}
+                        source={{
+                          uri: storageImageUrl(
+                            "vehicle-images",
+                            vehicle.main_image_url,
+                          ),
+                        }}
                         style={styles.vehicleIcon}
                         contentFit="cover"
                         cachePolicy="memory-disk"

@@ -1,5 +1,6 @@
 import { withOpacity } from "@/src/design-system";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
+import { storageImageUrl } from "@/lib/utils/storagePath";
 import React, { useState } from "react";
 import { Animated, Pressable, Text, View } from "react-native";
 import { Image } from "expo-image";
@@ -51,7 +52,7 @@ export const VehicleCard = React.memo(
 
     const imageUrl =
       vehicle.main_image_url && isValidImageUrl(vehicle.main_image_url)
-        ? vehicle.main_image_url
+        ? storageImageUrl("vehicle-images", vehicle.main_image_url)
         : null;
 
     return (

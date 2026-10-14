@@ -1,3 +1,4 @@
+import { storageImageUrl } from "@/lib/utils/storagePath";
 import { withOpacity, spacing } from "@/src/design-system";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { SkeletonList } from "@/components/ui/Skeleton";
@@ -192,7 +193,12 @@ export default function GroupsScreen() {
                 >
                   {member.profiles?.avatar_url ? (
                     <Image
-                      source={{ uri: member.profiles.avatar_url }}
+                      source={{
+                        uri: storageImageUrl(
+                          "profile-avatars",
+                          member.profiles.avatar_url,
+                        ),
+                      }}
                       style={{
                         width: "100%",
                         height: "100%",

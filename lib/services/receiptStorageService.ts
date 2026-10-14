@@ -1,31 +1,16 @@
 import { logger } from "@/lib/utils/logger";
+import { isLocalUri, toBucketPath } from "@/lib/utils/storagePath";
 import { supabase } from "../../services/supabaseClient";
 import { ApiResponse } from "../../types";
 
-const LOCAL_URI_PREFIXES = [
-  "file:",
-  "content:",
-  "ph:",
-  "assets-library:",
-  "blob:",
-  "data:",
-];
-
-/** True for on-device URIs (a just-captured photo), which are never signed. */
-export function isLocalUri(value: string): boolean {
-  return LOCAL_URI_PREFIXES.some((prefix) => value.startsWith(prefix));
-}
+export { isLocalUri };
 
 /**
  * Normalize a stored receipt value to a bucket path. Accepts a bare path
  * (returned as is) or a legacy full Supabase URL (host and prefix stripped).
  */
 export function toReceiptPath(value: string): string {
-  const withoutQuery = value.split("?")[0];
-  return withoutQuery.replace(
-    /^https?:\/\/[^/]+\/storage\/v1\/object\/(public|sign|authenticated)\/receipt-images\//,
-    "",
-  );
+  return toBucketPath("receipt-images", value);
 }
 
 export class ReceiptStorageService {

@@ -1,3 +1,4 @@
+import { storageImageUrl } from "@/lib/utils/storagePath";
 import { withOpacity } from "@/src/design-system";
 import React, { useCallback, useMemo, forwardRef } from "react";
 import { View, Text, TouchableOpacity } from "react-native";
@@ -78,7 +79,9 @@ export const VehicleDetailsBottomSheet = forwardRef<
         {vehicle?.main_image_url && (
           <View style={styles.bottomSheetImageContainer}>
             <Image
-              source={{ uri: vehicle.main_image_url }}
+              source={{
+                uri: storageImageUrl("vehicle-images", vehicle.main_image_url),
+              }}
               style={styles.bottomSheetImage}
               contentFit="cover"
               cachePolicy="memory-disk"

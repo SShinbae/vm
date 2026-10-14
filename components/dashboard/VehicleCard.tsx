@@ -1,3 +1,4 @@
+import { storageImageUrl } from "@/lib/utils/storagePath";
 import { withOpacity } from "@/src/design-system";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { VehicleWithShares } from "@/hooks/useDashboardDataQuery";
@@ -28,7 +29,9 @@ export function VehicleCard({ vehicle }: VehicleCardProps) {
     >
       {vehicle.main_image_url && !imageError ? (
         <Image
-          source={{ uri: vehicle.main_image_url }}
+          source={{
+            uri: storageImageUrl("vehicle-images", vehicle.main_image_url),
+          }}
           style={styles.vehicleImage}
           contentFit="cover"
           cachePolicy="memory-disk"

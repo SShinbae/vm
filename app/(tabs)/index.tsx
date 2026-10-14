@@ -1,3 +1,4 @@
+import { storageImageUrl } from "@/lib/utils/storagePath";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { SkeletonDashboard } from "@/components/ui/Skeleton";
 import { useFocusEffect } from "@react-navigation/native";
@@ -200,7 +201,9 @@ export default function DashboardScreen() {
                     </Text>
                     {avatarUrl && !avatarError && (
                       <Image
-                        source={{ uri: avatarUrl }}
+                        source={{
+                          uri: storageImageUrl("profile-avatars", avatarUrl),
+                        }}
                         style={styles.avatarImage}
                         contentFit="cover"
                         onError={() => setAvatarError(true)}
