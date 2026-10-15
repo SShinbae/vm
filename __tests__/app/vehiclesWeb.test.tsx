@@ -1,6 +1,9 @@
+import { router } from "expo-router";
 import React from "react";
 import { render, screen, fireEvent } from "@testing-library/react-native";
 import VehiclesScreen from "@/app/(tabs)/vehicles";
+
+jest.mock("expo-router", () => ({ router: { push: jest.fn() } }));
 
 const mockLayout = { isWeb: true, isMobile: false, isDesktop: true };
 const mockClearSearch = jest.fn();
@@ -54,17 +57,20 @@ jest.mock("@/components/vehicles/VehicleFilters", () => ({
   VehicleFilters: () => null,
 }));
 jest.mock("@/components/dashboard/VehicleTable", () => ({
-  VehicleTable: ({ vehicles }: any) => {
-    const { Text } = require("react-native");
+  VehicleTable: ({ vehicles, onView }: any) => {
+    const { Text, Button } = require("react-native");
     return (
-      <Text>
-        {vehicles
-          .map(
-            (vehicle: any) =>
-              `${vehicle.id}:${vehicle.isSharedWithMe}:${vehicle.shareCount}`,
-          )
-          .join(",")}
-      </Text>
+      <>
+        <Button title="Open owned vehicle" onPress={() => onView("owned")} />
+        <Text>
+          {vehicles
+            .map(
+              (vehicle: any) =>
+                `${vehicle.id}:${vehicle.isSharedWithMe}:${vehicle.shareCount}`,
+            )
+            .join(",")}
+        </Text>
+      </>
     );
   },
 }));
@@ -104,4 +110,13 @@ it("allows clearing filters when accessible vehicles have no matches", () => {
   fireEvent.press(screen.getByText("Clear filters"));
   expect(mockClearSearch).toHaveBeenCalledWith("");
   expect(mockSetFilter).toHaveBeenCalledWith("all");
+});
+
+it("preserves the Vehicles list origin when opening a table row", () => {
+  render(<VehiclesScreen />);
+  fireEvent.press(screen.getByText("Open owned vehicle"));
+  expect(router.push).toHaveBeenCalledWith({
+    pathname: "/vehicles/[id]",
+    params: { id: "owned", returnTo: "vehicles" },
+  });
 });

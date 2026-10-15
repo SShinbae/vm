@@ -20,9 +20,18 @@ export type VehicleTableItem = Pick<
   | "isSharedWithMe"
   | "shareCount"
 >;
-type VehicleTableProps = { vehicles: VehicleTableItem[] };
+type VehicleTableProps = {
+  vehicles: VehicleTableItem[];
+  onView?: (id: string) => void;
+};
 
-function VehicleTableRow({ vehicle }: { vehicle: VehicleTableItem }) {
+function VehicleTableRow({
+  vehicle,
+  onView,
+}: {
+  vehicle: VehicleTableItem;
+  onView?: (id: string) => void;
+}) {
   const { styles, theme } = useStyles(stylesheet);
   const [imageError, setImageError] = useState(false);
 
@@ -120,7 +129,11 @@ function VehicleTableRow({ vehicle }: { vehicle: VehicleTableItem }) {
       <View style={styles.actionsColumn}>
         <TouchableOpacity
           style={styles.viewButton}
-          onPress={() => router.push(`/vehicles/${vehicle.id}` as any)}
+          onPress={() =>
+            onView
+              ? onView(vehicle.id)
+              : router.push(`/vehicles/${vehicle.id}` as any)
+          }
           accessibilityLabel={`View details for ${vehicleName}`}
         >
           <Text style={styles.viewButtonText}>View</Text>
@@ -130,7 +143,7 @@ function VehicleTableRow({ vehicle }: { vehicle: VehicleTableItem }) {
   );
 }
 
-export function VehicleTable({ vehicles }: VehicleTableProps) {
+export function VehicleTable({ vehicles, onView }: VehicleTableProps) {
   const { styles } = useStyles(stylesheet);
   const [width, setWidth] = useState(0);
 
@@ -162,7 +175,11 @@ export function VehicleTable({ vehicles }: VehicleTableProps) {
 
           {/* Data Rows */}
           {vehicles.map((vehicle) => (
-            <VehicleTableRow key={vehicle.id} vehicle={vehicle} />
+            <VehicleTableRow
+              key={vehicle.id}
+              vehicle={vehicle}
+              onView={onView}
+            />
           ))}
         </View>
       </ScrollView>

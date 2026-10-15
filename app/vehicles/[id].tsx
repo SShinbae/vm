@@ -1,3 +1,4 @@
+import { goBack } from "@/lib/utils/goBack";
 import { storageImageUrl } from "@/lib/utils/storagePath";
 import { baseColors, withOpacity, spacing } from "@/src/design-system";
 import { useColorScheme } from "@/hooks/use-color-scheme";
@@ -30,10 +31,8 @@ import { VehicleWithDetails } from "@/types/database-v2";
 import { Image } from "expo-image";
 import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
 import Head from "expo-router/head";
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
-  Dimensions,
-  Platform,
   RefreshControl,
   ScrollView,
   StyleSheet,
@@ -43,10 +42,32 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import { DashboardWebLayout } from "@/components/layout/DashboardWebLayout";
+import { Breadcrumbs } from "@/components/layout/Breadcrumbs";
+import {
+  webPageStyles,
+  WEB_PAGE_MAX_WIDTH,
+} from "@/components/layout/webPageStyles";
+import { MetricCard } from "@/components/analytics/MetricCard";
+import { WebFilterButton } from "@/components/ui/WebFilterButton";
+import { Button } from "@/components/ui/Button";
+import { useResponsiveLayout } from "@/hooks/use-responsive-layout";
+
 type LogTab = "mileage" | "fuel" | "service";
 
 export default function VehicleDetailScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  return (
+    <DashboardWebLayout>
+      <VehicleDetailContent />
+    </DashboardWebLayout>
+  );
+}
+
+function VehicleDetailContent() {
+  const { id, returnTo } = useLocalSearchParams<{
+    id: string;
+    returnTo?: string;
+  }>();
   const { user } = useAuth();
   const [vehicle, setVehicle] = useState<VehicleWithDetails | null>(null);
   const [loading, setLoading] = useState(true);
@@ -56,9 +77,15 @@ export default function VehicleDetailScreen() {
   const [imageError, setImageError] = useState(false);
   const [activeTab, setActiveTab] = useState<LogTab>("mileage");
   const [sharingExpanded, setSharingExpanded] = useState(false);
-  const [windowWidth, setWindowWidth] = useState(
-    Dimensions.get("window").width,
-  );
+  const layout = useResponsiveLayout();
+  const isWeb = layout.isWeb;
+  const isDesktopWeb = isWeb && !layout.isMobile;
+  const isMobile = !isDesktopWeb;
+  const userId = user?.id;
+  const focused = useRef(false);
+  const requestId = useRef(0);
+  const loadedId = useRef<string | undefined>(undefined);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   // Pagination states
   const [mileageCurrentPage, setMileageCurrentPage] = useState(1);
@@ -71,51 +98,46 @@ export default function VehicleDetailScreen() {
   const { showSuccess, showError } = useToast();
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [deleteLogLoading, setDeleteLogLoading] = useState(false);
-  const [canModify, setCanModify] = useState(true);
+  const [canModify, setCanModify] = useState(false);
   const { theme } = useStyles();
   const colorScheme = useColorScheme();
   const colors = theme.colors;
+  const { styles: web } = useStyles(webPageStyles);
 
   const fetchVehicleData = useCallback(async () => {
-    if (!id) return;
-
+    if (!id || !focused.current) return;
+    const currentRequest = ++requestId.current;
+    setCanModify(false);
     try {
-      // Using VehicleService.getVehicleById for more detailed data
-      const vehicleResult = await VehicleService.getVehicleById(id);
-
-      if (vehicleResult.error) {
-        console.error("Error fetching vehicle:", vehicleResult.error);
-        toast.error("Failed to load vehicle details");
-        router.back();
-      } else if (vehicleResult.data) {
-        setVehicle(vehicleResult.data);
-
-        // Check if user can modify this vehicle's logs
-        if (user) {
-          const canAccess = await canUserAccessVehicle(id, user.id);
-          setCanModify(canAccess);
-        }
-      } else {
-        toast.error("Vehicle not found");
-        router.back();
-      }
-    } catch (error) {
-      console.error("Unexpected error fetching vehicle data:", error);
+      const result = await VehicleService.getVehicleById(id);
+      if (!focused.current || currentRequest !== requestId.current) return;
+      if (result.error || !result.data)
+        throw new Error(result.error || "Vehicle not found");
+      setVehicle(result.data);
+      setLoadError(null);
+      const canAccess = userId ? await canUserAccessVehicle(id, userId) : false;
+      if (!focused.current || currentRequest !== requestId.current) return;
+      setCanModify(canAccess);
+    } catch {
+      if (!focused.current || currentRequest !== requestId.current) return;
+      setLoadError("Failed to load vehicle details");
       toast.error("Failed to load vehicle details");
-      router.back();
+      if (!isDesktopWeb) goBack("/vehicles");
+    } finally {
+      if (focused.current && currentRequest === requestId.current) {
+        setLoading(false);
+        setRefreshing(false);
+      }
     }
-
-    setLoading(false);
-  }, [id, user]);
+  }, [id, userId, isDesktopWeb]);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
     await fetchVehicleData();
-    setRefreshing(false);
   }, [fetchVehicleData]);
 
   const handleDelete = async () => {
-    if (!vehicle || deleteLoading) return;
+    if (!vehicle?.is_own_vehicle || deleteLoading) return;
     const ok = await confirm({
       title: "Delete Vehicle",
       message: `Are you sure you want to delete ${vehicle.year} ${vehicle.make} ${vehicle.model}? This action cannot be undone and will delete all associated logs.`,
@@ -130,7 +152,8 @@ export default function VehicleDetailScreen() {
       if (error) {
         showError("Failed to delete vehicle");
       } else {
-        router.back();
+        if (isDesktopWeb) router.replace("/vehicles");
+        else goBack("/vehicles");
       }
     } finally {
       setDeleteLoading(false);
@@ -142,7 +165,7 @@ export default function VehicleDetailScreen() {
     logId: string,
     description: string,
   ) => {
-    if (deleteLogLoading) return;
+    if (!canModify || deleteLogLoading) return;
     const ok = await confirm({
       title: `Delete ${type} Log`,
       message: `Are you sure you want to delete this ${type} log?\n\n${description}\n\nThis action cannot be undone.`,
@@ -178,6 +201,7 @@ export default function VehicleDetailScreen() {
   };
 
   const handleEditLog = (type: LogTab, id: string) => {
+    if (!canModify) return;
     switch (type) {
       case "mileage":
         router.push(`/logs/mileage/${id}/edit` as any);
@@ -191,9 +215,26 @@ export default function VehicleDetailScreen() {
     }
   };
 
+  const handleAddLog = () => {
+    if (!vehicle || !canModify) return;
+    router.push({
+      pathname: `/logs/${activeTab}/add`,
+      params: {
+        vehicleId: vehicle.id,
+        ...(returnTo === "vehicles" ? { returnTo } : {}),
+      },
+    });
+  };
+
   const openSharingModal = async () => {
-    if (!vehicle) return;
-    const { data } = await VehicleService.getVehicleSharingConfig(vehicle.id);
+    if (!vehicle?.is_own_vehicle) return;
+    const { data, error } = await VehicleService.getVehicleSharingConfig(
+      vehicle.id,
+    );
+    if (error) {
+      showError("Couldn't load vehicle sharing", { message: error });
+      return;
+    }
     setCurrentShares(
       (data?.shared_groups ?? []).map(
         (s) => ({ id: s.group_id, name: s.group_name }) as Group,
@@ -207,34 +248,25 @@ export default function VehicleDetailScreen() {
     if (success) await fetchVehicleData();
   };
 
-  useEffect(() => {
-    fetchVehicleData();
-  }, [fetchVehicleData]);
-
-  // Window resize listener for responsive web
-  useEffect(() => {
-    if (Platform.OS !== "web") return;
-
-    const handleResize = () => {
-      setWindowWidth(Dimensions.get("window").width);
-    };
-
-    const subscription = Dimensions.addEventListener("change", handleResize);
-
-    return () => {
-      subscription?.remove();
-    };
-  }, []);
-
-  // Refresh data when screen comes into focus (e.g., after adding a new log)
   useFocusEffect(
     useCallback(() => {
-      if (vehicle) {
-        // Only refresh if we already have vehicle data loaded
-        fetchVehicleData();
+      focused.current = true;
+      if (loadedId.current !== id) {
+        loadedId.current = id;
+        setVehicle(null);
+        setLoading(true);
+        setLoadError(null);
+        setImageError(false);
       }
-    }, [fetchVehicleData, vehicle]),
+      void fetchVehicleData();
+      return () => {
+        focused.current = false;
+        requestId.current += 1;
+      };
+    }, [id, fetchVehicleData]),
   );
+
+  useEffect(() => setImageError(false), [vehicle?.main_image_url]);
 
   // Reset pagination when switching tabs
   useEffect(() => {
@@ -243,80 +275,95 @@ export default function VehicleDetailScreen() {
     setServiceCurrentPage(1);
   }, [activeTab]);
 
-  // Responsive breakpoints
-  const isWeb = Platform.OS === "web";
-  const isMobileWeb = isWeb && windowWidth < 768;
-  const isDesktopWeb = isWeb && windowWidth >= 768;
-  const isMobile = !isWeb || isMobileWeb;
+  const vehicleName =
+    vehicle?.id === id
+      ? `${vehicle.year} ${vehicle.make} ${vehicle.model}`
+      : "Vehicle";
+  const breadcrumbs = (
+    <Breadcrumbs
+      items={[{ label: "Vehicles", href: "/vehicles" }, { label: vehicleName }]}
+    />
+  );
 
-  const StatCard = ({
-    title,
-    value,
-    subtitle,
-    icon,
-    gradient = false,
-  }: any) => (
-    <View
-      style={[
-        styles.statCard,
-        isDesktopWeb && styles.statCardWeb,
-        gradient && styles.statCardGradient,
-      ]}
-    >
-      <View style={styles.statCardHeader}>
-        <View style={[styles.statIcon, gradient && styles.statIconGradient]}>
-          <IconSymbol
-            name={icon}
-            size={isDesktopWeb ? 24 : 20}
-            color={gradient ? theme.colors.white : colors.primary}
-          />
-        </View>
-        {isDesktopWeb && subtitle && (
-          <View style={styles.statTrend}>
+  const StatCard = ({ title, value, subtitle, icon, gradient = false }: any) =>
+    isDesktopWeb ? (
+      <View
+        style={{
+          flexBasis: layout.isTablet ? "47%" : "22%",
+          flexGrow: 1,
+          minWidth: 160,
+        }}
+      >
+        <MetricCard title={title} value={value} subtitle={subtitle} />
+      </View>
+    ) : (
+      <View
+        style={[
+          styles.statCard,
+          isDesktopWeb && styles.statCardWeb,
+          gradient && styles.statCardGradient,
+        ]}
+      >
+        <View style={styles.statCardHeader}>
+          <View style={[styles.statIcon, gradient && styles.statIconGradient]}>
             <IconSymbol
-              name="arrow.up.right"
-              size={12}
-              color={colors.success}
+              name={icon}
+              size={isDesktopWeb ? 24 : 20}
+              color={gradient ? theme.colors.white : colors.primary}
             />
           </View>
-        )}
-      </View>
-      <View style={styles.statContent}>
-        <Text style={[styles.statValue, gradient && styles.statValueLight]}>
-          {value}
-        </Text>
-        <Text style={[styles.statTitle, gradient && styles.statTitleLight]}>
-          {title}
-        </Text>
-        {subtitle && (
-          <Text
-            style={[styles.statSubtitle, gradient && styles.statSubtitleLight]}
-          >
-            {subtitle}
+          {isDesktopWeb && subtitle && (
+            <View style={styles.statTrend}>
+              <IconSymbol
+                name="arrow.up.right"
+                size={12}
+                color={colors.success}
+              />
+            </View>
+          )}
+        </View>
+        <View style={styles.statContent}>
+          <Text style={[styles.statValue, gradient && styles.statValueLight]}>
+            {value}
           </Text>
-        )}
+          <Text style={[styles.statTitle, gradient && styles.statTitleLight]}>
+            {title}
+          </Text>
+          {subtitle && (
+            <Text
+              style={[
+                styles.statSubtitle,
+                gradient && styles.statSubtitleLight,
+              ]}
+            >
+              {subtitle}
+            </Text>
+          )}
+        </View>
       </View>
-    </View>
-  );
+    );
 
-  const TabButton = ({ label, icon, isActive, onPress }: any) => (
-    <TouchableOpacity
-      style={[styles.tabButton, isActive && styles.tabButtonActive]}
-      onPress={onPress}
-    >
-      <IconSymbol
-        name={icon}
-        size={isDesktopWeb ? 18 : 16}
-        color={isActive ? colors.primary : colors.textSecondary}
-      />
-      <Text
-        style={[styles.tabButtonText, isActive && styles.tabButtonTextActive]}
+  const TabButton = ({ label, icon, isActive, onPress }: any) =>
+    isDesktopWeb ? (
+      <WebFilterButton label={label} selected={isActive} onPress={onPress} />
+    ) : (
+      <TouchableOpacity
+        style={[styles.tabButton, isActive && styles.tabButtonActive]}
+        onPress={onPress}
       >
-        {label}
-      </Text>
-      {isActive && <View style={styles.tabIndicator} />}
-    </TouchableOpacity>
-  );
+        <IconSymbol
+          name={icon}
+          size={isDesktopWeb ? 18 : 16}
+          color={isActive ? colors.primary : colors.textSecondary}
+        />
+        <Text
+          style={[styles.tabButtonText, isActive && styles.tabButtonTextActive]}
+        >
+          {label}
+        </Text>
+        {isActive && <View style={styles.tabIndicator} />}
+      </TouchableOpacity>
+    );
 
   // Slice an array to the current page worth of items
   const getPaginatedItems = (items: any[], currentPage: number) => {
@@ -377,16 +424,73 @@ export default function VehicleDetailScreen() {
             label: "Edit",
             icon: "pencil",
             onPress: () => handleEditLog(logType, log.id),
-            disabled: !canModify,
+            disabled: !canModify || deleteLogLoading,
           },
           {
             label: "Delete",
             icon: "trash",
             onPress: () => handleDeleteLog(logType, log.id, getLogText()),
             variant: "danger",
-            disabled: !canModify,
+            disabled: !canModify || deleteLogLoading,
           },
         ];
+
+    if (isDesktopWeb) {
+      return (
+        <View
+          style={{
+            flexDirection: "row",
+            flexWrap: "wrap",
+            alignItems: "center",
+            gap: theme.spacing.md,
+            paddingVertical: theme.spacing.lg,
+            borderBottomWidth: 1,
+            borderBottomColor: colors.border,
+          }}
+        >
+          <TouchableOpacity
+            accessibilityRole={isServiceLog ? "button" : undefined}
+            onPress={handlePress}
+            disabled={!isServiceLog}
+            style={{ flex: 1, minWidth: 180 }}
+          >
+            <Text
+              style={{
+                color: colors.text,
+                fontWeight: "600",
+                fontSize: theme.fontSize.base,
+              }}
+            >
+              {getLogText()}
+            </Text>
+            {!!getLogSubtext() && (
+              <Text
+                style={{
+                  color: colors.textSecondary,
+                  marginTop: theme.spacing.xs,
+                }}
+              >
+                {getLogSubtext()}
+              </Text>
+            )}
+          </TouchableOpacity>
+          <Text style={{ color: colors.textSecondary, width: 120 }}>
+            {formatDate(log.date || log.created_at)}
+          </Text>
+          <View style={{ width: 28 }}>
+            {isServiceLog && log.receipt_image_url && (
+              <ServiceReceiptIndicator
+                hasReceipt
+                receiptUrl={log.receipt_image_url}
+                onPress={handlePress}
+                size={16}
+              />
+            )}
+          </View>
+          <ActionMenu items={actionMenuItems} disabled={deleteLogLoading} />
+        </View>
+      );
+    }
 
     return (
       <TouchableOpacity
@@ -486,8 +590,8 @@ export default function VehicleDetailScreen() {
     heroContent: {
       flex: 1,
       justifyContent: "flex-end",
-      padding: isDesktopWeb ? 40 : 16,
-      maxWidth: isDesktopWeb ? 1200 : undefined,
+      padding: isDesktopWeb ? theme.spacing.xl : 16,
+      maxWidth: isDesktopWeb ? WEB_PAGE_MAX_WIDTH : undefined,
       width: "100%",
       alignSelf: "center",
     },
@@ -622,12 +726,20 @@ export default function VehicleDetailScreen() {
       fontWeight: "600",
     },
     // Content Container
+    webFrame: {
+      width: "100%",
+      maxWidth: WEB_PAGE_MAX_WIDTH,
+      alignSelf: "center",
+      flexShrink: 0,
+      paddingHorizontal: theme.spacing.xl,
+      paddingTop: theme.spacing.lg,
+    },
     contentContainer: {
-      maxWidth: isDesktopWeb ? 1200 : undefined,
+      maxWidth: isDesktopWeb ? WEB_PAGE_MAX_WIDTH : undefined,
       width: "100%",
       alignSelf: "center",
-      padding: isDesktopWeb ? 40 : 16,
-      paddingTop: isDesktopWeb ? 32 : 16,
+      padding: isDesktopWeb ? theme.spacing.xl : 16,
+      paddingTop: isDesktopWeb ? theme.spacing.lg : 16,
     },
     // Sharing Section
     sharingCard: {
@@ -1027,6 +1139,7 @@ export default function VehicleDetailScreen() {
         </Head>
         <SafeAreaView style={styles.container}>
           {isMobile && <PageHeader title="Vehicle Details" showBack />}
+          {isDesktopWeb && <View style={styles.webFrame}>{breadcrumbs}</View>}
           <SkeletonVehicleDetail />
         </SafeAreaView>
       </React.Fragment>
@@ -1042,7 +1155,36 @@ export default function VehicleDetailScreen() {
         <SafeAreaView style={styles.container}>
           {isMobile && <PageHeader title="Vehicle Details" showBack />}
           <View style={styles.content}>
-            <Text style={styles.errorText}>Vehicle not found</Text>
+            {isDesktopWeb ? (
+              <View style={styles.webFrame}>
+                {breadcrumbs}
+                <View style={[web.panel, { gap: theme.spacing.lg }]}>
+                  <Text style={{ color: colors.text }}>
+                    {loadError || "Vehicle not found"}
+                  </Text>
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      flexWrap: "wrap",
+                      gap: theme.spacing.md,
+                    }}
+                  >
+                    <Button
+                      title="Retry"
+                      loading={refreshing}
+                      onPress={onRefresh}
+                    />
+                    <Button
+                      title="Return to Vehicles"
+                      variant="outline"
+                      onPress={() => router.replace("/vehicles")}
+                    />
+                  </View>
+                </View>
+              </View>
+            ) : (
+              <Text style={styles.errorText}>Vehicle not found</Text>
+            )}
           </View>
         </SafeAreaView>
       </React.Fragment>
@@ -1068,141 +1210,233 @@ export default function VehicleDetailScreen() {
           }
           showsVerticalScrollIndicator={false}
         >
-          {/* Hero Section */}
-          <View style={styles.heroSection}>
-            {vehicle.main_image_url && !imageError ? (
-              <>
-                <Image
-                  source={{
-                    uri: storageImageUrl(
-                      "vehicle-images",
-                      vehicle.main_image_url,
-                    ),
-                  }}
-                  style={styles.heroBackground}
-                  contentFit="cover"
-                  cachePolicy="memory-disk"
-                  transition={200}
-                  onError={() => setImageError(true)}
-                  blurRadius={isDesktopWeb ? 20 : 8}
+          {isDesktopWeb ? (
+            <View style={styles.webFrame}>
+              {breadcrumbs}
+              <View
+                style={[
+                  web.panel,
+                  {
+                    flexDirection: "row",
+                    flexWrap: "wrap",
+                    alignItems: "center",
+                    gap: theme.spacing.lg,
+                  },
+                ]}
+              >
+                {vehicle.main_image_url && !imageError ? (
+                  <Image
+                    source={{
+                      uri: storageImageUrl(
+                        "vehicle-images",
+                        vehicle.main_image_url,
+                      ),
+                    }}
+                    contentFit="cover"
+                    style={{
+                      width: 112,
+                      height: 80,
+                      borderRadius: theme.borderRadius.md,
+                    }}
+                    onError={() => setImageError(true)}
+                    accessibilityLabel={vehicleName}
+                  />
+                ) : (
+                  <View
+                    style={{
+                      width: 112,
+                      height: 80,
+                      justifyContent: "center",
+                      alignItems: "center",
+                      backgroundColor: colors.background,
+                      borderRadius: theme.borderRadius.md,
+                    }}
+                  >
+                    <IconSymbol
+                      name="car.fill"
+                      size={32}
+                      color={colors.textSecondary}
+                    />
+                  </View>
+                )}
+                <View style={{ flex: 1, minWidth: 200, gap: theme.spacing.sm }}>
+                  <Text
+                    style={{
+                      color: colors.text,
+                      fontSize: theme.fontSize.xl,
+                      fontWeight: "600",
+                    }}
+                  >
+                    {vehicleName}
+                  </Text>
+                  <Text style={{ color: colors.textSecondary }}>
+                    {vehicle.license_plate} ·{" "}
+                    {vehicle.is_own_vehicle ? "Owned" : "Shared with me"}
+                  </Text>
+                  {!!vehicle.vin && (
+                    <Text style={{ color: colors.textSecondary }}>
+                      VIN: {vehicle.vin}
+                    </Text>
+                  )}
+                  <Text style={{ color: colors.textSecondary }}>
+                    {formatDateWithPrefix(vehicle.created_at, "Added")}
+                  </Text>
+                </View>
+                <Button
+                  title="Edit Vehicle"
+                  variant="outline"
+                  disabled={!canModify}
+                  onPress={() => router.push(`/vehicles/${vehicle.id}/edit`)}
                 />
-                <View style={styles.heroOverlay} />
-              </>
-            ) : (
-              <View style={styles.heroOverlay} />
-            )}
+              </View>
+            </View>
+          ) : (
+            <>
+              {/* Hero Section */}
+              <View style={styles.heroSection}>
+                {vehicle.main_image_url && !imageError ? (
+                  <>
+                    <Image
+                      source={{
+                        uri: storageImageUrl(
+                          "vehicle-images",
+                          vehicle.main_image_url,
+                        ),
+                      }}
+                      style={styles.heroBackground}
+                      contentFit="cover"
+                      cachePolicy="memory-disk"
+                      transition={200}
+                      onError={() => setImageError(true)}
+                      blurRadius={isDesktopWeb ? 20 : 8}
+                    />
+                    <View style={styles.heroOverlay} />
+                  </>
+                ) : (
+                  <View style={styles.heroOverlay} />
+                )}
 
-            {/* Hero Content */}
-            <View style={styles.heroContent}>
-              <View style={styles.heroCard}>
-                <View style={styles.vehicleHeader}>
-                  {vehicle.main_image_url && !imageError ? (
-                    <View style={{ position: "relative" }}>
-                      <Image
-                        source={{
-                          uri: storageImageUrl(
-                            "vehicle-images",
-                            vehicle.main_image_url,
-                          ),
-                        }}
-                        style={styles.vehicleIcon}
-                        contentFit="cover"
-                        cachePolicy="memory-disk"
-                        transition={200}
-                      />
-                      <View style={styles.ownershipBadge}>
-                        <IconSymbol
-                          name={
-                            vehicle.is_own_vehicle
-                              ? "star.fill"
-                              : "person.3.fill"
+                {/* Hero Content */}
+                <View style={styles.heroContent}>
+                  <View style={styles.heroCard}>
+                    <View style={styles.vehicleHeader}>
+                      {vehicle.main_image_url && !imageError ? (
+                        <View style={{ position: "relative" }}>
+                          <Image
+                            source={{
+                              uri: storageImageUrl(
+                                "vehicle-images",
+                                vehicle.main_image_url,
+                              ),
+                            }}
+                            style={styles.vehicleIcon}
+                            contentFit="cover"
+                            cachePolicy="memory-disk"
+                            transition={200}
+                          />
+                          <View style={styles.ownershipBadge}>
+                            <IconSymbol
+                              name={
+                                vehicle.is_own_vehicle
+                                  ? "star.fill"
+                                  : "person.3.fill"
+                              }
+                              size={10}
+                              color={theme.colors.white}
+                            />
+                            <Text style={styles.ownershipBadgeText}>
+                              {vehicle.is_own_vehicle ? "Owned" : "Shared"}
+                            </Text>
+                          </View>
+                        </View>
+                      ) : (
+                        <View style={styles.vehicleIcon}>
+                          <IconSymbol
+                            name="car.fill"
+                            size={isDesktopWeb ? 36 : 26}
+                            color="white"
+                          />
+                        </View>
+                      )}
+                      <View style={styles.vehicleInfo}>
+                        <Text style={styles.vehicleName}>
+                          {vehicle.year} {vehicle.make} {vehicle.model}
+                        </Text>
+                        <Text style={styles.vehiclePlate}>
+                          {vehicle.license_plate}
+                        </Text>
+                      </View>
+
+                      {/* Action Buttons */}
+                      <View style={styles.vehicleActions}>
+                        <TouchableOpacity
+                          style={styles.actionButton}
+                          disabled={!canModify}
+                          onPress={() =>
+                            router.push(`/vehicles/${vehicle.id}/edit` as any)
                           }
-                          size={10}
-                          color={theme.colors.white}
+                        >
+                          <IconSymbol
+                            name="pencil"
+                            size={isDesktopWeb ? 18 : 16}
+                            color={colors.primary}
+                          />
+                        </TouchableOpacity>
+                        {vehicle.is_own_vehicle && (
+                          <TouchableOpacity
+                            style={styles.actionButton}
+                            onPress={handleDelete}
+                          >
+                            <IconSymbol
+                              name="trash"
+                              size={isDesktopWeb ? 18 : 16}
+                              color={colors.error}
+                            />
+                          </TouchableOpacity>
+                        )}
+                      </View>
+                    </View>
+
+                    <View style={styles.vehicleDetails}>
+                      {vehicle.vin && (
+                        <View style={styles.detailItem}>
+                          <IconSymbol
+                            name="number"
+                            size={14}
+                            color={colors.textSecondary}
+                          />
+                          <Text style={styles.detailLabel}>VIN:</Text>
+                          <Text style={styles.detailValue}>{vehicle.vin}</Text>
+                        </View>
+                      )}
+                      <View style={styles.detailItem}>
+                        <IconSymbol
+                          name="calendar"
+                          size={14}
+                          color={colors.textSecondary}
                         />
-                        <Text style={styles.ownershipBadgeText}>
-                          {vehicle.is_own_vehicle ? "Owned" : "Shared"}
+                        <Text style={styles.detailLabel}>Added:</Text>
+                        <Text style={styles.detailValue}>
+                          {formatDateWithPrefix(vehicle.created_at, "Added")}
                         </Text>
                       </View>
                     </View>
-                  ) : (
-                    <View style={styles.vehicleIcon}>
-                      <IconSymbol
-                        name="car.fill"
-                        size={isDesktopWeb ? 36 : 26}
-                        color="white"
-                      />
-                    </View>
-                  )}
-                  <View style={styles.vehicleInfo}>
-                    <Text style={styles.vehicleName}>
-                      {vehicle.year} {vehicle.make} {vehicle.model}
-                    </Text>
-                    <Text style={styles.vehiclePlate}>
-                      {vehicle.license_plate}
-                    </Text>
-                  </View>
-
-                  {/* Action Buttons */}
-                  <View style={styles.vehicleActions}>
-                    <TouchableOpacity
-                      style={styles.actionButton}
-                      onPress={() =>
-                        router.push(`/vehicles/${vehicle.id}/edit` as any)
-                      }
-                    >
-                      <IconSymbol
-                        name="pencil"
-                        size={isDesktopWeb ? 18 : 16}
-                        color={colors.primary}
-                      />
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      style={styles.actionButton}
-                      onPress={handleDelete}
-                    >
-                      <IconSymbol
-                        name="trash"
-                        size={isDesktopWeb ? 18 : 16}
-                        color={colors.error}
-                      />
-                    </TouchableOpacity>
-                  </View>
-                </View>
-
-                <View style={styles.vehicleDetails}>
-                  {vehicle.vin && (
-                    <View style={styles.detailItem}>
-                      <IconSymbol
-                        name="number"
-                        size={14}
-                        color={colors.textSecondary}
-                      />
-                      <Text style={styles.detailLabel}>VIN:</Text>
-                      <Text style={styles.detailValue}>{vehicle.vin}</Text>
-                    </View>
-                  )}
-                  <View style={styles.detailItem}>
-                    <IconSymbol
-                      name="calendar"
-                      size={14}
-                      color={colors.textSecondary}
-                    />
-                    <Text style={styles.detailLabel}>Added:</Text>
-                    <Text style={styles.detailValue}>
-                      {formatDateWithPrefix(vehicle.created_at, "Added")}
-                    </Text>
                   </View>
                 </View>
               </View>
-            </View>
-          </View>
+            </>
+          )}
 
           {/* Main Content */}
           <View style={styles.contentContainer}>
             {/* Sharing Section */}
             {vehicle.is_own_vehicle && (
-              <View style={styles.sharingCard}>
+              <View
+                style={[
+                  styles.sharingCard,
+                  isDesktopWeb && [web.panel, { shadowOpacity: 0 }],
+                ]}
+              >
                 <TouchableOpacity
                   style={styles.sharingHeader}
                   onPress={() => setSharingExpanded(!sharingExpanded)}
@@ -1381,7 +1615,13 @@ export default function VehicleDetailScreen() {
             </View>
 
             {/* Tab Navigation */}
-            <View style={styles.tabsContainer}>
+            <View
+              style={
+                isDesktopWeb
+                  ? [web.filters, { marginBottom: theme.spacing.lg }]
+                  : styles.tabsContainer
+              }
+            >
               <TabButton
                 label="Mileage"
                 icon="speedometer"
@@ -1403,7 +1643,12 @@ export default function VehicleDetailScreen() {
             </View>
 
             {/* Logs Container */}
-            <View style={styles.logsContainer}>
+            <View
+              style={[
+                styles.logsContainer,
+                isDesktopWeb && [web.panel, { shadowOpacity: 0 }],
+              ]}
+            >
               <View style={styles.logsHeader}>
                 <Text style={styles.logsTitle}>
                   Recent{" "}
@@ -1414,20 +1659,26 @@ export default function VehicleDetailScreen() {
                       : "Service"}{" "}
                   Logs
                 </Text>
-                <TouchableOpacity
-                  style={styles.addLogButton}
-                  onPress={() => {
-                    const route = `/logs/${activeTab}/add?vehicleId=${vehicle.id}`;
-                    router.push(route as any);
-                  }}
-                >
-                  <IconSymbol
-                    name="plus"
-                    size={16}
-                    color={theme.colors.white}
+                {isDesktopWeb ? (
+                  <Button
+                    title={`Add ${activeTab} log`}
+                    disabled={!canModify}
+                    onPress={handleAddLog}
                   />
-                  <Text style={styles.addLogButtonText}>Add</Text>
-                </TouchableOpacity>
+                ) : (
+                  <TouchableOpacity
+                    style={styles.addLogButton}
+                    disabled={!canModify}
+                    onPress={handleAddLog}
+                  >
+                    <IconSymbol
+                      name="plus"
+                      size={16}
+                      color={theme.colors.white}
+                    />
+                    <Text style={styles.addLogButtonText}>Add</Text>
+                  </TouchableOpacity>
+                )}
               </View>
 
               {/* Mileage Logs */}
@@ -1556,6 +1807,36 @@ export default function VehicleDetailScreen() {
                 </>
               )}
             </View>
+            {isDesktopWeb && vehicle.is_own_vehicle && (
+              <View
+                style={[
+                  web.panel,
+                  {
+                    marginTop: theme.spacing.lg,
+                    flexDirection: "row",
+                    flexWrap: "wrap",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    gap: theme.spacing.md,
+                  },
+                ]}
+              >
+                <View style={{ flex: 1, minWidth: 200 }}>
+                  <Text style={{ color: colors.text, fontWeight: "600" }}>
+                    Delete this vehicle
+                  </Text>
+                  <Text style={{ color: colors.textSecondary }}>
+                    Permanently deletes the vehicle and all associated logs.
+                  </Text>
+                </View>
+                <Button
+                  title="Delete Vehicle"
+                  variant="danger"
+                  loading={deleteLoading}
+                  onPress={handleDelete}
+                />
+              </View>
+            )}
           </View>
         </ScrollView>
 

@@ -1,8 +1,9 @@
+import { returnAfterLogSave } from "@/lib/utils/returnAfterLogSave";
 import { FuelLogService } from "@/lib/services/loggingService";
 import { VehicleService } from "@/lib/services/vehicleService";
 import { FuelLogFormData } from "@/types";
 import { VehicleWithDetails } from "@/types/database-v2";
-import { router, useLocalSearchParams } from "expo-router";
+import { useLocalSearchParams } from "expo-router";
 import { usePostHog } from "posthog-react-native";
 import { useEffect, useState } from "react";
 import { Platform } from "react-native";
@@ -11,7 +12,10 @@ import { useToast } from "./useToast";
 const MOCK_FUEL_PRICES = [1.99, 2.6, 3.2]; // RON95, RON97, Diesel?
 
 export const useAddFuelLog = () => {
-  const { vehicleId } = useLocalSearchParams<{ vehicleId?: string }>();
+  const { vehicleId, returnTo } = useLocalSearchParams<{
+    vehicleId?: string;
+    returnTo?: string;
+  }>();
   const [vehicles, setVehicles] = useState<VehicleWithDetails[]>([]);
   const { showSuccess, showError } = useToast();
   const posthog = usePostHog();
@@ -28,6 +32,10 @@ export const useAddFuelLog = () => {
 
   const [loading, setLoading] = useState(false);
   const [vehiclesLoading, setVehiclesLoading] = useState(true);
+  const [vehiclesError, setVehiclesError] = useState<string | null>(null);
+  const [vehiclesAttempt, setVehiclesAttempt] = useState(0);
+  const retryVehicles = () => setVehiclesAttempt((value) => value + 1);
+
   const [lastEditedField, setLastEditedField] = useState<
     "cost" | "liters" | null
   >(null);
@@ -38,22 +46,49 @@ export const useAddFuelLog = () => {
 
   // --- Data Fetching ---
   useEffect(() => {
+    let active = true;
+    setVehiclesLoading(true);
+    setVehiclesError(null);
     const fetchVehicles = async () => {
-      const { data, error } = await VehicleService.getVehiclesSeparated();
-      if (!error && data) {
+      try {
+        const { data, error } = await VehicleService.getVehiclesSeparated();
+        if (!active) return;
+        if (error || !data) throw new Error(error || "Failed to load vehicles");
         const allVehicles = [...data.ownVehicles, ...data.sharedVehicles];
         setVehicles(allVehicles);
-
-        // Set default vehicle if not passed in params
-        if (!vehicleId && allVehicles.length > 0) {
-          setFormData((prev) => ({ ...prev, vehicle_id: allVehicles[0].id }));
+        if (
+          vehicleId &&
+          !allVehicles.some((vehicle) => vehicle.id === vehicleId)
+        ) {
+          setFormData((prev) => ({ ...prev, vehicle_id: "" }));
+          throw new Error(
+            "This vehicle is unavailable or you no longer have access.",
+          );
         }
+        setFormData((prev) => ({
+          ...prev,
+          vehicle_id:
+            vehicleId ||
+            (allVehicles.some((vehicle) => vehicle.id === prev.vehicle_id)
+              ? prev.vehicle_id
+              : allVehicles[0]?.id || ""),
+        }));
+      } catch (reason) {
+        if (active)
+          setVehiclesError(
+            reason instanceof Error
+              ? reason.message
+              : "Failed to load vehicles",
+          );
+      } finally {
+        if (active) setVehiclesLoading(false);
       }
-      setVehiclesLoading(false);
     };
-
-    fetchVehicles();
-  }, [vehicleId]);
+    void fetchVehicles();
+    return () => {
+      active = false;
+    };
+  }, [vehicleId, vehiclesAttempt]);
 
   // --- Form Logic & Calculations ---
   const calculateLiters = (cost: number, fuelPrice: number) => {
@@ -165,6 +200,12 @@ export const useAddFuelLog = () => {
 
   // --- Submission ---
   const handleSave = async () => {
+    if (
+      vehiclesLoading ||
+      vehiclesError ||
+      !vehicles.some((vehicle) => vehicle.id === formData.vehicle_id)
+    )
+      return;
     if (!isFormValid) {
       showError("Please fill in all required fields");
       return;
@@ -187,7 +228,7 @@ export const useAddFuelLog = () => {
         odometer_reading: formData.odometer_reading,
       });
       showSuccess("Fuel log added successfully!");
-      router.replace("/(tabs)/logs");
+      returnAfterLogSave(vehicleId, returnTo);
     }
   };
 
@@ -196,6 +237,8 @@ export const useAddFuelLog = () => {
     formData,
     vehicles,
     vehiclesLoading,
+    vehiclesError,
+    retryVehicles,
     loading,
     isWeb: Platform.OS === "web",
     isLocked: !!vehicleId,

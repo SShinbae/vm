@@ -1,3 +1,8 @@
+import { goBack } from "@/lib/utils/goBack";
+import { LogPageNavigation } from "@/components/logs/LogPageNavigation";
+import { logPageStyles } from "@/components/logs/logPageStyles";
+import { useResponsiveLayout } from "@/hooks/use-responsive-layout";
+import { useLogRecord } from "@/hooks/useLogRecord";
 import { withOpacity, spacing } from "@/src/design-system";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useStyles } from "react-native-unistyles";
@@ -17,7 +22,6 @@ import {
 import { ServiceLogService } from "@/lib/services/loggingService";
 import {
   OCRExtractedData,
-  ServiceLog,
   ServiceLogFormData,
   ServiceLogItem,
   ServiceType,
@@ -76,7 +80,17 @@ const parseServiceLogItems = (
 
 export default function EditServiceLogScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const [serviceLog, setServiceLog] = useState<ServiceLog | null>(null);
+  const layout = useResponsiveLayout();
+  const isDesktopWeb = layout.isWeb && !layout.isMobile;
+  const { styles: logWeb } = useStyles(logPageStyles);
+  const {
+    record: serviceLog,
+    loading: dataLoading,
+    error: loadError,
+    retry,
+    canModify,
+    readOnly,
+  } = useLogRecord(id, "service", ServiceLogService.getServiceLogById);
   const [formData, setFormData] = useState<ServiceLogFormData>({
     vehicle_id: "",
     service_type: "general_maintenance",
@@ -92,7 +106,6 @@ export default function EditServiceLogScreen() {
     auto_filled: false,
   });
   const [loading, setLoading] = useState(false);
-  const [dataLoading, setDataLoading] = useState(true);
   const { showSuccess, showError } = useToast();
   const posthog = usePostHog();
   const { theme } = useStyles();
@@ -101,63 +114,29 @@ export default function EditServiceLogScreen() {
   const isWeb = Platform.OS === "web";
 
   useEffect(() => {
-    const fetchServiceLog = async () => {
-      if (!id) {
-        showError("Invalid service log ID");
-        router.back();
-        return;
-      }
-
-      try {
-        const { data: logs, error } = await ServiceLogService.getServiceLogs();
-        if (error) {
-          showError("Failed to load service log");
-          router.back();
-          return;
-        }
-
-        const log = logs?.find((l) => l.id === id);
-        if (!log) {
-          showError("Service log not found");
-          router.back();
-          return;
-        }
-
-        setServiceLog(log);
-
-        // Parse items from description (with backward compatibility)
-        const items = parseServiceLogItems(log.description, log.cost || 0);
-
-        setFormData({
-          vehicle_id: log.vehicle_id,
-          service_type: log.service_type as ServiceType,
-          description: log.description,
-          cost: log.cost || 0,
-          items: items,
-          date: log.date,
-          odometer_reading: log.odometer_reading,
-          next_service_due: log.next_service_due || "",
-          next_service_mileage: log.next_service_mileage || undefined,
-          receipt_image_url: log.receipt_image_url || "",
-          ocr_extracted_data: log.ocr_extracted_data as
-            | OCRExtractedData
-            | undefined,
-          auto_filled: log.auto_filled || false,
-        });
-      } catch (error) {
-        console.error("Error fetching service log:", error);
-        showError("Failed to load service log");
-        router.back();
-      }
-
-      setDataLoading(false);
-    };
-
-    fetchServiceLog();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id]);
+    if (!serviceLog) return;
+    const log = serviceLog;
+    const items = parseServiceLogItems(log.description, log.cost || 0);
+    setFormData({
+      vehicle_id: log.vehicle_id,
+      service_type: log.service_type as ServiceType,
+      description: log.description,
+      cost: log.cost || 0,
+      items: items,
+      date: log.date,
+      odometer_reading: log.odometer_reading,
+      next_service_due: log.next_service_due || "",
+      next_service_mileage: log.next_service_mileage || undefined,
+      receipt_image_url: log.receipt_image_url || "",
+      ocr_extracted_data: log.ocr_extracted_data as
+        | OCRExtractedData
+        | undefined,
+      auto_filled: log.auto_filled || false,
+    });
+  }, [serviceLog]);
 
   const handleSave = async () => {
+    if (!canModify || loading) return;
     // Validation
     const itemsError = validateServiceItems(formData.items || []);
     if (itemsError) {
@@ -435,21 +414,46 @@ export default function EditServiceLogScreen() {
     },
   });
 
+  const pageNavigation = (
+    <LogPageNavigation
+      title="Edit Service Log"
+      vehicleId={serviceLog?.vehicle_id}
+      vehicle={serviceLog?.vehicles}
+      error={loadError}
+      retry={retry}
+      readOnly={readOnly}
+      serviceDetailId={id}
+    />
+  );
+
+  if (loadError)
+    return (
+      <SafeAreaView style={styles.container}>{pageNavigation}</SafeAreaView>
+    );
+
   if (dataLoading) {
     return (
       <SafeAreaView style={styles.container}>
+        {pageNavigation}
         {!isWeb && (
           <View style={styles.header}>
             <TouchableOpacity
               style={styles.backButton}
-              onPress={() => router.back()}
+              onPress={() =>
+                goBack({ pathname: "/logs/service/[id]", params: { id } })
+              }
             >
               <IconSymbol name="chevron.left" size={24} color={colors.text} />
             </TouchableOpacity>
             <Text style={styles.headerTitle}>Edit Service Log</Text>
           </View>
         )}
-        <ScrollView contentContainerStyle={styles.scrollContent}>
+        <ScrollView
+          contentContainerStyle={[
+            styles.scrollContent,
+            isDesktopWeb && logWeb.content,
+          ]}
+        >
           <SkeletonServiceLogEdit />
         </ScrollView>
       </SafeAreaView>
@@ -458,11 +462,14 @@ export default function EditServiceLogScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
+      {pageNavigation}
       {!isWeb && (
         <View style={styles.header}>
           <TouchableOpacity
             style={styles.backButton}
-            onPress={() => router.back()}
+            onPress={() =>
+              goBack({ pathname: "/logs/service/[id]", params: { id } })
+            }
           >
             <IconSymbol name="chevron.left" size={24} color={colors.text} />
           </TouchableOpacity>
@@ -475,11 +482,14 @@ export default function EditServiceLogScreen() {
         style={styles.content}
       >
         <ScrollView
-          contentContainerStyle={styles.scrollContent}
+          contentContainerStyle={[
+            styles.scrollContent,
+            isDesktopWeb && logWeb.content,
+          ]}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
-          {isWeb && (
+          {isWeb && !isDesktopWeb && (
             <>
               <Text style={styles.title}>Edit Service Log</Text>
               <Text style={styles.subtitle}>
@@ -488,7 +498,7 @@ export default function EditServiceLogScreen() {
             </>
           )}
 
-          <View style={styles.card}>
+          <View style={[styles.card, isDesktopWeb && logWeb.panel]}>
             <View style={styles.inputContainer}>
               <Text style={styles.label}>Vehicle</Text>
               {(serviceLog as any)?.vehicles && (
@@ -609,7 +619,9 @@ export default function EditServiceLogScreen() {
             <View style={styles.buttonContainer}>
               <Button
                 title="Cancel"
-                onPress={() => router.back()}
+                onPress={() =>
+                  goBack({ pathname: "/logs/service/[id]", params: { id } })
+                }
                 variant="outline"
                 icon="xmark"
                 style={styles.cancelButton}
@@ -617,7 +629,7 @@ export default function EditServiceLogScreen() {
               <Button
                 title="Save Changes"
                 onPress={handleSave}
-                disabled={!isFormValid()}
+                disabled={!canModify || !isFormValid()}
                 loading={loading}
                 icon="checkmark"
                 style={styles.saveButton}

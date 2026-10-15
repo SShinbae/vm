@@ -70,6 +70,31 @@ it.each([
   expect(screen.getByLabelText("Notifications, 7 unread")).toBeTruthy();
 });
 
+it.each([
+  ["/vehicles/add", "Add Vehicle"],
+  ["/vehicles/services/add", "Create Service Template"],
+  ["/vehicles/civic", "Vehicle details"],
+  ["/vehicles/civic/edit", "Vehicle Edit"],
+])("shows the vehicle heading for %s", (path, title) => {
+  mockPathname = path;
+  render(<WebPageHeader />);
+  expect(screen.getByText(title)).toBeTruthy();
+});
+
+it.each([
+  ["/logs/mileage/add", "Add Mileage Log"],
+  ["/logs/mileage/old/edit", "Edit Mileage Log"],
+  ["/logs/fuel/add", "Add Fuel Log"],
+  ["/logs/fuel/old/edit", "Edit Fuel Log"],
+  ["/logs/service/add", "Add Service Log"],
+  ["/logs/service/old", "Service Details"],
+  ["/logs/service/old/edit", "Edit Service Log"],
+])("shows the log heading for %s", (path, title) => {
+  mockPathname = path;
+  render(<WebPageHeader />);
+  expect(screen.getByText(title)).toBeTruthy();
+});
+
 it.each(["Profile", "Settings"])(
   "opens the %s destination with user identity in the avatar menu",
   (tab) => {

@@ -1,3 +1,8 @@
+import { DashboardWebLayout } from "@/components/layout/DashboardWebLayout";
+import { Breadcrumbs } from "@/components/layout/Breadcrumbs";
+import { formPageStyles } from "@/components/layout/formPageStyles";
+import { useResponsiveLayout } from "@/hooks/use-responsive-layout";
+import { goBack } from "@/lib/utils/goBack";
 import { withOpacity, spacing } from "@/src/design-system";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useStyles } from "react-native-unistyles";
@@ -25,6 +30,25 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function AddVehicleScreen() {
+  return (
+    <DashboardWebLayout>
+      <AddVehicleContent />
+    </DashboardWebLayout>
+  );
+}
+
+function AddVehicleContent() {
+  const layout = useResponsiveLayout();
+  const isDesktopWeb = layout.isWeb && !layout.isMobile;
+  const { styles: formWeb } = useStyles(formPageStyles);
+  const breadcrumbs = (
+    <Breadcrumbs
+      items={[
+        { label: "Vehicles", href: "/vehicles" },
+        { label: "Add Vehicle" },
+      ]}
+    />
+  );
   const [formData, setFormData] = useState<VehicleFormData>({
     make: "",
     model: "",
@@ -45,6 +69,7 @@ export default function AddVehicleScreen() {
   const isWeb = Platform.OS === "web";
 
   const handleSave = async () => {
+    if (loading) return;
     // Validation
     if (!formData.make.trim()) {
       showError("Please enter the vehicle make");
@@ -73,43 +98,53 @@ export default function AddVehicleScreen() {
       vin: formData.vin?.trim() || undefined,
     };
 
-    const { data: vehicle, error } =
-      await VehicleService.createVehicle(vehicleData);
+    try {
+      const { data: vehicle, error } =
+        await VehicleService.createVehicle(vehicleData);
 
-    // The photo goes in after the vehicle exists, since its path needs the id.
-    let photoError: string | undefined;
-    if (vehicle && pendingImage) {
-      const upload = pendingImage.file
-        ? await ImageUploadService.uploadVehicleImage(
-            vehicle.id,
-            pendingImage.file,
-            "vehicle_main",
-          )
-        : await ImageUploadService.uploadVehicleImageFromUri(
-            vehicle.id,
-            pendingImage.uri,
-            "vehicle_main",
-          );
-      photoError = upload.error ?? undefined;
-    }
-    setLoading(false);
-
-    if (error) {
-      showError(error);
-    } else {
-      posthog?.capture("vehicle_created", {
-        make: vehicleData.make,
-        model: vehicleData.model,
-        year: vehicleData.year,
-      });
-      if (photoError) {
-        showWarning("Vehicle added", {
-          message: "The photo couldn't be uploaded. Add it from Edit vehicle.",
-        });
-      } else {
-        showSuccess("Vehicle added successfully!");
+      // The photo goes in after the vehicle exists, since its path needs the id.
+      let photoError: string | undefined;
+      if (vehicle && pendingImage) {
+        try {
+          const upload = pendingImage.file
+            ? await ImageUploadService.uploadVehicleImage(
+                vehicle.id,
+                pendingImage.file,
+                "vehicle_main",
+              )
+            : await ImageUploadService.uploadVehicleImageFromUri(
+                vehicle.id,
+                pendingImage.uri,
+                "vehicle_main",
+              );
+          photoError = upload.error ?? undefined;
+        } catch {
+          photoError = "Photo upload failed";
+        }
       }
-      router.push("/(tabs)/vehicles");
+
+      if (error || !vehicle) {
+        showError(error || "Failed to add vehicle. Please try again.");
+      } else {
+        posthog?.capture("vehicle_created", {
+          make: vehicleData.make,
+          model: vehicleData.model,
+          year: vehicleData.year,
+        });
+        if (photoError) {
+          showWarning("Vehicle added", {
+            message:
+              "The photo couldn't be uploaded. Add it from Edit vehicle.",
+          });
+        } else {
+          showSuccess("Vehicle added successfully!");
+        }
+        router.push("/(tabs)/vehicles");
+      }
+    } catch {
+      showError("Failed to add vehicle. Please try again.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -263,7 +298,7 @@ export default function AddVehicleScreen() {
         <View style={styles.header}>
           <TouchableOpacity
             style={styles.backButton}
-            onPress={() => router.back()}
+            onPress={() => goBack("/vehicles")}
           >
             <IconSymbol name="chevron.left" size={24} color={colors.text} />
           </TouchableOpacity>
@@ -276,11 +311,14 @@ export default function AddVehicleScreen() {
         style={styles.content}
       >
         <ScrollView
-          contentContainerStyle={styles.scrollContent}
+          contentContainerStyle={[
+            styles.scrollContent,
+            isDesktopWeb && formWeb.content,
+          ]}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
-          {isWeb && (
+          {isWeb && !isDesktopWeb && (
             <>
               <Text style={styles.title}>Add Vehicle</Text>
               <Text style={styles.subtitle}>
@@ -289,7 +327,8 @@ export default function AddVehicleScreen() {
             </>
           )}
 
-          <View style={styles.card}>
+          {isDesktopWeb && breadcrumbs}
+          <View style={[styles.card, isDesktopWeb && formWeb.panel]}>
             {/* Circular Vehicle Photo */}
             <View style={styles.avatarContainer}>
               <ImageUpload
@@ -397,7 +436,7 @@ export default function AddVehicleScreen() {
             <View style={styles.buttonContainer}>
               <Button
                 title="Cancel"
-                onPress={() => router.back()}
+                onPress={() => goBack("/vehicles")}
                 variant="outline"
                 icon="xmark"
                 style={styles.cancelButton}

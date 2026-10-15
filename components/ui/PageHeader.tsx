@@ -1,4 +1,4 @@
-import { router, useRouter } from "expo-router";
+import { goBack } from "@/lib/utils/goBack";
 import type { ReactNode } from "react";
 import { Pressable, Text, View } from "react-native";
 import { createStyleSheet, useStyles } from "react-native-unistyles";
@@ -15,17 +15,13 @@ export function PageHeader({
   showBack?: boolean;
   rightContent?: ReactNode;
 }) {
-  const navigation = useRouter();
   const { styles, theme } = useStyles(stylesheet);
-
-  const goBack = () =>
-    navigation.canGoBack() ? navigation.back() : router.replace("/(tabs)");
 
   return (
     <View style={styles.header}>
       {showBack && (
         <Pressable
-          onPress={goBack}
+          onPress={() => goBack()}
           style={styles.backButton}
           accessibilityRole="button"
           accessibilityLabel="Go back"

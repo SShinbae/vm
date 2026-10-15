@@ -2,6 +2,7 @@ import { logger } from "@/lib/utils/logger";
 import { supabase } from "../../services/supabaseClient";
 import {
   ApiResponse,
+  LogWithVehicle,
   MileageLog,
   MileageLogInsert,
   MileageLogUpdate,
@@ -22,6 +23,61 @@ export const isAutoMileageLog = (logType: string | null, log: object | null) =>
   log.source === "fuel_log";
 
 export class MileageLogService {
+  static async getMileageLogById(
+    id: string,
+  ): Promise<ApiResponse<LogWithVehicle<MileageLog>>> {
+    try {
+      const {
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser();
+
+      if (userError || !user) {
+        return { data: null, error: "User not authenticated", loading: false };
+      }
+
+      const { data, error } = await supabase
+        .from("mileage_logs")
+        .select(
+          `
+          *,
+          vehicles!inner(make, model, year, license_plate, user_id, main_image_url)
+        `,
+        )
+        .eq("id", id)
+        .single();
+
+      if (error) {
+        logger.error("Error fetching mileage log:", error);
+        return { data: null, error: error.message, loading: false };
+      }
+
+      if (data) {
+        const hasAccess = await canUserAccessVehicle(
+          (data as any).vehicle_id,
+          user.id,
+        );
+        if (!hasAccess) {
+          return {
+            data: null,
+            error:
+              "Access denied - you do not have permission to view this mileage log",
+            loading: false,
+          };
+        }
+      }
+
+      return { data, error: null, loading: false };
+    } catch (error) {
+      logger.error("Unexpected error fetching mileage log:", error);
+      return {
+        data: null,
+        error: "Failed to fetch mileage log",
+        loading: false,
+      };
+    }
+  }
+
   static async getMileageLogs(
     vehicleId?: string,
     options?: { limit?: number; offset?: number; ascending?: boolean },

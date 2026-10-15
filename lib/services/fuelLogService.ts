@@ -2,6 +2,7 @@ import { logger } from "@/lib/utils/logger";
 import { supabase } from "../../services/supabaseClient";
 import {
   ApiResponse,
+  LogWithVehicle,
   FuelLog,
   FuelLogInsert,
   FuelLogUpdate,
@@ -136,7 +137,9 @@ export class FuelLogService {
     }
   }
 
-  static async getFuelLogById(id: string): Promise<ApiResponse<FuelLog>> {
+  static async getFuelLogById(
+    id: string,
+  ): Promise<ApiResponse<LogWithVehicle<FuelLog>>> {
     try {
       const {
         data: { user },

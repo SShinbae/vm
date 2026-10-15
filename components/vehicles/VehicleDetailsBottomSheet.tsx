@@ -273,7 +273,10 @@ export const VehicleDetailsBottomSheet = forwardRef<
               style={[styles.actionButton, styles.actionButtonPrimary]}
               onPress={() => {
                 onClose();
-                router.push(`/vehicles/${vehicle.id}` as any);
+                router.push({
+                  pathname: "/vehicles/[id]",
+                  params: { id: vehicle.id, returnTo: "vehicles" },
+                });
               }}
             >
               <IconSymbol name="pencil" size={18} color={theme.colors.white} />

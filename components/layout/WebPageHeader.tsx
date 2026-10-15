@@ -46,6 +46,27 @@ export function WebPageHeader() {
   const firstName = user?.profile?.full_name?.split(" ")[0];
   const isAnalytics =
     pathname === "/analytics" || pathname.startsWith("/analytics/");
+  const logRoute = pathname.match(
+    /^\/logs\/(mileage|fuel|service)\/(add|[^/]+)(\/edit)?$/,
+  );
+  const logKind = logRoute
+    ? logRoute[1][0].toUpperCase() + logRoute[1].slice(1)
+    : "";
+  const logHeading = logRoute
+    ? [
+        logRoute[2] === "add"
+          ? `Add ${logKind} Log`
+          : logRoute[3]
+            ? `Edit ${logKind} Log`
+            : "Service Details",
+        "Track mileage, fuel, and service history",
+      ]
+    : null;
+  const vehicleHeading = /^\/vehicles\/[^/]+\/edit$/.test(pathname)
+    ? ["Vehicle Edit", "Update vehicle information"]
+    : /^\/vehicles\/[^/]+$/.test(pathname) && pathname !== "/vehicles/add"
+      ? ["Vehicle details", "Mileage, fuel, service, and sharing"]
+      : null;
   const groupHeading =
     pathname === "/groups"
       ? ["Groups", "Manage vehicle sharing and members"]
@@ -57,12 +78,19 @@ export function WebPageHeader() {
             ? ["Group details", "Members, shared vehicles, and invitations"]
             : null;
   const headings: Record<string, [string, string]> = {
+    "/vehicles/add": ["Add Vehicle", "Add a new vehicle to your fleet"],
+    "/vehicles/services/add": [
+      "Create Service Template",
+      "Save reusable service items and prices",
+    ],
     "/vehicles": ["Vehicles", "Manage your fleet and maintenance"],
     "/logs": ["Logs", "Track mileage, fuel, and service history"],
     "/notifications": ["Notifications", "Updates, reminders, and invitations"],
     "/profile": ["Profile", "Account details and preferences"],
   };
   const [title, subtitle] =
+    logHeading ||
+    vehicleHeading ||
     groupHeading ||
     headings[pathname] ||
     (isAnalytics

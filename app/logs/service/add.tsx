@@ -1,3 +1,8 @@
+import { returnAfterLogSave } from "@/lib/utils/returnAfterLogSave";
+import { goBack } from "@/lib/utils/goBack";
+import { LogPageNavigation } from "@/components/logs/LogPageNavigation";
+import { logPageStyles } from "@/components/logs/logPageStyles";
+import { useResponsiveLayout } from "@/hooks/use-responsive-layout";
 import { storageImageUrl } from "@/lib/utils/storagePath";
 import { withOpacity, spacing } from "@/src/design-system";
 import { useColorScheme } from "@/hooks/use-color-scheme";
@@ -105,7 +110,13 @@ const SERVICE_TYPES: { value: ServiceType; label: string; icon: string }[] = [
 ];
 
 export default function AddServiceLogScreen() {
-  const { vehicleId } = useLocalSearchParams<{ vehicleId?: string }>();
+  const layout = useResponsiveLayout();
+  const isDesktopWeb = layout.isWeb && !layout.isMobile;
+  const { styles: logWeb } = useStyles(logPageStyles);
+  const { vehicleId, returnTo } = useLocalSearchParams<{
+    vehicleId?: string;
+    returnTo?: string;
+  }>();
   const [vehicles, setVehicles] = useState<VehicleWithDetails[]>([]);
   const [formData, setFormData] = useState<ServiceLogFormData>({
     vehicle_id: vehicleId || "",
@@ -123,6 +134,10 @@ export default function AddServiceLogScreen() {
   });
   const [loading, setLoading] = useState(false);
   const [vehiclesLoading, setVehiclesLoading] = useState(true);
+  const [vehiclesError, setVehiclesError] = useState<string | null>(null);
+  const [vehiclesAttempt, setVehiclesAttempt] = useState(0);
+  const retryVehicles = () => setVehiclesAttempt((value) => value + 1);
+
   const { showSuccess, showError, showInfo } = useToast();
   const posthog = usePostHog();
   const [ocrResult, setOcrResult] = useState<ReceiptProcessingResult | null>(
@@ -152,7 +167,7 @@ export default function AddServiceLogScreen() {
       <View style={styles.customHeader}>
         <TouchableOpacity
           style={styles.customBackButton}
-          onPress={() => router.back()}
+          onPress={() => goBack("/logs")}
         >
           <IconSymbol name="chevron.left" size={24} color={colors.text} />
         </TouchableOpacity>
@@ -169,22 +184,57 @@ export default function AddServiceLogScreen() {
   };
 
   useEffect(() => {
+    let active = true;
+    setVehiclesLoading(true);
+    setVehiclesError(null);
     const fetchVehicles = async () => {
-      const { data, error } = await VehicleService.getVehiclesSeparated();
-      if (!error && data) {
+      try {
+        const { data, error } = await VehicleService.getVehiclesSeparated();
+        if (!active) return;
+        if (error || !data) throw new Error(error || "Failed to load vehicles");
         const allVehicles = [...data.ownVehicles, ...data.sharedVehicles];
         setVehicles(allVehicles);
-        if (!vehicleId && allVehicles.length > 0) {
-          setFormData((prev) => ({ ...prev, vehicle_id: allVehicles[0].id }));
+        if (
+          vehicleId &&
+          !allVehicles.some((vehicle) => vehicle.id === vehicleId)
+        ) {
+          setFormData((prev) => ({ ...prev, vehicle_id: "" }));
+          throw new Error(
+            "This vehicle is unavailable or you no longer have access.",
+          );
         }
+        setFormData((prev) => ({
+          ...prev,
+          vehicle_id:
+            vehicleId ||
+            (allVehicles.some((vehicle) => vehicle.id === prev.vehicle_id)
+              ? prev.vehicle_id
+              : allVehicles[0]?.id || ""),
+        }));
+      } catch (reason) {
+        if (active)
+          setVehiclesError(
+            reason instanceof Error
+              ? reason.message
+              : "Failed to load vehicles",
+          );
+      } finally {
+        if (active) setVehiclesLoading(false);
       }
-      setVehiclesLoading(false);
     };
-
-    fetchVehicles();
-  }, [vehicleId]);
+    void fetchVehicles();
+    return () => {
+      active = false;
+    };
+  }, [vehicleId, vehiclesAttempt]);
 
   const handleSave = async () => {
+    if (
+      vehiclesLoading ||
+      vehiclesError ||
+      !vehicles.some((vehicle) => vehicle.id === formData.vehicle_id)
+    )
+      return;
     if (!formData.vehicle_id) {
       showError("Please select a vehicle");
       return;
@@ -243,7 +293,7 @@ export default function AddServiceLogScreen() {
         auto_filled: logData.auto_filled || false,
       });
       showSuccess("Service log added successfully!");
-      router.push("/(tabs)/logs");
+      returnAfterLogSave(vehicleId, returnTo);
     }
   };
 
@@ -774,11 +824,44 @@ export default function AddServiceLogScreen() {
     },
   });
 
+  const pageNavigation = (
+    <LogPageNavigation
+      title="Add Service Log"
+      vehicleId={formData.vehicle_id}
+      vehicle={
+        vehiclesError
+          ? undefined
+          : vehicles.find((v) => v.id === formData.vehicle_id)
+      }
+      error={vehiclesError}
+      retry={retryVehicles}
+    />
+  );
+  if (vehiclesError)
+    return (
+      <SafeAreaView style={styles.container}>
+        {!isDesktopWeb && <CustomHeader />}
+        {pageNavigation}
+        {!isDesktopWeb && (
+          <View style={{ padding: 24, gap: 16 }}>
+            <Text>Unable to load vehicles. Please try again.</Text>
+            <Button title="Retry" onPress={retryVehicles} />
+          </View>
+        )}
+      </SafeAreaView>
+    );
+
   if (vehiclesLoading) {
     return (
       <SafeAreaView style={styles.container}>
-        <CustomHeader />
-        <ScrollView contentContainerStyle={styles.scrollContent}>
+        {!isDesktopWeb && <CustomHeader />}
+        {pageNavigation}
+        <ScrollView
+          contentContainerStyle={[
+            styles.scrollContent,
+            isDesktopWeb && logWeb.content,
+          ]}
+        >
           <SkeletonServiceLogForm />
         </ScrollView>
       </SafeAreaView>
@@ -788,7 +871,8 @@ export default function AddServiceLogScreen() {
   if (vehicles.length === 0) {
     return (
       <SafeAreaView style={styles.container}>
-        <CustomHeader />
+        {!isDesktopWeb && <CustomHeader />}
+        {pageNavigation}
         <View style={styles.loadingContainer}>
           <Text style={[styles.label, { textAlign: "center" }]}>
             No vehicles found. Please add a vehicle first.
@@ -806,18 +890,22 @@ export default function AddServiceLogScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <CustomHeader />
+      {!isDesktopWeb && <CustomHeader />}
+      {pageNavigation}
 
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={styles.content}
       >
         <ScrollView
-          contentContainerStyle={styles.scrollContent}
+          contentContainerStyle={[
+            styles.scrollContent,
+            isDesktopWeb && logWeb.content,
+          ]}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
-          <View style={styles.card}>
+          <View style={[styles.card, isDesktopWeb && logWeb.panel]}>
             <VehicleSelector />
 
             <View style={styles.inputContainer}>
@@ -952,7 +1040,7 @@ export default function AddServiceLogScreen() {
             <View style={styles.buttonContainer}>
               <Button
                 title="Cancel"
-                onPress={() => router.back()}
+                onPress={() => goBack("/logs")}
                 variant="outline"
                 icon="xmark"
                 style={styles.cancelButton}

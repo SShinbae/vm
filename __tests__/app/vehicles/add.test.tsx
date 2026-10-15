@@ -2,6 +2,12 @@ import React from "react";
 import { fireEvent, render, waitFor } from "@testing-library/react-native";
 import AddVehicleScreen from "@/app/vehicles/add";
 
+jest.mock("@/components/layout/DashboardWebLayout", () => ({
+  DashboardWebLayout: ({ children }: any) => children,
+}));
+jest.mock("@/hooks/use-responsive-layout", () => ({
+  useResponsiveLayout: () => ({ isWeb: false, isMobile: true }),
+}));
 const mockPush = jest.fn();
 const mockBack = jest.fn();
 const mockShowSuccess = jest.fn();
@@ -100,7 +106,13 @@ jest.mock("@/hooks/use-color-scheme", () => ({
 }));
 jest.mock("react-native-unistyles", () => {
   const { lightTheme } = jest.requireActual("@/src/design-system");
-  return { useStyles: () => ({ theme: lightTheme }) };
+  return {
+    createStyleSheet: (fn: any) => fn,
+    useStyles: (fn?: any) => ({
+      theme: lightTheme,
+      styles: fn ? fn(lightTheme) : {},
+    }),
+  };
 });
 
 function fillForm(getByPlaceholderText: (text: string) => any) {

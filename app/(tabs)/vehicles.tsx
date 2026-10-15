@@ -74,7 +74,10 @@ export default function VehiclesScreen() {
       bottomSheetRef.current?.expand();
     } else {
       // On web, navigate directly to vehicle details
-      router.push(`/vehicles/${vehicle.id}` as any);
+      router.push({
+        pathname: "/vehicles/[id]",
+        params: { id: vehicle.id, returnTo: "vehicles" },
+      });
     }
   }, []);
 
@@ -249,6 +252,12 @@ export default function VehiclesScreen() {
                     {filterLabel} ({filteredVehicles.length})
                   </Text>
                   <VehicleTable
+                    onView={(id) =>
+                      router.push({
+                        pathname: "/vehicles/[id]",
+                        params: { id, returnTo: "vehicles" },
+                      })
+                    }
                     vehicles={filteredVehicles.map((vehicle) => ({
                       ...vehicle,
                       isSharedWithMe: !vehicle.is_own_vehicle,

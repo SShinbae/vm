@@ -1,10 +1,15 @@
+import { Button } from "@/components/ui/Button";
+import { DashboardWebLayout } from "@/components/layout/DashboardWebLayout";
+import { Breadcrumbs } from "@/components/layout/Breadcrumbs";
+import { formPageStyles } from "@/components/layout/formPageStyles";
+import { useResponsiveLayout } from "@/hooks/use-responsive-layout";
+import { goBack } from "@/lib/utils/goBack";
 import { withOpacity, spacing } from "@/src/design-system";
 import { useStyles } from "react-native-unistyles";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { useToast } from "@/hooks/useToast";
 import { VehicleService } from "@/lib/services/vehicleService";
 import { ServiceItemFormData, ServiceTemplateFormData } from "@/types";
-import { router } from "expo-router";
 import React, { useState } from "react";
 import {
   ActivityIndicator,
@@ -20,6 +25,25 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function AddServiceScreen() {
+  return (
+    <DashboardWebLayout>
+      <AddServiceContent />
+    </DashboardWebLayout>
+  );
+}
+
+function AddServiceContent() {
+  const layout = useResponsiveLayout();
+  const isDesktopWeb = layout.isWeb && !layout.isMobile;
+  const { styles: formWeb } = useStyles(formPageStyles);
+  const breadcrumbs = (
+    <Breadcrumbs
+      items={[
+        { label: "Vehicles", href: "/vehicles" },
+        { label: "Create Service Template" },
+      ]}
+    />
+  );
   const [formData, setFormData] = useState<ServiceTemplateFormData>({
     name: "",
     description: "",
@@ -40,6 +64,7 @@ export default function AddServiceScreen() {
   const totalCost = calculateTotalCost(formData.items);
 
   const handleSave = async () => {
+    if (loading) return;
     // Validation
     if (!formData.name.trim()) {
       showError("Please enter a service name");
@@ -62,14 +87,19 @@ export default function AddServiceScreen() {
       items: validItems,
     };
 
-    const result = await VehicleService.createServiceTemplate(cleanFormData);
-    setLoading(false);
+    try {
+      const result = await VehicleService.createServiceTemplate(cleanFormData);
 
-    if (result.error) {
-      showError(result.error);
-    } else {
-      showSuccess("Service template created successfully!");
-      router.back();
+      if (result.error) {
+        showError(result.error);
+      } else {
+        showSuccess("Service template created successfully!");
+        goBack("/vehicles");
+      }
+    } catch {
+      showError("Failed to create service template. Please try again.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -342,90 +372,120 @@ export default function AddServiceScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => router.back()}
-        >
-          <IconSymbol name="chevron.left" size={24} color={colors.text} />
-        </TouchableOpacity>
-        <Text style={styles.title}>Create Service Template</Text>
-        <TouchableOpacity
-          style={[
-            styles.saveButton,
-            (!isFormValid() || loading) && styles.saveButtonDisabled,
-          ]}
-          onPress={handleSave}
-          disabled={!isFormValid() || loading}
-        >
-          {loading ? (
-            <ActivityIndicator color="white" size="small" />
-          ) : (
-            <>
-              <IconSymbol name="checkmark" size={14} color="white" />
-              <Text style={styles.saveButtonText}>Save</Text>
-            </>
-          )}
-        </TouchableOpacity>
-      </View>
+      {!isDesktopWeb && (
+        <View style={styles.header}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => goBack("/vehicles")}
+          >
+            <IconSymbol name="chevron.left" size={24} color={colors.text} />
+          </TouchableOpacity>
+          <Text style={styles.title}>Create Service Template</Text>
+          <TouchableOpacity
+            style={[
+              styles.saveButton,
+              (!isFormValid() || loading) && styles.saveButtonDisabled,
+            ]}
+            onPress={handleSave}
+            disabled={!isFormValid() || loading}
+          >
+            {loading ? (
+              <ActivityIndicator color="white" size="small" />
+            ) : (
+              <>
+                <IconSymbol name="checkmark" size={14} color="white" />
+                <Text style={styles.saveButtonText}>Save</Text>
+              </>
+            )}
+          </TouchableOpacity>
+        </View>
+      )}
 
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={styles.content}
       >
         <ScrollView
-          contentContainerStyle={styles.scrollContent}
+          contentContainerStyle={[
+            styles.scrollContent,
+            isDesktopWeb && formWeb.content,
+          ]}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
-          <View style={styles.formCard}>
-            <View style={styles.inputContainer}>
-              <Text style={styles.label}>
-                Service Name <Text style={styles.requiredLabel}>*</Text>
-              </Text>
-              <TextInput
-                style={styles.input}
-                value={formData.name}
-                onChangeText={(text) =>
-                  setFormData((prev) => ({ ...prev, name: text }))
-                }
-                placeholder="e.g., Basic Oil Change"
-                placeholderTextColor={colors.textSecondary}
-              />
+          {isDesktopWeb && breadcrumbs}
+          <View style={isDesktopWeb ? formWeb.panel : undefined}>
+            <View style={!isDesktopWeb && styles.formCard}>
+              <View style={styles.inputContainer}>
+                <Text style={styles.label}>
+                  Service Name <Text style={styles.requiredLabel}>*</Text>
+                </Text>
+                <TextInput
+                  style={styles.input}
+                  value={formData.name}
+                  onChangeText={(text) =>
+                    setFormData((prev) => ({ ...prev, name: text }))
+                  }
+                  placeholder="e.g., Basic Oil Change"
+                  placeholderTextColor={colors.textSecondary}
+                />
+              </View>
+
+              <View style={styles.inputContainer}>
+                <Text style={styles.label}>Description</Text>
+                <TextInput
+                  style={[styles.input, styles.textArea]}
+                  value={formData.description}
+                  onChangeText={(text) =>
+                    setFormData((prev) => ({ ...prev, description: text }))
+                  }
+                  placeholder="Optional description of the service..."
+                  placeholderTextColor={colors.textSecondary}
+                  multiline
+                  textAlignVertical="top"
+                />
+              </View>
             </View>
 
-            <View style={styles.inputContainer}>
-              <Text style={styles.label}>Description</Text>
-              <TextInput
-                style={[styles.input, styles.textArea]}
-                value={formData.description}
-                onChangeText={(text) =>
-                  setFormData((prev) => ({ ...prev, description: text }))
-                }
-                placeholder="Optional description of the service..."
-                placeholderTextColor={colors.textSecondary}
-                multiline
-                textAlignVertical="top"
-              />
+            <View style={styles.itemsSection}>
+              <Text style={styles.sectionTitle}>Service Items</Text>
+
+              {formData.items.map((item, index) => (
+                <ServiceItem key={index} item={item} index={index} />
+              ))}
+
+              <TouchableOpacity style={styles.addItemButton} onPress={addItem}>
+                <IconSymbol name="plus" size={16} color={colors.primary} />
+                <Text style={styles.addItemButtonText}>Add Item</Text>
+              </TouchableOpacity>
             </View>
-          </View>
 
-          <View style={styles.itemsSection}>
-            <Text style={styles.sectionTitle}>Service Items</Text>
-
-            {formData.items.map((item, index) => (
-              <ServiceItem key={index} item={item} index={index} />
-            ))}
-
-            <TouchableOpacity style={styles.addItemButton} onPress={addItem}>
-              <IconSymbol name="plus" size={16} color={colors.primary} />
-              <Text style={styles.addItemButtonText}>Add Item</Text>
-            </TouchableOpacity>
-          </View>
-
-          <View style={styles.totalSection}>
-            <Text style={styles.totalLabel}>Total Cost</Text>
-            <Text style={styles.totalCost}>RM{totalCost.toFixed(2)}</Text>
+            <View style={styles.totalSection}>
+              <Text style={styles.totalLabel}>Total Cost</Text>
+              <Text style={styles.totalCost}>RM{totalCost.toFixed(2)}</Text>
+            </View>
+            {isDesktopWeb && (
+              <View
+                style={{
+                  flexDirection: "row",
+                  flexWrap: "wrap",
+                  gap: 16,
+                  marginTop: 24,
+                }}
+              >
+                <Button
+                  title="Cancel"
+                  variant="outline"
+                  onPress={() => goBack("/vehicles")}
+                />
+                <Button
+                  title="Save Template"
+                  onPress={handleSave}
+                  disabled={!isFormValid()}
+                  loading={loading}
+                />
+              </View>
+            )}
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
