@@ -41,6 +41,7 @@ export function FuelPriceChip({
 const stylesheet = createStyleSheet((theme) => ({
   fuelPriceOption: {
     flex: 1,
+    minWidth: "30%", // wraps to ~3 chips per row
     backgroundColor: theme.colors.surface,
     borderWidth: 1,
     borderColor: theme.colors.border,
