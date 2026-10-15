@@ -5,11 +5,10 @@ import { FuelLogFormData } from "@/types";
 import { VehicleWithDetails } from "@/types/database-v2";
 import { useLocalSearchParams } from "expo-router";
 import { usePostHog } from "posthog-react-native";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Platform } from "react-native";
+import { FALLBACK_FUEL_PRICES, useFuelPrices } from "./useFuelPrices";
 import { useToast } from "./useToast";
-
-const MOCK_FUEL_PRICES = [1.99, 2.6, 3.2]; // RON95, RON97, Diesel?
 
 export const useAddFuelLog = () => {
   const { vehicleId, returnTo } = useLocalSearchParams<{
@@ -19,12 +18,14 @@ export const useAddFuelLog = () => {
   const [vehicles, setVehicles] = useState<VehicleWithDetails[]>([]);
   const { showSuccess, showError } = useToast();
   const posthog = usePostHog();
+  const fuelPrices = useFuelPrices();
+  const priceTouched = useRef(false);
 
   const [formData, setFormData] = useState<FuelLogFormData>({
     vehicle_id: vehicleId || "",
     liters_filled: 0,
     cost: 0,
-    fuel_price: MOCK_FUEL_PRICES[0], // Default to first price
+    fuel_price: FALLBACK_FUEL_PRICES[0].price, // Default to first price
     date: new Date().toISOString().split("T")[0],
     odometer_reading: 0,
     location: "",
@@ -90,6 +91,13 @@ export const useAddFuelLog = () => {
     };
   }, [vehicleId, vehiclesAttempt]);
 
+  // Once live prices load, default to the first unless the user already chose
+  useEffect(() => {
+    if (!priceTouched.current && fuelPrices[0]) {
+      setFormData((prev) => ({ ...prev, fuel_price: fuelPrices[0].price }));
+    }
+  }, [fuelPrices]);
+
   // --- Form Logic & Calculations ---
   const calculateLiters = (cost: number, fuelPrice: number) => {
     if (fuelPrice > 0 && cost > 0) {
@@ -142,6 +150,7 @@ export const useAddFuelLog = () => {
   };
 
   const handlePriceChange = (price: number) => {
+    priceTouched.current = true;
     setFormData((prev) => {
       const newData = { ...prev, fuel_price: price };
 
@@ -243,7 +252,7 @@ export const useAddFuelLog = () => {
     isWeb: Platform.OS === "web",
     isLocked: !!vehicleId,
     selectedVehicle: vehicles.find((v) => v.id === formData.vehicle_id),
-    fuelPrices: MOCK_FUEL_PRICES,
+    fuelPrices,
 
     // Raw input values for display (preserves decimals while typing)
     costInput,

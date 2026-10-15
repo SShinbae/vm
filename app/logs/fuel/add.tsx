@@ -178,15 +178,18 @@ export default function AddFuelLogScreen() {
                 <Text style={styles.requiredLabel}>*</Text>
               </Text>
               <View style={styles.fuelPriceSelector}>
-                {fuelPrices.map((price) => (
+                {fuelPrices.map((item) => (
                   <FuelPriceChip
-                    key={price}
-                    price={price}
-                    isSelected={!isCustomPrice && formData.fuel_price === price}
+                    key={item.label}
+                    price={item.price}
+                    label={`${item.label} RM ${item.price.toFixed(2)}`}
+                    isSelected={
+                      !isCustomPrice && formData.fuel_price === item.price
+                    }
                     onPress={() => {
                       setIsCustomPrice(false);
                       setCustomPriceInput("");
-                      handlePriceChange(price);
+                      handlePriceChange(item.price);
                     }}
                   />
                 ))}
@@ -401,6 +404,7 @@ const stylesheet = createStyleSheet((theme) => ({
   },
   fuelPriceSelector: {
     flexDirection: "row",
+    flexWrap: "wrap",
     gap: theme.spacing.sm,
   },
   buttonContainer: {
