@@ -40,6 +40,7 @@ const NAV_ITEMS: NavItem[] = [
     label: "Analytics",
   },
   { name: "logs", icon: "doc.text.fill", path: "/logs", label: "Logs" },
+  { name: "groups", icon: "person.2.fill", path: "/groups", label: "Groups" },
   {
     name: "notifications",
     icon: "bell.fill",
@@ -530,12 +531,12 @@ export function WebSidebar() {
       {/* Navigation */}
       <View style={styles.nav}>
         {isOpen && <Text style={styles.navGroupLabel}>MAIN</Text>}
-        {NAV_ITEMS.slice(0, 4).map((item) => (
+        {NAV_ITEMS.slice(0, 5).map((item) => (
           <NavButton key={item.name} item={item} />
         ))}
         <View style={styles.navDivider} />
         {isOpen && <Text style={styles.navGroupLabel}>ACCOUNT</Text>}
-        {NAV_ITEMS.slice(4).map((item) => (
+        {NAV_ITEMS.slice(5).map((item) => (
           <NavButton key={item.name} item={item} />
         ))}
       </View>

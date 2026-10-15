@@ -57,6 +57,19 @@ beforeEach(() => {
   jest.clearAllMocks();
 });
 
+it.each([
+  ["/groups", "Groups"],
+  ["/groups/create", "Create Group"],
+  ["/groups/group-1", "Group details"],
+  ["/groups/group-1/invite", "Invite Member"],
+])("shows the Groups heading for %s", (path, title) => {
+  mockPathname = path;
+  render(<WebPageHeader />);
+  expect(screen.getByText(title)).toBeTruthy();
+  expect(screen.getByLabelText("Profile menu")).toBeTruthy();
+  expect(screen.getByLabelText("Notifications, 7 unread")).toBeTruthy();
+});
+
 it.each(["Profile", "Settings"])(
   "opens the %s destination with user identity in the avatar menu",
   (tab) => {
@@ -91,6 +104,10 @@ it("changes page title, closes menus, and clears vehicle lookup on navigation", 
   rerender(<WebPageHeader />);
   expect(screen.getByText("Notifications")).toBeTruthy();
   expect(screen.getByText("Updates, reminders, and invitations")).toBeTruthy();
+  mockPathname = "/profile";
+  rerender(<WebPageHeader />);
+  expect(screen.getByText("Profile")).toBeTruthy();
+  expect(screen.getByText("Account details and preferences")).toBeTruthy();
 });
 
 it("opens notifications from the shared header without navigating", () => {

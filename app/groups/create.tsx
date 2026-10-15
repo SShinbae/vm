@@ -17,6 +17,8 @@ import {
   View,
 } from "react-native";
 import { useStyles } from "react-native-unistyles";
+import { useResponsiveLayout } from "@/hooks/use-responsive-layout";
+import { webPageStyles } from "@/components/layout/webPageStyles";
 
 export default function CreateGroupScreen() {
   const [formData, setFormData] = useState<GroupFormData>({
@@ -28,6 +30,8 @@ export default function CreateGroupScreen() {
   const posthog = usePostHog();
   const navigation = useRouter();
   const { theme } = useStyles();
+  const { styles: web } = useStyles(webPageStyles);
+  const layout = useResponsiveLayout();
 
   const handleGoBack = () => {
     if (navigation.canGoBack()) {
@@ -69,6 +73,97 @@ export default function CreateGroupScreen() {
     return undefined;
   };
 
+  const fields = (
+    <>
+      <Input
+        label="Group Name"
+        value={formData.name}
+        onChangeText={(text) =>
+          setFormData((prev) => ({ ...prev, name: text }))
+        }
+        placeholder="Family, Work Team, etc."
+        required
+        error={formData.name ? validateName(formData.name) : undefined}
+        helperText="Choose a name that identifies your group"
+        leftIcon="people"
+      />
+
+      <Input
+        label="Description (Optional)"
+        value={formData.description || ""}
+        onChangeText={(text) =>
+          setFormData((prev) => ({ ...prev, description: text }))
+        }
+        placeholder="Describe the purpose of this group..."
+        multiline
+        numberOfLines={3}
+        helperText="Help members understand what this group is for"
+      />
+    </>
+  );
+  const actions = (
+    <>
+      <Button
+        title="Cancel"
+        variant="outline"
+        onPress={handleGoBack}
+        disabled={loading}
+        style={styles.button}
+      />
+      <Button
+        title="Create Group"
+        onPress={handleSave}
+        loading={loading}
+        style={styles.button}
+      />
+    </>
+  );
+
+  if (layout.isWeb && !layout.isMobile) {
+    return (
+      <ScrollView style={{ flex: 1 }} keyboardShouldPersistTaps="handled">
+        <View
+          style={[
+            web.frame,
+            {
+              flex: 0,
+              paddingHorizontal: theme.spacing.xl,
+              paddingTop: theme.spacing.lg,
+              paddingBottom: theme.spacing.xl,
+            },
+          ]}
+        >
+          <View
+            style={[
+              web.panel,
+              { width: "100%", maxWidth: 640, alignSelf: "center" },
+            ]}
+          >
+            <Text
+              style={[
+                styles.description,
+                { color: theme.colors.textSecondary },
+              ]}
+            >
+              Create a group to share vehicles with family, friends, or your
+              team.
+            </Text>
+            {fields}
+            <View
+              style={{
+                flexDirection: "row",
+                gap: theme.spacing.md,
+                marginTop: theme.spacing.lg,
+              }}
+            >
+              {actions}
+            </View>
+          </View>
+        </View>
+      </ScrollView>
+    );
+  }
+
   return (
     <KeyboardAvoidingView
       style={[styles.container, { backgroundColor: theme.colors.background }]}
@@ -88,30 +183,7 @@ export default function CreateGroupScreen() {
           Create a new group to share vehicles and collaborate with family or
           team members
         </Text>
-        <Input
-          label="Group Name"
-          value={formData.name}
-          onChangeText={(text) =>
-            setFormData((prev) => ({ ...prev, name: text }))
-          }
-          placeholder="Family, Work Team, etc."
-          required
-          error={formData.name ? validateName(formData.name) : undefined}
-          helperText="Choose a name that identifies your group"
-          leftIcon="people"
-        />
-
-        <Input
-          label="Description (Optional)"
-          value={formData.description || ""}
-          onChangeText={(text) =>
-            setFormData((prev) => ({ ...prev, description: text }))
-          }
-          placeholder="Describe the purpose of this group..."
-          multiline
-          numberOfLines={3}
-          helperText="Help members understand what this group is for"
-        />
+        {fields}
       </ScrollView>
       <View
         style={[
@@ -122,19 +194,7 @@ export default function CreateGroupScreen() {
           },
         ]}
       >
-        <Button
-          title="Cancel"
-          variant="outline"
-          onPress={handleGoBack}
-          disabled={loading}
-          style={styles.button}
-        />
-        <Button
-          title="Create Group"
-          onPress={handleSave}
-          loading={loading}
-          style={styles.button}
-        />
+        {actions}
       </View>
     </KeyboardAvoidingView>
   );

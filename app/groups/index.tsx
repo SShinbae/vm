@@ -7,8 +7,8 @@ import { toast } from "@/hooks/useToast";
 import { GroupService } from "@/lib/services/groupService";
 import { GroupWithMembers } from "@/types";
 import { Image } from "expo-image";
-import { router, useRouter } from "expo-router";
-import React, { useCallback, useEffect, useState } from "react";
+import { router, useFocusEffect, useRouter } from "expo-router";
+import React, { useCallback, useRef, useState } from "react";
 import {
   RefreshControl,
   ScrollView,
@@ -18,14 +18,24 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useStyles } from "react-native-unistyles";
+import { useResponsiveLayout } from "@/hooks/use-responsive-layout";
+import { webPageStyles } from "@/components/layout/webPageStyles";
+import { ResponsiveGrid } from "@/components/layout/ResponsiveGrid";
+import { Button } from "@/components/ui/Button";
+import { GroupAvatar } from "@/components/groups/GroupAvatar";
 
 export default function GroupsScreen() {
   const { theme } = useStyles();
+  const { styles: web } = useStyles(webPageStyles);
+  const layout = useResponsiveLayout();
+  const isWeb = layout.isWeb && !layout.isMobile;
   const { user } = useAuth();
   const navigation = useRouter();
   const [groups, setGroups] = useState<GroupWithMembers[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const focused = useRef(false);
+  const requestId = useRef(0);
 
   const handleBack = () => {
     if (navigation.canGoBack()) {
@@ -36,24 +46,43 @@ export default function GroupsScreen() {
   };
 
   const fetchGroups = useCallback(async () => {
-    const result = await GroupService.getGroups();
-    if (result.error) {
-      toast.error("Failed to load groups");
-    } else {
-      setGroups(result.data || []);
+    if (!focused.current) return;
+    const currentRequest = ++requestId.current;
+    try {
+      const result = await GroupService.getGroups();
+      if (!focused.current || currentRequest !== requestId.current) return;
+      if (result.error) {
+        toast.error("Failed to load groups");
+      } else {
+        setGroups(result.data || []);
+      }
+    } catch {
+      if (focused.current && currentRequest === requestId.current) {
+        toast.error("Failed to load groups");
+      }
+    } finally {
+      if (focused.current && currentRequest === requestId.current) {
+        setLoading(false);
+        setRefreshing(false);
+      }
     }
-    setLoading(false);
   }, []);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
     await fetchGroups();
-    setRefreshing(false);
   }, [fetchGroups]);
 
-  useEffect(() => {
-    fetchGroups();
-  }, [fetchGroups]);
+  useFocusEffect(
+    useCallback(() => {
+      focused.current = true;
+      void fetchGroups();
+      return () => {
+        focused.current = false;
+        requestId.current += 1;
+      };
+    }, [fetchGroups]),
+  );
 
   const GroupCard = ({ group }: { group: GroupWithMembers }) => {
     const isOwner = group.owner_id === user?.id;
@@ -64,7 +93,7 @@ export default function GroupsScreen() {
           backgroundColor: theme.colors.surface,
           borderRadius: theme.borderRadius.xl,
           padding: theme.spacing.lg,
-          marginBottom: theme.spacing.md,
+          marginBottom: isWeb ? 0 : theme.spacing.md,
           borderWidth: 1,
           borderColor: theme.colors.border,
         }}
@@ -93,11 +122,12 @@ export default function GroupsScreen() {
                   fontSize: theme.fontSize.lg,
                   fontWeight: theme.fontWeight.bold,
                   color: theme.colors.text,
+                  flexShrink: 1,
                 }}
               >
                 {group.name}
               </Text>
-              {isOwner && (
+              {(isOwner || isWeb) && (
                 <View
                   style={{
                     backgroundColor: withOpacity(theme.colors.primary, 0.12),
@@ -114,7 +144,7 @@ export default function GroupsScreen() {
                       textTransform: "uppercase",
                     }}
                   >
-                    Owner
+                    {isOwner ? "Owner" : "Member"}
                   </Text>
                 </View>
               )}
@@ -191,7 +221,17 @@ export default function GroupsScreen() {
                     overflow: "hidden",
                   }}
                 >
-                  {member.profiles?.avatar_url ? (
+                  {isWeb ? (
+                    <GroupAvatar
+                      size={28}
+                      name={
+                        member.profiles?.full_name ||
+                        member.profiles?.email ||
+                        "Member"
+                      }
+                      avatarUrl={member.profiles?.avatar_url}
+                    />
+                  ) : member.profiles?.avatar_url ? (
                     <Image
                       source={{
                         uri: storageImageUrl(
@@ -252,6 +292,92 @@ export default function GroupsScreen() {
       </TouchableOpacity>
     );
   };
+
+  if (isWeb) {
+    return (
+      <ScrollView
+        style={{ flex: 1 }}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
+      >
+        <View
+          style={[
+            web.frame,
+            {
+              flex: 0,
+              paddingHorizontal: theme.spacing.xl,
+              paddingTop: theme.spacing.lg,
+              paddingBottom: theme.spacing.xl,
+              gap: theme.spacing.lg,
+            },
+          ]}
+        >
+          <View
+            style={{
+              flexDirection: "row",
+              flexWrap: "wrap",
+              justifyContent: "space-between",
+              alignItems: "center",
+              gap: theme.spacing.md,
+            }}
+          >
+            <Text
+              style={{
+                fontSize: theme.fontSize.lg,
+                fontWeight: "600",
+                color: theme.colors.text,
+              }}
+            >
+              All groups{!loading ? ` (${groups.length})` : ""}
+            </Text>
+            <View style={{ flexDirection: "row", gap: theme.spacing.sm }}>
+              <Button
+                title="Refresh"
+                size="small"
+                variant="outline"
+                loading={refreshing}
+                onPress={onRefresh}
+              />
+              <Button
+                title="Create Group"
+                size="small"
+                icon="plus"
+                onPress={() => router.push("/groups/create")}
+              />
+            </View>
+          </View>
+          {loading ? (
+            <SkeletonList itemCount={3} showAvatar lines={3} />
+          ) : groups.length === 0 ? (
+            <View style={[web.panel, { gap: theme.spacing.sm }]}>
+              <Text
+                style={{
+                  color: theme.colors.text,
+                  fontWeight: "600",
+                  fontSize: theme.fontSize.lg,
+                }}
+              >
+                No Groups Yet
+              </Text>
+              <Text style={{ color: theme.colors.textSecondary }}>
+                Create a group to share vehicles with family, friends, or team
+                members.
+              </Text>
+            </View>
+          ) : (
+            <ResponsiveGrid
+              columns={{ tablet: 1, desktop: 2, largeDesktop: 3 }}
+            >
+              {groups.map((group) => (
+                <GroupCard key={group.id} group={group} />
+              ))}
+            </ResponsiveGrid>
+          )}
+        </View>
+      </ScrollView>
+    );
+  }
 
   if (loading) {
     return (

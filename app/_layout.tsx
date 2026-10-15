@@ -30,6 +30,7 @@ import { NotificationProvider } from "@/lib/contexts/NotificationContext";
 import { ThemeProvider } from "@/lib/contexts/ThemeContext";
 import { PostHogProvider } from "@/lib/providers/PostHogProvider";
 import { QueryProvider } from "@/lib/providers/QueryProvider";
+import { SidebarProvider } from "@/lib/contexts/SidebarContext";
 
 // Import reanimated - required for gesture handler and animations
 // This import must happen before any other imports that use reanimated
@@ -92,7 +93,9 @@ export default function RootLayout() {
               <AuthProvider>
                 <NotificationProvider>
                   <DialogProvider>
-                    <RootLayoutContent />
+                    <SidebarProvider>
+                      <RootLayoutContent />
+                    </SidebarProvider>
                   </DialogProvider>
                 </NotificationProvider>
               </AuthProvider>

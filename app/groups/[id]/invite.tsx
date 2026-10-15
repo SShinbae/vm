@@ -20,6 +20,8 @@ import { Button } from "@/components/ui/Button";
 import { Card, CardContent } from "@/components/ui/Card";
 import { useToast } from "@/hooks/useToast";
 import { useDialog } from "@/lib/contexts/DialogContext";
+import { useResponsiveLayout } from "@/hooks/use-responsive-layout";
+import { webPageStyles } from "@/components/layout/webPageStyles";
 
 export default function InviteToGroupScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -29,6 +31,8 @@ export default function InviteToGroupScreen() {
   const { showError } = useToast();
   const posthog = usePostHog();
   const { theme } = useStyles();
+  const { styles: web } = useStyles(webPageStyles);
+  const layout = useResponsiveLayout();
   const colors = theme.colors;
   const navigation = useRouter();
 
@@ -96,6 +100,96 @@ export default function InviteToGroupScreen() {
   const isFormValid = () => {
     return email.trim().length > 0 && validateEmail(email.trim());
   };
+
+  const emailInput = (
+    <Input
+      label="Email Address"
+      value={email}
+      onChangeText={setEmail}
+      placeholder="friend@example.com"
+      keyboardType="email-address"
+      autoCapitalize="none"
+      autoCorrect={false}
+      autoComplete="email"
+      required
+      error={getEmailValidationError()}
+      success={
+        email.trim() && validateEmail(email.trim())
+          ? "Valid email address"
+          : undefined
+      }
+      helperText={
+        !email.trim()
+          ? "Enter the email address of the person you want to invite"
+          : undefined
+      }
+      leftIcon="envelope"
+    />
+  );
+
+  if (layout.isWeb && !layout.isMobile) {
+    return (
+      <ScrollView style={{ flex: 1 }} keyboardShouldPersistTaps="handled">
+        <View
+          style={[
+            web.frame,
+            {
+              flex: 0,
+              paddingHorizontal: theme.spacing.xl,
+              paddingTop: theme.spacing.lg,
+              paddingBottom: theme.spacing.xl,
+            },
+          ]}
+        >
+          <View
+            style={[
+              web.panel,
+              {
+                width: "100%",
+                maxWidth: 640,
+                alignSelf: "center",
+                gap: theme.spacing.lg,
+              },
+            ]}
+          >
+            <Text style={{ color: colors.textSecondary }}>
+              Invite someone by email to join this group.
+            </Text>
+            {emailInput}
+            <View style={{ gap: theme.spacing.sm }}>
+              <Text style={{ color: colors.text, fontWeight: "600" }}>
+                How invitations work
+              </Text>
+              <Text style={{ color: colors.textSecondary, lineHeight: 22 }}>
+                They can accept or decline in the app. Invitations expire after
+                7 days, and the group owner can cancel pending invitations.
+              </Text>
+            </View>
+            <View
+              style={{
+                flexDirection: "row",
+                justifyContent: "flex-end",
+                gap: theme.spacing.md,
+              }}
+            >
+              <Button
+                title="Cancel"
+                variant="outline"
+                onPress={handleGoBack}
+                disabled={loading}
+              />
+              <Button
+                title="Send Invitation"
+                onPress={handleSendInvitation}
+                disabled={!isFormValid()}
+                loading={loading}
+              />
+            </View>
+          </View>
+        </View>
+      </ScrollView>
+    );
+  }
 
   const styles = StyleSheet.create({
     container: {
@@ -200,29 +294,7 @@ export default function InviteToGroupScreen() {
               <View style={styles.section}>
                 <Text style={styles.sectionTitle}>Send Invitation</Text>
 
-                <Input
-                  label="Email Address"
-                  value={email}
-                  onChangeText={setEmail}
-                  placeholder="friend@example.com"
-                  keyboardType="email-address"
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                  autoComplete="email"
-                  required
-                  error={getEmailValidationError()}
-                  success={
-                    email.trim() && validateEmail(email.trim())
-                      ? "Valid email address"
-                      : undefined
-                  }
-                  helperText={
-                    !email.trim()
-                      ? "Enter the email address of the person you want to invite"
-                      : undefined
-                  }
-                  leftIcon="envelope"
-                />
+                {emailInput}
               </View>
             </CardContent>
           </Card>
@@ -242,8 +314,7 @@ export default function InviteToGroupScreen() {
               <View style={styles.bulletPoint}>
                 <IconSymbol name="circle.fill" size={4} color={colors.text} />
                 <Text style={styles.bulletText}>
-                  The person will receive an email invitation (note: email
-                  functionality is pending implementation)
+                  The person will receive an invitation to join this group
                 </Text>
               </View>
 

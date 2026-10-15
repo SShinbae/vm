@@ -1,6 +1,6 @@
 import { storageImageUrl } from "@/lib/utils/storagePath";
 import { withOpacity, spacing } from "@/src/design-system";
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import React, { useState, useCallback, useRef } from "react";
 import {
   View,
   TouchableOpacity,
@@ -9,7 +9,12 @@ import {
   useWindowDimensions,
 } from "react-native";
 import { Image } from "expo-image";
-import { router, useLocalSearchParams, useRouter } from "expo-router";
+import {
+  router,
+  useFocusEffect,
+  useLocalSearchParams,
+  useRouter,
+} from "expo-router";
 import {
   GroupService,
   GroupInvitationService,
@@ -27,22 +32,25 @@ import { PageHeader } from "@/components/ui/PageHeader";
 import { ThemedText as Text } from "@/components/ui/ThemedText";
 import { useStyles } from "react-native-unistyles";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useResponsiveLayout } from "@/hooks/use-responsive-layout";
+import { GroupWebDetail } from "@/components/groups/GroupWebDetail";
 
 type TabType = "members" | "invitations" | "vehicles";
 
 export default function GroupDetailScreen() {
   const { theme } = useStyles();
+  const layout = useResponsiveLayout();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { width } = useWindowDimensions();
   const navigation = useRouter();
 
-  const handleGoBack = () => {
+  const handleGoBack = useCallback(() => {
     if (navigation.canGoBack()) {
       router.back();
     } else {
       router.replace("/groups");
     }
-  };
+  }, [navigation]);
 
   // Clamp font size: min 10, preferred based on width, max 14
   const tabFontSize = Math.min(Math.max(width * 0.03, 10), 14);
@@ -57,39 +65,45 @@ export default function GroupDetailScreen() {
   const [sharedVehicles, setSharedVehicles] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const focused = useRef(false);
+  const requestId = useRef(0);
 
   const fetchGroupData = useCallback(async () => {
-    if (!id) return;
+    if (!id || !focused.current) return;
+    const currentRequest = ++requestId.current;
+    try {
+      const [groupResult, invitationsResult, vehiclesResult] =
+        await Promise.all([
+          GroupService.getGroupById(id),
+          GroupInvitationService.getInvitations(id),
+          VehicleService.getVehiclesForGroup(id),
+        ]);
+      if (!focused.current || currentRequest !== requestId.current) return;
 
-    const [groupResult, invitationsResult, vehiclesResult] = await Promise.all([
-      GroupService.getGroupById(id),
-      GroupInvitationService.getInvitations(id),
-      VehicleService.getVehiclesForGroup(id),
-    ]);
+      if (groupResult.error) {
+        toast.error("Failed to load group details");
+        handleGoBack();
+      } else if (groupResult.data) {
+        setGroup(groupResult.data);
+      }
 
-    if (groupResult.error) {
-      toast.error("Failed to load group details");
-      handleGoBack();
-    } else if (groupResult.data) {
-      setGroup(groupResult.data);
+      if (invitationsResult.data) setInvitations(invitationsResult.data);
+      if (vehiclesResult.data) setSharedVehicles(vehiclesResult.data);
+    } catch {
+      if (focused.current && currentRequest === requestId.current) {
+        toast.error("Failed to load group details");
+      }
+    } finally {
+      if (focused.current && currentRequest === requestId.current) {
+        setLoading(false);
+        setRefreshing(false);
+      }
     }
-
-    if (invitationsResult.data) {
-      setInvitations(invitationsResult.data);
-    }
-
-    if (vehiclesResult.data) {
-      setSharedVehicles(vehiclesResult.data);
-    }
-
-    setLoading(false);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id, dialog]);
+  }, [id, handleGoBack]);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
     await fetchGroupData();
-    setRefreshing(false);
   }, [fetchGroupData]);
 
   // Dialogs close on confirm, so guard against double taps while the action runs.
@@ -244,9 +258,40 @@ export default function GroupDetailScreen() {
     });
   };
 
-  useEffect(() => {
-    fetchGroupData();
-  }, [fetchGroupData]);
+  useFocusEffect(
+    useCallback(() => {
+      focused.current = true;
+      void fetchGroupData();
+      return () => {
+        focused.current = false;
+        requestId.current += 1;
+      };
+    }, [fetchGroupData]),
+  );
+
+  if (layout.isWeb && !layout.isMobile) {
+    return (
+      <GroupWebDetail
+        group={group}
+        invitations={invitations}
+        vehicles={sharedVehicles}
+        userId={user?.id}
+        loading={loading}
+        refreshing={refreshing}
+        busy={busy}
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
+        onBack={handleGoBack}
+        onRefresh={onRefresh}
+        onRemoveMember={handleRemoveMember}
+        onMakeOwner={handleMakeOwner}
+        onResend={handleResendInvitation}
+        onCancel={handleCancelInvitation}
+        onLeave={handleLeaveGroup}
+        onDelete={handleDeleteGroup}
+      />
+    );
+  }
 
   if (loading) {
     return (

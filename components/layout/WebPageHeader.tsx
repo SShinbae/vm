@@ -46,26 +46,31 @@ export function WebPageHeader() {
   const firstName = user?.profile?.full_name?.split(" ")[0];
   const isAnalytics =
     pathname === "/analytics" || pathname.startsWith("/analytics/");
-  const title =
-    pathname === "/vehicles"
-      ? "Vehicles"
-      : pathname === "/logs"
-        ? "Logs"
-        : pathname === "/notifications"
-          ? "Notifications"
-          : isAnalytics
-            ? "Analytics"
-            : `Welcome back${firstName ? `, ${firstName}` : ""}`;
-  const subtitle =
-    pathname === "/vehicles"
-      ? "Manage your fleet and maintenance"
-      : pathname === "/logs"
-        ? "Track mileage, fuel, and service history"
-        : pathname === "/notifications"
-          ? "Updates, reminders, and invitations"
-          : isAnalytics
-            ? "Track costs, fuel, and maintenance"
-            : "Your vehicles at a glance";
+  const groupHeading =
+    pathname === "/groups"
+      ? ["Groups", "Manage vehicle sharing and members"]
+      : pathname === "/groups/create"
+        ? ["Create Group", "Share vehicles with family or your team"]
+        : /^\/groups\/[^/]+\/invite$/.test(pathname)
+          ? ["Invite Member", "Invite someone to share this group"]
+          : pathname.startsWith("/groups/")
+            ? ["Group details", "Members, shared vehicles, and invitations"]
+            : null;
+  const headings: Record<string, [string, string]> = {
+    "/vehicles": ["Vehicles", "Manage your fleet and maintenance"],
+    "/logs": ["Logs", "Track mileage, fuel, and service history"],
+    "/notifications": ["Notifications", "Updates, reminders, and invitations"],
+    "/profile": ["Profile", "Account details and preferences"],
+  };
+  const [title, subtitle] =
+    groupHeading ||
+    headings[pathname] ||
+    (isAnalytics
+      ? ["Analytics", "Track costs, fuel, and maintenance"]
+      : [
+          `Welcome back${firstName ? `, ${firstName}` : ""}`,
+          "Your vehicles at a glance",
+        ]);
 
   useEffect(() => setAvatarError(false), [avatarUrl]);
   useEffect(() => {
