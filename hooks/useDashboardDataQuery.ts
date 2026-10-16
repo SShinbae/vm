@@ -1,15 +1,18 @@
 import { useAuth } from "@/lib/contexts/AuthContext";
-import { useQueries } from "@tanstack/react-query";
+import { useQueries, useQuery } from "@tanstack/react-query";
 import { supabase } from "@/services/supabaseClient";
-import { Database } from "@/types/database";
+import {
+  ReminderLog,
+  selectServiceReminders,
+} from "@/lib/dashboard/serviceReminders";
+import { buildFuelCostTrend } from "@/lib/dashboard/homeOverview";
+import { fetchAccessibleVehicles } from "@/lib/services/vehicleAccess";
 
-// Import types from original hook
-type Vehicle = Database["public"]["Tables"]["vehicles"]["Row"];
-export interface VehicleWithShares extends Vehicle {
-  shareCount: number;
-  isSharedWithMe: boolean;
-  ownerName: string | null;
-}
+import {
+  accessibleVehicleQueryOptions,
+  VehicleWithShares,
+} from "./useAccessibleVehiclesQuery";
+export type { VehicleWithShares } from "./useAccessibleVehiclesQuery";
 
 export interface DashboardStats {
   totalVehicles: number;
@@ -26,6 +29,7 @@ export interface ActivityItem {
   id: string;
   type: "mileage" | "fuel" | "service";
   date: string;
+  createdAt?: string;
   vehicleName: string;
   primaryValue: string;
   icon: "speedometer" | "fuelpump.fill" | "wrench.and.screwdriver.fill";
@@ -59,6 +63,7 @@ const processActivityLogs = (
       id: log.id,
       type: "mileage",
       date: log.date,
+      createdAt: log.created_at,
       vehicleName: `${log.vehicles?.year} ${log.vehicles?.make} ${log.vehicles?.model}`,
       primaryValue: `${log.odometer_reading.toLocaleString()} km`,
       icon: "speedometer",
@@ -71,6 +76,7 @@ const processActivityLogs = (
       id: log.id,
       type: "fuel",
       date: log.date,
+      createdAt: log.created_at,
       vehicleName: `${log.vehicles?.year} ${log.vehicles?.make} ${log.vehicles?.model}`,
       primaryValue: `RM${log.cost.toFixed(2)}`,
       icon: "fuelpump.fill",
@@ -82,17 +88,22 @@ const processActivityLogs = (
     activities.push({
       id: log.id,
       type: "service",
-      date: log.service_date,
+      date: log.date,
+      createdAt: log.created_at,
       vehicleName: `${log.vehicles?.year} ${log.vehicles?.make} ${log.vehicles?.model}`,
-      primaryValue: `RM${log.cost.toFixed(2)}`,
+      primaryValue: `RM${(log.cost || 0).toFixed(2)}`,
       icon: "wrench.and.screwdriver.fill",
       addedBy: log.profiles?.full_name ?? "Unknown",
     });
   });
 
   return activities
-    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-    .slice(0, 10);
+    .sort(
+      (a, b) =>
+        b.date.localeCompare(a.date) ||
+        (b.createdAt || "").localeCompare(a.createdAt || ""),
+    )
+    .slice(0, 5);
 };
 
 /**
@@ -100,10 +111,7 @@ const processActivityLogs = (
  */
 async function fetchStats(userId: string): Promise<DashboardStats> {
   // Get vehicles
-  const { data: allVehiclesData } = await (supabase as any).rpc(
-    "get_user_vehicles_with_sharing",
-    { user_uuid: userId },
-  );
+  const { data: allVehiclesData } = await fetchAccessibleVehicles(userId);
 
   const vehicleIds = allVehiclesData?.map((v: any) => v.vehicle_id) || [];
   const totalVehicles = vehicleIds.length;
@@ -169,58 +177,6 @@ async function fetchStats(userId: string): Promise<DashboardStats> {
 /**
  * Fetch vehicles with share counts and accurate mileage (owned + shared)
  */
-async function fetchVehicles(userId: string): Promise<VehicleWithShares[]> {
-  // Use the same RPC as stats to get both owned and shared vehicles
-  const { data: allVehiclesData, error: rpcError } = await (
-    supabase as any
-  ).rpc("get_user_vehicles_with_sharing", { user_uuid: userId });
-
-  if (rpcError) throw rpcError;
-  if (!allVehiclesData || allVehiclesData.length === 0) return [];
-
-  const vehicleIds = allVehiclesData.map((v: any) => v.vehicle_id);
-
-  // Fetch mileage logs for accurate mileage readings
-  const { data: mileageLogs } = await supabase
-    .from("mileage_logs")
-    .select("vehicle_id, odometer_reading")
-    .in("vehicle_id", vehicleIds);
-
-  // Build a map of vehicle_id -> max odometer reading
-  const maxMileageByVehicle: Record<string, number> = {};
-  mileageLogs?.forEach((log: any) => {
-    const current = maxMileageByVehicle[log.vehicle_id] || 0;
-    if (log.odometer_reading > current) {
-      maxMileageByVehicle[log.vehicle_id] = log.odometer_reading;
-    }
-  });
-
-  return allVehiclesData.map((v: any) => {
-    const logMileage = maxMileageByVehicle[v.vehicle_id] || 0;
-    const effectiveMileage = Math.max(v.current_mileage || 0, logMileage);
-    const isOwn = v.is_own_vehicle === true;
-
-    return {
-      id: v.vehicle_id,
-      user_id: v.owner_id,
-      make: v.make,
-      model: v.model,
-      year: v.year,
-      license_plate: v.license_plate,
-      current_mileage: effectiveMileage,
-      main_image_url: v.main_image_url,
-      created_at: v.created_at,
-      updated_at: v.updated_at ?? v.created_at,
-      vin: v.vin ?? null,
-      color: v.color ?? null,
-      shared_with_groups: (v.shared_groups?.length || 0) > 0,
-      shareCount: isOwn ? v.shared_groups?.length || 0 : 0,
-      isSharedWithMe: !isOwn,
-      ownerName: v.owner_name ?? null,
-    } as VehicleWithShares;
-  });
-}
-
 /**
  * Fetch recent activity (owned + shared vehicles)
  */
@@ -241,18 +197,21 @@ async function fetchRecentActivity(userId: string): Promise<ActivityItem[]> {
       .select("*, vehicles(year, make, model), profiles(full_name)")
       .in("vehicle_id", vehicleIds)
       .order("date", { ascending: false })
+      .order("created_at", { ascending: false })
       .limit(10),
     supabase
       .from("fuel_logs")
       .select("*, vehicles(year, make, model), profiles(full_name)")
       .in("vehicle_id", vehicleIds)
       .order("date", { ascending: false })
+      .order("created_at", { ascending: false })
       .limit(10),
     supabase
       .from("service_logs")
       .select("*, vehicles(year, make, model), profiles(full_name)")
       .in("vehicle_id", vehicleIds)
       .order("date", { ascending: false })
+      .order("created_at", { ascending: false })
       .limit(10),
   ]);
 
@@ -261,6 +220,58 @@ async function fetchRecentActivity(userId: string): Promise<ActivityItem[]> {
     fuelPromise.data || [],
     servicePromise.data || [],
   );
+}
+
+async function fetchServiceReminders(vehicles: VehicleWithShares[]) {
+  if (!vehicles.length) return [];
+
+  const logs: ReminderLog[] = [];
+  for (let offset = 0; ; offset += 1000) {
+    const { data, error } = await supabase
+      .from("service_logs")
+      .select(
+        "id,vehicle_id,service_type,date,created_at,next_service_due,next_service_mileage",
+      )
+      .in(
+        "vehicle_id",
+        vehicles.map((vehicle) => vehicle.id),
+      )
+      .order("date", { ascending: false })
+      .order("created_at", { ascending: false })
+      .range(offset, offset + 999);
+    if (error) throw new Error(error.message);
+    logs.push(...(data || []));
+    if (!data || data.length < 1000) break;
+  }
+
+  return selectServiceReminders(logs, vehicles);
+}
+
+async function fetchFuelCostTrend(
+  vehicles: VehicleWithShares[],
+  months: 6 | 12,
+) {
+  if (!vehicles.length) return buildFuelCostTrend([], months);
+  const now = new Date();
+  const start = new Date(now.getFullYear(), now.getMonth() - months + 1, 1);
+  const fromDate = `${start.getFullYear()}-${String(start.getMonth() + 1).padStart(2, "0")}-01`;
+  const logs: { date: string; cost: number | null }[] = [];
+  for (let offset = 0; ; offset += 1000) {
+    const { data, error } = await supabase
+      .from("fuel_logs")
+      .select("date,cost")
+      .in(
+        "vehicle_id",
+        vehicles.map((vehicle) => vehicle.id),
+      )
+      .gte("date", fromDate)
+      .order("date", { ascending: false })
+      .range(offset, offset + 999);
+    if (error) throw new Error(error.message);
+    logs.push(...(data || []));
+    if (!data || data.length < 1000) break;
+  }
+  return buildFuelCostTrend(logs, months, now);
 }
 
 /**
@@ -274,7 +285,7 @@ async function fetchRecentActivity(userId: string): Promise<ActivityItem[]> {
  * - Optimistic updates support
  * - Parallel query execution for faster initial load
  */
-export const useDashboardDataQuery = () => {
+export const useDashboardDataQuery = (fuelTrendMonths: 6 | 12 = 6) => {
   const { user } = useAuth();
 
   const queries = useQueries({
@@ -288,15 +299,7 @@ export const useDashboardDataQuery = () => {
         refetchOnMount: false, // Don't refetch if data is fresh
         refetchOnWindowFocus: false, // Reduce unnecessary refetches
       },
-      {
-        queryKey: ["dashboard", "vehicles", user?.id],
-        queryFn: () => fetchVehicles(user!.id),
-        enabled: !!user,
-        staleTime: 3 * 60 * 1000, // 3min - vehicles change less frequently
-        gcTime: 15 * 60 * 1000, // 15min cache
-        refetchOnMount: false,
-        refetchOnWindowFocus: false,
-      },
+      accessibleVehicleQueryOptions(user?.id),
       {
         queryKey: ["dashboard", "activity", user?.id],
         queryFn: () => fetchRecentActivity(user!.id),
@@ -310,6 +313,27 @@ export const useDashboardDataQuery = () => {
   });
 
   const [statsQuery, vehiclesQuery, activityQuery] = queries;
+  const remindersQuery = useQuery({
+    queryKey: ["dashboard", "reminders", user?.id, vehiclesQuery.dataUpdatedAt],
+    queryFn: () => fetchServiceReminders(vehiclesQuery.data || []),
+    enabled: !!user && vehiclesQuery.data !== undefined,
+    staleTime: 2 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+  });
+  const fuelTrendQuery = useQuery({
+    queryKey: [
+      "dashboard",
+      "fuelTrend",
+      user?.id,
+      vehiclesQuery.dataUpdatedAt,
+      fuelTrendMonths,
+    ],
+    queryFn: () =>
+      fetchFuelCostTrend(vehiclesQuery.data || [], fuelTrendMonths),
+    enabled: !!user && vehiclesQuery.data !== undefined,
+    staleTime: 2 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+  });
 
   // Combined loading state
   const loading = queries.some((q) => q.isLoading);
@@ -320,13 +344,23 @@ export const useDashboardDataQuery = () => {
 
   // Manual refresh function
   const onRefresh = async () => {
-    await Promise.all(queries.map((q) => q.refetch()));
+    await Promise.all([
+      ...queries.map((q) => q.refetch()),
+      remindersQuery.refetch(),
+      fuelTrendQuery.refetch(),
+    ]);
   };
 
   return {
     stats: statsQuery.data || defaultStats,
     vehicles: vehiclesQuery.data || [],
     recentActivity: activityQuery.data || [],
+    serviceReminders: remindersQuery.data || [],
+    remindersLoading: remindersQuery.isLoading,
+    remindersError: remindersQuery.error ? String(remindersQuery.error) : null,
+    fuelCostTrend: fuelTrendQuery.data || [],
+    fuelTrendLoading: fuelTrendQuery.isLoading,
+    fuelTrendError: fuelTrendQuery.error ? String(fuelTrendQuery.error) : null,
     loading,
     refreshing,
     error: error ? String(error) : null,

@@ -23,6 +23,14 @@ export type GroupInvitation =
 export type MileageLog = Database["public"]["Tables"]["mileage_logs"]["Row"];
 export type FuelLog = Database["public"]["Tables"]["fuel_logs"]["Row"];
 export type ServiceLog = Database["public"]["Tables"]["service_logs"]["Row"];
+
+export type LogWithVehicle<T> = T & {
+  vehicles: Pick<
+    Vehicle,
+    "make" | "model" | "year" | "license_plate" | "user_id" | "main_image_url"
+  >;
+};
+
 export type VehicleImage =
   Database["public"]["Tables"]["vehicle_images"]["Row"];
 export type VehicleGroupShare =

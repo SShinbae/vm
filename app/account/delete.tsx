@@ -1,3 +1,4 @@
+import { useResponsiveLayout } from "@/hooks/use-responsive-layout";
 import { Button } from "@/components/ui/Button";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { Input } from "@/components/ui/Input";
@@ -11,6 +12,7 @@ import { router, useFocusEffect } from "expo-router";
 import React, { useCallback, useRef, useState } from "react";
 import {
   Platform,
+  KeyboardAvoidingView,
   ScrollView,
   Text,
   TouchableOpacity,
@@ -29,6 +31,8 @@ const formatDate = (d: Date) =>
 
 export default function DeleteAccountScreen() {
   const { theme } = useStyles();
+  const { isWeb, isMobile } = useResponsiveLayout();
+  const compact = !isWeb || isMobile;
   const { showError } = useToast();
   const { confirm, alert } = useDialog();
   const [typed, setTyped] = useState("");
@@ -151,143 +155,157 @@ export default function DeleteAccountScreen() {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.background }}>
+    <SafeAreaView
+      edges={["top", "left", "right", "bottom"]}
+      style={{ flex: 1, backgroundColor: theme.colors.background }}
+    >
       <MaxWidthContainer>
-        <ScrollView
-          contentContainerStyle={{
-            padding: theme.spacing.xl,
-            gap: theme.spacing.lg,
-          }}
+        <KeyboardAvoidingView
+          enabled={Platform.OS !== "web"}
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          style={{ flex: 1 }}
         >
-          <TouchableOpacity
-            onPress={() =>
-              router.canGoBack()
-                ? router.back()
-                : router.replace("/(tabs)/profile")
-            }
-            accessibilityRole="button"
-            accessibilityLabel="Go back"
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              gap: theme.spacing.xs,
+          <ScrollView
+            keyboardShouldPersistTaps="handled"
+            contentContainerStyle={{
+              padding: compact ? 16 : theme.spacing.xl,
+              gap: theme.spacing.lg,
             }}
           >
-            <IconSymbol
-              name="chevron.left"
-              size={18}
-              color={theme.colors.primary}
-            />
-            <Text
+            <TouchableOpacity
+              onPress={() =>
+                router.canGoBack()
+                  ? router.back()
+                  : router.replace("/(tabs)/profile")
+              }
+              accessibilityRole="button"
+              accessibilityLabel="Go back"
               style={{
-                color: theme.colors.primary,
-                fontSize: theme.fontSize.base,
+                minHeight: 48,
+                flexDirection: "row",
+                alignItems: "center",
+                gap: theme.spacing.xs,
               }}
             >
-              Back
-            </Text>
-          </TouchableOpacity>
-
-          <Text
-            accessibilityRole="header"
-            style={{ ...heading, fontSize: theme.fontSize.xl }}
-          >
-            Delete account
-          </Text>
-
-          <Text style={text}>
-            Your account will be deleted on{" "}
-            <Text style={bold}>{deletionDate}</Text>. Until then you can sign in
-            and cancel.
-          </Text>
-
-          <Text style={heading}>What will be deleted</Text>
-          <Text style={text}>
-            {"•"} Your profile, vehicles and their fuel, mileage and service
-            logs{"\n"}
-            {"•"} Receipts and photos you uploaded{"\n"}
-            {"•"} Groups you own with no other members, and your memberships
-            {"\n"}
-            {"•"} Notifications and notification settings
-          </Text>
-
-          <Text style={heading}>What stays</Text>
-          <Text style={text}>
-            Logs you added to family members&apos; vehicles stay on those
-            vehicles without your name, with any receipt photos attached to
-            them, so their history stays complete.
-          </Text>
-
-          {blocking.length > 0 && (
-            <View
-              style={{
-                borderWidth: 1,
-                borderColor: theme.colors.error,
-                borderRadius: theme.borderRadius.lg,
-                padding: theme.spacing.lg,
-                gap: theme.spacing.sm,
-              }}
-            >
-              <Text style={heading}>Hand over your groups first</Text>
-              <Text style={text}>
-                You own groups that other people still use. Make another member
-                the owner (the crown button) or delete the group, then come
-                back.
+              <IconSymbol
+                name="chevron.left"
+                size={18}
+                color={theme.colors.primary}
+              />
+              <Text
+                style={{
+                  color: theme.colors.primary,
+                  fontSize: theme.fontSize.base,
+                }}
+              >
+                Back
               </Text>
-              {blocking.map((g) => (
-                <TouchableOpacity
-                  key={g.id}
-                  onPress={() => router.push(`/groups/${g.id}` as never)}
-                  accessibilityRole="link"
-                >
-                  <Text
-                    style={{
-                      color: theme.colors.primary,
-                      fontSize: theme.fontSize.base,
-                    }}
-                  >
-                    {g.name}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          )}
+            </TouchableOpacity>
 
-          <Input
-            label={
-              <>
-                Type <Text style={bold}>DELETE</Text> to confirm
-              </>
-            }
-            accessibilityLabel="Type DELETE to confirm"
-            value={typed}
-            onChangeText={setTyped}
-            autoCapitalize="characters"
-            autoCorrect={false}
-          />
-
-          {checkingGroups && <Text style={text}>Checking your groups…</Text>}
-          {blockingStatus === "error" && (
             <Text
-              accessibilityRole="alert"
-              style={{
-                color: theme.colors.error,
-                fontSize: theme.fontSize.base,
-              }}
+              accessibilityRole="header"
+              style={{ ...heading, fontSize: theme.fontSize.xl }}
             >
-              Couldn&apos;t check your groups. Go back and try again.
+              Delete account
             </Text>
-          )}
 
-          <Button
-            title="Delete my account"
-            variant="danger"
-            onPress={handleDelete}
-            disabled={!canDelete}
-            loading={busy}
-            fullWidth
-          />
-        </ScrollView>
+            <Text style={text}>
+              Your account will be deleted on{" "}
+              <Text style={bold}>{deletionDate}</Text>. Until then you can sign
+              in and cancel.
+            </Text>
+
+            <Text style={heading}>What will be deleted</Text>
+            <Text style={text}>
+              {"•"} Your profile, vehicles and their fuel, mileage and service
+              logs{"\n"}
+              {"•"} Receipts and photos you uploaded{"\n"}
+              {"•"} Groups you own with no other members, and your memberships
+              {"\n"}
+              {"•"} Notifications and notification settings
+            </Text>
+
+            <Text style={heading}>What stays</Text>
+            <Text style={text}>
+              Logs you added to family members&apos; vehicles stay on those
+              vehicles without your name, with any receipt photos attached to
+              them, so their history stays complete.
+            </Text>
+
+            {blocking.length > 0 && (
+              <View
+                style={{
+                  borderWidth: 1,
+                  borderColor: theme.colors.error,
+                  borderRadius: theme.borderRadius.lg,
+                  padding: theme.spacing.lg,
+                  gap: theme.spacing.sm,
+                }}
+              >
+                <Text style={heading}>Hand over your groups first</Text>
+                <Text style={text}>
+                  You own groups that other people still use. Make another
+                  member the owner (the crown button) or delete the group, then
+                  come back.
+                </Text>
+                {blocking.map((g) => (
+                  <TouchableOpacity
+                    key={g.id}
+                    onPress={() => router.push(`/groups/${g.id}` as never)}
+                    accessibilityRole="link"
+                    style={{ minHeight: 48, justifyContent: "center" }}
+                  >
+                    <Text
+                      style={{
+                        color: theme.colors.primary,
+                        fontSize: theme.fontSize.base,
+                      }}
+                    >
+                      {g.name}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            )}
+
+            <Input
+              label={
+                <>
+                  Type <Text style={bold}>DELETE</Text> to confirm
+                </>
+              }
+              accessibilityLabel="Type DELETE to confirm"
+              inputStyle={{ minHeight: 48 }}
+              value={typed}
+              onChangeText={setTyped}
+              autoCapitalize="characters"
+              autoCorrect={false}
+            />
+
+            {checkingGroups && <Text style={text}>Checking your groups…</Text>}
+            {blockingStatus === "error" && (
+              <Text
+                accessibilityRole="alert"
+                style={{
+                  color: theme.colors.error,
+                  fontSize: theme.fontSize.base,
+                }}
+              >
+                Couldn&apos;t check your groups. Go back and try again.
+              </Text>
+            )}
+
+            <Button
+              title="Delete my account"
+              style={{ minHeight: 48 }}
+              variant="danger"
+              onPress={handleDelete}
+              disabled={!canDelete}
+              loading={busy}
+              fullWidth
+            />
+          </ScrollView>
+        </KeyboardAvoidingView>
       </MaxWidthContainer>
     </SafeAreaView>
   );

@@ -1,17 +1,37 @@
+import { storageImageUrl } from "@/lib/utils/storagePath";
 import { withOpacity, spacing } from "@/src/design-system";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { VehicleWithShares } from "@/hooks/useDashboardDataQuery";
 import { Image } from "expo-image";
 import { router } from "expo-router";
 import React, { useState } from "react";
-import { Text, TouchableOpacity, View } from "react-native";
+import { ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { createStyleSheet, useStyles } from "react-native-unistyles";
 
+export type VehicleTableItem = Pick<
+  VehicleWithShares,
+  | "id"
+  | "year"
+  | "make"
+  | "model"
+  | "main_image_url"
+  | "license_plate"
+  | "current_mileage"
+  | "isSharedWithMe"
+  | "shareCount"
+>;
 type VehicleTableProps = {
-  vehicles: VehicleWithShares[];
+  vehicles: VehicleTableItem[];
+  onView?: (id: string) => void;
 };
 
-function VehicleTableRow({ vehicle }: { vehicle: VehicleWithShares }) {
+function VehicleTableRow({
+  vehicle,
+  onView,
+}: {
+  vehicle: VehicleTableItem;
+  onView?: (id: string) => void;
+}) {
   const { styles, theme } = useStyles(stylesheet);
   const [imageError, setImageError] = useState(false);
 
@@ -19,14 +39,23 @@ function VehicleTableRow({ vehicle }: { vehicle: VehicleWithShares }) {
     .filter((val) => val != null && val !== "")
     .map(String);
   const vehicleName = parts.length > 0 ? parts.join(" ") : "Unknown Vehicle";
+  const handleView = () =>
+    onView ? onView(vehicle.id) : router.push(`/vehicles/${vehicle.id}` as any);
 
   return (
     <View style={styles.row}>
       {/* Vehicle Column */}
-      <View style={styles.vehicleColumn}>
+      <TouchableOpacity
+        style={styles.vehicleColumn}
+        onPress={handleView}
+        accessibilityRole="link"
+        accessibilityLabel={`Open ${vehicleName}`}
+      >
         {vehicle.main_image_url && !imageError ? (
           <Image
-            source={{ uri: vehicle.main_image_url }}
+            source={{
+              uri: storageImageUrl("vehicle-images", vehicle.main_image_url),
+            }}
             style={styles.vehicleImage}
             contentFit="cover"
             cachePolicy="memory-disk"
@@ -47,10 +76,11 @@ function VehicleTableRow({ vehicle }: { vehicle: VehicleWithShares }) {
             {String(vehicleName)}
           </Text>
           <Text style={styles.vehicleSubText} numberOfLines={1}>
-            {vehicle.license_plate ? String(vehicle.license_plate) : "N/A"}
+            {[vehicle.make, vehicle.model].filter(Boolean).join(" ") ||
+              "Vehicle"}
           </Text>
         </View>
-      </View>
+      </TouchableOpacity>
 
       {/* Plate Number Column */}
       <View style={styles.plateColumn}>
@@ -72,15 +102,32 @@ function VehicleTableRow({ vehicle }: { vehicle: VehicleWithShares }) {
       <View style={styles.statusColumn}>
         {vehicle.isSharedWithMe ? (
           <View style={styles.sharedWithMeBadge}>
-            <Text style={styles.badgeText}>Shared with me</Text>
+            <IconSymbol
+              name="person.2.fill"
+              size={14}
+              color={theme.colors.warning}
+            />
+            <Text style={[styles.badgeText, styles.sharedWithMeText]}>
+              Shared with me
+            </Text>
           </View>
         ) : vehicle.shareCount > 0 ? (
           <View style={styles.sharedBadge}>
-            <Text style={styles.badgeText}>Shared</Text>
+            <IconSymbol
+              name="person.2.fill"
+              size={14}
+              color={theme.colors.primary}
+            />
+            <Text style={[styles.badgeText, styles.sharedText]}>Shared</Text>
           </View>
         ) : (
           <View style={styles.activeBadge}>
-            <Text style={styles.badgeText}>Active</Text>
+            <IconSymbol
+              name="checkmark.circle.fill"
+              size={14}
+              color={theme.colors.success}
+            />
+            <Text style={[styles.badgeText, styles.activeText]}>Active</Text>
           </View>
         )}
       </View>
@@ -89,7 +136,7 @@ function VehicleTableRow({ vehicle }: { vehicle: VehicleWithShares }) {
       <View style={styles.actionsColumn}>
         <TouchableOpacity
           style={styles.viewButton}
-          onPress={() => router.push(`/vehicles/${vehicle.id}` as any)}
+          onPress={handleView}
           accessibilityLabel={`View details for ${vehicleName}`}
         >
           <Text style={styles.viewButtonText}>View</Text>
@@ -99,48 +146,62 @@ function VehicleTableRow({ vehicle }: { vehicle: VehicleWithShares }) {
   );
 }
 
-export function VehicleTable({ vehicles }: VehicleTableProps) {
+export function VehicleTable({ vehicles, onView }: VehicleTableProps) {
   const { styles } = useStyles(stylesheet);
+  const [width, setWidth] = useState(0);
 
   return (
-    <View style={styles.container}>
-      {/* Header Row */}
-      <View style={styles.headerRow}>
-        <View style={styles.vehicleColumn}>
-          <Text style={styles.headerText}>Vehicle</Text>
-        </View>
-        <View style={styles.plateColumn}>
-          <Text style={styles.headerText}>Plate Number</Text>
-        </View>
-        <View style={styles.mileageColumn}>
-          <Text style={styles.headerText}>Mileage</Text>
-        </View>
-        <View style={styles.statusColumn}>
-          <Text style={styles.headerText}>Status</Text>
-        </View>
-        <View style={styles.actionsColumn}>
-          <Text style={styles.headerText}>Actions</Text>
-        </View>
-      </View>
+    <View
+      style={styles.container}
+      onLayout={(event) => setWidth(event.nativeEvent.layout.width)}
+    >
+      <ScrollView horizontal showsHorizontalScrollIndicator>
+        <View style={{ width: Math.max(width - 2, 760) }}>
+          {/* Header Row */}
+          <View style={styles.headerRow}>
+            <View style={styles.vehicleColumn}>
+              <Text style={styles.headerText}>Vehicle</Text>
+            </View>
+            <View style={styles.plateColumn}>
+              <Text style={styles.headerText}>Plate Number</Text>
+            </View>
+            <View style={styles.mileageColumn}>
+              <Text style={styles.headerText}>Mileage</Text>
+            </View>
+            <View style={styles.statusColumn}>
+              <Text style={styles.headerText}>Status</Text>
+            </View>
+            <View style={styles.actionsColumn}>
+              <Text style={styles.headerText}>Actions</Text>
+            </View>
+          </View>
 
-      {/* Data Rows */}
-      {vehicles.map((vehicle) => (
-        <VehicleTableRow key={vehicle.id} vehicle={vehicle} />
-      ))}
+          {/* Data Rows */}
+          {vehicles.map((vehicle) => (
+            <VehicleTableRow
+              key={vehicle.id}
+              vehicle={vehicle}
+              onView={onView}
+            />
+          ))}
+        </View>
+      </ScrollView>
     </View>
   );
 }
 
 const stylesheet = createStyleSheet((theme) => ({
   container: {
-    backgroundColor: theme.colors.surface,
-    borderRadius: theme.borderRadius.xl,
+    backgroundColor: theme.colors.background,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    borderRadius: theme.borderRadius.lg,
     overflow: "hidden",
   },
   headerRow: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: theme.colors.background,
+    backgroundColor: withOpacity(theme.colors.textSecondary, 0.06),
     paddingVertical: theme.spacing.md,
     paddingHorizontal: theme.spacing.lg,
   },
@@ -152,20 +213,20 @@ const stylesheet = createStyleSheet((theme) => ({
   row: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: theme.spacing.md,
+    paddingVertical: theme.spacing.lg,
     paddingHorizontal: theme.spacing.lg,
     borderBottomWidth: 1,
     borderBottomColor: withOpacity(theme.colors.textSecondary, 0.12),
   },
   vehicleColumn: {
-    flex: 35,
+    flex: 31,
     flexDirection: "row",
     alignItems: "center",
     gap: theme.spacing.sm,
     paddingRight: theme.spacing.sm,
   },
   plateColumn: {
-    flex: 15,
+    flex: 14,
     paddingRight: theme.spacing.sm,
   },
   mileageColumn: {
@@ -173,22 +234,22 @@ const stylesheet = createStyleSheet((theme) => ({
     paddingRight: theme.spacing.sm,
   },
   statusColumn: {
-    flex: 15,
+    flex: 22,
     paddingRight: theme.spacing.sm,
   },
   actionsColumn: {
-    flex: 20,
+    flex: 18,
     alignItems: "flex-end",
   },
   vehicleImage: {
-    width: 40,
-    height: 40,
+    width: 52,
+    height: 52,
     borderRadius: theme.borderRadius.md,
     backgroundColor: theme.colors.disabled,
   },
   vehiclePlaceholder: {
-    width: 40,
-    height: 40,
+    width: 52,
+    height: 52,
     borderRadius: theme.borderRadius.md,
     backgroundColor: withOpacity(theme.colors.primary, 0.08),
     alignItems: "center",
@@ -212,31 +273,48 @@ const stylesheet = createStyleSheet((theme) => ({
     color: theme.colors.text,
   },
   sharedBadge: {
-    backgroundColor: theme.colors.primary,
+    backgroundColor: withOpacity(theme.colors.primary, 0.1),
+    borderWidth: 1,
+    borderColor: withOpacity(theme.colors.primary, 0.35),
     paddingHorizontal: theme.spacing.sm,
     paddingVertical: theme.spacing.xs,
     borderRadius: theme.borderRadius.sm,
     alignSelf: "flex-start",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: theme.spacing.xs,
   },
   activeBadge: {
-    backgroundColor: theme.colors.success,
+    backgroundColor: withOpacity(theme.colors.success, 0.1),
+    borderWidth: 1,
+    borderColor: withOpacity(theme.colors.success, 0.35),
     paddingHorizontal: theme.spacing.sm,
     paddingVertical: theme.spacing.xs,
     borderRadius: theme.borderRadius.sm,
     alignSelf: "flex-start",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: theme.spacing.xs,
   },
   sharedWithMeBadge: {
-    backgroundColor: theme.colors.warning,
+    backgroundColor: withOpacity(theme.colors.warning, 0.1),
+    borderWidth: 1,
+    borderColor: withOpacity(theme.colors.warning, 0.55),
     paddingHorizontal: theme.spacing.sm,
     paddingVertical: theme.spacing.xs,
     borderRadius: theme.borderRadius.sm,
     alignSelf: "flex-start",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: theme.spacing.xs,
   },
   badgeText: {
     fontSize: theme.fontSize.xs,
     fontWeight: theme.fontWeight.semibold,
-    color: theme.colors.white,
   },
+  sharedWithMeText: { color: theme.colors.warning },
+  sharedText: { color: theme.colors.primary },
+  activeText: { color: theme.colors.success },
   viewButton: {
     backgroundColor: theme.colors.surface,
     borderWidth: 1,

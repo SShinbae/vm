@@ -1,3 +1,4 @@
+import { webPageStyles } from "@/components/layout/webPageStyles";
 import { spacing } from "@/src/design-system";
 import React from "react";
 import { View, Text } from "react-native";
@@ -11,10 +12,18 @@ interface StatCardProps {
 
 export function StatCard({ value, label }: StatCardProps) {
   const { styles } = useStyles(stylesheet);
-  const { isMobile, isTablet } = useResponsiveLayout();
+  const { isWeb, isMobile, isTablet } = useResponsiveLayout();
 
+  const { styles: web } = useStyles(webPageStyles);
+  const isWebPage = isWeb && !isMobile;
   return (
-    <View style={[styles.container, isMobile && styles.containerMobile]}>
+    <View
+      style={[
+        styles.container,
+        isMobile && styles.containerMobile,
+        isWebPage && [web.panel, { shadowOpacity: 0, elevation: 0 }],
+      ]}
+    >
       <Text
         style={[
           styles.value,
@@ -48,7 +57,7 @@ const stylesheet = createStyleSheet((theme) => ({
   },
   containerMobile: {
     padding: theme.spacing.md,
-    minWidth: 80,
+    minWidth: 0,
   },
   value: {
     fontSize: theme.fontSize["3xl"],
@@ -70,7 +79,7 @@ const stylesheet = createStyleSheet((theme) => ({
     letterSpacing: 0.5,
   },
   labelMobile: {
-    fontSize: 10,
+    fontSize: theme.fontSize.sm,
     letterSpacing: 0.3,
   },
 }));

@@ -1,7 +1,9 @@
+import { getLogHistory } from "./logHistory";
 import { logger } from "@/lib/utils/logger";
 import { supabase } from "../../services/supabaseClient";
 import {
   ApiResponse,
+  LogWithVehicle,
   FuelLog,
   FuelLogInsert,
   FuelLogUpdate,
@@ -11,130 +13,14 @@ import { canUserAccessVehicle } from "../utils/serviceUtils";
 export class FuelLogService {
   static async getFuelLogs(
     vehicleId?: string,
-    options?: { limit?: number; offset?: number },
+    options?: { limit?: number; offset?: number; ascending?: boolean },
   ): Promise<ApiResponse<FuelLog[]>> {
-    try {
-      const {
-        data: { user },
-        error: userError,
-      } = await supabase.auth.getUser();
-
-      if (userError || !user) {
-        return { data: null, error: "User not authenticated", loading: false };
-      }
-
-      // OPTIMIZATION: Add pagination support
-      const limit = options?.limit || 20;
-      const offset = options?.offset || 0;
-
-      // Build base query for owned vehicles
-      let ownedQuery = supabase
-        .from("fuel_logs")
-        .select(
-          `
-          *,
-          vehicles!inner(make, model, year, license_plate, user_id, main_image_url)
-        `,
-        )
-        .eq("vehicles.user_id", user.id)
-        .order("date", { ascending: false })
-        .range(offset, offset + limit - 1);
-
-      if (vehicleId) {
-        ownedQuery = ownedQuery.eq("vehicle_id", vehicleId);
-      }
-
-      // First, get the shared vehicle IDs that the user has access to
-      let sharedVehicleIds: string[] = [];
-      if (!vehicleId) {
-        // Get user's group memberships
-        const { data: userGroups, error: groupError } = await supabase
-          .from("group_members")
-          .select("group_id")
-          .eq("user_id", user.id);
-
-        if (!groupError && userGroups && userGroups.length > 0) {
-          const groupIds = userGroups.map(
-            (g: { group_id: string }) => g.group_id,
-          );
-
-          // Get vehicles shared with these groups
-          const { data: sharedVehicles, error: shareError } = await supabase
-            .from("vehicle_group_shares")
-            .select("vehicle_id")
-            .in("group_id", groupIds);
-
-          if (!shareError && sharedVehicles) {
-            sharedVehicleIds = sharedVehicles.map(
-              (sv: { vehicle_id: string }) => sv.vehicle_id,
-            );
-          }
-        }
-      }
-
-      // Get logs for both owned vehicles and shared vehicles
-      const [ownedLogsResult, sharedLogsResult] = await Promise.all([
-        // Owned vehicle logs
-        ownedQuery,
-
-        // Shared vehicle logs (only if we have shared vehicle IDs)
-        sharedVehicleIds.length > 0
-          ? supabase
-              .from("fuel_logs")
-              .select(
-                `
-            *,
-            vehicles!inner(make, model, year, license_plate, user_id, main_image_url)
-          `,
-              )
-              .in("vehicle_id", sharedVehicleIds)
-              .order("date", { ascending: false })
-              .range(offset, offset + limit - 1)
-          : Promise.resolve({ data: [], error: null }),
-      ]);
-
-      // Handle errors
-      if (ownedLogsResult.error) {
-        logger.error("Error fetching owned fuel logs:", ownedLogsResult.error);
-        return {
-          data: null,
-          error: ownedLogsResult.error.message,
-          loading: false,
-        };
-      }
-
-      if (sharedLogsResult.error) {
-        logger.warn("Error fetching shared fuel logs:", sharedLogsResult.error);
-        // Don't fail completely, just use owned logs
-      }
-
-      // Combine and sort all logs
-      const ownedLogs = ownedLogsResult.data || [];
-      const sharedLogs = (sharedLogsResult.data || []).map((log: any) => ({
-        ...log,
-        is_shared_vehicle: true, // Mark as shared for UI indicators
-      }));
-
-      const allLogs = [...ownedLogs, ...sharedLogs];
-
-      // Remove duplicates (in case user owns and has access to same vehicle through sharing)
-      const uniqueLogs = allLogs.filter(
-        (log, index, self) => index === self.findIndex((l) => l.id === log.id),
-      );
-
-      // Sort by date descending
-      uniqueLogs.sort(
-        (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
-      );
-
-      return { data: uniqueLogs, error: null, loading: false };
-    } catch (error) {
-      logger.error("Unexpected error fetching fuel logs:", error);
-      return { data: null, error: "Failed to fetch fuel logs", loading: false };
-    }
+    return getLogHistory<FuelLog>("fuel_logs", vehicleId, options);
   }
 
-  static async getFuelLogById(id: string): Promise<ApiResponse<FuelLog>> {
+  static async getFuelLogById(
+    id: string,
+  ): Promise<ApiResponse<LogWithVehicle<FuelLog>>> {
     try {
       const {
         data: { user },

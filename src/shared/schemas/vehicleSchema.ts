@@ -44,11 +44,8 @@ export const vehicleSchema = z.object({
     .trim()
     .optional()
     .or(z.literal("")),
-  main_image_url: z
-    .string()
-    .url("Invalid image URL")
-    .optional()
-    .or(z.literal("")),
+  // Stored bucket path (the URL is built at render time), so no .url()
+  main_image_url: z.string().trim().optional().or(z.literal("")),
 });
 
 /**

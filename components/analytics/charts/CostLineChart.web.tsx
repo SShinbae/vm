@@ -1,3 +1,4 @@
+import { useResponsiveLayout } from "@/hooks/use-responsive-layout";
 import { spacing } from "@/src/design-system";
 import { useStyles } from "react-native-unistyles";
 /**
@@ -22,6 +23,7 @@ import { CostChartDataPoint } from "../../../types/analytics";
 interface CostLineChartProps {
   data: CostChartDataPoint[];
   title: string;
+  subtitle?: string;
   height?: number;
   showLegend?: boolean;
 }
@@ -29,19 +31,28 @@ interface CostLineChartProps {
 export function CostLineChart({
   data,
   title,
+  subtitle,
   height = 250,
   showLegend = true,
 }: CostLineChartProps) {
   const { theme } = useStyles();
   const colors = theme.colors;
+  const { isMobile } = useResponsiveLayout();
 
-  const costColor = colors.primary || theme.colors.info;
+  const costColor = colors.analytics.cost || theme.colors.warning;
   const fuelColor = colors.analytics.fuel || theme.colors.warning;
   const serviceColor = colors.analytics.service || theme.colors.success;
 
   const styles = StyleSheet.create({
     container: {
       marginBottom: spacing.lg,
+      ...(!isMobile && {
+        backgroundColor: colors.surface,
+        borderRadius: theme.borderRadius.xl,
+        padding: spacing.lg,
+        borderWidth: 1,
+        borderColor: colors.border,
+      }),
     },
     title: {
       fontSize: 18,
@@ -52,14 +63,16 @@ export function CostLineChart({
     chartContainer: {
       height: height,
       width: "100%",
-      backgroundColor: colors.surface,
-      borderRadius: 12,
-      padding: spacing.lg,
+      backgroundColor: isMobile ? colors.surface : "transparent",
+      borderRadius: isMobile ? 12 : 0,
+      borderWidth: 0,
+      padding: isMobile ? spacing.lg : 0,
     },
     emptyContainer: {
       height: height,
       backgroundColor: colors.surface,
-      borderRadius: 12,
+      borderRadius: isMobile ? 12 : theme.borderRadius.xl,
+      ...(!isMobile && { borderWidth: 1, borderColor: colors.border }),
       justifyContent: "center",
       alignItems: "center",
     },
@@ -92,6 +105,18 @@ export function CostLineChart({
   return (
     <View style={styles.container}>
       <Text style={styles.title}>{title}</Text>
+      {subtitle && (
+        <Text
+          style={{
+            color: colors.textSecondary,
+            fontSize: 14,
+            marginTop: -spacing.sm,
+            marginBottom: spacing.md,
+          }}
+        >
+          {subtitle}
+        </Text>
+      )}
       <View style={styles.chartContainer}>
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={chartData}>
@@ -115,15 +140,22 @@ export function CostLineChart({
               axisLine={{ stroke: colors.border }}
             />
             <Tooltip
-              formatter={(value: any, name?: string) => {
-                const label =
-                  name === "totalCost"
-                    ? "Total"
-                    : name === "fuelCost"
-                      ? "Fuel"
-                      : "Service";
-                return [`RM${Number(value).toFixed(2)}`, label];
-              }}
+              formatter={(value: any, name: any, item: any) => [
+                `RM${Number(value).toFixed(2)}`,
+                <span key={name}>
+                  <span
+                    style={{
+                      display: "inline-block",
+                      width: 8,
+                      height: 8,
+                      borderRadius: "50%",
+                      backgroundColor: item?.color,
+                      marginRight: 6,
+                    }}
+                  />
+                  {name}
+                </span>,
+              ]}
               labelStyle={{ color: colors.text }}
               contentStyle={{
                 backgroundColor: colors.surface,

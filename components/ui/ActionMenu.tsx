@@ -1,7 +1,7 @@
 import { baseColors, withOpacity } from "@/src/design-system";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import * as Haptics from "expo-haptics";
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import {
   Modal,
   Pressable,
@@ -9,6 +9,7 @@ import {
   TouchableOpacity,
   useWindowDimensions,
   View,
+  ViewStyle,
 } from "react-native";
 import { useStyles } from "react-native-unistyles";
 
@@ -23,13 +24,27 @@ export interface ActionMenuItem {
 interface ActionMenuProps {
   items: ActionMenuItem[];
   disabled?: boolean;
+  vertical?: boolean;
+  label?: string;
+  minTouchSize?: number;
+  accessibilityLabel?: string;
+  style?: ViewStyle;
 }
 
-export function ActionMenu({ items, disabled = false }: ActionMenuProps) {
+export function ActionMenu({
+  items,
+  disabled = false,
+  vertical = false,
+  label,
+  minTouchSize,
+  accessibilityLabel,
+  style,
+}: ActionMenuProps) {
   const { theme } = useStyles();
   const { width: windowWidth } = useWindowDimensions();
+  const triggerRef = useRef<View>(null);
   const [visible, setVisible] = useState(false);
-  const [menuPosition, setMenuPosition] = useState({ x: 0, y: 0 });
+  const [menuPosition, setMenuPosition] = useState({ x: 0, y: 0, width: 160 });
 
   const handleOpen = (event: any) => {
     if (disabled) return;
@@ -40,19 +55,10 @@ export function ActionMenu({ items, disabled = false }: ActionMenuProps) {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
 
     // Get the position of the button for positioning the menu
-    event.target.measure(
-      (
-        _x: number,
-        _y: number,
-        _width: number,
-        height: number,
-        pageX: number,
-        pageY: number,
-      ) => {
-        setMenuPosition({ x: pageX, y: pageY + height });
-        setVisible(true);
-      },
-    );
+    triggerRef.current?.measureInWindow((x, y, width, height) => {
+      setMenuPosition({ x, y: y + height, width });
+      setVisible(true);
+    });
   };
 
   const handleClose = () => {
@@ -72,14 +78,53 @@ export function ActionMenu({ items, disabled = false }: ActionMenuProps) {
   return (
     <>
       <TouchableOpacity
+        ref={triggerRef}
+        accessibilityRole="button"
+        accessibilityLabel={accessibilityLabel || label || "More actions"}
         onPress={handleOpen}
         disabled={disabled}
         style={{
+          maxWidth: "100%",
           padding: theme.spacing.sm,
+          ...(minTouchSize && {
+            minHeight: minTouchSize,
+            minWidth: minTouchSize,
+          }),
           opacity: disabled ? 0.5 : 1,
+          ...(label && {
+            minHeight: minTouchSize ?? 44,
+            paddingHorizontal: theme.spacing.lg,
+            flexDirection: "row",
+            alignItems: "center",
+            gap: theme.spacing.sm,
+            borderWidth: 1,
+            borderColor: theme.colors.border,
+            borderRadius: theme.borderRadius.md,
+            backgroundColor: theme.colors.surface,
+          }),
+          ...style,
         }}
       >
-        <IconSymbol name="ellipsis" size={20} color={theme.colors.text} />
+        {label && (
+          <Text
+            style={{
+              flexShrink: 1,
+              color: theme.colors.textSecondary,
+              fontSize: theme.fontSize.sm,
+            }}
+          >
+            {label}
+          </Text>
+        )}
+        <View
+          style={vertical ? { transform: [{ rotate: "90deg" }] } : undefined}
+        >
+          <IconSymbol
+            name={label ? "chevron.down" : "ellipsis"}
+            size={20}
+            color={theme.colors.textSecondary}
+          />
+        </View>
       </TouchableOpacity>
 
       <Modal
@@ -99,7 +144,20 @@ export function ActionMenu({ items, disabled = false }: ActionMenuProps) {
             style={{
               position: "absolute",
               right: theme.spacing.xl,
-              top: menuPosition.y,
+              top: menuPosition.y + (label ? theme.spacing.xs : 0),
+              ...(label && {
+                right: undefined,
+                left: Math.max(
+                  theme.spacing.xl,
+                  Math.min(
+                    menuPosition.x,
+                    windowWidth -
+                      theme.spacing.xl -
+                      Math.max(160, menuPosition.width),
+                  ),
+                ),
+                width: Math.max(160, menuPosition.width),
+              }),
               backgroundColor: theme.colors.surface,
               borderRadius: theme.borderRadius.lg,
               borderWidth: 1,

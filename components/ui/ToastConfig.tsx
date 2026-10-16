@@ -1,19 +1,17 @@
 import { Ionicons } from "@expo/vector-icons";
 import React from "react";
 import {
-  Dimensions,
   Platform,
   Pressable,
   StyleSheet,
   Text,
+  useWindowDimensions,
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { ToastConfig } from "react-native-toast-message";
 import { useStyles } from "react-native-unistyles";
 import { baseColors, withOpacity, spacing } from "@/src/design-system";
-
-const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
 interface ToastProps {
   text1?: string;
@@ -39,16 +37,11 @@ function CustomToast({ type, props }: { type: ToastType; props: ToastProps }) {
   const { theme } = useStyles();
   const insets = useSafeAreaInsets();
   const statusColor = theme.colors[type];
-  // Solid card + tint layer: a translucent background let the screen behind
-  // the toast show through and made the text unreadable.
-  const tintColor = withOpacity(statusColor, 0.12);
   const textColor = theme.colors.text;
   const secondaryTextColor = theme.colors.textSecondary;
 
-  const toastWidth =
-    Platform.OS === "web"
-      ? Math.min(SCREEN_WIDTH - 32, 400)
-      : SCREEN_WIDTH - 32;
+  const { width: windowWidth } = useWindowDimensions();
+  const isWeb = Platform.OS === "web";
 
   return (
     <View
@@ -56,19 +49,18 @@ function CustomToast({ type, props }: { type: ToastType; props: ToastProps }) {
         styles.container,
         {
           backgroundColor: theme.colors.surface,
-          borderLeftColor: statusColor,
-          width: toastWidth,
-          marginTop: Platform.OS === "web" ? 60 : insets.top + 8,
+          borderColor: theme.colors.border,
+          width: isWeb ? Math.min(windowWidth - 32, 380) : windowWidth - 32,
+          // Web sits bottom-right; mobile sits top below the notch.
+          ...(isWeb
+            ? { alignSelf: "flex-end", marginRight: 24 }
+            : { marginTop: insets.top + 8 }),
         },
       ]}
     >
-      <View
-        pointerEvents="none"
-        style={[styles.tint, { backgroundColor: tintColor }]}
-      />
       <View style={styles.content}>
         <View style={styles.iconContainer}>
-          <Ionicons name={TOAST_ICONS[type]} size={24} color={statusColor} />
+          <Ionicons name={TOAST_ICONS[type]} size={22} color={statusColor} />
         </View>
         <View style={styles.textContainer}>
           {props.text1 && (
@@ -103,7 +95,7 @@ function CustomToast({ type, props }: { type: ToastType; props: ToastProps }) {
               props.props?.onRetry?.();
               props.hide?.();
             }}
-            style={[styles.actionButton, { borderColor: statusColor }]}
+            style={styles.actionButton}
           >
             <Ionicons
               name="refresh"
@@ -131,19 +123,14 @@ export const toastConfig: ToastConfig = {
 const styles = StyleSheet.create({
   container: {
     borderRadius: 12,
-    borderLeftWidth: 4,
+    borderWidth: 1,
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.lg,
     shadowColor: baseColors.black,
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
+    shadowOpacity: 0.12,
     shadowRadius: 8,
     elevation: 4,
-  },
-  tint: {
-    ...StyleSheet.absoluteFillObject,
-    borderTopRightRadius: 12,
-    borderBottomRightRadius: 12,
   },
   content: {
     flexDirection: "row",
@@ -182,8 +169,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingVertical: spacing.sm,
     paddingHorizontal: spacing.md,
-    borderRadius: 6,
-    borderWidth: 1,
   },
   actionText: {
     fontSize: 14,

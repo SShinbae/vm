@@ -31,7 +31,7 @@ export default function Root({ children }: { children: React.ReactNode }) {
         <meta httpEquiv="X-UA-Compatible" content="IE=edge" />
         <meta
           name="viewport"
-          content="width=device-width, initial-scale=1, shrink-to-fit=no"
+          content="width=device-width, initial-scale=1, shrink-to-fit=no, viewport-fit=cover"
         />
         {/* SEO Meta Tags */}
         <meta
@@ -73,7 +73,9 @@ export default function Root({ children }: { children: React.ReactNode }) {
         {/* Inline dark-mode background so the page is never white/black before JS loads */}
         <style
           dangerouslySetInnerHTML={{
-            __html: `@media(prefers-color-scheme:dark){html,body{background-color:${darkTheme.colors.background};color:${darkTheme.colors.text}}`,
+            __html: `#landing-page :focus-visible, #landing-nav :focus-visible { outline: 2px solid ${lightTheme.colors.primary}; outline-offset: 4px; }
+            #landing-page [role="button"]:hover, #landing-nav [role="button"]:hover { opacity: 0.85; }
+            @media(prefers-color-scheme:dark){html,body{background-color:${darkTheme.colors.background};color:${darkTheme.colors.text}}`,
           }}
         />
       </head>

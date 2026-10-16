@@ -19,13 +19,17 @@ export function VehicleSearchBar({
   onSearchChange,
 }: VehicleSearchBarProps) {
   const { styles, theme } = useStyles(stylesheet);
-  const { isMobile } = useResponsiveLayout();
+  const { isMobile, isWeb } = useResponsiveLayout();
 
   const iconSize = isMobile ? 18 : 20;
 
   return (
     <View
-      style={[styles.searchContainer, isMobile && styles.searchContainerMobile]}
+      style={[
+        styles.searchContainer,
+        isMobile && styles.searchContainerMobile,
+        isWeb && !isMobile && styles.webSearch,
+      ]}
     >
       <IconSymbol
         name="magnifyingglass"
@@ -33,6 +37,7 @@ export function VehicleSearchBar({
         color={theme.colors.textSecondary}
       />
       <TextInput
+        accessibilityLabel="Filter vehicles"
         style={[styles.searchInput, isMobile && styles.searchInputMobile]}
         placeholder="Search vehicles by make, model, plate..."
         placeholderTextColor={theme.colors.textSecondary}
@@ -40,7 +45,17 @@ export function VehicleSearchBar({
         onChangeText={onSearchChange}
       />
       {searchQuery.length > 0 && (
-        <TouchableOpacity onPress={() => onSearchChange("")}>
+        <TouchableOpacity
+          accessibilityRole="button"
+          accessibilityLabel="Clear vehicle search"
+          style={{
+            minWidth: 48,
+            minHeight: 48,
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+          onPress={() => onSearchChange("")}
+        >
           <IconSymbol
             name="xmark.circle.fill"
             size={iconSize}
@@ -54,6 +69,7 @@ export function VehicleSearchBar({
 
 const stylesheet = createStyleSheet((theme) => ({
   searchContainer: {
+    minHeight: 48,
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: theme.colors.surface,
@@ -62,12 +78,19 @@ const stylesheet = createStyleSheet((theme) => ({
     paddingVertical: theme.spacing.md,
     gap: theme.spacing.sm,
   },
+  webSearch: {
+    minHeight: 44,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    paddingVertical: theme.spacing.sm,
+  },
   searchContainerMobile: {
     paddingHorizontal: theme.spacing.md,
     paddingVertical: theme.spacing.sm,
     gap: theme.spacing.xs,
   },
   searchInput: {
+    minWidth: 0,
     flex: 1,
     fontSize: theme.fontSize.base,
     color: theme.colors.text,

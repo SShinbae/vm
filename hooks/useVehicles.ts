@@ -1,71 +1,71 @@
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { useFocusEffect } from "@react-navigation/native";
 import { VehicleService } from "@/lib/services/vehicleService";
 import { VehicleWithDetails } from "@/types/database-v2";
 import { toast } from "@/hooks/useToast";
 
-/**
- * Custom hook for managing vehicle data fetching and state
- * Provides centralized vehicle data management with automatic refresh on screen focus
- */
 export function useVehicles() {
   const [allVehicles, setAllVehicles] = useState<VehicleWithDetails[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const focused = useRef(false);
+  const requestId = useRef(0);
+  const hasLoaded = useRef(false);
 
-  /**
-   * Fetch all vehicles (own and shared)
-   */
   const fetchVehicles = useCallback(async () => {
-    const vehiclesResult = await VehicleService.getVehiclesSeparated();
-
-    if (vehiclesResult.error) {
-      toast.error("Failed to load vehicles");
-      console.error("Failed to fetch vehicles:", vehiclesResult.error);
-      return { ownVehicles: [], sharedVehicles: [] };
-    } else if (vehiclesResult.data) {
-      const combinedVehicles = [
-        ...vehiclesResult.data.ownVehicles,
-        ...vehiclesResult.data.sharedVehicles,
-      ];
-      setAllVehicles(combinedVehicles);
-      return vehiclesResult.data;
+    const empty = { ownVehicles: [], sharedVehicles: [] };
+    if (!focused.current) return empty;
+    const request = ++requestId.current;
+    try {
+      const result = await VehicleService.getVehiclesSeparated();
+      if (!focused.current || request !== requestId.current) return empty;
+      if (result.error || !result.data)
+        throw new Error(result.error || "No vehicle data");
+      setAllVehicles([
+        ...result.data.ownVehicles,
+        ...result.data.sharedVehicles,
+      ]);
+      hasLoaded.current = true;
+      setError(null);
+      return result.data;
+    } catch {
+      if (focused.current && request === requestId.current) {
+        setError("Failed to load vehicles");
+        toast.error("Failed to load vehicles");
+      }
+      return empty;
+    } finally {
+      if (focused.current && request === requestId.current) {
+        setLoading(false);
+        setRefreshing(false);
+      }
     }
-
-    return { ownVehicles: [], sharedVehicles: [] };
   }, []);
 
-  /**
-   * Initial fetch with loading state
-   */
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    await fetchVehicles();
-    setLoading(false);
-  }, [fetchVehicles]);
-
-  /**
-   * Refresh handler for pull-to-refresh
-   */
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
     await fetchVehicles();
-    setRefreshing(false);
   }, [fetchVehicles]);
 
-  /**
-   * Auto-refresh on screen focus
-   */
   useFocusEffect(
     useCallback(() => {
-      fetchData();
-    }, [fetchData]),
+      focused.current = true;
+      setLoading(!hasLoaded.current);
+      setRefreshing(hasLoaded.current);
+      void fetchVehicles();
+      return () => {
+        focused.current = false;
+        requestId.current++;
+      };
+    }, [fetchVehicles]),
   );
 
   return {
     allVehicles,
     loading,
     refreshing,
+    error,
     onRefresh,
     refetch: fetchVehicles,
   };

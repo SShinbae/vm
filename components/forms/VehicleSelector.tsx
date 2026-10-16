@@ -1,3 +1,4 @@
+import { storageImageUrl } from "@/lib/utils/storagePath";
 import { withOpacity, spacing } from "@/src/design-system";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { VehicleWithDetails } from "@/types/database-v2";
@@ -35,7 +36,12 @@ export function VehicleSelector({
           <View style={styles.lockedVehicle}>
             {selectedVehicle.main_image_url && !imageError ? (
               <Image
-                source={{ uri: selectedVehicle.main_image_url }}
+                source={{
+                  uri: storageImageUrl(
+                    "vehicle-images",
+                    selectedVehicle.main_image_url,
+                  ),
+                }}
                 style={styles.vehicleIcon}
                 contentFit="cover"
                 onError={() => setImageError(true)}
@@ -50,7 +56,7 @@ export function VehicleSelector({
               </View>
             )}
             <View style={styles.lockedVehicleInfo}>
-              <Text style={styles.lockedVehicleText} numberOfLines={1}>
+              <Text style={styles.lockedVehicleText}>
                 {selectedVehicle.year} {selectedVehicle.make}{" "}
                 {selectedVehicle.model}
               </Text>
@@ -141,6 +147,7 @@ const stylesheet = createStyleSheet((theme) => ({
   },
   lockedVehicleInfo: {
     flex: 1,
+    minWidth: 0,
   },
   lockedVehicleText: {
     fontSize: theme.fontSize.base,

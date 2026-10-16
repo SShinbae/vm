@@ -1,5 +1,5 @@
 import React from "react";
-import { fireEvent, render, waitFor } from "@testing-library/react-native";
+import { act, fireEvent, render, waitFor } from "@testing-library/react-native";
 import { ImageGallery, ImageUpload } from "@/components/ui/ImageUpload";
 
 const mockShowError = jest.fn();
@@ -7,6 +7,19 @@ const mockChoose = jest.fn();
 const mockUploadFromUri = jest.fn();
 const mockUploadAvatarFromUri = jest.fn();
 const mockUploadVehicleImage = jest.fn();
+const mockImage = jest.fn((_props?: unknown) => null);
+
+jest.mock("@/services/supabaseClient", () => ({
+  supabase: {
+    storage: {
+      from: (bucket: string) => ({
+        getPublicUrl: (path: string) => ({
+          data: { publicUrl: `https://cdn.test/${bucket}/${path}` },
+        }),
+      }),
+    },
+  },
+}));
 
 jest.mock("@/hooks/useToast", () => ({
   useToast: () => ({
@@ -37,7 +50,9 @@ jest.mock("expo-image-picker", () => ({
     assets: [{ uri: "file:///photo.jpg" }],
   }),
 }));
-jest.mock("expo-image", () => ({ Image: () => null }));
+jest.mock("expo-image", () => ({
+  Image: (props: unknown) => mockImage(props),
+}));
 jest.mock("@/components/ui/ImageCropModal", () => ({
   ImageCropModal: () => null,
 }));
@@ -90,6 +105,69 @@ describe("ImageUpload select-only mode (onImageSelected)", () => {
     expect(mockUploadAvatarFromUri).not.toHaveBeenCalled();
     expect(mockUploadVehicleImage).not.toHaveBeenCalled();
     expect(mockShowError).not.toHaveBeenCalled();
+  });
+});
+
+describe("ImageUpload image source", () => {
+  it("shows initials when the profile photo is missing", () => {
+    const view = render(<ImageUpload type="avatar" fallbackName="Wan Ahnaf" />);
+    expect(view.getByText("WA")).toBeTruthy();
+    expect(view.getByLabelText("Change profile photo")).toBeTruthy();
+  });
+
+  it("shows initials for a failed profile photo and retries a changed source", () => {
+    const view = render(
+      <ImageUpload
+        type="avatar"
+        fallbackName="Wan Ahnaf"
+        currentImageUrl="uid/broken.jpg"
+      />,
+    );
+    const props = mockImage.mock.calls.at(-1)?.[0] as { onError: () => void };
+    act(() => props.onError());
+    expect(view.getByText("WA")).toBeTruthy();
+    view.rerender(
+      <ImageUpload
+        type="avatar"
+        fallbackName="Wan Ahnaf"
+        currentImageUrl="uid/new.jpg"
+      />,
+    );
+    expect(view.queryByText("WA")).toBeNull();
+  });
+  it("renders a stored avatar path as its public URL", () => {
+    render(<ImageUpload type="avatar" currentImageUrl="uid/avatar_1.jpg" />);
+
+    expect(mockImage).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        source: { uri: "https://cdn.test/profile-avatars/uid/avatar_1.jpg" },
+      }),
+    );
+  });
+
+  it("renders a stored vehicle path as its public URL", () => {
+    render(
+      <ImageUpload
+        type="vehicle_main"
+        vehicleId="v1"
+        currentImageUrl="uid/v.jpg"
+      />,
+    );
+
+    expect(mockImage).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        source: { uri: "https://cdn.test/vehicle-images/uid/v.jpg" },
+      }),
+    );
+  });
+
+  it("leaves an external https URL unchanged", () => {
+    const google = "https://lh3.googleusercontent.com/a/abc=s96-c";
+    render(<ImageUpload type="avatar" currentImageUrl={google} />);
+
+    expect(mockImage).toHaveBeenLastCalledWith(
+      expect.objectContaining({ source: { uri: google } }),
+    );
   });
 });
 

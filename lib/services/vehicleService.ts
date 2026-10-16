@@ -1,4 +1,5 @@
 import { logger } from "@/lib/utils/logger";
+import { fetchAccessibleVehicles } from "./vehicleAccess";
 import { supabase } from "../../services/supabaseClient";
 import {
   ServiceTemplate,
@@ -45,44 +46,20 @@ export class VehicleService {
 
       logger.log("🔍 Fetching vehicles with sharing info for user:", user.id);
 
-      // Define the expected return type from the RPC
-      type VehicleSharingInfo = {
-        vehicle_id: string;
-        make: string;
-        model: string;
-        year: number;
-        license_plate: string;
-        vin: string | null;
-        main_image_url: string | null;
-        color: string | null;
-        current_mileage: number | null;
-        created_at: string;
-        updated_at: string;
-        is_own_vehicle: boolean;
-        owner_name: string | null;
-        owner_email: string;
-        shared_groups: string[];
-      };
-
       // Use the database function for optimized query
-      const { data: vehicleData, error: vehicleError } = await (
-        supabase as any
-      ).rpc("get_user_vehicles_with_sharing", { user_uuid: user.id });
+      const { data: vehicleData, error: vehicleError } =
+        await fetchAccessibleVehicles(user.id);
 
       if (vehicleError) {
         logger.error("❌ Error fetching vehicles:", vehicleError);
         return { data: null, error: vehicleError.message, loading: false };
       }
 
-      const typedVehicleData = vehicleData as VehicleSharingInfo[] | null;
-      logger.log(
-        "✅ Raw vehicle data received:",
-        typedVehicleData?.length || 0,
-      );
+      logger.log("✅ Raw vehicle data received:", vehicleData?.length || 0);
 
       // Enhance the data with additional information
       const enhancedVehicles: VehicleWithDetails[] = await Promise.all(
-        (typedVehicleData || []).map(async (vehicle: VehicleSharingInfo) => {
+        (vehicleData || []).map(async (vehicle) => {
           // Get vehicle images
           const { data: images } = await supabase
             .from("vehicle_images")

@@ -1,14 +1,20 @@
+import { goBack } from "@/lib/utils/goBack";
+import { LogPageNavigation } from "@/components/logs/LogPageNavigation";
+import { logPageStyles } from "@/components/logs/logPageStyles";
+import { useResponsiveLayout } from "@/hooks/use-responsive-layout";
+import { useLogRecord } from "@/hooks/useLogRecord";
+import { Button } from "@/components/ui/Button";
 import { withOpacity, spacing } from "@/src/design-system";
 import { useStyles } from "react-native-unistyles";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { ReceiptViewer } from "@/components/ui/ReceiptViewer";
 import { SkeletonCard } from "@/components/ui/Skeleton";
 import { ServiceLogService } from "@/lib/services/loggingService";
-import { OCRExtractedData, ServiceLog, ServiceType } from "@/types";
-import { toast, useToast } from "@/hooks/useToast";
+import { OCRExtractedData, ServiceType } from "@/types";
+import { useToast } from "@/hooks/useToast";
 import { useDialog } from "@/lib/contexts/DialogContext";
 import { router, useLocalSearchParams } from "expo-router";
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import {
   ScrollView,
   StyleSheet,
@@ -40,60 +46,37 @@ const SERVICE_TYPE_ICONS: Record<ServiceType, string> = {
 
 export default function ServiceLogDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const [serviceLog, setServiceLog] = useState<ServiceLog | null>(null);
-  const [loading, setLoading] = useState(true);
+  const layout = useResponsiveLayout();
+  const isDesktopWeb = layout.isWeb && !layout.isMobile;
+  const { styles: logWeb } = useStyles(logPageStyles);
+  const {
+    record: serviceLog,
+    loading,
+    error: loadError,
+    retry,
+    canModify,
+    canDelete,
+  } = useLogRecord(id, "service", ServiceLogService.getServiceLogById);
+  const [deleting, setDeleting] = useState(false);
   const { theme } = useStyles();
   const colors = theme.colors;
   const { showError, showSuccess, showWarning } = useToast();
   const { confirm } = useDialog();
 
-  useEffect(() => {
-    const fetchServiceLog = async () => {
-      if (!id) {
-        toast.error("Invalid service log ID");
-        router.back();
-        return;
-      }
-
-      try {
-        const { data: logs, error } = await ServiceLogService.getServiceLogs();
-        if (error) {
-          toast.error("Failed to load service log");
-          router.back();
-          return;
-        }
-
-        const log = logs?.find((l) => l.id === id);
-        if (!log) {
-          toast.error("Service log not found");
-          router.back();
-          return;
-        }
-
-        setServiceLog(log);
-      } catch (error) {
-        console.error("Error fetching service log:", error);
-        toast.error("Failed to load service log");
-        router.back();
-      }
-
-      setLoading(false);
-    };
-
-    fetchServiceLog();
-  }, [id]);
-
   const handleEdit = () => {
+    if (!canModify) return;
     router.push(`/logs/service/${id}/edit` as any);
   };
 
   const handleDelete = async () => {
+    if (!canDelete || deleting) return;
     if (!id) {
       showError("Cannot delete: Invalid service log ID");
       return;
     }
 
     const performDelete = async () => {
+      setDeleting(true);
       try {
         console.log("Attempting to delete service log with ID:", id);
         const result = await ServiceLogService.deleteServiceLog(id);
@@ -115,19 +98,23 @@ export default function ServiceLogDetailScreen() {
           showError("Couldn't delete service log", { message: errorMessage });
         } else if (result.data === true) {
           showSuccess("Service log deleted");
-          router.back();
+          if (isDesktopWeb) router.replace("/logs");
+          else goBack("/logs");
         } else {
           showWarning("Delete status unclear", {
             message:
               "Couldn't confirm the deletion. Check the service log list.",
           });
-          router.back();
+          if (isDesktopWeb) router.replace("/logs");
+          else goBack("/logs");
         }
       } catch (error) {
         console.error("Error deleting service log:", error);
         showError("Failed to delete service log", {
           message: "Please check your connection and try again.",
         });
+      } finally {
+        setDeleting(false);
       }
     };
 
@@ -377,21 +364,42 @@ export default function ServiceLogDetailScreen() {
     },
   });
 
+  const pageNavigation = (
+    <LogPageNavigation
+      title="Service Details"
+      vehicleId={serviceLog?.vehicle_id}
+      vehicle={serviceLog?.vehicles}
+      error={loadError}
+      retry={retry}
+    />
+  );
+
+  if (loadError)
+    return (
+      <SafeAreaView style={styles.container}>{pageNavigation}</SafeAreaView>
+    );
+
   if (loading) {
     return (
       <SafeAreaView style={styles.container}>
-        <View style={styles.header}>
-          <TouchableOpacity
-            style={styles.backButton}
-            onPress={() => router.back()}
-          >
-            <IconSymbol name="chevron.left" size={24} color={colors.text} />
-          </TouchableOpacity>
-          <Text style={styles.title}>Service Details</Text>
-        </View>
+        {pageNavigation}
+        {!isDesktopWeb && (
+          <View style={styles.header}>
+            <TouchableOpacity
+              style={styles.backButton}
+              onPress={() => goBack("/logs")}
+            >
+              <IconSymbol name="chevron.left" size={24} color={colors.text} />
+            </TouchableOpacity>
+            <Text style={styles.title}>Service Details</Text>
+          </View>
+        )}
         <ScrollView
           style={styles.content}
-          contentContainerStyle={styles.scrollContent}
+          contentContainerStyle={[
+            styles.scrollContent,
+            isDesktopWeb && logWeb.content,
+          ]}
         >
           <SkeletonCard lines={6} style={{ marginBottom: spacing.lg }} />
           <SkeletonCard lines={4} />
@@ -403,15 +411,18 @@ export default function ServiceLogDetailScreen() {
   if (!serviceLog) {
     return (
       <SafeAreaView style={styles.container}>
-        <View style={styles.header}>
-          <TouchableOpacity
-            style={styles.backButton}
-            onPress={() => router.back()}
-          >
-            <IconSymbol name="chevron.left" size={24} color={colors.text} />
-          </TouchableOpacity>
-          <Text style={styles.title}>Service Details</Text>
-        </View>
+        {pageNavigation}
+        {!isDesktopWeb && (
+          <View style={styles.header}>
+            <TouchableOpacity
+              style={styles.backButton}
+              onPress={() => goBack("/logs")}
+            >
+              <IconSymbol name="chevron.left" size={24} color={colors.text} />
+            </TouchableOpacity>
+            <Text style={styles.title}>Service Details</Text>
+          </View>
+        )}
         <View style={styles.loadingContainer}>
           <Text style={[styles.detailLabel, { textAlign: "center" }]}>
             Service log not found
@@ -425,33 +436,68 @@ export default function ServiceLogDetailScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => router.back()}
-        >
-          <IconSymbol name="chevron.left" size={24} color={colors.text} />
-        </TouchableOpacity>
-        <Text style={styles.title}>Service Details</Text>
-        <View style={styles.actionsContainer}>
-          <TouchableOpacity style={styles.actionButton} onPress={handleEdit}>
-            <IconSymbol name="pencil" size={14} color="white" />
-            <Text style={styles.actionButtonText}>Edit</Text>
-          </TouchableOpacity>
+      {pageNavigation}
+      {!isDesktopWeb && (
+        <View style={styles.header}>
           <TouchableOpacity
-            style={[styles.actionButton, styles.deleteButton]}
-            onPress={handleDelete}
+            style={styles.backButton}
+            onPress={() => goBack("/logs")}
           >
-            <IconSymbol name="trash" size={14} color="white" />
+            <IconSymbol name="chevron.left" size={24} color={colors.text} />
           </TouchableOpacity>
+          <Text style={styles.title}>Service Details</Text>
+          <View style={styles.actionsContainer}>
+            <TouchableOpacity
+              style={styles.actionButton}
+              onPress={handleEdit}
+              disabled={!canModify || deleting}
+            >
+              <IconSymbol name="pencil" size={14} color="white" />
+              <Text style={styles.actionButtonText}>Edit</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.actionButton, styles.deleteButton]}
+              onPress={handleDelete}
+              disabled={!canDelete || deleting}
+            >
+              <IconSymbol name="trash" size={14} color="white" />
+            </TouchableOpacity>
+          </View>
         </View>
-      </View>
+      )}
+      {isDesktopWeb && (
+        <View
+          style={{
+            flexDirection: "row",
+            gap: 12,
+            justifyContent: "flex-end",
+            paddingHorizontal: 24,
+            paddingBottom: 16,
+          }}
+        >
+          <Button
+            title="Edit Service Log"
+            onPress={handleEdit}
+            disabled={!canModify || deleting}
+          />
+          <Button
+            title="Delete"
+            variant="outline"
+            onPress={handleDelete}
+            disabled={!canDelete || deleting}
+            loading={deleting}
+          />
+        </View>
+      )}
 
       <ScrollView
         style={styles.content}
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[
+          styles.scrollContent,
+          isDesktopWeb && logWeb.content,
+        ]}
       >
-        <View style={styles.card}>
+        <View style={[styles.card, isDesktopWeb && logWeb.panel]}>
           <View style={styles.serviceTypeHeader}>
             <View style={styles.serviceTypeIcon}>
               <IconSymbol
@@ -554,7 +600,7 @@ export default function ServiceLogDetailScreen() {
         </View>
 
         {serviceLog.receipt_image_url && (
-          <View style={styles.card}>
+          <View style={[styles.card, isDesktopWeb && logWeb.panel]}>
             <ReceiptViewer
               receiptImageUrl={serviceLog.receipt_image_url}
               ocrData={

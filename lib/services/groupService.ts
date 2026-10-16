@@ -238,28 +238,21 @@ export class GroupService {
         return { data: null, error: "User not authenticated", loading: false };
       }
 
-      const { data, error } = (await supabase
-        .from("groups")
-        .insert({
-          ...group,
-          owner_id: user.id,
+      const { data, error } = await supabase
+        .rpc("create_group_with_owner", {
+          p_name: group.name,
+          p_description: group.description ?? null,
         } as any)
-        .select()
-        .single()) as {
-        data: Database["public"]["Tables"]["groups"]["Row"] | null;
-        error: any;
-      };
+        .single();
 
       if (error) {
         logger.error("Error creating group:", error);
         return { data: null, error: error.message, loading: false };
       }
 
-      // Automatically add the creator as a member
-      await supabase.from("group_members").insert({
-        group_id: data!.id,
-        user_id: user.id,
-      } as any);
+      if (!data) {
+        return { data: null, error: "Failed to create group", loading: false };
+      }
 
       return { data, error: null, loading: false };
     } catch (error) {
@@ -449,50 +442,49 @@ export class GroupService {
 }
 
 export class GroupInvitationService {
+  private static async requireGroupOwner(
+    groupId: string,
+  ): Promise<ApiResponse<string>> {
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
+
+    if (userError || !user) {
+      return { data: null, error: "User not authenticated", loading: false };
+    }
+
+    const { data: group, error } = (await supabase
+      .from("groups")
+      .select("owner_id")
+      .eq("id", groupId)
+      .single()) as { data: { owner_id: string } | null; error: any };
+
+    if (error && error.code !== "PGRST116") {
+      logger.error("Error checking group invitation owner:", error);
+      return { data: null, error: error.message, loading: false };
+    }
+    if (!group) {
+      return { data: null, error: "Group not found", loading: false };
+    }
+    if (group.owner_id !== user.id) {
+      return {
+        data: null,
+        error: "Only group owners can send invitations",
+        loading: false,
+      };
+    }
+    return { data: user.id, error: null, loading: false };
+  }
+
   static async sendInvitation(
     groupId: string,
     email: string,
   ): Promise<ApiResponse<GroupInvitation>> {
     try {
-      const {
-        data: { user },
-        error: userError,
-      } = await supabase.auth.getUser();
-
-      if (userError || !user) {
-        return { data: null, error: "User not authenticated", loading: false };
-      }
-
-      // Check if user is the owner or a member (allow both to send invitations)
-      const { data: group } = (await supabase
-        .from("groups")
-        .select("owner_id")
-        .eq("id", groupId)
-        .single()) as { data: { owner_id: string } | null; error: any };
-
-      if (!group) {
-        return { data: null, error: "Group not found", loading: false };
-      }
-
-      // Allow group owners to send invitations without being a member
-      const isOwner = group.owner_id === user.id;
-
-      if (!isOwner) {
-        // Check if user is a member
-        const { data: existingMember } = await supabase
-          .from("group_members")
-          .select("id")
-          .eq("group_id", groupId)
-          .eq("user_id", user.id);
-
-        if (!existingMember || existingMember.length === 0) {
-          return {
-            data: null,
-            error: "You must be a member of the group to send invitations",
-            loading: false,
-          };
-        }
-      }
+      const owner = await this.requireGroupOwner(groupId);
+      if (owner.error)
+        return { data: null, error: owner.error, loading: false };
 
       // Check for existing pending invitation
       const { data: existingInvitation } = await supabase
@@ -532,7 +524,7 @@ export class GroupInvitationService {
       logger.log("Sending invitation:", {
         group_id: groupId,
         email: email.toLowerCase(),
-        invited_by: user.id,
+        invited_by: owner.data,
         expires_at: expiresAt.toISOString(),
       });
 
@@ -541,7 +533,7 @@ export class GroupInvitationService {
         .insert({
           group_id: groupId,
           email: email.toLowerCase(),
-          invited_by: user.id,
+          invited_by: owner.data,
           expires_at: expiresAt.toISOString(),
         } as any)
         .select()
@@ -583,6 +575,10 @@ export class GroupInvitationService {
       if (!invitation) {
         return { data: null, error: "Invitation not found", loading: false };
       }
+
+      const owner = await this.requireGroupOwner(invitation.group_id);
+      if (owner.error)
+        return { data: null, error: owner.error, loading: false };
 
       const cancelResult = await this.cancelInvitation(invitationId);
       if (cancelResult.error) {

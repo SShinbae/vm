@@ -1,3 +1,11 @@
+import { goBack } from "@/lib/utils/goBack";
+import { LogPageNavigation } from "@/components/logs/LogPageNavigation";
+import {
+  logPageStyles,
+  compactLogFormStyles,
+} from "@/components/logs/logPageStyles";
+import { useResponsiveLayout } from "@/hooks/use-responsive-layout";
+import { useLogRecord } from "@/hooks/useLogRecord";
 import { withOpacity, spacing } from "@/src/design-system";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useStyles } from "react-native-unistyles";
@@ -9,11 +17,9 @@ import { Input } from "@/components/ui/Input";
 import { SkeletonMileageLogEdit } from "@/components/ui/Skeleton";
 import { useToast } from "@/hooks/useToast";
 import { useDialog } from "@/lib/contexts/DialogContext";
-import { useAuth } from "@/lib/contexts/AuthContext";
-import { canUserAccessVehicle } from "@/lib/utils/serviceUtils";
 import { MileageLogService } from "@/lib/services/loggingService";
 import { AUTO_MILEAGE_LOG_READ_ONLY } from "@/lib/services/mileageLogService";
-import { MileageLog, MileageLogFormData } from "@/types";
+import { MileageLogFormData } from "@/types";
 import { router, useLocalSearchParams } from "expo-router";
 import { usePostHog } from "posthog-react-native";
 import React, { useEffect, useState } from "react";
@@ -30,8 +36,19 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function EditMileageLogScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { user } = useAuth();
-  const [mileageLog, setMileageLog] = useState<MileageLog | null>(null);
+  const layout = useResponsiveLayout();
+  const isDesktopWeb = layout.isWeb && !layout.isMobile;
+  const { styles: logWeb } = useStyles(logPageStyles);
+  const { styles: compact } = useStyles(compactLogFormStyles);
+  const {
+    record: mileageLog,
+    loading: dataLoading,
+    error: loadError,
+    retry,
+    canModify,
+    canDelete,
+    readOnly,
+  } = useLogRecord(id, "mileage", MileageLogService.getMileageLogById);
   const [formData, setFormData] = useState<MileageLogFormData>({
     vehicle_id: "",
     odometer_reading: 0,
@@ -39,10 +56,8 @@ export default function EditMileageLogScreen() {
     notes: "",
   });
   const [loading, setLoading] = useState(false);
-  const [dataLoading, setDataLoading] = useState(true);
   const { showSuccess, showError } = useToast();
   const posthog = usePostHog();
-  const [canModify, setCanModify] = useState(true);
   const { confirm } = useDialog();
   const [deleteLoading, setDeleteLoading] = useState(false);
   const { theme } = useStyles();
@@ -51,66 +66,18 @@ export default function EditMileageLogScreen() {
   const isWeb = Platform.OS === "web";
 
   useEffect(() => {
-    const fetchMileageLog = async () => {
-      if (!id) {
-        showError("Invalid mileage log ID");
-        router.back();
-        return;
-      }
-
-      try {
-        const { data: logs, error } = await MileageLogService.getMileageLogs();
-        if (error) {
-          console.error("Error fetching mileage logs:", error);
-          let errorMsg = "Failed to load mileage log";
-          if (error.includes("User not authenticated")) {
-            errorMsg = "Your session has expired. Please log in again.";
-          } else if (error.includes("Failed to fetch")) {
-            errorMsg =
-              "Unable to load mileage log. Please check your internet connection.";
-          }
-          showError(errorMsg);
-          router.back();
-          return;
-        }
-
-        const log = logs?.find((l) => l.id === id);
-        if (!log) {
-          console.error("No mileage log found with ID:", id);
-          showError(
-            "This mileage log no longer exists. It may have been deleted.",
-          );
-          router.back();
-          return;
-        }
-
-        setMileageLog(log);
-        setFormData({
-          vehicle_id: log.vehicle_id,
-          odometer_reading: log.odometer_reading,
-          date: log.date,
-          notes: log.notes || "",
-        });
-
-        // Check if user can modify this log
-        if (user) {
-          const canAccess = await canUserAccessVehicle(log.vehicle_id, user.id);
-          setCanModify(canAccess);
-        }
-      } catch (error) {
-        console.error("Error fetching mileage log:", error);
-        showError("Failed to load mileage log");
-        router.back();
-      }
-
-      setDataLoading(false);
-    };
-
-    fetchMileageLog();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id]);
+    if (!mileageLog) return;
+    const log = mileageLog;
+    setFormData({
+      vehicle_id: log.vehicle_id,
+      odometer_reading: log.odometer_reading,
+      date: log.date,
+      notes: log.notes || "",
+    });
+  }, [mileageLog]);
 
   const handleSave = async () => {
+    if (!canModify || loading) return;
     if (formData.odometer_reading <= 0) {
       showError("Please enter a valid odometer reading");
       return;
@@ -168,6 +135,7 @@ export default function EditMileageLogScreen() {
   };
 
   const handleDelete = async () => {
+    if (!canDelete || deleteLoading) return;
     if (deleteLoading) return;
     const ok = await confirm({
       title: "Delete Mileage Log",
@@ -213,7 +181,7 @@ export default function EditMileageLogScreen() {
       icon: "trash",
       onPress: handleDelete,
       variant: "danger",
-      disabled: !canModify,
+      disabled: !canDelete || deleteLoading,
     },
   ];
 
@@ -335,14 +303,41 @@ export default function EditMileageLogScreen() {
     },
   });
 
+  const pageNavigation = (
+    <LogPageNavigation
+      title="Edit Mileage Log"
+      vehicleId={mileageLog?.vehicle_id}
+      vehicle={mileageLog?.vehicles}
+      error={loadError}
+      retry={retry}
+      readOnly={readOnly}
+    />
+  );
+
+  if (loadError)
+    return (
+      <SafeAreaView
+        edges={["top", "left", "right", "bottom"]}
+        style={styles.container}
+      >
+        {pageNavigation}
+      </SafeAreaView>
+    );
+
   if (dataLoading) {
     return (
-      <SafeAreaView style={styles.container}>
-        {!isWeb && (
-          <View style={styles.header}>
+      <SafeAreaView
+        edges={["top", "left", "right", "bottom"]}
+        style={styles.container}
+      >
+        {pageNavigation}
+        {!isDesktopWeb && (
+          <View style={[styles.header, compact.header]}>
             <TouchableOpacity
-              style={styles.backButton}
-              onPress={() => router.back()}
+              accessibilityRole="button"
+              accessibilityLabel="Back"
+              style={[styles.backButton, compact.back]}
+              onPress={() => goBack("/logs")}
             >
               <IconSymbol name="chevron.left" size={24} color={colors.text} />
             </TouchableOpacity>
@@ -350,7 +345,13 @@ export default function EditMileageLogScreen() {
             <ActionMenu items={actionMenuItems} />
           </View>
         )}
-        <ScrollView contentContainerStyle={styles.scrollContent}>
+        <ScrollView
+          contentContainerStyle={[
+            styles.scrollContent,
+            isDesktopWeb && logWeb.content,
+            !isDesktopWeb && compact.content,
+          ]}
+        >
           <SkeletonMileageLogEdit />
         </ScrollView>
       </SafeAreaView>
@@ -358,12 +359,18 @@ export default function EditMileageLogScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.container}>
-      {!isWeb && (
-        <View style={styles.header}>
+    <SafeAreaView
+      edges={["top", "left", "right", "bottom"]}
+      style={styles.container}
+    >
+      {pageNavigation}
+      {!isDesktopWeb && (
+        <View style={[styles.header, compact.header]}>
           <TouchableOpacity
-            style={styles.backButton}
-            onPress={() => router.back()}
+            accessibilityRole="button"
+            accessibilityLabel="Back"
+            style={[styles.backButton, compact.back]}
+            onPress={() => goBack("/logs")}
           >
             <IconSymbol name="chevron.left" size={24} color={colors.text} />
           </TouchableOpacity>
@@ -372,23 +379,32 @@ export default function EditMileageLogScreen() {
         </View>
       )}
 
+      {isDesktopWeb && (
+        <View style={{ alignItems: "flex-end", paddingHorizontal: 24 }}>
+          <ActionMenu items={actionMenuItems} />
+        </View>
+      )}
       <KeyboardAvoidingView
+        enabled={Platform.OS !== "web"}
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={styles.content}
       >
         <ScrollView
-          contentContainerStyle={styles.scrollContent}
+          contentContainerStyle={[
+            styles.scrollContent,
+            isDesktopWeb && logWeb.content,
+            !isDesktopWeb && compact.content,
+          ]}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
-          {isWeb && (
-            <>
-              <Text style={styles.title}>Edit Mileage Log</Text>
-              <Text style={styles.subtitle}>Update mileage information</Text>
-            </>
-          )}
-
-          <View style={styles.card}>
+          <View
+            style={[
+              styles.card,
+              isDesktopWeb && logWeb.panel,
+              !isDesktopWeb && compact.panel,
+            ]}
+          >
             <View style={styles.inputContainer}>
               <Text style={styles.label}>Vehicle</Text>
               {(mileageLog as any)?.vehicles && (
@@ -396,7 +412,7 @@ export default function EditMileageLogScreen() {
                   <View style={styles.vehicleIcon}>
                     <IconSymbol name="car.fill" size={16} color="white" />
                   </View>
-                  <View>
+                  <View style={{ flex: 1, minWidth: 0 }}>
                     <Text style={styles.vehicleText}>
                       {(mileageLog as any).vehicles.year}{" "}
                       {(mileageLog as any).vehicles.make}{" "}
@@ -454,21 +470,31 @@ export default function EditMileageLogScreen() {
               numberOfLines={3}
             />
 
-            <View style={styles.buttonContainer}>
+            <View
+              style={[styles.buttonContainer, !isDesktopWeb && compact.footer]}
+            >
               <Button
                 title="Cancel"
-                onPress={() => router.back()}
+                onPress={() => goBack("/logs")}
                 variant="outline"
                 icon="xmark"
-                style={styles.cancelButton}
+                style={
+                  isDesktopWeb
+                    ? styles.cancelButton
+                    : { ...styles.cancelButton, ...compact.button }
+                }
               />
               <Button
                 title="Update Log"
                 onPress={handleSave}
-                disabled={!isFormValid()}
+                disabled={!canModify || !isFormValid()}
                 loading={loading}
                 icon="checkmark"
-                style={styles.saveButton}
+                style={
+                  isDesktopWeb
+                    ? styles.saveButton
+                    : { ...styles.saveButton, ...compact.button }
+                }
               />
             </View>
           </View>

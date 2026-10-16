@@ -1,22 +1,42 @@
 import { logger } from "@/lib/utils/logger";
+import { isLocalUri, toBucketPath } from "@/lib/utils/storagePath";
 import { supabase } from "../../services/supabaseClient";
 import { ApiResponse } from "../../types";
 
+export { isLocalUri };
+
+/**
+ * Normalize a stored receipt value to a bucket path. Accepts a bare path
+ * (returned as is) or a legacy full Supabase URL (host and prefix stripped).
+ */
+export function toReceiptPath(value: string): string {
+  return toBucketPath("receipt-images", value);
+}
+
 export class ReceiptStorageService {
   /**
-   * Get receipt image URL for a service log
+   * Short-lived signed URL for a stored receipt. Accepts a path or a legacy URL.
    */
-  static async getReceiptImageUrl(
-    receiptPath: string,
+  static async getReceiptSignedUrl(
+    pathOrUrl: string,
   ): Promise<ApiResponse<string>> {
     try {
-      const { data } = supabase.storage
+      const { data, error } = await supabase.storage
         .from("receipt-images")
-        .getPublicUrl(receiptPath);
+        .createSignedUrl(toReceiptPath(pathOrUrl), 3600);
 
-      return { data: data.publicUrl, error: null, loading: false };
+      if (error || !data) {
+        logger.error("Error signing receipt image URL:", error);
+        return {
+          data: null,
+          error: error?.message ?? "Failed to sign receipt image URL",
+          loading: false,
+        };
+      }
+
+      return { data: data.signedUrl, error: null, loading: false };
     } catch (error) {
-      logger.error("Error getting receipt image URL:", error);
+      logger.error("Unexpected error signing receipt image URL:", error);
       return {
         data: null,
         error: "Failed to get receipt image URL",

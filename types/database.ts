@@ -568,6 +568,10 @@ export interface Database {
       [_ in never]: never;
     };
     Functions: {
+      create_group_with_owner: {
+        Args: { p_name: string; p_description?: string | null };
+        Returns: Database["public"]["Tables"]["groups"]["Row"][];
+      };
       get_accessible_vehicles: {
         Args: { user_uuid: string };
         Returns: (Database["public"]["Tables"]["vehicles"]["Row"] & {

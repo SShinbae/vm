@@ -13,6 +13,7 @@ interface VehicleListProps {
   filterLabel: string;
   onVehiclePress: (vehicle: VehicleWithDetails) => void;
   isDesktop?: boolean;
+  onClearFilters?: () => void;
 }
 
 /**
@@ -26,11 +27,26 @@ export function VehicleList({
   filterLabel,
   onVehiclePress,
   isDesktop = false,
+  onClearFilters,
 }: VehicleListProps) {
   const { styles, theme } = useStyles(stylesheet);
 
   // Empty state
   if (vehicles.length === 0) {
+    if (onClearFilters)
+      return (
+        <View style={styles.emptyState}>
+          <Text style={styles.emptyTitle}>No matching vehicles</Text>
+          <TouchableOpacity
+            accessibilityRole="button"
+            accessibilityLabel="Clear filters"
+            style={styles.emptyButton}
+            onPress={onClearFilters}
+          >
+            <Text style={styles.emptyButtonText}>Clear filters</Text>
+          </TouchableOpacity>
+        </View>
+      );
     return (
       <View style={styles.emptyState}>
         <View style={styles.emptyIconContainer}>
@@ -42,6 +58,7 @@ export function VehicleList({
         </Text>
         <TouchableOpacity
           style={styles.emptyButton}
+          accessibilityRole="button"
           onPress={() => router.push("/vehicles/add")}
         >
           <IconSymbol
@@ -154,6 +171,7 @@ const stylesheet = createStyleSheet((theme) => ({
     paddingVertical: theme.spacing.md,
     borderRadius: theme.borderRadius.lg,
     marginTop: theme.spacing.md,
+    minHeight: 48,
   },
   emptyButtonText: {
     fontSize: theme.fontSize.base,

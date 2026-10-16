@@ -249,6 +249,7 @@ const styles = StyleSheet.create({
     opacity: 0.6,
   },
   text: {
+    flexShrink: 1,
     fontWeight: "600",
     textAlign: "center",
   },

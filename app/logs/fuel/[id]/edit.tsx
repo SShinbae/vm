@@ -1,3 +1,11 @@
+import { goBack } from "@/lib/utils/goBack";
+import { LogPageNavigation } from "@/components/logs/LogPageNavigation";
+import {
+  logPageStyles,
+  compactLogFormStyles,
+} from "@/components/logs/logPageStyles";
+import { useResponsiveLayout } from "@/hooks/use-responsive-layout";
+import { useLogRecord } from "@/hooks/useLogRecord";
 import { withOpacity, spacing } from "@/src/design-system";
 import { ActionMenu, ActionMenuItem } from "@/components/ui/ActionMenu";
 import { Button } from "@/components/ui/Button";
@@ -7,11 +15,9 @@ import { Input } from "@/components/ui/Input";
 import { SkeletonFuelLogEdit } from "@/components/ui/Skeleton";
 import { useToast } from "@/hooks/useToast";
 import { useDialog } from "@/lib/contexts/DialogContext";
-import { useAuth } from "@/lib/contexts/AuthContext";
 import { FuelLogService } from "@/lib/services/loggingService";
-import { canUserAccessVehicle } from "@/lib/utils/serviceUtils";
-import { FuelLog, FuelLogFormData, Vehicle } from "@/types";
-import { router, useLocalSearchParams, useNavigation } from "expo-router";
+import { FuelLogFormData } from "@/types";
+import { router, useLocalSearchParams } from "expo-router";
 import { usePostHog } from "posthog-react-native";
 import React, { useEffect, useState } from "react";
 import {
@@ -25,15 +31,22 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { createStyleSheet, useStyles } from "react-native-unistyles";
 
-type FuelLogWithVehicle = FuelLog & {
-  vehicles: Vehicle | null;
-};
-
 export default function EditFuelLogScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { user } = useAuth();
+  const layout = useResponsiveLayout();
+  const isDesktopWeb = layout.isWeb && !layout.isMobile;
+  const { styles: logWeb } = useStyles(logPageStyles);
+  const { styles: compact } = useStyles(compactLogFormStyles);
+  const {
+    record: fuelLog,
+    loading: dataLoading,
+    error: loadError,
+    retry,
+    canModify,
+    canDelete,
+    readOnly,
+  } = useLogRecord(id, "fuel", FuelLogService.getFuelLogById);
   const { styles, theme } = useStyles(stylesheet);
-  const [fuelLog, setFuelLog] = useState<FuelLogWithVehicle | null>(null);
   const [formData, setFormData] = useState<FuelLogFormData>({
     vehicle_id: "",
     liters_filled: 0,
@@ -44,10 +57,8 @@ export default function EditFuelLogScreen() {
     location: "",
   });
   const [loading, setLoading] = useState(false);
-  const [dataLoading, setDataLoading] = useState(true);
   const { showSuccess, showError } = useToast();
   const posthog = usePostHog();
-  const [canModify, setCanModify] = useState(true);
   const { confirm } = useDialog();
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [lastEditedField, setLastEditedField] = useState<
@@ -59,16 +70,9 @@ export default function EditFuelLogScreen() {
   const [costInput, setCostInput] = useState("");
   const [litersInput, setLitersInput] = useState("");
   const isWeb = Platform.OS === "web";
-  const navigation = useNavigation();
 
   // Safe back navigation - fallback to logs tab if no history
-  const handleGoBack = () => {
-    if (navigation.canGoBack()) {
-      router.back();
-    } else {
-      router.replace("/(tabs)/logs");
-    }
-  };
+  const handleGoBack = () => goBack("/logs");
 
   // Auto-calculate liters based on cost and fuel price
   const calculateLiters = (cost: number, fuelPrice: number) => {
@@ -87,76 +91,24 @@ export default function EditFuelLogScreen() {
   };
 
   useEffect(() => {
-    const fetchFuelLog = async () => {
-      if (!id) {
-        showError("Invalid fuel log ID");
-        router.replace("/(tabs)/logs");
-        return;
-      }
-
-      try {
-        const { data: log, error } = await FuelLogService.getFuelLogById(id);
-        if (error) {
-          console.error("Error fetching fuel log:", error);
-          let errorMsg = "Failed to load fuel log";
-          if (error.includes("User not authenticated")) {
-            errorMsg = "Your session has expired. Please log in again.";
-          } else if (error.includes("Failed to fetch")) {
-            errorMsg =
-              "Unable to load fuel log. Please check your internet connection.";
-          }
-          showError(errorMsg);
-          router.replace("/(tabs)/logs");
-          return;
-        }
-
-        if (!log) {
-          console.error("No fuel log found with ID:", id);
-          showError(
-            "This fuel log no longer exists. It may have been deleted.",
-          );
-          router.replace("/(tabs)/logs");
-          return;
-        }
-
-        setFuelLog(log as FuelLogWithVehicle);
-        setFormData({
-          vehicle_id: log.vehicle_id!,
-          liters_filled: log.liters_filled,
-          cost: log.cost || 0,
-          fuel_price: (log as any).fuel_price || 1.99, // Default if not set
-          date: log.date,
-          odometer_reading: log.odometer_reading,
-          location: log.location || "",
-        });
-        // Initialize raw input displays
-        setCostInput(log.cost ? log.cost.toString() : "");
-        setLitersInput(
-          log.liters_filled > 0 ? log.liters_filled.toFixed(3) : "",
-        );
-
-        // Check if user can modify this log
-        if (user) {
-          const canAccess = await canUserAccessVehicle(
-            log.vehicle_id!,
-            user.id,
-          );
-          setCanModify(canAccess);
-        }
-      } catch (error) {
-        console.error("Error fetching fuel log:", error);
-        showError("Failed to load fuel log");
-        router.replace("/(tabs)/logs");
-      }
-
-      setDataLoading(false);
-    };
-
-    fetchFuelLog();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id]);
+    if (!fuelLog) return;
+    const log = fuelLog;
+    setFormData({
+      vehicle_id: log.vehicle_id!,
+      liters_filled: log.liters_filled,
+      cost: log.cost || 0,
+      fuel_price: (log as any).fuel_price || 1.99, // Default if not set
+      date: log.date,
+      odometer_reading: log.odometer_reading,
+      location: log.location || "",
+    });
+    // Initialize raw input displays
+    setCostInput(log.cost ? log.cost.toString() : "");
+    setLitersInput(log.liters_filled > 0 ? log.liters_filled.toFixed(3) : "");
+  }, [fuelLog]);
 
   const handleSave = async () => {
+    if (!canModify || loading) return;
     // Validation
     if (!formData.cost || formData.cost <= 0) {
       showError("Please enter a valid cost amount");
@@ -222,6 +174,7 @@ export default function EditFuelLogScreen() {
   };
 
   const handleDelete = async () => {
+    if (!canDelete || deleteLoading) return;
     if (deleteLoading) return;
     const ok = await confirm({
       title: "Delete Fuel Log",
@@ -284,14 +237,19 @@ export default function EditFuelLogScreen() {
       icon: "trash",
       onPress: handleDelete,
       variant: "danger",
-      disabled: !canModify,
+      disabled: !canDelete || deleteLoading,
     },
   ];
 
   // Custom Header Component
   const CustomHeader = () => (
-    <View style={styles.customHeader}>
-      <TouchableOpacity style={styles.customBackButton} onPress={handleGoBack}>
+    <View style={[styles.customHeader, compact.header]}>
+      <TouchableOpacity
+        accessibilityRole="button"
+        accessibilityLabel="Back"
+        style={[styles.customBackButton, compact.back]}
+        onPress={handleGoBack}
+      >
         <IconSymbol name="chevron.left" size={24} color={theme.colors.text} />
       </TouchableOpacity>
       <View style={styles.titleContainer}>
@@ -301,11 +259,42 @@ export default function EditFuelLogScreen() {
     </View>
   );
 
+  const pageNavigation = (
+    <LogPageNavigation
+      title="Edit Fuel Log"
+      vehicleId={fuelLog?.vehicle_id}
+      vehicle={fuelLog?.vehicles}
+      error={loadError}
+      retry={retry}
+      readOnly={readOnly}
+    />
+  );
+
+  if (loadError)
+    return (
+      <SafeAreaView
+        edges={["top", "left", "right", "bottom"]}
+        style={styles.container}
+      >
+        {pageNavigation}
+      </SafeAreaView>
+    );
+
   if (dataLoading) {
     return (
-      <SafeAreaView style={styles.container}>
-        <CustomHeader />
-        <ScrollView contentContainerStyle={styles.scrollContent(isWeb)}>
+      <SafeAreaView
+        edges={["top", "left", "right", "bottom"]}
+        style={styles.container}
+      >
+        {pageNavigation}
+        {!isDesktopWeb && <CustomHeader />}
+        <ScrollView
+          contentContainerStyle={[
+            styles.scrollContent(isWeb),
+            isDesktopWeb && logWeb.content,
+            !isDesktopWeb && compact.content,
+          ]}
+        >
           <SkeletonFuelLogEdit />
         </ScrollView>
       </SafeAreaView>
@@ -313,26 +302,39 @@ export default function EditFuelLogScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.container}>
-      <CustomHeader />
+    <SafeAreaView
+      edges={["top", "left", "right", "bottom"]}
+      style={styles.container}
+    >
+      {pageNavigation}
+      {!isDesktopWeb && <CustomHeader />}
 
+      {isDesktopWeb && (
+        <View style={{ alignItems: "flex-end", paddingHorizontal: 24 }}>
+          <ActionMenu items={actionMenuItems} />
+        </View>
+      )}
       <KeyboardAvoidingView
+        enabled={Platform.OS !== "web"}
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={styles.content}
       >
         <ScrollView
-          contentContainerStyle={styles.scrollContent(isWeb)}
+          contentContainerStyle={[
+            styles.scrollContent(isWeb),
+            isDesktopWeb && logWeb.content,
+            !isDesktopWeb && compact.content,
+          ]}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
-          {isWeb && (
-            <>
-              <Text style={styles.title}>Edit Fuel Log</Text>
-              <Text style={styles.subtitle}>Update your fuel log details</Text>
-            </>
-          )}
-
-          <View style={styles.card(isWeb)}>
+          <View
+            style={[
+              styles.card(isWeb),
+              isDesktopWeb && logWeb.panel,
+              !isDesktopWeb && compact.panel,
+            ]}
+          >
             <View style={styles.inputContainer}>
               <Text style={styles.label}>Vehicle</Text>
               {fuelLog?.vehicles && (
@@ -340,7 +342,7 @@ export default function EditFuelLogScreen() {
                   <View style={styles.vehicleIcon}>
                     <IconSymbol name="car.fill" size={16} color="white" />
                   </View>
-                  <View>
+                  <View style={{ flex: 1, minWidth: 0 }}>
                     <Text style={styles.vehicleText}>
                       {fuelLog.vehicles.year} {fuelLog.vehicles.make}{" "}
                       {fuelLog.vehicles.model}
@@ -481,7 +483,7 @@ export default function EditFuelLogScreen() {
                 )}
               </View>
 
-              <View style={styles.row}>
+              <View style={[styles.row, !isDesktopWeb && compact.row]}>
                 <View style={styles.flex1}>
                   <Input
                     label="Cost (RM)"
@@ -561,7 +563,7 @@ export default function EditFuelLogScreen() {
                 </View>
               </View>
 
-              <View style={styles.row}>
+              <View style={[styles.row, !isDesktopWeb && compact.row]}>
                 <View style={styles.flex1}>
                   <Input
                     label="Odometer (km)"
@@ -611,21 +613,31 @@ export default function EditFuelLogScreen() {
             </View>
 
             {/* Action Buttons */}
-            <View style={styles.buttonContainer}>
+            <View
+              style={[styles.buttonContainer, !isDesktopWeb && compact.footer]}
+            >
               <Button
                 title="Cancel"
                 onPress={handleGoBack}
                 variant="outline"
                 icon="xmark"
-                style={styles.cancelButton}
+                style={
+                  isDesktopWeb
+                    ? styles.cancelButton
+                    : { ...styles.cancelButton, ...compact.button }
+                }
               />
               <Button
                 title="Save Changes"
                 onPress={handleSave}
-                disabled={!isFormValid()}
+                disabled={!canModify || !isFormValid()}
                 loading={loading}
                 icon="checkmark"
-                style={styles.saveButton}
+                style={
+                  isDesktopWeb
+                    ? styles.saveButton
+                    : { ...styles.saveButton, ...compact.button }
+                }
               />
             </View>
           </View>

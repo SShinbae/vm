@@ -94,6 +94,7 @@ export function useSnoozeNotificationType() {
     }) => {
       // First get current snoozed_types
       const current = await getPreferences(userId);
+      if (current.error) throw new Error(current.error);
       const currentSnoozed = current.data
         ? (current.data.snoozed_types as Record<string, string>)
         : {};

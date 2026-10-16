@@ -1,4 +1,6 @@
 import React from "react";
+import { WebFilterButton } from "@/components/ui/WebFilterButton";
+import { useResponsiveLayout } from "@/hooks/use-responsive-layout";
 import { TouchableOpacity, Text } from "react-native";
 import { createStyleSheet, useStyles } from "react-native-unistyles";
 import { FilterType } from "@/hooks/useVehicleFilters";
@@ -23,9 +25,22 @@ export function FilterChip({
 }: FilterChipProps) {
   const { styles } = useStyles(stylesheet);
   const isActive = activeFilter === filter;
+  const layout = useResponsiveLayout();
+  if (layout.isWeb && !layout.isMobile) {
+    return (
+      <WebFilterButton
+        label={label}
+        selected={isActive}
+        onPress={() => onPress(filter)}
+      />
+    );
+  }
 
   return (
     <TouchableOpacity
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      accessibilityState={{ selected: isActive }}
       style={[styles.filterChip, isActive && styles.filterChipActive]}
       onPress={() => onPress(filter)}
     >
@@ -40,6 +55,8 @@ export function FilterChip({
 
 const stylesheet = createStyleSheet((theme) => ({
   filterChip: {
+    minHeight: 48,
+    maxWidth: "100%",
     backgroundColor: theme.colors.surface,
     borderRadius: theme.borderRadius.full,
     paddingHorizontal: {

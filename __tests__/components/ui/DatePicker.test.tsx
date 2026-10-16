@@ -6,6 +6,7 @@
  */
 
 import React from "react";
+import { StyleSheet } from "react-native";
 import { render, fireEvent } from "@testing-library/react-native";
 
 import { DatePicker } from "@/components/ui/DatePicker";
@@ -59,6 +60,14 @@ describe("DatePicker", () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+  });
+
+  it("exposes a labelled date control with a 48-point minimum target", () => {
+    const { getByRole } = render(<DatePicker {...defaultProps} />);
+    const trigger = getByRole("button", { name: "Date" });
+    expect(
+      StyleSheet.flatten(trigger.props.style).minHeight,
+    ).toBeGreaterThanOrEqual(48);
   });
 
   describe("Rendering", () => {

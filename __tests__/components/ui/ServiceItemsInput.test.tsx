@@ -6,9 +6,15 @@
  */
 
 import React from "react";
+import { StyleSheet } from "react-native";
 import { render, fireEvent } from "@testing-library/react-native";
 
 import { ServiceItemsInput } from "@/components/ui/ServiceItemsInput";
+let mockDimensions = { width: 1024, height: 844, fontScale: 1, scale: 1 };
+jest.mock("react-native/Libraries/Utilities/useWindowDimensions", () => ({
+  __esModule: true,
+  default: () => mockDimensions,
+}));
 
 // Mock dependencies
 jest.mock("@/hooks/use-color-scheme", () => ({
@@ -36,6 +42,42 @@ describe("ServiceItemsInput", () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    mockDimensions = { width: 1024, height: 844, fontScale: 1, scale: 1 };
+  });
+
+  it.each([
+    [320, 1],
+    [360, 1],
+    [390, 1],
+    [844, 1.3],
+  ])(
+    "gives descriptions a full row at width %s/font scale %s",
+    (width, fontScale) => {
+      mockDimensions = { ...mockDimensions, width, fontScale };
+      const { getByLabelText } = render(
+        <ServiceItemsInput {...defaultProps} />,
+      );
+      expect(
+        StyleSheet.flatten(getByLabelText("Service description 1").props.style)
+          .flexBasis,
+      ).toBe("100%");
+    },
+  );
+
+  it("labels item controls and gives remove/add actions 48-point targets", () => {
+    const { getByRole, getByLabelText } = render(
+      <ServiceItemsInput {...defaultProps} />,
+    );
+    expect(getByLabelText("Service description 1")).toBeTruthy();
+    expect(getByLabelText("Service price 1")).toBeTruthy();
+    const remove = getByRole("button", { name: "Remove service item 1" });
+    expect(
+      StyleSheet.flatten(remove.props.style).minHeight,
+    ).toBeGreaterThanOrEqual(48);
+    expect(
+      StyleSheet.flatten(getByRole("button", { name: "Add Item" }).props.style)
+        .minHeight,
+    ).toBeGreaterThanOrEqual(48);
   });
 
   describe("Rendering", () => {

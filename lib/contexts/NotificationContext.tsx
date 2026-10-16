@@ -6,6 +6,7 @@ import React, {
   useCallback,
   useContext,
   useEffect,
+  useRef,
   useState,
 } from "react";
 import { supabase } from "../../services/supabaseClient";
@@ -19,6 +20,7 @@ import {
 import { queryKeys } from "../config/queryClient";
 import { migratePreferencesFromAsyncStorage } from "../services/notificationPreferencesService";
 import { NotificationData } from "../services/notificationService";
+import { toast } from "@/hooks/useToast";
 import {
   hasMigratedNotifications,
   migrateNotificationsFromStorage,
@@ -29,6 +31,10 @@ interface NotificationContextType {
   latestNotification: NotificationData | null;
   unreadCount: number;
   isInitialized: boolean;
+  isLoading: boolean;
+  isRefreshing: boolean;
+  error: Error | null;
+  isMarkingRead: boolean;
   markAsRead: (notificationId: string) => void;
   markAllAsRead: () => void;
   clearNotification: (notificationId: string) => void;
@@ -47,7 +53,15 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
   const [isInitialized, setIsInitialized] = useState(false);
   const [latestNotification, setLatestNotification] =
     useState<NotificationData | null>(null);
-  const { data: notifications = [], refetch } = useNotificationsQuery(userId);
+  const {
+    data: notifications = [],
+    refetch,
+    isLoading,
+    isFetching,
+    error,
+  } = useNotificationsQuery(userId);
+  const readPending = useRef(false);
+  const [isMarkingRead, setIsMarkingRead] = useState(false);
   const markAsReadMutation = useMarkAsReadMutation();
   const markAllAsReadMutation = useMarkAllAsReadMutation();
   const deleteNotificationMutation = useDeleteNotificationMutation();
@@ -160,8 +174,34 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
   }, [queryClient, subscribe]);
 
   const refreshNotifications = useCallback(async () => {
-    await refetch();
-  }, [refetch]);
+    if (userId) await refetch({ throwOnError: true });
+  }, [refetch, userId]);
+
+  const markAsRead = (id: string) => {
+    if (!userId || readPending.current) return;
+    readPending.current = true;
+    setIsMarkingRead(true);
+    markAsReadMutation.mutate(id, {
+      onError: () => toast.error("Couldn't mark notification as read"),
+      onSettled: () => {
+        readPending.current = false;
+        setIsMarkingRead(false);
+      },
+    });
+  };
+
+  const markAllAsRead = () => {
+    if (!userId || readPending.current) return;
+    readPending.current = true;
+    setIsMarkingRead(true);
+    markAllAsReadMutation.mutate(userId, {
+      onError: () => toast.error("Couldn't mark all notifications as read"),
+      onSettled: () => {
+        readPending.current = false;
+        setIsMarkingRead(false);
+      },
+    });
+  };
 
   return (
     <NotificationContext.Provider
@@ -170,8 +210,12 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
         latestNotification,
         unreadCount: notifications.filter((item) => !item.read).length,
         isInitialized,
-        markAsRead: (id) => markAsReadMutation.mutate(id),
-        markAllAsRead: () => userId && markAllAsReadMutation.mutate(userId),
+        isLoading: !isInitialized || (!!userId && isLoading),
+        isRefreshing: !!userId && isFetching,
+        error,
+        isMarkingRead,
+        markAsRead,
+        markAllAsRead,
         clearNotification: (id) => deleteNotificationMutation.mutate(id),
         clearAllNotifications: () =>
           userId && deleteAllNotificationsMutation.mutate(userId),

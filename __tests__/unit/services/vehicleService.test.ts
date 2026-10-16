@@ -162,6 +162,39 @@ describe("VehicleService", () => {
   });
 
   describe("getVehiclesSeparated", () => {
+    it("returns one vehicle per ID when multiple shared groups grant access", async () => {
+      const shared = {
+        vehicle_id: "shared-1",
+        make: "Honda",
+        model: "Civic",
+        year: 2022,
+        current_mileage: 32000,
+        is_own_vehicle: false,
+        shared_groups: ["Family Fleet", "Work Fleet"],
+      };
+      mockSupabase.rpc.mockResolvedValue({
+        data: [shared, { ...shared }, { ...shared, vehicle_id: "shared-2" }],
+        error: null,
+      });
+      mockSupabase.from.mockImplementation(() =>
+        createMockQueryBuilder({ selectData: [] }),
+      );
+
+      const result = await VehicleService.getVehiclesSeparated();
+
+      expect(result.error).toBeNull();
+      expect(result.data?.sharedVehicles.map((vehicle) => vehicle.id)).toEqual([
+        "shared-1",
+        "shared-2",
+      ]);
+      expect(result.data?.sharedVehicles[0].sharing_info).toEqual({
+        is_shared: true,
+        shared_with_groups: ["Family Fleet", "Work Fleet"],
+        total_shares: 2,
+      });
+      expect(mockSupabase.from).toHaveBeenCalledTimes(8);
+    });
+
     it("should separate owned and shared vehicles", async () => {
       const mockVehicles = [
         {

@@ -318,8 +318,13 @@ const WebCropModal: React.FC<WebCropModalProps> = ({
     const ctx = canvas?.getContext("2d");
     if (!canvas || !ctx || !image) return;
 
-    canvas.width = CONTAINER_WIDTH;
-    canvas.height = CONTAINER_HEIGHT;
+    // ponytail: DPR read per draw, no resize listener
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = CONTAINER_WIDTH * dpr;
+    canvas.height = CONTAINER_HEIGHT * dpr;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = "high";
 
     // Clear canvas
     ctx.fillStyle = baseColors.black;

@@ -1,7 +1,9 @@
+import { getLogHistory } from "./logHistory";
 import { logger } from "@/lib/utils/logger";
 import { supabase } from "../../services/supabaseClient";
 import {
   ApiResponse,
+  LogWithVehicle,
   ServiceLog,
   ServiceLogInsert,
   ServiceLogUpdate,
@@ -9,10 +11,9 @@ import {
 import { canUserAccessVehicle } from "../utils/serviceUtils";
 
 export class ServiceLogService {
-  static async getServiceLogs(
-    vehicleId?: string,
-    options?: { limit?: number; offset?: number },
-  ): Promise<ApiResponse<ServiceLog[]>> {
+  static async getServiceLogById(
+    id: string,
+  ): Promise<ApiResponse<LogWithVehicle<ServiceLog>>> {
     try {
       const {
         data: { user },
@@ -23,12 +24,7 @@ export class ServiceLogService {
         return { data: null, error: "User not authenticated", loading: false };
       }
 
-      // OPTIMIZATION: Add pagination support
-      const limit = options?.limit || 20;
-      const offset = options?.offset || 0;
-
-      // Build base query for owned vehicles
-      let ownedQuery = supabase
+      const { data, error } = await supabase
         .from("service_logs")
         .select(
           `
@@ -36,112 +32,45 @@ export class ServiceLogService {
           vehicles!inner(make, model, year, license_plate, user_id, main_image_url)
         `,
         )
-        .eq("vehicles.user_id", user.id)
-        .order("date", { ascending: false })
-        .range(offset, offset + limit - 1);
+        .eq("id", id)
+        .single();
 
-      if (vehicleId) {
-        ownedQuery = ownedQuery.eq("vehicle_id", vehicleId);
+      if (error) {
+        logger.error("Error fetching service log:", error);
+        return { data: null, error: error.message, loading: false };
       }
 
-      // First, get the shared vehicle IDs that the user has access to
-      let sharedVehicleIds: string[] = [];
-      if (!vehicleId) {
-        // Get user's group memberships
-        const { data: userGroups, error: groupError } = await supabase
-          .from("group_members")
-          .select("group_id")
-          .eq("user_id", user.id);
-
-        if (!groupError && userGroups && userGroups.length > 0) {
-          const groupIds = userGroups.map(
-            (g: { group_id: string }) => g.group_id,
-          );
-
-          // Get vehicles shared with these groups
-          const { data: sharedVehicles, error: shareError } = await supabase
-            .from("vehicle_group_shares")
-            .select("vehicle_id")
-            .in("group_id", groupIds);
-
-          if (!shareError && sharedVehicles) {
-            sharedVehicleIds = sharedVehicles.map(
-              (sv: { vehicle_id: string }) => sv.vehicle_id,
-            );
-          }
+      if (data) {
+        const hasAccess = await canUserAccessVehicle(
+          (data as any).vehicle_id,
+          user.id,
+        );
+        if (!hasAccess) {
+          return {
+            data: null,
+            error:
+              "Access denied - you do not have permission to view this service log",
+            loading: false,
+          };
         }
       }
 
-      // Get logs for both owned vehicles and shared vehicles
-      const [ownedLogsResult, sharedLogsResult] = await Promise.all([
-        // Owned vehicle logs
-        ownedQuery,
-
-        // Shared vehicle logs (only if we have shared vehicle IDs)
-        sharedVehicleIds.length > 0
-          ? supabase
-              .from("service_logs")
-              .select(
-                `
-            *,
-            vehicles!inner(make, model, year, license_plate, user_id, main_image_url)
-          `,
-              )
-              .in("vehicle_id", sharedVehicleIds)
-              .order("date", { ascending: false })
-              .range(offset, offset + limit - 1)
-          : Promise.resolve({ data: [], error: null }),
-      ]);
-
-      // Handle errors
-      if (ownedLogsResult.error) {
-        logger.error(
-          "Error fetching owned service logs:",
-          ownedLogsResult.error,
-        );
-        return {
-          data: null,
-          error: ownedLogsResult.error.message,
-          loading: false,
-        };
-      }
-
-      if (sharedLogsResult.error) {
-        logger.warn(
-          "Error fetching shared service logs:",
-          sharedLogsResult.error,
-        );
-        // Don't fail completely, just use owned logs
-      }
-
-      // Combine and sort all logs
-      const ownedLogs = ownedLogsResult.data || [];
-      const sharedLogs = (sharedLogsResult.data || []).map((log: any) => ({
-        ...log,
-        is_shared_vehicle: true, // Mark as shared for UI indicators
-      }));
-
-      const allLogs = [...ownedLogs, ...sharedLogs];
-
-      // Remove duplicates (in case user owns and has access to same vehicle through sharing)
-      const uniqueLogs = allLogs.filter(
-        (log, index, self) => index === self.findIndex((l) => l.id === log.id),
-      );
-
-      // Sort by date descending
-      uniqueLogs.sort(
-        (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
-      );
-
-      return { data: uniqueLogs, error: null, loading: false };
+      return { data, error: null, loading: false };
     } catch (error) {
-      logger.error("Unexpected error fetching service logs:", error);
+      logger.error("Unexpected error fetching service log:", error);
       return {
         data: null,
-        error: "Failed to fetch service logs",
+        error: "Failed to fetch service log",
         loading: false,
       };
     }
+  }
+
+  static async getServiceLogs(
+    vehicleId?: string,
+    options?: { limit?: number; offset?: number; ascending?: boolean },
+  ): Promise<ApiResponse<ServiceLog[]>> {
+    return getLogHistory<ServiceLog>("service_logs", vehicleId, options);
   }
 
   static async createServiceLog(

@@ -1,4 +1,5 @@
 import { logger } from "@/lib/utils/logger";
+import { toBucketPath } from "@/lib/utils/storagePath";
 import { supabase } from "../../services/supabaseClient";
 import {
   ApiResponse,
@@ -117,19 +118,12 @@ export class ImageUploadService {
 
       logger.log("✅ Storage upload successful:", uploadData);
 
-      // Get public URL
-      const { data: urlData } = supabase.storage
-        .from("profile-avatars")
-        .getPublicUrl(fileName);
-
-      logger.log("🔗 Generated public URL:", urlData.publicUrl);
-
-      // Update user profile with new avatar URL
+      // Store the path; the public URL is built at render time
       logger.log("💾 Updating profile in database...");
       const { error: updateError } = await supabase
         .from("profiles")
         // @ts-expect-error - Supabase type inference issue with update
-        .update({ avatar_url: urlData.publicUrl })
+        .update({ avatar_url: fileName })
         .eq("id", user.id);
 
       if (updateError) {
@@ -139,8 +133,8 @@ export class ImageUploadService {
         return { data: null, error: updateError.message, loading: false };
       }
 
-      logger.log("✅ Avatar upload complete! URL:", urlData.publicUrl);
-      return { data: urlData.publicUrl, error: null, loading: false };
+      logger.log("✅ Avatar upload complete! Path:", fileName);
+      return { data: fileName, error: null, loading: false };
     } catch (error) {
       logger.error("💥 Unexpected error uploading avatar:", error);
       return { data: null, error: "Failed to upload avatar", loading: false };
@@ -218,19 +212,12 @@ export class ImageUploadService {
 
       logger.log("✅ Storage upload successful:", uploadData);
 
-      // Get public URL
-      const { data: urlData } = supabase.storage
-        .from("profile-avatars")
-        .getPublicUrl(fileName);
-
-      logger.log("🔗 Generated public URL:", urlData.publicUrl);
-
-      // Update user profile with new avatar URL
+      // Store the path; the public URL is built at render time
       logger.log("💾 Updating profile in database...");
       const { error: updateError } = await supabase
         .from("profiles")
         // @ts-expect-error - Supabase type inference issue with update
-        .update({ avatar_url: urlData.publicUrl })
+        .update({ avatar_url: fileName })
         .eq("id", user.id);
 
       if (updateError) {
@@ -240,8 +227,8 @@ export class ImageUploadService {
         return { data: null, error: updateError.message, loading: false };
       }
 
-      logger.log("✅ Avatar upload complete! URL:", urlData.publicUrl);
-      return { data: urlData.publicUrl, error: null, loading: false };
+      logger.log("✅ Avatar upload complete! Path:", fileName);
+      return { data: fileName, error: null, loading: false };
     } catch (error) {
       logger.error("💥 Unexpected error uploading avatar from URI:", error);
       return { data: null, error: "Failed to upload avatar", loading: false };
@@ -314,11 +301,6 @@ export class ImageUploadService {
         return { data: null, error: uploadError.message, loading: false };
       }
 
-      // Get public URL
-      const { data: urlData } = supabase.storage
-        .from("vehicle-images")
-        .getPublicUrl(fileName);
-
       // Get next display order for gallery images
       let displayOrder = 0;
       if (imageType === "vehicle_gallery") {
@@ -337,7 +319,7 @@ export class ImageUploadService {
       // Create vehicle image record
       const imageData: VehicleImageInsert = {
         vehicle_id: vehicleId,
-        image_url: urlData.publicUrl,
+        image_url: fileName,
         image_type: imageType,
         caption: caption || null,
         display_order: displayOrder,
@@ -363,7 +345,7 @@ export class ImageUploadService {
         const { error: vehicleUpdateError } = await supabase
           .from("vehicles")
           // @ts-expect-error - Supabase type inference issue with update
-          .update({ main_image_url: urlData.publicUrl })
+          .update({ main_image_url: fileName })
           .eq("id", vehicleId);
 
         if (vehicleUpdateError) {
@@ -385,7 +367,7 @@ export class ImageUploadService {
         }
       }
 
-      logger.log("✅ Vehicle image uploaded successfully:", urlData.publicUrl);
+      logger.log("✅ Vehicle image uploaded successfully:", fileName);
       return { data: imageRecord, error: null, loading: false };
     } catch (error) {
       logger.error("Unexpected error uploading vehicle image:", error);
@@ -486,11 +468,6 @@ export class ImageUploadService {
         return { data: null, error: uploadError.message, loading: false };
       }
 
-      // Get public URL
-      const { data: urlData } = supabase.storage
-        .from("vehicle-images")
-        .getPublicUrl(fileName);
-
       // Get next display order for gallery images
       let displayOrder = 0;
       if (imageType === "vehicle_gallery") {
@@ -509,7 +486,7 @@ export class ImageUploadService {
       // Create vehicle image record
       const imageData: VehicleImageInsert = {
         vehicle_id: vehicleId,
-        image_url: urlData.publicUrl,
+        image_url: fileName,
         image_type: imageType,
         caption: caption || null,
         display_order: displayOrder,
@@ -535,7 +512,7 @@ export class ImageUploadService {
         const { error: vehicleUpdateError } = await supabase
           .from("vehicles")
           // @ts-expect-error - Supabase type inference issue with update
-          .update({ main_image_url: urlData.publicUrl })
+          .update({ main_image_url: fileName })
           .eq("id", vehicleId);
 
         if (vehicleUpdateError) {
@@ -557,7 +534,7 @@ export class ImageUploadService {
         }
       }
 
-      logger.log("✅ Vehicle image uploaded successfully:", urlData.publicUrl);
+      logger.log("✅ Vehicle image uploaded successfully:", fileName);
       return { data: imageRecord, error: null, loading: false };
     } catch (error) {
       logger.error("Unexpected error uploading vehicle image from URI:", error);
@@ -643,20 +620,20 @@ export class ImageUploadService {
         };
       }
 
-      // Extract filename from URL
-      const url = new URL((imageRecord as any).image_url);
-      const pathParts = url.pathname.split("/");
-      const fileName = pathParts[pathParts.length - 1];
-      const fullPath = `${user.id}/${fileName}`;
+      // Delete from storage, unless the value is external (no object here)
+      const path = toBucketPath(
+        "vehicle-images",
+        (imageRecord as any).image_url,
+      );
+      if (!/^https?:\/\//i.test(path)) {
+        const { error: storageError } = await supabase.storage
+          .from("vehicle-images")
+          .remove([path]);
 
-      // Delete from storage
-      const { error: storageError } = await supabase.storage
-        .from("vehicle-images")
-        .remove([fullPath]);
-
-      if (storageError) {
-        logger.error("Error deleting from storage:", storageError);
-        // Continue with database deletion even if storage fails
+        if (storageError) {
+          logger.error("Error deleting from storage:", storageError);
+          // Continue with database deletion even if storage fails
+        }
       }
 
       // Delete database record
@@ -789,20 +766,17 @@ export class ImageUploadService {
         return { data: null, error: "No avatar to delete", loading: false };
       }
 
-      // Extract filename from URL
-      const url = new URL(profile.avatar_url);
-      const pathParts = url.pathname.split("/");
-      const fileName = pathParts[pathParts.length - 1];
-      const fullPath = `${user.id}/${fileName}`;
+      // Delete from storage, unless the value is external (no object here)
+      const path = toBucketPath("profile-avatars", profile.avatar_url);
+      if (!/^https?:\/\//i.test(path)) {
+        const { error: storageError } = await supabase.storage
+          .from("profile-avatars")
+          .remove([path]);
 
-      // Delete from storage
-      const { error: storageError } = await supabase.storage
-        .from("profile-avatars")
-        .remove([fullPath]);
-
-      if (storageError) {
-        logger.error("Error deleting avatar from storage:", storageError);
-        // Continue with database update even if storage fails
+        if (storageError) {
+          logger.error("Error deleting avatar from storage:", storageError);
+          // Continue with database update even if storage fails
+        }
       }
 
       // Update profile to remove avatar URL

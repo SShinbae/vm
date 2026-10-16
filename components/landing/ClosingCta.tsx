@@ -13,7 +13,7 @@ export function ClosingCta() {
   return (
     <View
       style={{
-        backgroundColor: theme.colors.primary,
+        backgroundColor: theme.colors.surface,
         borderRadius: isMobile ? 20 : 24,
         padding: isMobile ? 32 : 64,
         alignItems: "center",
@@ -27,7 +27,7 @@ export function ClosingCta() {
           lineHeight: isMobile ? 34 : 46,
           fontWeight: "800",
           letterSpacing: -1,
-          color: theme.colors.white,
+          color: theme.colors.text,
           textAlign: "center",
           marginBottom: spacing.lg,
         }}
@@ -38,14 +38,15 @@ export function ClosingCta() {
         style={{
           fontSize: isMobile ? 17 : 19,
           lineHeight: 28,
-          color: theme.colors.white,
+          color: theme.colors.text,
           opacity: 0.9,
           textAlign: "center",
           maxWidth: 560,
           marginBottom: spacing.xxl,
         }}
       >
-        Free, no credit card. Add your first vehicle in under a minute.
+        Start with one vehicle and one log. Build a clearer picture with every
+        trip.
       </Text>
       <TouchableOpacity
         onPress={() => router.push("/(auth)/register")}
@@ -53,7 +54,7 @@ export function ClosingCta() {
         accessibilityRole="button"
         accessibilityLabel="Create free account"
         style={{
-          backgroundColor: theme.colors.white,
+          backgroundColor: theme.colors.text,
           paddingVertical: 16,
           paddingHorizontal: 32,
           borderRadius: 12,
@@ -61,7 +62,7 @@ export function ClosingCta() {
       >
         <Text
           style={{
-            color: theme.colors.primary,
+            color: theme.colors.background,
             fontSize: 17,
             fontWeight: "700",
           }}

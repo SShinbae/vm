@@ -31,9 +31,8 @@ export function FeatureGrid() {
               flexBasis: isMobile ? "auto" : "48%",
               flexGrow: 1,
               backgroundColor: theme.colors.background,
-              borderRadius: 16,
-              borderWidth: 1,
-              borderColor: theme.colors.border,
+              borderRadius: 20,
+
               padding: isMobile ? 24 : 32,
             }}
           >
@@ -70,7 +69,8 @@ export function FeatureGrid() {
               style={{
                 fontSize: 16,
                 lineHeight: 24,
-                color: theme.colors.textSecondary,
+                color: theme.colors.text,
+                opacity: 0.8,
               }}
             >
               {feature.description}

@@ -1,9 +1,17 @@
+import { useResponsiveLayout } from "@/hooks/use-responsive-layout";
 import { withOpacity, spacing } from "@/src/design-system";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { BottomTabBarProps } from "@react-navigation/bottom-tabs";
 import * as Haptics from "expo-haptics";
 import React from "react";
-import { Animated, Platform, Text, TouchableOpacity, View } from "react-native";
+import {
+  Animated,
+  Platform,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { createStyleSheet, useStyles } from "react-native-unistyles";
 
@@ -33,6 +41,8 @@ export const ResponsiveTabBar: React.FC<BottomTabBarProps> = ({
   const { styles, theme, breakpoint } = useStyles(stylesheet);
   const insets = useSafeAreaInsets();
   const reduceMotion = useReducedMotion();
+  const { isMobile: isMobileLayout } = useResponsiveLayout();
+  const isCompact = Platform.OS !== "web" || isMobileLayout;
 
   const visibleRoutes = React.useMemo(
     () =>
@@ -42,7 +52,7 @@ export const ResponsiveTabBar: React.FC<BottomTabBarProps> = ({
         if (hasHref && (options as any).href === null) {
           return false;
         }
-        return true;
+        return StyleSheet.flatten(options.tabBarItemStyle)?.display !== "none";
       }),
     [descriptors, state.routes],
   );
@@ -105,13 +115,27 @@ export const ResponsiveTabBar: React.FC<BottomTabBarProps> = ({
     <View
       style={[
         styles.tabBarContainer,
+        isCompact && {
+          backgroundColor: theme.colors.background,
+          paddingLeft: insets.left,
+          paddingRight: insets.right,
+        },
         {
           paddingBottom: Math.max(insets.bottom, 0),
         },
       ]}
     >
-      <View style={styles.tabBar}>
-        {visibleRoutes.map((route, visibleIndex) => {
+      <View
+        style={[
+          styles.tabBar,
+          isCompact && {
+            height: "auto",
+            minHeight: 64,
+            paddingHorizontal: theme.spacing.xs,
+          },
+        ]}
+      >
+        {visibleRoutes.map((route) => {
           const { options } = descriptors[route.key];
           const routeIndex = state.routes.findIndex((r) => r.key === route.key);
           const isFocused = state.index === routeIndex;
@@ -137,6 +161,7 @@ export const ResponsiveTabBar: React.FC<BottomTabBarProps> = ({
               key={route.key}
               style={[
                 styles.tabItem,
+                isCompact && { minWidth: 0, alignItems: "stretch" },
                 {
                   transform: [{ scale: scaleAnims[routeIndex] }],
                 },
@@ -153,7 +178,15 @@ export const ResponsiveTabBar: React.FC<BottomTabBarProps> = ({
                 testID={options.tabBarAccessibilityLabel}
                 onPress={() => handlePress(route, routeIndex, isFocused)}
                 onLongPress={() => handleLongPress(route)}
-                style={[styles.tabButton, isFocused && styles.tabButtonActive]}
+                style={[
+                  styles.tabButton,
+                  isCompact && {
+                    width: "100%",
+                    minWidth: 0,
+                    paddingHorizontal: 2,
+                  },
+                  isFocused && styles.tabButtonActive,
+                ]}
               >
                 {/* Top accent line for active tab - centered within button */}
                 {isFocused && <View style={styles.activeIndicatorLine} />}
@@ -178,7 +211,7 @@ export const ResponsiveTabBar: React.FC<BottomTabBarProps> = ({
                       fontWeight: isFocused ? "600" : "500",
                     },
                   ]}
-                  numberOfLines={1}
+                  numberOfLines={isCompact ? undefined : 1}
                 >
                   {typeof label === "string" ? label : "Tab"}
                 </Text>

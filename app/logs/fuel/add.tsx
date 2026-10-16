@@ -1,9 +1,16 @@
+import { goBack } from "@/lib/utils/goBack";
+import { LogPageNavigation } from "@/components/logs/LogPageNavigation";
+import {
+  logPageStyles,
+  compactLogFormStyles,
+} from "@/components/logs/logPageStyles";
+import { useResponsiveLayout } from "@/hooks/use-responsive-layout";
 import { spacing } from "@/src/design-system";
 import { Button } from "@/components/ui/Button";
 import { DatePicker } from "@/components/ui/DatePicker";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { Input } from "@/components/ui/Input";
-import { router, useNavigation } from "expo-router";
+import { router } from "expo-router";
 import React, { useState } from "react";
 import {
   KeyboardAvoidingView,
@@ -23,11 +30,17 @@ import { SkeletonFuelLogForm } from "@/components/ui/Skeleton";
 import { useAddFuelLog } from "@/hooks/useAddFuelLog";
 
 export default function AddFuelLogScreen() {
+  const layout = useResponsiveLayout();
+  const isDesktopWeb = layout.isWeb && !layout.isMobile;
+  const { styles: logWeb } = useStyles(logPageStyles);
+  const { styles: compact } = useStyles(compactLogFormStyles);
   const { styles, theme } = useStyles(stylesheet);
   const {
     formData,
     vehicles,
     vehiclesLoading,
+    vehiclesError,
+    retryVehicles,
     loading,
     isWeb,
     isLocked,
@@ -49,21 +62,19 @@ export default function AddFuelLogScreen() {
 
   const [isCustomPrice, setIsCustomPrice] = useState(false);
   const [customPriceInput, setCustomPriceInput] = useState("");
-  const navigation = useNavigation();
 
   // Safe back navigation - fallback to logs tab if no history
-  const handleGoBack = () => {
-    if (navigation.canGoBack()) {
-      router.back();
-    } else {
-      router.replace("/(tabs)/logs");
-    }
-  };
+  const handleGoBack = () => goBack("/logs");
 
   // --- New Custom Header ---
   const CustomHeader = () => (
-    <View style={styles.customHeader}>
-      <TouchableOpacity style={styles.customBackButton} onPress={handleGoBack}>
+    <View style={[styles.customHeader, compact.header]}>
+      <TouchableOpacity
+        accessibilityRole="button"
+        accessibilityLabel="Back"
+        style={[styles.customBackButton, compact.back]}
+        onPress={handleGoBack}
+      >
         <IconSymbol name="chevron.left" size={24} color={theme.colors.text} />
       </TouchableOpacity>
       <View style={styles.titleContainer}>
@@ -76,11 +87,45 @@ export default function AddFuelLogScreen() {
   );
 
   // Loading State
+  const pageNavigation = (
+    <LogPageNavigation
+      title="Add Fuel Log"
+      vehicleId={formData.vehicle_id}
+      vehicle={
+        vehiclesError
+          ? undefined
+          : vehicles.find((v) => v.id === formData.vehicle_id)
+      }
+      error={vehiclesError}
+      retry={retryVehicles}
+    />
+  );
+  if (vehiclesError)
+    return (
+      <SafeAreaView
+        edges={["top", "left", "right", "bottom"]}
+        style={styles.container}
+      >
+        {!isDesktopWeb && <CustomHeader />}
+        {pageNavigation}
+      </SafeAreaView>
+    );
+
   if (vehiclesLoading) {
     return (
-      <SafeAreaView style={styles.container}>
-        <CustomHeader />
-        <ScrollView contentContainerStyle={styles.scrollContent(isWeb)}>
+      <SafeAreaView
+        edges={["top", "left", "right", "bottom"]}
+        style={styles.container}
+      >
+        {!isDesktopWeb && <CustomHeader />}
+        {pageNavigation}
+        <ScrollView
+          contentContainerStyle={[
+            styles.scrollContent(isWeb),
+            isDesktopWeb && logWeb.content,
+            !isDesktopWeb && compact.content,
+          ]}
+        >
           <SkeletonFuelLogForm />
         </ScrollView>
       </SafeAreaView>
@@ -90,8 +135,12 @@ export default function AddFuelLogScreen() {
   // Empty State
   if (vehicles.length === 0) {
     return (
-      <SafeAreaView style={styles.container}>
-        <CustomHeader />
+      <SafeAreaView
+        edges={["top", "left", "right", "bottom"]}
+        style={styles.container}
+      >
+        {!isDesktopWeb && <CustomHeader />}
+        {pageNavigation}
         <View style={styles.loadingContainer}>
           <Text style={styles.emptyText}>
             No vehicles found. Please add a vehicle first.
@@ -109,22 +158,37 @@ export default function AddFuelLogScreen() {
 
   // Main Content
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView
+      edges={["top", "left", "right", "bottom"]}
+      style={styles.container}
+    >
       {/* Render the new custom header here */}
-      <CustomHeader />
+      {!isDesktopWeb && <CustomHeader />}
+      {pageNavigation}
 
       <KeyboardAvoidingView
+        enabled={Platform.OS !== "web"}
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={styles.content}
       >
         <ScrollView
-          contentContainerStyle={styles.scrollContent(isWeb)}
+          contentContainerStyle={[
+            styles.scrollContent(isWeb),
+            isDesktopWeb && logWeb.content,
+            !isDesktopWeb && compact.content,
+          ]}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
           {/* Web-only title was here, it's now in CustomHeader */}
 
-          <View style={styles.card(isWeb)}>
+          <View
+            style={[
+              styles.card(isWeb),
+              isDesktopWeb && logWeb.panel,
+              !isDesktopWeb && compact.panel,
+            ]}
+          >
             <VehicleSelector
               vehicles={vehicles}
               selectedVehicleId={formData.vehicle_id}
@@ -138,15 +202,18 @@ export default function AddFuelLogScreen() {
                 <Text style={styles.requiredLabel}>*</Text>
               </Text>
               <View style={styles.fuelPriceSelector}>
-                {fuelPrices.map((price) => (
+                {fuelPrices.map((item) => (
                   <FuelPriceChip
-                    key={price}
-                    price={price}
-                    isSelected={!isCustomPrice && formData.fuel_price === price}
+                    key={item.label}
+                    price={item.price}
+                    label={`${item.label} RM ${item.price.toFixed(2)}`}
+                    isSelected={
+                      !isCustomPrice && formData.fuel_price === item.price
+                    }
                     onPress={() => {
                       setIsCustomPrice(false);
                       setCustomPriceInput("");
-                      handlePriceChange(price);
+                      handlePriceChange(item.price);
                     }}
                   />
                 ))}
@@ -176,7 +243,7 @@ export default function AddFuelLogScreen() {
               )}
             </View>
 
-            <View style={styles.row}>
+            <View style={[styles.row, !isDesktopWeb && compact.row]}>
               <Input
                 label="Cost (RM)"
                 value={costInput}
@@ -243,13 +310,19 @@ export default function AddFuelLogScreen() {
               leftIcon="location"
             />
 
-            <View style={styles.buttonContainer}>
+            <View
+              style={[styles.buttonContainer, !isDesktopWeb && compact.footer]}
+            >
               <Button
                 title="Cancel"
                 onPress={handleGoBack}
                 variant="outline"
                 icon="xmark"
-                style={styles.cancelButton}
+                style={
+                  isDesktopWeb
+                    ? styles.cancelButton
+                    : { ...styles.cancelButton, ...compact.button }
+                }
               />
               <Button
                 title="Save Log"
@@ -257,7 +330,11 @@ export default function AddFuelLogScreen() {
                 disabled={!isFormValid}
                 loading={loading}
                 icon="checkmark"
-                style={styles.saveButton}
+                style={
+                  isDesktopWeb
+                    ? styles.saveButton
+                    : { ...styles.saveButton, ...compact.button }
+                }
               />
             </View>
           </View>
@@ -361,6 +438,7 @@ const stylesheet = createStyleSheet((theme) => ({
   },
   fuelPriceSelector: {
     flexDirection: "row",
+    flexWrap: "wrap",
     gap: theme.spacing.sm,
   },
   buttonContainer: {

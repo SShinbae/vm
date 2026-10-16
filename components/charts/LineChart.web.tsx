@@ -1,3 +1,4 @@
+import { useResponsiveLayout } from "@/hooks/use-responsive-layout";
 import { spacing } from "@/src/design-system";
 import { useStyles } from "react-native-unistyles";
 import React from "react";
@@ -5,6 +6,8 @@ import { View, Text, StyleSheet } from "react-native";
 import {
   LineChart as RechartsLineChart,
   Line,
+  Area,
+  AreaChart as RechartsAreaChart,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -19,6 +22,8 @@ interface LineChartProps {
   height?: number;
   color?: string;
   showArea?: boolean;
+  embedded?: boolean;
+  width?: number;
   formatY?: (value: number) => string;
 }
 
@@ -28,20 +33,23 @@ export function LineChart({
   height = 200,
   color,
   showArea = false,
+  embedded = false,
   formatY = (value: number) => `RM${value.toFixed(0)}`,
 }: LineChartProps) {
   const { theme } = useStyles();
   const colors = theme.colors;
+  const { isMobile } = useResponsiveLayout();
 
   const chartColor = color || colors.analytics.fuel;
+  const Chart = showArea ? RechartsAreaChart : RechartsLineChart;
 
   const styles = StyleSheet.create({
     container: {
-      backgroundColor: colors.surface,
-      borderRadius: 12,
-      padding: spacing.lg,
-      marginBottom: spacing.lg,
-      borderWidth: 1,
+      backgroundColor: embedded ? "transparent" : colors.surface,
+      borderRadius: embedded ? 0 : isMobile ? 12 : theme.borderRadius.xl,
+      padding: embedded ? 0 : spacing.lg,
+      marginBottom: embedded ? 0 : spacing.lg,
+      borderWidth: embedded ? 0 : 1,
       borderColor: colors.border,
     },
     title: {
@@ -68,7 +76,7 @@ export function LineChart({
   if (!data || data.length === 0) {
     return (
       <View style={styles.container}>
-        <Text style={styles.title}>{title}</Text>
+        {!embedded && <Text style={styles.title}>{title}</Text>}
         <View style={styles.emptyState}>
           <Text style={styles.emptyText}>No data available</Text>
         </View>
@@ -84,10 +92,10 @@ export function LineChart({
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>{title}</Text>
+      {!embedded && <Text style={styles.title}>{title}</Text>}
       <View style={styles.chartContainer}>
         <ResponsiveContainer width="100%" height="100%">
-          <RechartsLineChart data={chartData}>
+          <Chart data={chartData}>
             <CartesianGrid strokeDasharray="3 3" stroke={colors.border} />
             <XAxis
               dataKey="name"
@@ -114,15 +122,26 @@ export function LineChart({
                 borderRadius: "8px",
               }}
             />
-            <Line
-              type="monotone"
-              dataKey="value"
-              stroke={chartColor}
-              strokeWidth={3}
-              dot={{ fill: chartColor, strokeWidth: 2, r: 4 }}
-              activeDot={{ r: 6, stroke: chartColor, strokeWidth: 2 }}
-            />
-          </RechartsLineChart>
+            {showArea ? (
+              <Area
+                type="monotone"
+                dataKey="value"
+                stroke={chartColor}
+                fill={chartColor}
+                fillOpacity={0.14}
+                strokeWidth={3}
+              />
+            ) : (
+              <Line
+                type="monotone"
+                dataKey="value"
+                stroke={chartColor}
+                strokeWidth={3}
+                dot={{ fill: chartColor, strokeWidth: 2, r: 4 }}
+                activeDot={{ r: 6, stroke: chartColor, strokeWidth: 2 }}
+              />
+            )}
+          </Chart>
         </ResponsiveContainer>
       </View>
     </View>

@@ -26,6 +26,9 @@ export function FuelPriceChip({
 
   return (
     <TouchableOpacity
+      accessibilityRole="button"
+      accessibilityState={{ selected: isSelected }}
+      accessibilityLabel={label || `RM ${price.toFixed(2)} per liter`}
       style={[styles.fuelPriceOption, selectedStyles]}
       onPress={onPress}
     >
@@ -40,7 +43,9 @@ export function FuelPriceChip({
 
 const stylesheet = createStyleSheet((theme) => ({
   fuelPriceOption: {
+    minHeight: 48,
     flex: 1,
+    minWidth: "30%", // wraps to ~3 chips per row
     backgroundColor: theme.colors.surface,
     borderWidth: 1,
     borderColor: theme.colors.border,

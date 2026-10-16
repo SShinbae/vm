@@ -179,28 +179,10 @@ describe("Group Services", () => {
     describe("createGroup", () => {
       it("should create group and add owner as member", async () => {
         const newGroup = MockDataBuilders.group();
-        const insertMock = jest
+        const singleMock = jest
           .fn()
-          .mockResolvedValue({ data: null, error: null });
-
-        mockSupabase.from.mockImplementation((table: string) => {
-          if (table === "groups") {
-            return {
-              ...createMockQueryBuilder(),
-              insert: jest.fn().mockReturnValue({
-                select: jest.fn().mockReturnValue({
-                  single: jest
-                    .fn()
-                    .mockResolvedValue({ data: newGroup, error: null }),
-                }),
-              }),
-            };
-          }
-          if (table === "group_members") {
-            return { ...createMockQueryBuilder(), insert: insertMock };
-          }
-          return createMockQueryBuilder();
-        });
+          .mockResolvedValue({ data: newGroup, error: null });
+        mockSupabase.rpc.mockReturnValue({ single: singleMock });
 
         const result = await GroupService.createGroup({
           name: "New Group",
@@ -208,13 +190,28 @@ describe("Group Services", () => {
         });
 
         expect(result.error).toBeNull();
-        expect(result.data).toBeDefined();
-        expect(insertMock).toHaveBeenCalledWith(
-          expect.objectContaining({
-            group_id: newGroup.id,
-            user_id: "test-user-id",
-          }),
+        expect(result.data).toEqual(newGroup);
+        expect(mockSupabase.rpc).toHaveBeenCalledWith(
+          "create_group_with_owner",
+          { p_name: "New Group", p_description: "A new test group" },
         );
+        expect(mockSupabase.from).not.toHaveBeenCalled();
+      });
+
+      it("should return an error if the atomic creation function fails", async () => {
+        mockSupabase.rpc.mockReturnValue({
+          single: jest.fn().mockResolvedValue({
+            data: null,
+            error: { message: "Owner membership failed" },
+          }),
+        });
+
+        const result = await GroupService.createGroup({ name: "New Group" });
+
+        expect(result).toMatchObject({
+          data: null,
+          error: "Owner membership failed",
+        });
       });
 
       it("should return error when user not authenticated", async () => {
@@ -538,7 +535,7 @@ describe("Group Services", () => {
         expect(result.error).toBe("This user is already a member of the group");
       });
 
-      it("should require user to be owner or member to send invitations", async () => {
+      it("should reject members who are not group owners", async () => {
         mockSupabase.from.mockImplementation((table: string) => {
           if (table === "groups") {
             return {
@@ -556,8 +553,9 @@ describe("Group Services", () => {
             return {
               ...createMockQueryBuilder(),
               select: jest.fn().mockReturnThis(),
-              eq: jest.fn().mockReturnValue({
-                eq: jest.fn().mockResolvedValue({ data: [], error: null }),
+              eq: jest.fn().mockResolvedValue({
+                data: [{ id: "member-1" }],
+                error: null,
               }),
             };
           }
@@ -569,7 +567,50 @@ describe("Group Services", () => {
           "invitee@example.com",
         );
 
-        expect(result.error).toContain("must be a member");
+        expect(result.error).toBe("Only group owners can send invitations");
+      });
+
+      it("should reject a resend before deleting the pending invitation", async () => {
+        const invitation = MockDataBuilders.groupInvitation({
+          id: "invitation-1",
+          group_id: "group-1",
+          email: "invitee@example.com",
+        });
+        const deleteMock = jest.fn().mockReturnThis();
+        mockSupabase.from.mockImplementation((table: string) => {
+          if (table === "group_invitations") {
+            return {
+              ...createMockQueryBuilder(),
+              select: jest.fn().mockReturnThis(),
+              eq: jest.fn().mockReturnValue({
+                single: jest.fn().mockResolvedValue({
+                  data: invitation,
+                  error: null,
+                }),
+              }),
+              delete: deleteMock,
+            };
+          }
+          if (table === "groups") {
+            return {
+              ...createMockQueryBuilder(),
+              select: jest.fn().mockReturnThis(),
+              eq: jest.fn().mockReturnValue({
+                single: jest.fn().mockResolvedValue({
+                  data: { owner_id: "different-user" },
+                  error: null,
+                }),
+              }),
+            };
+          }
+          return createMockQueryBuilder();
+        });
+
+        const result =
+          await GroupInvitationService.resendInvitation("invitation-1");
+
+        expect(result.error).toBe("Only group owners can send invitations");
+        expect(deleteMock).not.toHaveBeenCalled();
       });
     });
 

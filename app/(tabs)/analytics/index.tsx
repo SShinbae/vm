@@ -1,7 +1,11 @@
+import { AnalyticsMobileSummary } from "@/components/analytics/AnalyticsMobileSummary";
 import {
   CostBreakdownCard,
   EmptyAnalytics,
+  InsightsStrip,
   MetricCard,
+  LazyCostLineChart,
+  OverviewCostChart,
   PeriodSelector,
   StatCard,
   UpcomingServiceCard,
@@ -14,13 +18,18 @@ import {
   useVehicleFilter,
 } from "@/hooks/useAnalytics";
 import { useResponsiveLayout } from "@/hooks/use-responsive-layout";
-import React, { useMemo } from "react";
-import { RefreshControl, ScrollView, Text, View } from "react-native";
+import { getPreviousPeriod } from "@/lib/analytics/calculations";
+import { calculateDelta, generateInsights } from "@/lib/analytics/overview";
+import React, { useMemo, useState } from "react";
+import { RefreshControl, ScrollView, Switch, Text, View } from "react-native";
 import { useStyles } from "react-native-unistyles";
 
 export default function OverviewTab() {
   const { theme } = useStyles();
-  const { isMobile, isTablet } = useResponsiveLayout();
+  const { isWeb, isMobile, isTablet } = useResponsiveLayout();
+  const isWebPage = isWeb && !isMobile;
+  const [compare, setCompare] = useState(false);
+  const comparing = compare && isWebPage;
   const { period, setPeriod, periods } = usePeriodSelector();
   const {
     vehicles,
@@ -29,6 +38,8 @@ export default function OverviewTab() {
     selectAll,
     clearAll,
     loading: vehiclesLoading,
+    error: vehiclesError,
+    refetch: refetchVehicles,
   } = useVehicleFilter();
 
   const filters = useMemo(
@@ -39,14 +50,45 @@ export default function OverviewTab() {
     [period, selectedVehicleIds],
   );
 
-  const { loading, error, costMetrics, fuelMetrics, serviceMetrics, refetch } =
-    useAnalyticsData(filters);
+  const {
+    loading,
+    error,
+    costMetrics,
+    fuelMetrics,
+    serviceMetrics,
+    chartDataset,
+    refetch,
+  } = useAnalyticsData(filters);
+
+  const previousFilters = useMemo(
+    () => ({ ...filters, period: getPreviousPeriod(period) }),
+    [filters, period],
+  );
+  const previous = useAnalyticsData(previousFilters, comparing);
+  const series = chartDataset?.data ?? [];
 
   const hasData =
     costMetrics &&
     (costMetrics.totalCost > 0 ||
       fuelMetrics?.fuelUps ||
       serviceMetrics?.totalServices);
+
+  if (!isWebPage) {
+    return (
+      <AnalyticsMobileSummary
+        costMetrics={costMetrics}
+        fuelMetrics={fuelMetrics}
+        serviceMetrics={serviceMetrics}
+        chartDataset={chartDataset}
+        loading={loading || vehiclesLoading}
+        error={error || vehiclesError}
+        onRefresh={() => {
+          void refetch();
+          void refetchVehicles();
+        }}
+      />
+    );
+  }
 
   // Loading state
   if (loading || vehiclesLoading) {
@@ -66,6 +108,7 @@ export default function OverviewTab() {
             style={{
               paddingHorizontal: isMobile ? theme.spacing.lg : theme.spacing.xl,
               paddingVertical: isMobile ? theme.spacing.md : theme.spacing.lg,
+              ...(isWebPage && { display: "none" }),
             }}
           >
             <Text
@@ -92,7 +135,13 @@ export default function OverviewTab() {
             </Text>
           </View>
           <View
-            style={{ padding: isMobile ? theme.spacing.md : theme.spacing.lg }}
+            style={{
+              padding: theme.spacing.lg,
+              ...(isWebPage && {
+                paddingHorizontal: theme.spacing.xl,
+                paddingTop: 0,
+              }),
+            }}
           >
             <EmptyAnalytics
               icon="alert-circle-outline"
@@ -114,6 +163,7 @@ export default function OverviewTab() {
             style={{
               paddingHorizontal: isMobile ? theme.spacing.lg : theme.spacing.xl,
               paddingVertical: isMobile ? theme.spacing.md : theme.spacing.lg,
+              ...(isWebPage && { display: "none" }),
             }}
           >
             <Text
@@ -140,7 +190,13 @@ export default function OverviewTab() {
             </Text>
           </View>
           <View
-            style={{ padding: isMobile ? theme.spacing.md : theme.spacing.lg }}
+            style={{
+              padding: theme.spacing.lg,
+              ...(isWebPage && {
+                paddingHorizontal: theme.spacing.xl,
+                paddingTop: 0,
+              }),
+            }}
           >
             <PeriodSelector
               selectedPeriod={period}
@@ -161,6 +217,17 @@ export default function OverviewTab() {
     );
   }
 
+  const delta = (cur?: number, prev?: number | null) => {
+    const d = comparing && cur != null ? calculateDelta(cur, prev) : null;
+    return d ? { direction: d.direction, percentage: d.pct } : undefined;
+  };
+  const insights = generateInsights({
+    fuelMetrics,
+    previousFuelMetrics: comparing ? previous.fuelMetrics : null,
+    serviceMetrics,
+    series,
+  });
+
   const upcomingServices = serviceMetrics?.upcomingServices.slice(0, 3) || [];
 
   // Calculate selected vehicle count
@@ -174,7 +241,13 @@ export default function OverviewTab() {
       <ScrollView
         style={{ flex: 1 }}
         refreshControl={
-          <RefreshControl refreshing={loading} onRefresh={refetch} />
+          <RefreshControl
+            refreshing={loading}
+            onRefresh={() => {
+              refetch();
+              if (comparing) previous.refetch();
+            }}
+          />
         }
         showsVerticalScrollIndicator={false}
       >
@@ -183,6 +256,7 @@ export default function OverviewTab() {
           style={{
             paddingHorizontal: isMobile ? theme.spacing.lg : theme.spacing.xl,
             paddingVertical: isMobile ? theme.spacing.md : theme.spacing.lg,
+            ...(isWebPage && { display: "none" }),
             backgroundColor: theme.colors.background,
           }}
         >
@@ -211,7 +285,13 @@ export default function OverviewTab() {
         </View>
 
         <View
-          style={{ padding: isMobile ? theme.spacing.md : theme.spacing.lg }}
+          style={{
+            padding: theme.spacing.lg,
+            ...(isWebPage && {
+              paddingHorizontal: theme.spacing.xl,
+              paddingTop: 0,
+            }),
+          }}
         >
           {/* Filters */}
           <PeriodSelector
@@ -226,23 +306,77 @@ export default function OverviewTab() {
             onSelectAll={selectAll}
             onClearAll={clearAll}
           />
+          {isWebPage && (
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                gap: theme.spacing.sm,
+                marginTop: theme.spacing.sm,
+              }}
+            >
+              <Switch
+                value={compare}
+                onValueChange={setCompare}
+                accessibilityLabel="Compare with previous period"
+              />
+              <Text
+                style={{
+                  color: theme.colors.text,
+                  fontSize: theme.fontSize.sm,
+                }}
+              >
+                Compare with previous period
+              </Text>
+            </View>
+          )}
 
           {/* Summary Section */}
-          <Text
-            style={{
-              fontSize: isMobile
-                ? theme.fontSize.xl
-                : isTablet
+          {isWebPage ? (
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "baseline",
+                gap: theme.spacing.md,
+                marginTop: theme.spacing.md,
+                marginBottom: theme.spacing.sm,
+              }}
+            >
+              <Text
+                style={{
+                  fontSize: theme.fontSize.xl,
+                  fontWeight: theme.fontWeight.bold,
+                  color: theme.colors.text,
+                }}
+              >
+                Summary
+              </Text>
+              <Text
+                style={{
+                  fontSize: theme.fontSize.xs,
+                  color: theme.colors.textSecondary,
+                }}
+              >
+                Key metrics for the selected vehicle in the last {period.label}
+              </Text>
+            </View>
+          ) : (
+            <Text
+              style={{
+                fontSize: isMobile
                   ? theme.fontSize.xl
-                  : theme.fontSize["2xl"],
-              fontWeight: theme.fontWeight.bold,
-              color: theme.colors.text,
-              marginBottom: isMobile ? theme.spacing.sm : theme.spacing.md,
-              marginTop: isMobile ? theme.spacing.md : theme.spacing.lg,
-            }}
-          >
-            Summary
-          </Text>
+                  : isTablet
+                    ? theme.fontSize.xl
+                    : theme.fontSize["2xl"],
+                fontWeight: theme.fontWeight.bold,
+                color: theme.colors.text,
+                marginBottom: isMobile ? theme.spacing.sm : theme.spacing.md,
+                marginTop: isMobile ? theme.spacing.md : theme.spacing.lg,
+              }}
+            >
+              Summary
+            </Text>
+          )}
 
           {/* Metric Cards Grid */}
           <View
@@ -253,7 +387,7 @@ export default function OverviewTab() {
           >
             <View
               style={{
-                flexDirection: "row",
+                flexDirection: isMobile ? "column" : "row",
                 gap: isMobile ? theme.spacing.sm : theme.spacing.md,
               }}
             >
@@ -263,6 +397,11 @@ export default function OverviewTab() {
                   value={`RM${costMetrics?.totalCost.toFixed(2) || 0}`}
                   subtitle={period.label}
                   icon="cash-outline"
+                  trend={delta(
+                    costMetrics?.totalCost,
+                    previous.costMetrics?.totalCost,
+                  )}
+                  sparkline={series.map((s) => s.totalCost)}
                 />
               </View>
               <View style={{ flex: 1 }}>
@@ -271,13 +410,17 @@ export default function OverviewTab() {
                   value={`RM${costMetrics?.costPerKm.toFixed(2) || 0}`}
                   subtitle="Average"
                   icon="speedometer-outline"
+                  trend={delta(
+                    costMetrics?.costPerKm,
+                    previous.costMetrics?.costPerKm,
+                  )}
                 />
               </View>
             </View>
 
             <View
               style={{
-                flexDirection: "row",
+                flexDirection: isMobile ? "column" : "row",
                 gap: isMobile ? theme.spacing.sm : theme.spacing.md,
               }}
             >
@@ -287,6 +430,11 @@ export default function OverviewTab() {
                   value={`RM${costMetrics?.totalFuelCost.toFixed(2) || 0}`}
                   subtitle={`${fuelMetrics?.fuelUps || 0} fill-ups`}
                   icon="water-outline"
+                  trend={delta(
+                    costMetrics?.totalFuelCost,
+                    previous.costMetrics?.totalFuelCost,
+                  )}
+                  sparkline={series.map((s) => s.fuelCost)}
                 />
               </View>
               <View style={{ flex: 1 }}>
@@ -295,6 +443,11 @@ export default function OverviewTab() {
                   value={`RM${costMetrics?.totalServiceCost.toFixed(2) || 0}`}
                   subtitle={`${serviceMetrics?.totalServices || 0} services`}
                   icon="build-outline"
+                  trend={delta(
+                    costMetrics?.totalServiceCost,
+                    previous.costMetrics?.totalServiceCost,
+                  )}
+                  sparkline={series.map((s) => s.serviceCost)}
                 />
               </View>
             </View>
@@ -316,31 +469,88 @@ export default function OverviewTab() {
           >
             Cost Breakdown
           </Text>
-          <CostBreakdownCard
-            totalCost={costMetrics?.totalCost || 0}
-            fuelCost={costMetrics?.totalFuelCost || 0}
-            serviceCost={costMetrics?.totalServiceCost || 0}
-          />
+          {isWebPage ? (
+            <View
+              style={{
+                flexDirection: "row",
+                gap: theme.spacing.lg,
+                alignItems: "flex-start",
+              }}
+            >
+              <View style={{ flex: 2 }}>
+                <OverviewCostChart
+                  data={series}
+                  previous={comparing ? previous.chartDataset?.data : undefined}
+                />
+              </View>
+              <View style={{ flex: 1 }}>
+                <InsightsStrip insights={insights} />
+              </View>
+            </View>
+          ) : (
+            <View style={{ gap: 16 }}>
+              <LazyCostLineChart
+                title="Cost trends over time"
+                data={series}
+                height={240}
+              />
+              <CostBreakdownCard
+                totalCost={costMetrics?.totalCost || 0}
+                fuelCost={costMetrics?.totalFuelCost || 0}
+                serviceCost={costMetrics?.totalServiceCost || 0}
+              />
+            </View>
+          )}
 
           {/* Quick Stats Section */}
-          <Text
-            style={{
-              fontSize: isMobile
-                ? theme.fontSize.xl
-                : isTablet
+          {isWebPage ? (
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "baseline",
+                gap: theme.spacing.md,
+                marginTop: theme.spacing.md,
+                marginBottom: theme.spacing.sm,
+              }}
+            >
+              <Text
+                style={{
+                  fontSize: theme.fontSize.xl,
+                  fontWeight: theme.fontWeight.bold,
+                  color: theme.colors.text,
+                }}
+              >
+                Quick Stats
+              </Text>
+              <Text
+                style={{
+                  fontSize: theme.fontSize.xs,
+                  color: theme.colors.textSecondary,
+                }}
+              >
+                Additional insights for the selected vehicle
+              </Text>
+            </View>
+          ) : (
+            <Text
+              style={{
+                fontSize: isMobile
                   ? theme.fontSize.xl
-                  : theme.fontSize["2xl"],
-              fontWeight: theme.fontWeight.bold,
-              color: theme.colors.text,
-              marginBottom: isMobile ? theme.spacing.sm : theme.spacing.md,
-              marginTop: isMobile ? theme.spacing.md : theme.spacing.lg,
-            }}
-          >
-            Quick Stats
-          </Text>
+                  : isTablet
+                    ? theme.fontSize.xl
+                    : theme.fontSize["2xl"],
+                fontWeight: theme.fontWeight.bold,
+                color: theme.colors.text,
+                marginBottom: isMobile ? theme.spacing.sm : theme.spacing.md,
+                marginTop: isMobile ? theme.spacing.md : theme.spacing.lg,
+              }}
+            >
+              Quick Stats
+            </Text>
+          )}
           <View
             style={{
-              flexDirection: "row",
+              flexDirection: isMobile ? "column" : "row",
               gap: isMobile ? theme.spacing.sm : theme.spacing.md,
               marginBottom: theme.spacing.md,
             }}

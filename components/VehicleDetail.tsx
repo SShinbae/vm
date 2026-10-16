@@ -1,3 +1,4 @@
+import { storageImageUrl } from "@/lib/utils/storagePath";
 import { baseColors, withOpacity, spacing } from "@/src/design-system";
 import { useStyles } from "react-native-unistyles";
 import { IconSymbol } from "@/components/ui/icon-symbol";
@@ -360,7 +361,12 @@ export const VehicleDetail: React.FC<VehicleDetailProps> = ({
 
             {vehicle.main_image_url && !imageError ? (
               <Image
-                source={{ uri: vehicle.main_image_url }}
+                source={{
+                  uri: storageImageUrl(
+                    "vehicle-images",
+                    vehicle.main_image_url,
+                  ),
+                }}
                 style={styles.vehicleIcon}
                 contentFit="cover"
                 cachePolicy="memory-disk"

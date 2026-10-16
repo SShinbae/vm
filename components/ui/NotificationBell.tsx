@@ -1,5 +1,12 @@
+import { useResponsiveLayout } from "@/hooks/use-responsive-layout";
 import React from "react";
-import { StyleSheet, TouchableOpacity, View, Text } from "react-native";
+import {
+  Platform,
+  StyleSheet,
+  TouchableOpacity,
+  View,
+  Text,
+} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useStyles } from "react-native-unistyles";
 import { spacing } from "@/src/design-system";
@@ -15,6 +22,8 @@ export function NotificationBell({
   size = 24,
 }: NotificationBellProps) {
   const { unreadCount } = useNotifications();
+  const { isMobile } = useResponsiveLayout();
+  const isCompact = Platform.OS !== "web" || isMobile;
   const { theme } = useStyles();
 
   return (
@@ -30,7 +39,17 @@ export function NotificationBell({
         color={theme.colors.text}
       />
       {unreadCount > 0 && (
-        <View style={[styles.badge, { backgroundColor: theme.colors.primary }]}>
+        <View
+          style={[
+            styles.badge,
+            { backgroundColor: theme.colors.primary },
+            isCompact && {
+              height: undefined,
+              minHeight: 20,
+              paddingHorizontal: spacing.xs,
+            },
+          ]}
+        >
           <Text style={[styles.badgeText, { color: theme.colors.white }]}>
             {unreadCount > 99 ? "99+" : unreadCount.toString()}
           </Text>

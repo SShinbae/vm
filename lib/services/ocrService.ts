@@ -21,6 +21,7 @@ export interface ReceiptProcessingResult {
   data?: OCRExtractedData;
   error?: string;
   imageUri?: string;
+  /** Storage path in the private receipt-images bucket, not a URL. Display via ReceiptStorageService.getReceiptSignedUrl. */
   uploadedImageUrl?: string;
 }
 
@@ -245,7 +246,8 @@ export class OCRService {
   }
 
   /**
-   * Upload image to Supabase storage
+   * Upload a receipt image to the private receipt-images bucket.
+   * Returns the storage path (not a URL); the image is shown via a signed URL.
    */
   static async uploadReceiptImage(
     imageUri: string,
@@ -301,12 +303,7 @@ export class OCRService {
         return { data: null, error: error.message, loading: false };
       }
 
-      // Get public URL
-      const { data: urlData } = supabase.storage
-        .from("receipt-images")
-        .getPublicUrl(data.path);
-
-      return { data: urlData.publicUrl, error: null, loading: false };
+      return { data: data.path, error: null, loading: false };
     } catch (error) {
       logger.error("Unexpected error uploading receipt image:", error);
       return {

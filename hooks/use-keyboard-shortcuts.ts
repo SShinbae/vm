@@ -3,13 +3,15 @@ import { Platform } from "react-native";
 
 interface UseKeyboardShortcutsProps {
   onToggleSidebar?: () => void;
+  enabled?: boolean;
 }
 
 export function useKeyboardShortcuts({
   onToggleSidebar,
+  enabled = true,
 }: UseKeyboardShortcutsProps) {
   useEffect(() => {
-    if (Platform.OS !== "web") return;
+    if (Platform.OS !== "web" || !enabled) return;
 
     const handleKeyDown = (event: KeyboardEvent) => {
       // Ctrl+B or Cmd+B to toggle sidebar
@@ -24,5 +26,5 @@ export function useKeyboardShortcuts({
     return () => {
       document.removeEventListener("keydown", handleKeyDown);
     };
-  }, [onToggleSidebar]);
+  }, [onToggleSidebar, enabled]);
 }

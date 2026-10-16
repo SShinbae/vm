@@ -165,6 +165,19 @@ describe("useDashboardData", () => {
   });
 
   describe("Stats Aggregation", () => {
+    it("counts a vehicle shared through two groups once", async () => {
+      mockRpc.mockResolvedValue({
+        data: [...mockVehiclesData, { ...mockVehiclesData[1] }],
+        error: null,
+      });
+      const { result } = renderHook(() => useDashboardData(), {
+        wrapper: createWrapper(),
+      });
+      await waitFor(() => expect(result.current.loading).toBe(false));
+      expect(result.current.stats.totalVehicles).toBe(2);
+      expect(result.current.stats.totalMileage).toBe(80000);
+    });
+
     it("should calculate total vehicles count", async () => {
       const { result } = renderHook(() => useDashboardData(), {
         wrapper: createWrapper(),

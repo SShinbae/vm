@@ -1,3 +1,6 @@
+import { Button } from "@/components/ui/Button";
+import { webPageStyles } from "@/components/layout/webPageStyles";
+import { useResponsiveLayout } from "@/hooks/use-responsive-layout";
 import { withOpacity, spacing } from "@/src/design-system";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
@@ -33,11 +36,18 @@ const FREQUENCY_OPTIONS = [
 
 export function NotificationPreferencesForm() {
   const { theme } = useStyles();
+  const { isWeb, isMobile } = useResponsiveLayout();
+  const isWebPage = isWeb && !isMobile;
   const { user } = useAuth();
   const userId = user?.id;
 
-  const { data: prefs, isLoading } = useNotificationPreferences(userId);
-  const { mutate: updatePrefs } = useUpdateNotificationPreferences();
+  const {
+    data: prefs,
+    isLoading,
+    isError,
+    refetch,
+  } = useNotificationPreferences(userId);
+  const { mutateAsync: updatePrefs } = useUpdateNotificationPreferences();
   const { showError } = useToast();
   const [pushPermission, setPushPermission] = useState<boolean | null>(null);
 
@@ -46,27 +56,63 @@ export function NotificationPreferencesForm() {
     pushService.hasPermission().then(setPushPermission);
   }, [userId]);
 
-  // Debounce timer for auto-save
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pendingRef = useRef<Partial<Update>>({});
+  const saveQueue = useRef<Promise<void>>(Promise.resolve());
+  const [draft, setDraft] = useState<Partial<Update>>({});
+  const [spendingText, setSpendingText] = useState<string | null>(null);
+  const showErrorRef = useRef(showError);
+  showErrorRef.current = showError;
+
+  const flushUpdates = useCallback(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = null;
+    const data = pendingRef.current;
+    pendingRef.current = {};
+    if (!userId || Object.keys(data).length === 0) return;
+    // Serialize saves so an older request cannot overwrite a newer preference.
+    saveQueue.current = saveQueue.current.then(async () => {
+      try {
+        await updatePrefs({ userId, data });
+      } catch {
+        showErrorRef.current("Couldn't save notification preferences");
+      } finally {
+        setDraft((current) => {
+          const next = { ...current };
+          for (const key of Object.keys(data) as (keyof Update)[]) {
+            if (Object.is(next[key], data[key])) delete next[key];
+          }
+          return next;
+        });
+      }
+    });
+  }, [userId, updatePrefs]);
+
+  useEffect(() => () => flushUpdates(), [flushUpdates]);
+  useEffect(() => {
+    setDraft({});
+    setSpendingText(null);
+  }, [userId]);
 
   const debouncedUpdate = useCallback(
     (data: Partial<Update>) => {
       if (!userId) return;
+      setDraft((current) => ({ ...current, ...data }));
+      pendingRef.current = { ...pendingRef.current, ...data };
       if (debounceRef.current) clearTimeout(debounceRef.current);
-      debounceRef.current = setTimeout(() => {
-        updatePrefs({ userId, data });
-      }, 500);
+      debounceRef.current = setTimeout(flushUpdates, 500);
     },
-    [userId, updatePrefs],
+    [userId, flushUpdates],
   );
 
   const immediateUpdate = useCallback(
     (data: Partial<Update>) => {
       if (!userId) return;
-      if (debounceRef.current) clearTimeout(debounceRef.current);
-      updatePrefs({ userId, data });
+      setDraft((current) => ({ ...current, ...data }));
+      pendingRef.current = { ...pendingRef.current, ...data };
+      flushUpdates();
     },
-    [userId, updatePrefs],
+    [userId, flushUpdates],
   );
 
   // Merge DB prefs with defaults
@@ -74,6 +120,7 @@ export function NotificationPreferencesForm() {
   const p = {
     ...defaults,
     ...prefs,
+    ...draft,
   };
 
   if (isLoading) {
@@ -83,6 +130,26 @@ export function NotificationPreferencesForm() {
       </View>
     );
   }
+
+  if (isError)
+    return (
+      <View style={{ padding: 16, gap: 12 }}>
+        <Text
+          accessibilityRole="alert"
+          style={{ color: theme.colors.textSecondary }}
+        >
+          Couldn&apos;t load notification preferences.
+        </Text>
+        <Button
+          title="Retry notification preferences"
+          variant="outline"
+          onPress={() => {
+            void refetch();
+          }}
+          style={{ minHeight: 48 }}
+        />
+      </View>
+    );
 
   const NotificationSwitch = ({
     label,
@@ -102,12 +169,13 @@ export function NotificationPreferencesForm() {
         flexDirection: "row",
         justifyContent: "space-between",
         alignItems: "center",
+        minHeight: 48,
         paddingVertical: theme.spacing.md,
         borderBottomWidth: 1,
         borderBottomColor: theme.colors.border,
       }}
     >
-      <View style={{ flex: 1, marginRight: theme.spacing.md }}>
+      <View style={{ flex: 1, minWidth: 0, marginRight: theme.spacing.md }}>
         <Text
           style={{
             fontSize: theme.fontSize.base,
@@ -130,6 +198,7 @@ export function NotificationPreferencesForm() {
         )}
       </View>
       <Switch
+        accessibilityLabel={label}
         value={value}
         onValueChange={(val) =>
           onChange ? onChange(val) : immediateUpdate({ [field]: val })
@@ -164,6 +233,9 @@ export function NotificationPreferencesForm() {
         return (
           <TouchableOpacity
             key={opt}
+            accessibilityRole="button"
+            accessibilityLabel={formatLabel ? formatLabel(opt) : String(opt)}
+            accessibilityState={{ selected: isSelected }}
             onPress={() => {
               const next = isSelected
                 ? selected.filter((s) => s !== opt)
@@ -171,6 +243,8 @@ export function NotificationPreferencesForm() {
               onToggle(next);
             }}
             style={{
+              minHeight: 48,
+              justifyContent: "center",
               paddingVertical: theme.spacing.sm,
               paddingHorizontal: theme.spacing.md,
               borderRadius: theme.borderRadius.md,
@@ -211,23 +285,19 @@ export function NotificationPreferencesForm() {
     </Text>
   );
 
-  const Section = ({ children }: { children: React.ReactNode }) => (
-    <View
-      style={{
-        padding: theme.spacing.xl,
-        backgroundColor: theme.colors.surface,
-        marginTop: theme.spacing.md,
-        borderTopWidth: 1,
-        borderBottomWidth: 1,
-        borderColor: theme.colors.border,
-      }}
-    >
-      {children}
-    </View>
-  );
-
   return (
-    <>
+    <View
+      style={
+        isWebPage
+          ? {
+              flexDirection: "row",
+              flexWrap: "wrap",
+              gap: theme.spacing.md,
+              marginBottom: theme.spacing.lg,
+            }
+          : undefined
+      }
+    >
       {/* Activity Notifications */}
       <Section>
         <SectionHeader title="Activity Notifications" />
@@ -337,20 +407,25 @@ export function NotificationPreferencesForm() {
                 Monthly spending threshold
               </Text>
               <TextInput
+                accessibilityLabel="Monthly spending threshold"
                 value={
-                  p.monthly_spending_threshold != null
+                  spendingText ??
+                  (p.monthly_spending_threshold != null
                     ? String(p.monthly_spending_threshold)
-                    : ""
+                    : "")
                 }
                 onChangeText={(text) => {
+                  setSpendingText(text);
                   const num = parseFloat(text);
                   debouncedUpdate({
                     monthly_spending_threshold: isNaN(num) ? null : num,
                   });
                 }}
+                onBlur={() => setSpendingText(null)}
                 placeholder="No limit set"
                 keyboardType="numeric"
                 style={{
+                  minHeight: 48,
                   fontSize: theme.fontSize.base,
                   color: theme.colors.text,
                   padding: theme.spacing.md,
@@ -390,6 +465,7 @@ export function NotificationPreferencesForm() {
           <View
             style={{
               flexDirection: "row",
+              flexWrap: "wrap",
               gap: theme.spacing.sm,
               marginTop: theme.spacing.md,
             }}
@@ -399,11 +475,18 @@ export function NotificationPreferencesForm() {
               return (
                 <TouchableOpacity
                   key={opt.value}
+                  accessibilityRole="button"
+                  accessibilityLabel={`${opt.label} analytics insights`}
+                  accessibilityState={{ selected: isSelected }}
                   onPress={() =>
                     immediateUpdate({ analytics_frequency: opt.value })
                   }
                   style={{
-                    flex: 1,
+                    flexGrow: 1,
+                    flexBasis: 88,
+                    minWidth: 0,
+                    minHeight: 48,
+                    justifyContent: "center",
                     paddingVertical: theme.spacing.md,
                     borderRadius: theme.borderRadius.md,
                     backgroundColor: isSelected
@@ -503,8 +586,9 @@ export function NotificationPreferencesForm() {
         <SectionHeader title="Frequency Limit" />
         <View
           style={{
-            flexDirection: "row",
-            alignItems: "center",
+            flexDirection: isWebPage ? "row" : "column",
+            gap: 12,
+            alignItems: isWebPage ? "center" : "flex-start",
             justifyContent: "space-between",
           }}
         >
@@ -525,14 +609,17 @@ export function NotificationPreferencesForm() {
             }}
           >
             <TouchableOpacity
+              accessibilityRole="button"
+              accessibilityLabel="Decrease notification limit"
+              disabled={p.max_per_type_per_day <= 1}
               onPress={() => {
                 const next = Math.max(1, p.max_per_type_per_day - 1);
                 immediateUpdate({ max_per_type_per_day: next });
               }}
               style={{
-                width: 36,
-                height: 36,
-                borderRadius: 18,
+                width: 48,
+                height: 48,
+                borderRadius: 24,
                 backgroundColor: withOpacity(theme.colors.primary, 0.08),
                 alignItems: "center",
                 justifyContent: "center",
@@ -560,14 +647,17 @@ export function NotificationPreferencesForm() {
               {p.max_per_type_per_day}
             </Text>
             <TouchableOpacity
+              accessibilityRole="button"
+              accessibilityLabel="Increase notification limit"
+              disabled={p.max_per_type_per_day >= 50}
               onPress={() => {
                 const next = Math.min(50, p.max_per_type_per_day + 1);
                 immediateUpdate({ max_per_type_per_day: next });
               }}
               style={{
-                width: 36,
-                height: 36,
-                borderRadius: 18,
+                width: 48,
+                height: 48,
+                borderRadius: 24,
                 backgroundColor: withOpacity(theme.colors.primary, 0.08),
                 alignItems: "center",
                 justifyContent: "center",
@@ -586,6 +676,30 @@ export function NotificationPreferencesForm() {
           </View>
         </View>
       </Section>
-    </>
+    </View>
+  );
+}
+
+function Section({ children }: { children: React.ReactNode }) {
+  const { theme } = useStyles();
+  const { styles: web } = useStyles(webPageStyles);
+  const { isWeb, isMobile } = useResponsiveLayout();
+  return (
+    <View
+      style={
+        isWeb && !isMobile
+          ? [web.panel, { flexGrow: 1, flexBasis: "48%", minWidth: 280 }]
+          : {
+              padding: 16,
+              backgroundColor: theme.colors.surface,
+              marginBottom: 16,
+              borderWidth: 1,
+              borderRadius: theme.borderRadius.lg,
+              borderColor: theme.colors.border,
+            }
+      }
+    >
+      {children}
+    </View>
   );
 }

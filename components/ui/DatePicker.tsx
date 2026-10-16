@@ -214,9 +214,10 @@ export function DatePicker({
       flexDirection: "row",
       alignItems: "center",
       justifyContent: "space-between",
-      minHeight: isSmallScreen ? 44 : 48,
+      minHeight: 48,
     },
     dateText: {
+      minWidth: 0,
       fontSize: isSmallScreen ? 13 : 16,
       color: value ? colors.text : colors.textSecondary,
       flex: 1,
@@ -307,6 +308,8 @@ export function DatePicker({
       </Text>
 
       <TouchableOpacity
+        accessibilityRole="button"
+        accessibilityLabel={label}
         style={styles.dateButton}
         onPress={handleOpenPicker}
         activeOpacity={0.7}

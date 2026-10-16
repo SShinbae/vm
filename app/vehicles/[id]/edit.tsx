@@ -1,3 +1,5 @@
+import { formPageStyles } from "@/components/layout/formPageStyles";
+import { goBack } from "@/lib/utils/goBack";
 import { withOpacity, spacing } from "@/src/design-system";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useStyles } from "react-native-unistyles";
@@ -25,7 +27,20 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import { DashboardWebLayout } from "@/components/layout/DashboardWebLayout";
+import { Breadcrumbs } from "@/components/layout/Breadcrumbs";
+import { webPageStyles } from "@/components/layout/webPageStyles";
+import { useResponsiveLayout } from "@/hooks/use-responsive-layout";
+
 export default function EditVehicleScreen() {
+  return (
+    <DashboardWebLayout>
+      <EditVehicleContent />
+    </DashboardWebLayout>
+  );
+}
+
+function EditVehicleContent() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const [vehicle, setVehicle] = useState<Vehicle | null>(null);
   const [isSharedVehicle, setIsSharedVehicle] = useState(false);
@@ -45,22 +60,24 @@ export default function EditVehicleScreen() {
   const colorScheme = useColorScheme();
   const colors = theme.colors;
   const isWeb = Platform.OS === "web";
+  const layout = useResponsiveLayout();
+  const isDesktopWeb = layout.isWeb && !layout.isMobile;
+  const { styles: web } = useStyles(webPageStyles);
+  const { styles: formWeb } = useStyles(formPageStyles);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [retry, setRetry] = useState(0);
 
   useEffect(() => {
+    let cancelled = false;
+    setVehicle(null);
+    setLoading(true);
+    setLoadError(null);
     const fetchVehicle = async () => {
-      if (!id) return;
-
-      const { data, error } = await VehicleService.getVehicleById(id);
-
-      if (error) {
-        let errorMsg = "Failed to load vehicle details";
-        if (error.includes("not found") || error.includes("access denied")) {
-          errorMsg =
-            "Vehicle not found or you do not have permission to access it.";
-        }
-        showError(errorMsg);
-        router.back();
-      } else if (data) {
+      try {
+        if (!id) throw new Error("Vehicle not found");
+        const { data, error } = await VehicleService.getVehicleById(id);
+        if (cancelled) return;
+        if (error || !data) throw new Error(error || "Vehicle not found");
         setVehicle(data);
         setIsSharedVehicle(!data.is_own_vehicle);
         setFormData({
@@ -71,17 +88,43 @@ export default function EditVehicleScreen() {
           vin: data.vin || "",
         });
         setImageUri(data.main_image_url || "");
+      } catch {
+        if (cancelled) return;
+        setLoadError("Failed to load vehicle details");
+        showError("Failed to load vehicle details");
+        if (!isDesktopWeb)
+          goBack({ pathname: "/vehicles/[id]", params: { id } });
+      } finally {
+        if (!cancelled) setLoading(false);
       }
-
-      setLoading(false);
     };
-
-    fetchVehicle();
+    void fetchVehicle();
+    return () => {
+      cancelled = true;
+    };
+    // Toast helpers change identity on every render.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id]);
+  }, [id, retry]);
+
+  const vehicleName =
+    vehicle?.id === id
+      ? `${vehicle.year} ${vehicle.make} ${vehicle.model}`
+      : "Vehicle";
+  const breadcrumbs = (
+    <Breadcrumbs
+      items={[
+        { label: "Vehicles", href: "/vehicles" },
+        {
+          label: vehicleName,
+          href: { pathname: "/vehicles/[id]", params: { id } },
+        },
+        { label: "Vehicle Edit" },
+      ]}
+    />
+  );
 
   const handleSave = async () => {
-    if (!vehicle) return;
+    if (!vehicle || saving || loading) return;
 
     // Validation
     if (!formData.make.trim()) {
@@ -112,24 +155,29 @@ export default function EditVehicleScreen() {
       main_image_url: imageUri || null,
     };
 
-    const { error } = await VehicleService.updateVehicle(vehicle.id, updates);
-    setSaving(false);
+    try {
+      const { error } = await VehicleService.updateVehicle(vehicle.id, updates);
 
-    if (error) {
-      let errorMsg = error;
-      if (error.includes("permission") || error.includes("access denied")) {
-        errorMsg =
-          "You do not have permission to edit this vehicle. Only the owner can modify vehicle details.";
+      if (error) {
+        let errorMsg = error;
+        if (error.includes("permission") || error.includes("access denied")) {
+          errorMsg =
+            "You do not have permission to edit this vehicle. Only the owner can modify vehicle details.";
+        }
+        showError(errorMsg);
+      } else {
+        posthog?.capture("vehicle_updated", {
+          make: updates.make,
+          model: updates.model,
+          year: updates.year,
+        });
+        showSuccess("Vehicle updated successfully!");
+        router.push("/(tabs)/vehicles");
       }
-      showError(errorMsg);
-    } else {
-      posthog?.capture("vehicle_updated", {
-        make: updates.make,
-        model: updates.model,
-        year: updates.year,
-      });
-      showSuccess("Vehicle updated successfully!");
-      router.push("/(tabs)/vehicles");
+    } catch {
+      showError("Failed to update vehicle. Please try again.");
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -318,17 +366,40 @@ export default function EditVehicleScreen() {
           <View style={styles.header}>
             <TouchableOpacity
               style={styles.backButton}
-              onPress={() => router.back()}
+              onPress={() =>
+                goBack({ pathname: "/vehicles/[id]", params: { id } })
+              }
             >
               <IconSymbol name="chevron.left" size={24} color={colors.text} />
             </TouchableOpacity>
             <Text style={styles.headerTitle}>Edit Vehicle</Text>
           </View>
         )}
-        <ScrollView contentContainerStyle={styles.scrollContent}>
+        <ScrollView
+          contentContainerStyle={[
+            styles.scrollContent,
+            isDesktopWeb && formWeb.content,
+          ]}
+        >
+          {isDesktopWeb && breadcrumbs}
           <SkeletonVehicleEdit />
         </ScrollView>
       </SafeAreaView>
+    );
+  }
+
+  if (isDesktopWeb && loadError) {
+    return (
+      <View style={[web.frame, formWeb.content]}>
+        {breadcrumbs}
+        <View style={[formWeb.panel, { gap: theme.spacing.lg }]}>
+          <Text style={{ color: colors.text }}>{loadError}</Text>
+          <Button
+            title="Retry"
+            onPress={() => setRetry((value) => value + 1)}
+          />
+        </View>
+      </View>
     );
   }
 
@@ -338,7 +409,9 @@ export default function EditVehicleScreen() {
         <View style={styles.header}>
           <TouchableOpacity
             style={styles.backButton}
-            onPress={() => router.back()}
+            onPress={() =>
+              goBack({ pathname: "/vehicles/[id]", params: { id } })
+            }
           >
             <IconSymbol name="chevron.left" size={24} color={colors.text} />
           </TouchableOpacity>
@@ -353,11 +426,15 @@ export default function EditVehicleScreen() {
         style={styles.content}
       >
         <ScrollView
-          contentContainerStyle={styles.scrollContent}
+          contentContainerStyle={[
+            styles.scrollContent,
+            isDesktopWeb && formWeb.content,
+          ]}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
-          {isWeb && (
+          {isDesktopWeb && breadcrumbs}
+          {isWeb && !isDesktopWeb && (
             <>
               <Text style={styles.title}>
                 Edit Vehicle {isSharedVehicle && "(Shared)"}
@@ -366,7 +443,7 @@ export default function EditVehicleScreen() {
             </>
           )}
 
-          <View style={styles.card}>
+          <View style={[styles.card, isDesktopWeb && formWeb.panel]}>
             {isSharedVehicle && (
               <View style={styles.sharedNotice}>
                 <IconSymbol
@@ -490,7 +567,9 @@ export default function EditVehicleScreen() {
             <View style={styles.buttonContainer}>
               <Button
                 title="Cancel"
-                onPress={() => router.back()}
+                onPress={() =>
+                  goBack({ pathname: "/vehicles/[id]", params: { id } })
+                }
                 variant="outline"
                 icon="xmark"
                 style={styles.cancelButton}

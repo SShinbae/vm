@@ -1,10 +1,12 @@
+import { useResponsiveLayout } from "@/hooks/use-responsive-layout";
+import { storageImageUrl } from "@/lib/utils/storagePath";
 import { withOpacity } from "@/src/design-system";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { VehicleWithShares } from "@/hooks/useDashboardDataQuery";
 import { Image } from "expo-image";
 import { router } from "expo-router";
 import React, { useState } from "react";
-import { Text, TouchableOpacity, View } from "react-native";
+import { Platform, Text, TouchableOpacity, View } from "react-native";
 import { createStyleSheet, useStyles } from "react-native-unistyles";
 
 type VehicleCardProps = {
@@ -14,21 +16,42 @@ type VehicleCardProps = {
 export function VehicleCard({ vehicle }: VehicleCardProps) {
   const { styles, theme } = useStyles(stylesheet);
   const [imageError, setImageError] = useState(false);
+  const { isMobile: isMobileLayout } = useResponsiveLayout();
+  const isCompact = Platform.OS !== "web" || isMobileLayout;
 
   const parts = [vehicle.year, vehicle.make, vehicle.model]
     .filter((val) => val != null && val !== "")
     .map(String);
   const vehicleName = parts.length > 0 ? parts.join(" ") : "Unknown Vehicle";
 
+  const sharingBadge = vehicle.isSharedWithMe ? (
+    <View style={[styles.sharedWithMeBadge, isCompact && { maxWidth: "100%" }]}>
+      <IconSymbol name="person.2.fill" size={12} color={theme.colors.white} />
+      <Text style={[styles.sharedBadgeText, isCompact && { flexShrink: 1 }]}>
+        Shared with me
+      </Text>
+    </View>
+  ) : vehicle.shareCount > 0 ? (
+    <View style={[styles.sharedBadge, isCompact && { maxWidth: "100%" }]}>
+      <IconSymbol name="person.2.fill" size={12} color={theme.colors.white} />
+      <Text style={[styles.sharedBadgeText, isCompact && { flexShrink: 1 }]}>
+        Shared
+      </Text>
+    </View>
+  ) : null;
+
   return (
     <TouchableOpacity
       style={styles.vehicleCard}
       onPress={() => router.push(`/vehicles/${vehicle.id}` as any)}
       accessibilityLabel={`View details for ${vehicleName}`}
+      accessibilityRole="button"
     >
       {vehicle.main_image_url && !imageError ? (
         <Image
-          source={{ uri: vehicle.main_image_url }}
+          source={{
+            uri: storageImageUrl("vehicle-images", vehicle.main_image_url),
+          }}
           style={styles.vehicleImage}
           contentFit="cover"
           cachePolicy="memory-disk"
@@ -40,8 +63,11 @@ export function VehicleCard({ vehicle }: VehicleCardProps) {
           <IconSymbol name="car.fill" size={24} color={theme.colors.primary} />
         </View>
       )}
-      <View style={styles.vehicleInfo}>
-        <Text style={styles.vehicleName} numberOfLines={1}>
+      <View style={[styles.vehicleInfo, isCompact && { minWidth: 0 }]}>
+        <Text
+          style={styles.vehicleName}
+          numberOfLines={isCompact ? undefined : 1}
+        >
           {String(vehicleName)}
         </Text>
         <Text style={styles.vehicleDetail}>
@@ -55,26 +81,9 @@ export function VehicleCard({ vehicle }: VehicleCardProps) {
             ? `${Number(vehicle.current_mileage).toLocaleString()} km`
             : "0 km"}
         </Text>
+        {isCompact && sharingBadge}
       </View>
-      {vehicle.isSharedWithMe ? (
-        <View style={styles.sharedWithMeBadge}>
-          <IconSymbol
-            name="person.2.fill"
-            size={12}
-            color={theme.colors.white}
-          />
-          <Text style={styles.sharedBadgeText}>Shared with me</Text>
-        </View>
-      ) : vehicle.shareCount > 0 ? (
-        <View style={styles.sharedBadge}>
-          <IconSymbol
-            name="person.2.fill"
-            size={12}
-            color={theme.colors.white}
-          />
-          <Text style={styles.sharedBadgeText}>Shared</Text>
-        </View>
-      ) : null}
+      {!isCompact && sharingBadge}
     </TouchableOpacity>
   );
 }

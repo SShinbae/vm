@@ -1,191 +1,192 @@
-import { spacing, withOpacity } from "@/src/design-system";
-import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { useRouter } from "expo-router";
-import React, { useEffect, useRef } from "react";
-import { Animated, Platform, Text, TouchableOpacity, View } from "react-native";
+import React from "react";
+import { Text, TouchableOpacity, View } from "react-native";
 import { useStyles } from "react-native-unistyles";
-import { FACTS } from "./content";
 import { Section, useBreakpoint } from "./layout";
 
 export function Hero() {
   const { theme } = useStyles();
   const router = useRouter();
-  const { isMobile, isTablet, isDesktop } = useBreakpoint();
-  const reduceMotion = useReducedMotion();
-
-  // Web paints instantly; native gets a short fade-in unless reduced motion is on.
-  const shouldAnimate = Platform.OS !== "web" && !reduceMotion;
-  const fade = useRef(new Animated.Value(shouldAnimate ? 0 : 1)).current;
-  useEffect(() => {
-    if (shouldAnimate) {
-      Animated.timing(fade, {
-        toValue: 1,
-        duration: 500,
-        useNativeDriver: true,
-      }).start();
-    }
-  }, [shouldAnimate, fade]);
+  const { isMobile, isDesktop } = useBreakpoint();
 
   return (
     <Section
       style={{
-        paddingTop: isMobile ? 48 : 80,
-        paddingBottom: isMobile ? 56 : 96,
+        paddingTop: isMobile ? 40 : 80,
+        paddingBottom: isMobile ? 56 : 88,
       }}
     >
-      <Animated.View
+      <View
         style={{
-          opacity: fade,
           flexDirection: isDesktop ? "row" : "column",
           alignItems: isDesktop ? "center" : "stretch",
-          gap: isDesktop ? 64 : 48,
+          gap: isDesktop ? 48 : 36,
         }}
       >
-        <View style={{ flex: isDesktop ? 1 : undefined }}>
+        <View style={{ flex: isDesktop ? 0.9 : undefined }}>
+          <Text
+            style={{
+              color: theme.colors.primary,
+              fontSize: 14,
+              fontWeight: "600",
+              marginBottom: 20,
+            }}
+          >
+            Less paperwork. More perspective.
+          </Text>
           <Text
             accessibilityRole="header"
             aria-level={1}
             style={{
-              fontSize: isMobile ? 40 : isTablet ? 52 : 56,
-              lineHeight: isMobile ? 46 : isTablet ? 58 : 62,
+              fontSize: isMobile ? 42 : 60,
+              lineHeight: isMobile ? 47 : 65,
               fontWeight: "800",
-              letterSpacing: -1.5,
+              letterSpacing: -1.8,
               color: theme.colors.text,
-              marginBottom: spacing.lg,
+              maxWidth: 560,
+              marginBottom: 24,
             }}
           >
             Know what your car{" "}
             <Text style={{ color: theme.colors.primary }}>really costs.</Text>
           </Text>
-
           <Text
             style={{
-              fontSize: isMobile ? 17 : 20,
-              lineHeight: isMobile ? 26 : 30,
-              color: theme.colors.textSecondary,
-              maxWidth: 520,
-              marginBottom: spacing.xxl,
+              fontSize: isMobile ? 17 : 19,
+              lineHeight: 28,
+              color: theme.colors.text,
+              opacity: 0.8,
+              maxWidth: 460,
+              marginBottom: 28,
             }}
           >
-            Log fuel, services and expenses for every family vehicle. See where
-            the money goes.
+            Fuel, services and expenses. Together at last. A clearer view of
+            every vehicle you and your family own.
           </Text>
-
-          <View
+          <TouchableOpacity
+            onPress={() => router.push("/(auth)/register")}
+            activeOpacity={0.8}
+            accessibilityRole="button"
+            accessibilityLabel="Get started, it's free"
             style={{
-              flexDirection: isMobile ? "column" : "row",
-              alignItems: isMobile ? "stretch" : "center",
-              gap: isMobile ? spacing.md : spacing.xl,
-              marginBottom: spacing.xxl,
+              backgroundColor: theme.colors.text,
+              paddingVertical: 17,
+              paddingHorizontal: 24,
+              borderRadius: 12,
+              alignSelf: isMobile ? "stretch" : "flex-start",
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 16,
             }}
           >
-            <TouchableOpacity
-              onPress={() => router.push("/(auth)/register")}
-              activeOpacity={0.85}
-              accessibilityRole="button"
-              accessibilityLabel="Get started, it's free"
+            <Text
               style={{
-                backgroundColor: theme.colors.primary,
-                paddingVertical: 16,
-                paddingHorizontal: 28,
-                borderRadius: 12,
-                alignItems: "center",
+                color: theme.colors.background,
+                fontSize: 17,
+                fontWeight: "600",
               }}
             >
-              <Text
-                style={{
-                  color: theme.colors.white,
-                  fontSize: 17,
-                  fontWeight: "700",
-                }}
-              >
-                Get started — it&apos;s free
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              onPress={() => router.push("/(auth)/login")}
-              accessibilityRole="link"
-              style={{ alignItems: "center", paddingVertical: 8 }}
-            >
-              <Text
-                style={{
-                  color: theme.colors.text,
-                  fontSize: 16,
-                  fontWeight: "600",
-                }}
-              >
-                I already have an account →
-              </Text>
-            </TouchableOpacity>
-          </View>
-
-          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
-            {FACTS.map((fact) => (
+              Create your free account
+            </Text>
+            <Ionicons
+              name="arrow-forward"
+              size={18}
+              color={theme.colors.background}
+            />
+          </TouchableOpacity>
+          <Text
+            style={{
+              fontSize: 13,
+              lineHeight: 20,
+              color: theme.colors.text,
+              opacity: 0.75,
+              marginTop: 14,
+            }}
+          >
+            Free to use. No ads. No credit card.
+          </Text>
+          <View
+            style={{
+              flexDirection: "row",
+              flexWrap: "wrap",
+              gap: 20,
+              marginTop: 32,
+            }}
+          >
+            {["Receipt photos", "Family sharing"].map((label) => (
               <View
-                key={fact.label}
-                style={{
-                  flexDirection: "row",
-                  alignItems: "center",
-                  gap: 6,
-                  paddingVertical: 6,
-                  paddingHorizontal: 12,
-                  borderRadius: 999,
-                  backgroundColor: theme.colors.surface,
-                  borderWidth: 1,
-                  borderColor: theme.colors.border,
-                }}
+                key={label}
+                style={{ flexDirection: "row", alignItems: "center", gap: 7 }}
               >
                 <Ionicons
-                  name={fact.icon}
-                  size={15}
+                  name="checkmark"
+                  size={16}
                   color={theme.colors.primary}
                 />
-                <Text
-                  style={{
-                    fontSize: 13,
-                    fontWeight: "600",
-                    color: theme.colors.text,
-                  }}
-                >
-                  {fact.label}
+                <Text style={{ fontSize: 14, color: theme.colors.text }}>
+                  {label}
                 </Text>
               </View>
             ))}
           </View>
         </View>
-
         <View
           style={{
-            flex: isDesktop ? 1.15 : undefined,
-            borderRadius: 16,
-            borderWidth: 1,
-            borderColor: theme.colors.border,
+            flex: isDesktop ? 1.2 : undefined,
             backgroundColor: theme.colors.surface,
-            padding: 6,
-            shadowColor: theme.colors.black,
-            shadowOffset: { width: 0, height: 20 },
-            shadowOpacity: 0.12,
-            shadowRadius: 40,
-            elevation: 8,
+            borderRadius: 24,
+            padding: isMobile ? 24 : 20,
+            alignItems: "center",
           }}
         >
-          <Image
-            source={require("@/assets/images/landing-dashboard.webp")}
-            accessibilityLabel="Dashboard showing monthly vehicle spending, fuel efficiency and recent logs"
+          <View
             style={{
               width: "100%",
-              aspectRatio: 1562 / 784,
-              borderRadius: 11,
-              backgroundColor: withOpacity(theme.colors.primary, 0.05),
+              maxWidth: isMobile ? 300 : undefined,
+              borderRadius: isMobile ? 22 : 12,
+              overflow: "hidden",
+              borderWidth: 1,
+              borderColor: theme.colors.border,
             }}
-            contentFit="cover"
-            priority="high"
-          />
+          >
+            <Image
+              source={
+                isMobile
+                  ? require("@/assets/images/landing-mobile-dashboard.png")
+                  : require("@/assets/images/landing-dashboard.webp")
+              }
+              accessible
+              accessibilityRole="image"
+              accessibilityLabel={
+                isMobile
+                  ? "Mobile dashboard with vehicle totals, fuel costs and quick logging actions"
+                  : "Desktop dashboard with vehicle totals and recent activity"
+              }
+              style={{
+                width: "100%",
+                aspectRatio: isMobile ? 1206 / 2622 : 1562 / 784,
+              }}
+              contentFit="contain"
+              priority="high"
+            />
+          </View>
+          <Text
+            style={{
+              color: theme.colors.text,
+              opacity: 0.75,
+              fontSize: 12,
+              lineHeight: 18,
+              marginTop: 16,
+              textAlign: "center",
+            }}
+          >
+            Your everyday overview, on any screen. Sample account shown.
+          </Text>
         </View>
-      </Animated.View>
+      </View>
     </Section>
   );
 }
