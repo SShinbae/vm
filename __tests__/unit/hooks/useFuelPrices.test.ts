@@ -4,10 +4,7 @@
  * Pure parser for data.gov.my fuel price rows.
  */
 
-import {
-  parseFuelPrices,
-  FALLBACK_FUEL_PRICES,
-} from "@/hooks/useFuelPrices";
+import { parseFuelPrices, FALLBACK_FUEL_PRICES } from "@/hooks/useFuelPrices";
 
 const levelRow = {
   date: "2026-10-15",
@@ -52,9 +49,7 @@ describe("parseFuelPrices", () => {
   it("skips fields that are missing, zero, or negative", () => {
     // ron97 and diesel are absent; ron95 is 0; diesel_budi is negative
     const { ron97: _ron97, diesel: _diesel, ...rest } = levelRow;
-    const prices = parseFuelPrices([
-      { ...rest, ron95: 0, diesel_budi: -1 },
-    ]);
+    const prices = parseFuelPrices([{ ...rest, ron95: 0, diesel_budi: -1 }]);
     expect(prices).toEqual([{ label: "BUDI95", price: 1.99 }]);
   });
 });
