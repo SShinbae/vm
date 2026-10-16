@@ -203,7 +203,12 @@ function RootLayoutContent() {
         </AuthGuard>
         <StatusBar style="auto" />
         <NotificationManager />
-        <Toast config={toastConfig} position="top" topOffset={0} />
+        <Toast
+          config={toastConfig}
+          position={Platform.OS === "web" ? "bottom" : "top"}
+          topOffset={0}
+          bottomOffset={24}
+        />
       </NavigationThemeProvider>
     </GestureHandlerRootView>
   );
