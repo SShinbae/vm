@@ -19,3 +19,6 @@ export {
   LazyCostPieChart,
   LazyCostStackedBarChart,
 } from "./LazyChartComponents";
+export { Sparkline } from "./Sparkline";
+export { OverviewCostChart } from "./charts/OverviewCostChart";
+export { InsightsStrip } from "./InsightsStrip";

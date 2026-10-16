@@ -5,6 +5,7 @@ import React from "react";
 import { Text, View } from "react-native";
 import { createStyleSheet, useStyles } from "react-native-unistyles";
 import { useResponsiveLayout } from "@/hooks/use-responsive-layout";
+import { Sparkline } from "./Sparkline";
 
 interface MetricCardProps {
   title: string;
@@ -16,6 +17,7 @@ interface MetricCardProps {
     percentage: number;
   };
   color?: string;
+  sparkline?: number[];
 }
 
 // Map icon names onto the theme's analytics palette.
@@ -49,6 +51,7 @@ export function MetricCard({
   icon,
   trend,
   color,
+  sparkline,
 }: MetricCardProps) {
   const { styles, theme } = useStyles(stylesheet);
   const { isWeb, isMobile, isTablet } = useResponsiveLayout();
@@ -58,6 +61,16 @@ export function MetricCard({
 
   const { styles: web } = useStyles(webPageStyles);
   const isWebPage = isWeb && !isMobile;
+  // A rounded-zero change reads as neutral: no arrow, no colour.
+  const trendDirection =
+    trend && trend.percentage === 0 ? "neutral" : trend?.direction;
+  // Costs: up is bad, down is good.
+  const trendColor =
+    trendDirection === "up"
+      ? theme.colors.error
+      : trendDirection === "down"
+        ? theme.colors.success
+        : theme.colors.textSecondary;
   return (
     <View
       style={[
@@ -96,8 +109,8 @@ export function MetricCard({
               isMobile && styles.valueMobile,
               isTablet && styles.valueTablet,
             ]}
-            numberOfLines={1}
-            adjustsFontSizeToFit
+            numberOfLines={isWebPage ? 1 : undefined}
+            adjustsFontSizeToFit={isWebPage}
             minimumFontScale={0.7}
           >
             {value}
@@ -106,6 +119,38 @@ export function MetricCard({
             <Text style={[styles.subtitle, isMobile && styles.subtitleMobile]}>
               {subtitle}
             </Text>
+          )}
+          {trend && (
+            <View
+              accessible
+              accessibilityLabel={
+                trendDirection === "neutral"
+                  ? "No change"
+                  : `${trendDirection === "up" ? "Up" : "Down"} ${trend.percentage}% vs previous period`
+              }
+              style={{ flexDirection: "row", gap: 4 }}
+            >
+              {trendDirection !== "neutral" && (
+                <Text
+                  accessibilityElementsHidden
+                  style={{ fontSize: theme.fontSize.xs, color: trendColor }}
+                >
+                  {trendDirection === "up" ? "▲" : "▼"}
+                </Text>
+              )}
+              <Text
+                style={{
+                  fontSize: theme.fontSize.xs,
+                  fontWeight: theme.fontWeight.medium,
+                  color: trendColor,
+                }}
+              >
+                {trend.percentage}%
+              </Text>
+            </View>
+          )}
+          {sparkline && sparkline.length > 1 && isWebPage && (
+            <Sparkline data={sparkline} color={color || iconColors.color} />
           )}
         </View>
       </View>
@@ -128,7 +173,7 @@ const stylesheet = createStyleSheet((theme) => ({
   },
   containerMobile: {
     padding: theme.spacing.md,
-    minHeight: 100,
+    minHeight: 112,
   },
   content: {
     flexDirection: "row",
@@ -148,6 +193,7 @@ const stylesheet = createStyleSheet((theme) => ({
   textContainer: {
     flex: 1,
     justifyContent: "center",
+    minWidth: 0,
   },
   title: {
     fontSize: theme.fontSize.sm,
@@ -168,7 +214,7 @@ const stylesheet = createStyleSheet((theme) => ({
     flexShrink: 1,
   },
   valueMobile: {
-    fontSize: theme.fontSize.base,
+    fontSize: theme.fontSize["2xl"],
   },
   valueTablet: {
     fontSize: theme.fontSize.xl,
@@ -178,6 +224,6 @@ const stylesheet = createStyleSheet((theme) => ({
     color: theme.colors.textSecondary,
   },
   subtitleMobile: {
-    fontSize: 10,
+    fontSize: theme.fontSize.sm,
   },
 }));

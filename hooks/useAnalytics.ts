@@ -5,6 +5,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
   type Dispatch,
@@ -46,7 +47,7 @@ import { useAnalyticsWorker } from "./useAnalyticsWorker";
  * Main hook for analytics data
  * OPTIMIZATION: Now uses Web Workers for heavy calculations
  */
-export function useAnalyticsData(filters: AnalyticsFilters) {
+export function useAnalyticsData(filters: AnalyticsFilters, enabled = true) {
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
@@ -60,11 +61,25 @@ export function useAnalyticsData(filters: AnalyticsFilters) {
   const [vehicleComparison, setVehicleComparison] = useState<
     VehiclePerformance[]
   >([]);
+  const [chartDataset, setChartDataset] = useState<ChartDataset | null>(null);
+  // Latest request wins: a slow response must not overwrite newer/cleared state.
+  const requestId = useRef(0);
 
   // OPTIMIZATION: Use Web Worker for calculations
   const { calculateAllMetrics, isReady } = useAnalyticsWorker();
 
   const fetchData = useCallback(async () => {
+    const id = ++requestId.current;
+    if (!enabled) {
+      setChartDataset(null);
+      setCostMetrics(null);
+      setFuelMetrics(null);
+      setServiceMetrics(null);
+      setVehicleComparison([]);
+      setError(null);
+      setLoading(false);
+      return;
+    }
     if (!user?.id || !isReady) return;
 
     try {
@@ -92,18 +107,23 @@ export function useAnalyticsData(filters: AnalyticsFilters) {
         vehiclesWithLogs,
         baselineFuelLogs: data.baselineFuelLogs,
       });
+      if (id !== requestId.current) return;
 
+      setChartDataset(
+        generateCostChartData(data.fuelLogs, data.serviceLogs, filters.period),
+      );
       setFuelMetrics(metrics.fuelMetrics);
       setCostMetrics(metrics.costMetrics);
       setServiceMetrics(metrics.serviceMetrics);
       setVehicleComparison(metrics.vehicleComparison);
     } catch (err) {
+      if (id !== requestId.current) return;
       console.error("Error fetching analytics data:", err);
       setError(err as Error);
     } finally {
-      setLoading(false);
+      if (id === requestId.current) setLoading(false);
     }
-  }, [user?.id, filters, isReady, calculateAllMetrics]);
+  }, [user?.id, filters, isReady, calculateAllMetrics, enabled]);
 
   useEffect(() => {
     fetchData();
@@ -116,6 +136,7 @@ export function useAnalyticsData(filters: AnalyticsFilters) {
     fuelMetrics,
     serviceMetrics,
     vehicleComparison,
+    chartDataset,
     refetch: fetchData,
   };
 }
@@ -138,90 +159,107 @@ export function useAnalyticsTrends(
   // OPTIMIZATION: Use Web Worker for trend calculations
   const { generateTrendDataAsync, isReady } = useAnalyticsWorker();
 
-  useEffect(() => {
-    async function fetchTrends() {
-      if (!user?.id || !isReady) return;
-
-      try {
-        setLoading(true);
-        const data = await fetchAnalyticsData(user.id, filters);
-
-        let trends: TrendDataPoint[] = [];
-        let logs: any[] = [];
-        let metricType: "cost" | "efficiency" | "frequency" = "cost";
-
-        switch (metric) {
-          case "fuel":
-            logs = data.fuelLogs;
-            metricType = "efficiency";
-            break;
-          case "service":
-          case "service_cost":
-            logs = data.serviceLogs;
-            metricType = metric === "service_cost" ? "cost" : "frequency";
-            break;
-          case "cost":
-            logs = [...data.fuelLogs, ...data.serviceLogs];
-            metricType = "cost";
-            break;
-        }
-
-        // OPTIMIZATION: Generate trends in Web Worker
-        trends = await generateTrendDataAsync(logs, filters.period, metricType);
-        setTrendData(trends);
-
-        // Calculate trend analysis (compare first half vs second half)
-        if (trends.length >= 2) {
-          const midPoint = Math.floor(trends.length / 2);
-          const firstHalf = trends.slice(0, midPoint);
-          const secondHalf = trends.slice(midPoint);
-
-          // Calculate with NaN filtering
-          const getValidAverage = (data: TrendDataPoint[]) => {
-            const validValues = data
-              .map((t) => t.value)
-              .filter((v) => !isNaN(v) && isFinite(v));
-            if (validValues.length === 0) return 0;
-            return (
-              validValues.reduce((sum, v) => sum + v, 0) / validValues.length
-            );
-          };
-
-          const firstAvg = getValidAverage(firstHalf);
-          const secondAvg = getValidAverage(secondHalf);
-
-          // Avoid division by zero and handle edge cases
-          let percentageChange = 0;
-          if (firstAvg > 0 && isFinite(secondAvg)) {
-            percentageChange = ((secondAvg - firstAvg) / firstAvg) * 100;
-            // Cap extreme percentages
-            percentageChange = Math.max(-999, Math.min(999, percentageChange));
-          }
-
-          const direction: "up" | "down" | "neutral" =
-            Math.abs(percentageChange) < 5
-              ? "neutral"
-              : percentageChange > 0
-                ? "up"
-                : "down";
-
-          setTrendAnalysis({
-            direction,
-            percentage: Math.abs(parseFloat(percentageChange.toFixed(1))),
-            comparisonPeriod: `${filters.period.label} period`,
-          });
-        }
-      } catch (err) {
-        console.error("Error fetching trends:", err);
-      } finally {
-        setLoading(false);
-      }
+  const requestId = useRef(0);
+  const [error, setError] = useState<Error | null>(null);
+  const fetchTrends = useCallback(async () => {
+    const request = ++requestId.current;
+    if (!user?.id || !isReady) {
+      setLoading(false);
+      setTrendData([]);
+      setTrendAnalysis(null);
+      return;
     }
 
-    fetchTrends();
+    try {
+      setLoading(true);
+      setError(null);
+      setTrendAnalysis(null);
+      const data = await fetchAnalyticsData(user.id, filters);
+      if (request !== requestId.current) return;
+
+      let trends: TrendDataPoint[] = [];
+      let logs: any[] = [];
+      let metricType: "cost" | "efficiency" | "frequency" = "cost";
+
+      switch (metric) {
+        case "fuel":
+          logs = data.fuelLogs;
+          metricType = "efficiency";
+          break;
+        case "service":
+        case "service_cost":
+          logs = data.serviceLogs;
+          metricType = metric === "service_cost" ? "cost" : "frequency";
+          break;
+        case "cost":
+          logs = [...data.fuelLogs, ...data.serviceLogs];
+          metricType = "cost";
+          break;
+      }
+
+      // OPTIMIZATION: Generate trends in Web Worker
+      trends = await generateTrendDataAsync(logs, filters.period, metricType);
+      if (request !== requestId.current) return;
+      setTrendData(trends);
+
+      // Calculate trend analysis (compare first half vs second half)
+      if (trends.length >= 2) {
+        const midPoint = Math.floor(trends.length / 2);
+        const firstHalf = trends.slice(0, midPoint);
+        const secondHalf = trends.slice(midPoint);
+
+        // Calculate with NaN filtering
+        const getValidAverage = (data: TrendDataPoint[]) => {
+          const validValues = data
+            .map((t) => t.value)
+            .filter((v) => !isNaN(v) && isFinite(v));
+          if (validValues.length === 0) return 0;
+          return (
+            validValues.reduce((sum, v) => sum + v, 0) / validValues.length
+          );
+        };
+
+        const firstAvg = getValidAverage(firstHalf);
+        const secondAvg = getValidAverage(secondHalf);
+
+        // Avoid division by zero and handle edge cases
+        let percentageChange = 0;
+        if (firstAvg > 0 && isFinite(secondAvg)) {
+          percentageChange = ((secondAvg - firstAvg) / firstAvg) * 100;
+          // Cap extreme percentages
+          percentageChange = Math.max(-999, Math.min(999, percentageChange));
+        }
+
+        const direction: "up" | "down" | "neutral" =
+          Math.abs(percentageChange) < 5
+            ? "neutral"
+            : percentageChange > 0
+              ? "up"
+              : "down";
+
+        setTrendAnalysis({
+          direction,
+          percentage: Math.abs(parseFloat(percentageChange.toFixed(1))),
+          comparisonPeriod: `${filters.period.label} period`,
+        });
+      }
+    } catch (err) {
+      if (request !== requestId.current) return;
+      setError(err instanceof Error ? err : new Error("Couldn't load trend"));
+    } finally {
+      if (request === requestId.current) setLoading(false);
+    }
   }, [user?.id, filters, metric, isReady, generateTrendDataAsync]);
 
-  return { loading, trendData, trendAnalysis };
+  useEffect(() => {
+    const generation = requestId;
+    void fetchTrends();
+    return () => {
+      generation.current++;
+    };
+  }, [fetchTrends]);
+
+  return { loading, error, trendData, trendAnalysis, refetch: fetchTrends };
 }
 
 /**
@@ -265,49 +303,110 @@ export function usePeriodSelector() {
 /**
  * Hook for vehicle filter state management
  */
+const AnalyticsVehicleContext = createContext<ReturnType<
+  typeof useLocalVehicleFilter
+> | null>(null);
+
+export function AnalyticsVehicleProvider({
+  children,
+}: {
+  children: ReactNode;
+}) {
+  const value = useLocalVehicleFilter(true);
+  return createElement(AnalyticsVehicleContext.Provider, { value }, children);
+}
+
 export function useVehicleFilter() {
+  const shared = useContext(AnalyticsVehicleContext);
+  const local = useLocalVehicleFilter(!shared);
+  return shared || local;
+}
+
+function useLocalVehicleFilter(enabled: boolean) {
   const { user } = useAuth();
-  const [vehicles, setVehicles] = useState<Vehicle[]>([]);
-  const [selectedVehicleIds, setSelectedVehicleIds] = useState<string[]>([]);
+  const [data, setData] = useState<{ userId?: string; vehicles: Vehicle[] }>({
+    vehicles: [],
+  });
+  const [selection, setSelection] = useState<{
+    userId?: string;
+    ids: string[];
+  }>({ ids: [] });
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
+  const request = useRef(0);
+  const vehicles = useMemo(
+    () => (data.userId === user?.id ? data.vehicles : []),
+    [data, user?.id],
+  );
+  const selectedVehicleIds = useMemo(
+    () => (selection.userId === user?.id ? selection.ids : []),
+    [selection, user?.id],
+  );
+
+  const refetch = useCallback(async () => {
+    const id = ++request.current;
+    if (!enabled || !user?.id) {
+      setLoading(false);
+      return;
+    }
+    setLoading(true);
+    setError(null);
+    try {
+      const vehicles = await fetchAccessibleVehicles(user.id);
+      if (id !== request.current) return;
+      setData({ userId: user.id, vehicles });
+      setSelection((prev) => ({
+        userId: user.id,
+        ids:
+          prev.userId === user.id
+            ? prev.ids.filter((id) => vehicles.some((v) => v.id === id))
+            : [],
+      }));
+    } catch (error) {
+      if (id === request.current)
+        setError(
+          error instanceof Error ? error : new Error("Couldn't load vehicles"),
+        );
+    } finally {
+      if (id === request.current) setLoading(false);
+    }
+  }, [enabled, user?.id]);
 
   useEffect(() => {
-    async function fetchVehicles() {
-      if (!user?.id) return;
+    const generation = request;
+    void refetch();
+    return () => {
+      generation.current++;
+    };
+  }, [refetch]);
 
-      try {
-        setLoading(true);
-        const accessibleVehicles = await fetchAccessibleVehicles(user.id);
-        setVehicles(accessibleVehicles);
-        // By default, select all vehicles
-        setSelectedVehicleIds([]);
-      } catch (err) {
-        console.error("Error fetching vehicles:", err);
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    fetchVehicles();
-  }, [user?.id]);
-
-  const toggleVehicle = useCallback((vehicleId: string) => {
-    setSelectedVehicleIds((prev) => {
-      if (prev.includes(vehicleId)) {
-        return prev.filter((id) => id !== vehicleId);
-      } else {
-        return [...prev, vehicleId];
-      }
-    });
-  }, []);
-
-  const selectAll = useCallback(() => {
-    setSelectedVehicleIds([]);
-  }, []);
-
-  const clearAll = useCallback(() => {
-    setSelectedVehicleIds(vehicles.length > 0 ? [vehicles[0].id] : []);
-  }, [vehicles]);
+  const toggleVehicle = useCallback(
+    (vehicleId: string) => {
+      if (!vehicles.some((v) => v.id === vehicleId)) return;
+      setSelection((prev) => {
+        const ids = prev.userId === user?.id ? prev.ids : [];
+        return {
+          userId: user?.id,
+          ids: ids.includes(vehicleId)
+            ? ids.filter((id) => id !== vehicleId)
+            : [...ids, vehicleId],
+        };
+      });
+    },
+    [vehicles, user?.id],
+  );
+  const selectAll = useCallback(
+    () => setSelection({ userId: user?.id, ids: [] }),
+    [user?.id],
+  );
+  const clearAll = useCallback(
+    () =>
+      setSelection({
+        userId: user?.id,
+        ids: vehicles.length ? [vehicles[0].id] : [],
+      }),
+    [vehicles, user?.id],
+  );
 
   return {
     vehicles,
@@ -316,6 +415,8 @@ export function useVehicleFilter() {
     selectAll,
     clearAll,
     loading,
+    error,
+    refetch,
   };
 }
 
@@ -463,13 +564,21 @@ export function useCompleteAnalytics(filters: AnalyticsFilters) {
  * Hook for cost chart data
  * Fetches and transforms data specifically for cost visualization charts
  */
-export function useCostChartData(filters: AnalyticsFilters) {
+export function useCostChartData(filters: AnalyticsFilters, enabled = true) {
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
   const [chartDataset, setChartDataset] = useState<ChartDataset | null>(null);
+  const requestId = useRef(0);
 
   const fetchData = useCallback(async () => {
+    const id = ++requestId.current;
+    if (!enabled) {
+      setChartDataset(null);
+      setError(null);
+      setLoading(false);
+      return;
+    }
     if (!user?.id) return;
 
     try {
@@ -485,14 +594,16 @@ export function useCostChartData(filters: AnalyticsFilters) {
         filters.period,
       );
 
+      if (id !== requestId.current) return;
       setChartDataset(dataset);
     } catch (err) {
+      if (id !== requestId.current) return;
       console.error("Error fetching cost chart data:", err);
       setError(err as Error);
     } finally {
-      setLoading(false);
+      if (id === requestId.current) setLoading(false);
     }
-  }, [user?.id, filters]);
+  }, [user?.id, filters, enabled]);
 
   useEffect(() => {
     fetchData();

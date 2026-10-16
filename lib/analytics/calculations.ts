@@ -505,3 +505,16 @@ export function getPeriodOptions(): AnalyticsPeriod[] {
     },
   ];
 }
+
+/**
+ * Period of equal length ending where `period` starts.
+ */
+export function getPreviousPeriod(period: AnalyticsPeriod): AnalyticsPeriod {
+  const len = period.endDate.getTime() - period.startDate.getTime();
+  return {
+    label: `Previous ${period.label}`,
+    days: period.days,
+    startDate: new Date(period.startDate.getTime() - len),
+    endDate: new Date(period.startDate.getTime()),
+  };
+}

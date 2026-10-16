@@ -39,7 +39,7 @@ export function CostLineChart({
   const colors = theme.colors;
   const { isMobile } = useResponsiveLayout();
 
-  const costColor = colors.primary || theme.colors.info;
+  const costColor = colors.analytics.cost || theme.colors.warning;
   const fuelColor = colors.analytics.fuel || theme.colors.warning;
   const serviceColor = colors.analytics.service || theme.colors.success;
 
@@ -140,15 +140,22 @@ export function CostLineChart({
               axisLine={{ stroke: colors.border }}
             />
             <Tooltip
-              formatter={(value: any, name?: string) => {
-                const label =
-                  name === "totalCost"
-                    ? "Total"
-                    : name === "fuelCost"
-                      ? "Fuel"
-                      : "Service";
-                return [`RM${Number(value).toFixed(2)}`, label];
-              }}
+              formatter={(value: any, name: any, item: any) => [
+                `RM${Number(value).toFixed(2)}`,
+                <span key={name}>
+                  <span
+                    style={{
+                      display: "inline-block",
+                      width: 8,
+                      height: 8,
+                      borderRadius: "50%",
+                      backgroundColor: item?.color,
+                      marginRight: 6,
+                    }}
+                  />
+                  {name}
+                </span>,
+              ]}
               labelStyle={{ color: colors.text }}
               contentStyle={{
                 backgroundColor: colors.surface,
