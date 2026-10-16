@@ -38,6 +38,9 @@ export function FilterChip({
 
   return (
     <TouchableOpacity
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      accessibilityState={{ selected: isActive }}
       style={[styles.filterChip, isActive && styles.filterChipActive]}
       onPress={() => onPress(filter)}
     >
@@ -52,6 +55,8 @@ export function FilterChip({
 
 const stylesheet = createStyleSheet((theme) => ({
   filterChip: {
+    minHeight: 48,
+    maxWidth: "100%",
     backgroundColor: theme.colors.surface,
     borderRadius: theme.borderRadius.full,
     paddingHorizontal: {

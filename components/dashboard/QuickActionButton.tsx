@@ -1,6 +1,7 @@
+import { useResponsiveLayout } from "@/hooks/use-responsive-layout";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import React from "react";
-import { Text, TouchableOpacity, View } from "react-native";
+import { Platform, Text, TouchableOpacity, View } from "react-native";
 import { withOpacity } from "@/src/design-system";
 import { createStyleSheet, useStyles } from "react-native-unistyles";
 
@@ -20,10 +21,16 @@ export function QuickActionButton({
   description,
 }: QuickActionButtonProps) {
   const { styles, theme } = useStyles(stylesheet);
+  const { isMobile: isMobileLayout } = useResponsiveLayout();
+  const isCompact = Platform.OS !== "web" || isMobileLayout;
 
   return (
     <TouchableOpacity
-      style={[styles.container, description && styles.desktopContainer]}
+      style={[
+        styles.container,
+        description && styles.desktopContainer,
+        isCompact && { paddingVertical: theme.spacing.md },
+      ]}
       onPress={onPress}
       accessibilityLabel={title}
       accessibilityRole="button"
@@ -36,10 +43,13 @@ export function QuickActionButton({
       >
         <IconSymbol name={icon as any} size={22} color={color} />
       </View>
-      <View style={description && styles.labelGroup}>
+      <View style={(description || isCompact) && styles.labelGroup}>
         <Text
-          style={[styles.title, description && styles.desktopTitle]}
-          numberOfLines={1}
+          style={[
+            styles.title,
+            (description || isCompact) && styles.desktopTitle,
+          ]}
+          numberOfLines={isCompact ? undefined : 1}
         >
           {title}
         </Text>

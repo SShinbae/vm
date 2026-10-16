@@ -1,5 +1,5 @@
 import React from "react";
-import { TouchableOpacity, View } from "react-native";
+import { StyleSheet, TouchableOpacity, View } from "react-native";
 import { render, screen, fireEvent, act } from "@testing-library/react-native";
 import { ActionMenu } from "@/components/ui/ActionMenu";
 
@@ -7,6 +7,19 @@ jest.mock("react-native-unistyles", () => ({
   useStyles: () => ({ theme: require("@/src/design-system").lightTheme }),
 }));
 jest.mock("@/components/ui/icon-symbol", () => ({ IconSymbol: () => null }));
+
+it("constrains a labelled trigger so enlarged text wraps within its toolbar", () => {
+  render(
+    <ActionMenu label="Sort by date (newest)" minTouchSize={48} items={[]} />,
+  );
+  expect(
+    StyleSheet.flatten(screen.getByRole("button").props.style).maxWidth,
+  ).toBe("100%");
+  expect(
+    StyleSheet.flatten(screen.getByText("Sort by date (newest)").props.style)
+      .flexShrink,
+  ).toBe(1);
+});
 
 it("opens from the measured trigger and runs the selected action", () => {
   jest.useFakeTimers();

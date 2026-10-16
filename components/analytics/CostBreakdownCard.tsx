@@ -111,6 +111,8 @@ const stylesheet = createStyleSheet((theme) => ({
   },
   legendItem: {
     flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
     justifyContent: "space-between",
     alignItems: "center",
   },
@@ -118,6 +120,7 @@ const stylesheet = createStyleSheet((theme) => ({
     flexDirection: "row",
     alignItems: "center",
     gap: theme.spacing.sm,
+    flexWrap: "wrap",
   },
   legendDot: {
     width: 12,

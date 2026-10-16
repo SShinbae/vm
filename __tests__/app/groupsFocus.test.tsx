@@ -1,4 +1,5 @@
 import React from "react";
+import { StyleSheet, ScrollView } from "react-native";
 import {
   act,
   fireEvent,
@@ -58,10 +59,15 @@ jest.mock("@/lib/services/groupService", () => ({
     getGroupById: jest.fn(),
     createGroup: jest.fn(),
     removeMember: jest.fn(),
+    transferOwnership: jest.fn(),
+    leaveGroup: jest.fn(),
+    deleteGroup: jest.fn(),
   },
   GroupInvitationService: {
     getInvitations: jest.fn(),
     sendInvitation: jest.fn(),
+    resendInvitation: jest.fn(),
+    cancelInvitation: jest.fn(),
   },
 }));
 jest.mock("@/lib/services/vehicleService", () => ({
@@ -90,7 +96,10 @@ jest.mock("react-native-unistyles", () => ({
 }));
 jest.mock("react-native-safe-area-context", () => {
   const { View } = require("react-native");
-  return { SafeAreaView: View };
+  return {
+    SafeAreaView: View,
+    useSafeAreaInsets: () => ({ top: 0, bottom: 24, left: 0, right: 0 }),
+  };
 });
 jest.mock("expo-image", () => ({
   Image: (props: any) => {
@@ -358,6 +367,264 @@ it("reloads group details and invitations on focus", async () => {
   await waitFor(() => expect(screen.getByText("After")).toBeTruthy());
   await act(async () => resolveFirst({ data: group("Stale"), error: null }));
   expect(screen.queryByText("Stale")).toBeNull();
-  fireEvent.press(screen.getByText("Invites(1)"));
+  fireEvent.press(screen.getByText("Invites (1)"));
   expect(screen.getByText("new@example.test")).toBeTruthy();
+});
+
+it.each([false, true])(
+  "uses the shared compact Groups heading and Retry on web=%s",
+  async (isWeb) => {
+    mockLayout.isWeb = isWeb;
+    jest
+      .mocked(GroupService.getGroups)
+      .mockResolvedValueOnce({ data: null, error: "Offline" } as any);
+    render(<GroupsScreen />);
+    await waitFor(() =>
+      expect(screen.getByRole("button", { name: "Retry groups" })).toBeTruthy(),
+    );
+    expect(screen.queryByText("No Groups Yet")).toBeNull();
+    expect(screen.getByRole("header", { name: "Groups" })).toBeTruthy();
+    jest
+      .mocked(GroupService.getGroups)
+      .mockResolvedValueOnce({ data: [group("Family")], error: null } as any);
+    fireEvent.press(screen.getByRole("button", { name: "Retry groups" }));
+    await waitFor(() => expect(screen.getByText("Family")).toBeTruthy());
+    fireEvent.press(screen.getByRole("button", { name: "Back" }));
+    expect(mockNavigation.back).toHaveBeenCalled();
+  },
+);
+it.each([false, true])(
+  "uses selected mobile detail tabs and keeps empty sections refreshable on web=%s",
+  async (isWeb) => {
+    mockLayout.isWeb = isWeb;
+    render(<GroupDetailScreen />);
+    await waitFor(() =>
+      expect(
+        screen.getByRole("tab", { name: "Members (1)", selected: true }),
+      ).toBeTruthy(),
+    );
+    fireEvent.press(screen.getByRole("tab", { name: "Vehicles (0)" }));
+    expect(screen.getByText("No shared vehicles")).toBeTruthy();
+    expect(
+      screen.UNSAFE_getByType(ScrollView).props.refreshControl,
+    ).toBeTruthy();
+    expect(
+      StyleSheet.flatten(
+        screen.getByRole("tab", { name: "Vehicles (0)" }).props.style,
+      ).minHeight,
+    ).toBeGreaterThanOrEqual(48);
+    expect(
+      screen.getByRole("tab", { name: "Vehicles (0)", selected: true }),
+    ).toBeTruthy();
+    fireEvent.press(screen.getByRole("button", { name: "Back" }));
+    expect(router.back).toHaveBeenCalled();
+  },
+);
+it("keeps a failed mobile detail load recoverable without navigating away", async () => {
+  jest
+    .mocked(GroupService.getGroupById)
+    .mockResolvedValueOnce({ data: null, error: "Offline" } as any);
+  render(<GroupDetailScreen />);
+  await waitFor(() =>
+    expect(
+      screen.getByRole("button", { name: "Retry group details" }),
+    ).toBeTruthy(),
+  );
+  expect(router.back).not.toHaveBeenCalled();
+  fireEvent.press(screen.getByRole("button", { name: "Retry group details" }));
+  await waitFor(() =>
+    expect(screen.getByRole("header", { name: "Group" })).toBeTruthy(),
+  );
+});
+it("keeps mobile Create fields stable and guards saves while preserving failed drafts", async () => {
+  let resolve!: (value: any) => void;
+  jest.mocked(GroupService.createGroup).mockImplementationOnce(
+    () =>
+      new Promise((r) => {
+        resolve = r;
+      }),
+  );
+  render(<CreateGroupScreen />);
+  expect(screen.getAllByRole("header", { name: "Create Group" })).toHaveLength(
+    1,
+  );
+  fireEvent.changeText(screen.getByLabelText("Group Name"), " Family ");
+  const save = screen.getByRole("button", { name: "Create Group" });
+  act(() => {
+    fireEvent.press(save);
+    fireEvent.press(save);
+  });
+  expect(GroupService.createGroup).toHaveBeenCalledTimes(1);
+  expect(screen.getByLabelText("Group Name").props.editable).toBe(false);
+  await act(async () => resolve({ error: "Offline" }));
+  expect(screen.getByLabelText("Group Name").props.value).toBe(" Family ");
+  expect(router.back).not.toHaveBeenCalled();
+});
+it("keeps the mobile invitation keyboard settings and Send Another flow", async () => {
+  jest
+    .mocked(GroupInvitationService.sendInvitation)
+    .mockResolvedValue({ error: null } as any);
+  mockConfirm.mockResolvedValueOnce(true);
+  render(<InviteToGroupScreen />);
+  const input = screen.getByLabelText("Email address");
+  expect(input.props.keyboardType).toBe("email-address");
+  expect(input.props.autoCapitalize).toBe("none");
+  fireEvent.changeText(input, " person@example.test ");
+  fireEvent.press(screen.getByRole("button", { name: "Send Invitation" }));
+  await waitFor(() =>
+    expect(GroupInvitationService.sendInvitation).toHaveBeenCalledWith(
+      "group-1",
+      "person@example.test",
+    ),
+  );
+  await waitFor(() =>
+    expect(screen.getByLabelText("Email address").props.value).toBe(""),
+  );
+});
+
+it("hides mobile invitations immediately when ownership changes", async () => {
+  jest.mocked(GroupInvitationService.getInvitations).mockResolvedValue({
+    data: [
+      {
+        id: "invite-1",
+        email: "private@example.test",
+        status: "pending",
+        created_at: "2026-10-01",
+      },
+    ],
+    error: null,
+  } as any);
+  render(<GroupDetailScreen />);
+  await waitFor(() =>
+    expect(screen.getByRole("tab", { name: "Invites (1)" })).toBeTruthy(),
+  );
+  fireEvent.press(screen.getByRole("tab", { name: "Invites (1)" }));
+  expect(screen.getByText("private@example.test")).toBeTruthy();
+  jest.mocked(GroupService.getGroupById).mockResolvedValue({
+    data: { ...group("Group"), owner_id: "someone-else" },
+    error: null,
+  } as any);
+  await setFocus();
+  await waitFor(() =>
+    expect(screen.getByRole("button", { name: "Leave Group" })).toBeTruthy(),
+  );
+  expect(screen.queryByText("private@example.test")).toBeNull();
+  expect(
+    screen.getByRole("tab", { name: "Members (1)", selected: true }),
+  ).toBeTruthy();
+  expect(screen.queryByRole("button", { name: "Invite Members" })).toBeNull();
+});
+it("keeps native ownership transfer connected to its confirmation and refreshed permissions", async () => {
+  const owned = {
+    ...group("Family"),
+    member_count: 2,
+    group_members: [
+      {
+        id: "m",
+        user_id: "other",
+        joined_at: "2026-10-01",
+        profiles: { full_name: "Other Member", email: "other@example.test" },
+      },
+    ],
+  };
+  jest
+    .mocked(GroupService.getGroupById)
+    .mockResolvedValueOnce({ data: owned, error: null } as any)
+    .mockResolvedValue({
+      data: { ...owned, owner_id: "other" },
+      error: null,
+    } as any);
+  jest
+    .mocked(GroupService.transferOwnership)
+    .mockResolvedValue({ error: null } as any);
+  mockConfirm.mockResolvedValueOnce(true);
+  render(<GroupDetailScreen />);
+  await waitFor(() =>
+    expect(
+      screen.getByRole("button", { name: "Make Other Member the owner" }),
+    ).toBeTruthy(),
+  );
+  fireEvent.press(
+    screen.getByRole("button", { name: "Make Other Member the owner" }),
+  );
+  await waitFor(() =>
+    expect(GroupService.transferOwnership).toHaveBeenCalledWith(
+      "group-1",
+      "other",
+    ),
+  );
+  await waitFor(() =>
+    expect(screen.getByRole("button", { name: "Leave Group" })).toBeTruthy(),
+  );
+  expect(screen.queryByRole("button", { name: "Delete Group" })).toBeNull();
+});
+it("keeps member leave behind confirmation and returns to the preceding screen", async () => {
+  jest.mocked(GroupService.getGroupById).mockResolvedValue({
+    data: { ...group("Family"), owner_id: "other" },
+    error: null,
+  } as any);
+  jest
+    .mocked(GroupService.leaveGroup)
+    .mockResolvedValue({ error: null } as any);
+  mockConfirm.mockResolvedValueOnce(true);
+  render(<GroupDetailScreen />);
+  await waitFor(() =>
+    expect(screen.getByRole("button", { name: "Leave Group" })).toBeTruthy(),
+  );
+  fireEvent.press(screen.getByRole("button", { name: "Leave Group" }));
+  await waitFor(() =>
+    expect(GroupService.leaveGroup).toHaveBeenCalledWith("group-1"),
+  );
+  expect(router.back).toHaveBeenCalledTimes(1);
+});
+it("recovers thrown create failures and keeps the draft available for retry", async () => {
+  jest
+    .mocked(GroupService.createGroup)
+    .mockRejectedValueOnce(new Error("Offline"));
+  render(<CreateGroupScreen />);
+  fireEvent.changeText(screen.getByLabelText("Group Name"), "Family");
+  fireEvent.press(screen.getByRole("button", { name: "Create Group" }));
+  await waitFor(() =>
+    expect(mockShowError).toHaveBeenCalledWith(
+      "Couldn't create group. Please try again.",
+    ),
+  );
+  expect(screen.getByLabelText("Group Name").props.editable).toBe(true);
+  expect(screen.getByLabelText("Group Name").props.value).toBe("Family");
+});
+it("ignores a create response after leaving the form", async () => {
+  let resolve!: (value: any) => void;
+  jest.mocked(GroupService.createGroup).mockImplementationOnce(
+    () =>
+      new Promise((r) => {
+        resolve = r;
+      }),
+  );
+  const view = render(<CreateGroupScreen />);
+  fireEvent.changeText(screen.getByLabelText("Group Name"), "Family");
+  fireEvent.press(screen.getByRole("button", { name: "Create Group" }));
+  view.unmount();
+  await act(async () => resolve({ error: null }));
+  expect(router.back).not.toHaveBeenCalled();
+  expect(mockShowSuccess).not.toHaveBeenCalled();
+});
+it("keeps failed invitation drafts and releases the send guard for retry", async () => {
+  jest
+    .mocked(GroupInvitationService.sendInvitation)
+    .mockRejectedValueOnce(new Error("Offline"));
+  render(<InviteToGroupScreen />);
+  fireEvent.changeText(
+    screen.getByLabelText("Email address"),
+    "person@example.test",
+  );
+  fireEvent.press(screen.getByRole("button", { name: "Send Invitation" }));
+  await waitFor(() =>
+    expect(mockShowError).toHaveBeenCalledWith(
+      "Couldn't send invitation. Please try again.",
+    ),
+  );
+  expect(screen.getByLabelText("Email address").props.editable).toBe(true);
+  expect(screen.getByLabelText("Email address").props.value).toBe(
+    "person@example.test",
+  );
 });

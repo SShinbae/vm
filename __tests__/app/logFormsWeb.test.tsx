@@ -1,5 +1,11 @@
 import React from "react";
-import { Platform } from "react-native";
+import {
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+} from "react-native";
+import { Button } from "@/components/ui/Button";
 import {
   fireEvent,
   render,
@@ -52,6 +58,10 @@ jest.mock("expo-router", () => ({
     );
   },
 }));
+jest.mock("@/hooks/useFuelPrices", () => {
+  const { FALLBACK_FUEL_PRICES } = jest.requireActual("@/hooks/useFuelPrices");
+  return { FALLBACK_FUEL_PRICES, useFuelPrices: () => FALLBACK_FUEL_PRICES };
+});
 jest.mock("@/hooks/use-responsive-layout", () => ({
   useResponsiveLayout: () => ({ isWeb: true, isMobile: mockMobile }),
 }));
@@ -303,6 +313,21 @@ test("Add page distinguishes failed loading from an empty garage", async () => {
   await screen.findByText("Save Log");
 });
 
+test.each([AddMileage, AddFuel, AddService])(
+  "compact Add failure has one Retry and preserves Back: %#",
+  async (Page) => {
+    mockMobile = true;
+    (VehicleService.getVehiclesSeparated as jest.Mock).mockResolvedValueOnce({
+      data: null,
+      error: "Offline",
+    });
+    render(<Page />);
+    await screen.findByText("Retry");
+    expect(screen.getAllByText("Retry")).toHaveLength(1);
+    expect(screen.getByRole("button", { name: "Back" })).toBeTruthy();
+  },
+);
+
 test.each([
   AddMileage,
   AddFuel,
@@ -364,6 +389,75 @@ test("native forms keep their original header and history navigation", async () 
   expect(router.back).toHaveBeenCalled();
 });
 
+test.each(["ios", "android"])(
+  "enables native keyboard avoidance on %s",
+  async (os) => {
+    mockMobile = true;
+    Object.defineProperty(Platform, "OS", { value: os, configurable: true });
+    render(<AddMileage />);
+    await screen.findByText("Save Log");
+    const keyboard = screen.UNSAFE_getByType(KeyboardAvoidingView);
+    expect(keyboard.props.enabled).toBe(true);
+    expect(keyboard.props.behavior).toBe(os === "ios" ? "padding" : "height");
+  },
+);
+
+test.each([
+  [EditMileage, MileageLogService.getMileageLogById],
+  [EditFuel, FuelLogService.getFuelLogById],
+  [EditService, ServiceLogService.getServiceLogById],
+] as const)(
+  "native failed record stays with Retry and Back: %#",
+  async (Page, load) => {
+    mockMobile = true;
+    Object.defineProperty(Platform, "OS", { value: "ios", configurable: true });
+    (load as jest.Mock).mockResolvedValueOnce({ data: null, error: "Offline" });
+    render(<Page />);
+    await screen.findByText("Retry");
+    expect(router.replace).not.toHaveBeenCalled();
+    expect(router.back).not.toHaveBeenCalled();
+    expect(screen.getByText("Return to Logs")).toBeTruthy();
+    fireEvent.press(screen.getByText("Retry"));
+    await screen.findByText("Cancel");
+  },
+);
+
+test.each([
+  [AddMileage, "Save Log"],
+  [AddFuel, "Save Log"],
+  [AddService, "Save Log"],
+  [EditMileage, "Update Log"],
+  [EditFuel, "Save Changes"],
+  [EditService, "Save Changes"],
+] as const)(
+  "compact form has reachable Back, stacked footer, and compact spacing: %#",
+  async (Page, saveLabel) => {
+    mockMobile = true;
+    mockParams = { id: "old", vehicleId: "car" };
+    render(<Page />);
+    await screen.findByText(saveLabel);
+    expect(screen.getByRole("button", { name: "Back" })).toBeTruthy();
+    const scroll = screen
+      .UNSAFE_getAllByType(ScrollView)
+      .find((node: any) => node.props.keyboardShouldPersistTaps === "handled");
+    expect(
+      StyleSheet.flatten(scroll!.props.contentContainerStyle).paddingHorizontal,
+    ).toBe(16);
+    const save = screen
+      .UNSAFE_getAllByType(Button)
+      .find((node: any) => node.props.title === saveLabel)!;
+    expect(
+      StyleSheet.flatten(save.props.style).minHeight,
+    ).toBeGreaterThanOrEqual(48);
+    expect(StyleSheet.flatten(save.parent!.props.style).flexDirection).toBe(
+      "column",
+    );
+    expect(screen.UNSAFE_getByType(KeyboardAvoidingView).props.enabled).toBe(
+      false,
+    );
+  },
+);
+
 const addCases = [
   ["Fuel", AddFuel, FuelLogService.createFuelLog],
   ["Mileage", AddMileage, MileageLogService.createMileageLog],
@@ -382,7 +476,7 @@ function fillAddForm(kind: string) {
   }
 }
 for (const [kind, Page, save] of addCases) {
-  test.each(["vehicles", "vehicle", "logs"])(
+  test.each(["vehicles", "vehicle", "logs", "filtered-logs"])(
     `${kind} save returns to its %s origin`,
     async (origin) => {
       mockParams =
@@ -392,6 +486,7 @@ for (const [kind, Page, save] of addCases) {
               id: "old",
               vehicleId: "car",
               ...(origin === "vehicles" ? { returnTo: "vehicles" } : {}),
+              ...(origin === "filtered-logs" ? { returnTo: "logs" } : {}),
             };
       render(<Page />);
       await screen.findByText("Save Log");

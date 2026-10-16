@@ -1,14 +1,16 @@
+import { MobilePageHeader } from "@/components/layout/MobilePageHeader";
+import { useAuth } from "@/lib/contexts/AuthContext";
 import { withOpacity, spacing } from "@/src/design-system";
 import { useStyles } from "react-native-unistyles";
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   View,
   Text,
-  TouchableOpacity,
   ScrollView,
   KeyboardAvoidingView,
   Platform,
   StyleSheet,
+  useWindowDimensions,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router, useLocalSearchParams, useRouter } from "expo-router";
@@ -35,12 +37,25 @@ export default function InviteToGroupScreen() {
   const layout = useResponsiveLayout();
   const colors = theme.colors;
   const navigation = useRouter();
+  const { width, fontScale } = useWindowDimensions();
+  const stacked = width < 360 || fontScale >= 1.3;
+  const { user } = useAuth();
+  const currentUser = useRef(user?.id);
+  currentUser.current = user?.id;
+  const pending = useRef(false);
+  const mounted = useRef(true);
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+    };
+  }, []);
 
   const handleGoBack = () => {
     if (navigation.canGoBack()) {
       router.back();
     } else {
-      router.replace(`/groups/${id}`);
+      router.replace(id ? `/groups/${id}` : "/groups");
     }
   };
 
@@ -65,28 +80,34 @@ export default function InviteToGroupScreen() {
       return;
     }
 
+    if (pending.current) return;
+    pending.current = true;
     setLoading(true);
-
-    const { error } = await GroupInvitationService.sendInvitation(
-      id,
-      email.trim(),
-    );
-    setLoading(false);
-
-    if (error) {
-      showError("Couldn't send invitation", { message: error });
-    } else {
+    const sentTo = email.trim();
+    const userId = user?.id;
+    try {
+      const { error } = await GroupInvitationService.sendInvitation(id, sentTo);
+      if (!mounted.current || currentUser.current !== userId) return;
+      if (error) {
+        showError("Couldn't send invitation", { message: error });
+        return;
+      }
       posthog?.capture("group_invitation_sent");
-      const sentTo = email.trim();
-      // Cancel/backdrop/back counts as "Done", same as before.
       const another = await confirm({
         title: "Invitation Sent",
         message: `An invitation has been sent to ${sentTo}`,
         confirmText: "Send Another",
         cancelText: "Done",
       });
+      if (!mounted.current || currentUser.current !== userId) return;
       if (another) setEmail("");
       else handleGoBack();
+    } catch {
+      if (mounted.current && currentUser.current === userId)
+        showError("Couldn't send invitation. Please try again.");
+    } finally {
+      pending.current = false;
+      if (mounted.current) setLoading(false);
     }
   };
 
@@ -104,6 +125,9 @@ export default function InviteToGroupScreen() {
   const emailInput = (
     <Input
       label="Email Address"
+      accessibilityLabel="Email address"
+      editable={!loading}
+      inputStyle={{ minHeight: 48 }}
       value={email}
       onChangeText={setEmail}
       placeholder="friend@example.com"
@@ -264,31 +288,31 @@ export default function InviteToGroupScreen() {
   });
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={handleGoBack}>
-          <IconSymbol name="chevron.left" size={24} color={colors.text} />
-        </TouchableOpacity>
-        <Text style={styles.title}>Invite Member</Text>
-        <Button
-          title="Send"
-          onPress={handleSendInvitation}
-          disabled={!isFormValid()}
-          loading={loading}
-          icon="paperplane.fill"
-          size="small"
-        />
-      </View>
-
+    <SafeAreaView
+      style={styles.container}
+      edges={["top", "left", "right", "bottom"]}
+    >
       <KeyboardAvoidingView
+        enabled={Platform.OS !== "web"}
         behavior={Platform.OS === "ios" ? "padding" : "height"}
-        style={styles.content}
+        style={{ flex: 1 }}
       >
         <ScrollView
-          contentContainerStyle={styles.scrollContent}
-          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{
+            paddingHorizontal: 16,
+            paddingBottom: 32,
+            gap: 16,
+          }}
           keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
         >
+          <MobilePageHeader
+            title="Invite Member"
+            subtitle="Send an invitation by email"
+            onBack={() => {
+              if (!pending.current) handleGoBack();
+            }}
+          />
           <Card variant="default" padding="large">
             <CardContent>
               <View style={styles.section}>
@@ -299,6 +323,22 @@ export default function InviteToGroupScreen() {
             </CardContent>
           </Card>
 
+          <View style={{ flexDirection: stacked ? "column" : "row", gap: 12 }}>
+            <Button
+              title="Cancel"
+              variant="outline"
+              onPress={handleGoBack}
+              disabled={loading}
+              style={{ flex: stacked ? undefined : 1, minHeight: 48 }}
+            />
+            <Button
+              title="Send Invitation"
+              onPress={handleSendInvitation}
+              disabled={!isFormValid()}
+              loading={loading}
+              style={{ flex: stacked ? undefined : 1, minHeight: 48 }}
+            />
+          </View>
           <Card variant="filled" padding="medium">
             <CardContent>
               <View style={styles.infoIcon}>

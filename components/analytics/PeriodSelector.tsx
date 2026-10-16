@@ -1,7 +1,16 @@
+import { Modal } from "@/components/ui/Modal";
+import { Button } from "@/components/ui/Button";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { formatDate } from "@/lib/utils/dateUtils";
 import { ActionMenu } from "@/components/ui/ActionMenu";
-import { baseColors, withOpacity } from "@/src/design-system";
 import React, { useState } from "react";
-import { View, Text, TouchableOpacity, Modal, FlatList } from "react-native";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  ScrollView,
+  useWindowDimensions,
+} from "react-native";
 import { createStyleSheet, useStyles } from "react-native-unistyles";
 import { Ionicons } from "@expo/vector-icons";
 import { AnalyticsPeriod } from "../../types/analytics";
@@ -15,6 +24,7 @@ interface PeriodSelectorProps {
   allowCustomRange?: boolean;
   onCustomRangeSelect?: (startDate: Date, endDate: Date) => void;
   placement?: "inline" | "toolbar";
+  compact?: boolean;
 }
 
 export function PeriodSelector({
@@ -24,23 +34,32 @@ export function PeriodSelector({
   allowCustomRange = true,
   onCustomRangeSelect,
   placement = "inline",
+  compact = false,
 }: PeriodSelectorProps) {
   const { styles, theme } = useStyles(stylesheet);
   const { isWeb, isMobile } = useResponsiveLayout();
   const [modalVisible, setModalVisible] = useState(false);
   const [dateRangePickerVisible, setDateRangePickerVisible] = useState(false);
 
-  const iconSize = isMobile ? 18 : 20;
-
+  const insets = useSafeAreaInsets();
+  const { height } = useWindowDimensions();
   const handleCustomRangeClick = () => {
-    setModalVisible(false);
     setDateRangePickerVisible(true);
   };
-
+  const close = () => {
+    setModalVisible(false);
+    setDateRangePickerVisible(false);
+  };
   const handleCustomRangeConfirm = (startDate: Date, endDate: Date) => {
-    if (onCustomRangeSelect) {
-      onCustomRangeSelect(startDate, endDate);
-    }
+    if (onCustomRangeSelect) onCustomRangeSelect(startDate, endDate);
+    else
+      onPeriodChange({
+        label: `${formatDate(startDate)} – ${formatDate(endDate)}`,
+        days: Math.ceil((endDate.getTime() - startDate.getTime()) / 86400000),
+        startDate,
+        endDate,
+      });
+    close();
   };
 
   if (isWeb && !isMobile)
@@ -78,186 +97,145 @@ export function PeriodSelector({
   return (
     <>
       <TouchableOpacity
-        style={[styles.container, isMobile && styles.containerMobile]}
+        accessibilityRole="button"
+        accessibilityLabel="Select analytics period"
+        accessibilityValue={{ text: selectedPeriod.label }}
+        accessibilityState={{ expanded: modalVisible }}
+        style={[
+          styles.container,
+          compact && { minHeight: 56, flexGrow: 1, gap: 6, marginBottom: 0 },
+        ]}
         onPress={() => setModalVisible(true)}
       >
         <Ionicons
           name="calendar-outline"
-          size={iconSize}
+          size={compact ? 18 : 22}
           color={theme.colors.textSecondary}
         />
         <Text
-          style={[styles.selectedText, isMobile && styles.selectedTextMobile]}
+          numberOfLines={compact ? 2 : undefined}
+          style={styles.selectedText}
         >
-          {selectedPeriod.label}
+          {compact && !periods.some((p) => p.label === selectedPeriod.label)
+            ? "Custom dates"
+            : selectedPeriod.label}
         </Text>
         <Ionicons
           name="chevron-down-outline"
-          size={iconSize}
+          size={20}
           color={theme.colors.textSecondary}
         />
       </TouchableOpacity>
-
       <Modal
-        visible={modalVisible}
-        animationType="slide"
-        transparent
-        onRequestClose={() => setModalVisible(false)}
+        visible={modalVisible || dateRangePickerVisible}
+        onClose={close}
+        variant="bottom-sheet"
+        showCloseButton={false}
+        contentStyle={{
+          maxHeight: height - insets.top,
+          paddingBottom: insets.bottom,
+        }}
       >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Select Period</Text>
-              <TouchableOpacity onPress={() => setModalVisible(false)}>
-                <Ionicons
-                  name="close-outline"
-                  size={24}
-                  color={theme.colors.text}
-                />
-              </TouchableOpacity>
-            </View>
-
-            <FlatList
-              data={periods}
-              keyExtractor={(item) => item.label}
-              renderItem={({ item }) => {
-                const isSelected = item.label === selectedPeriod.label;
-                return (
-                  <TouchableOpacity
-                    style={styles.periodItem}
-                    onPress={() => {
-                      onPeriodChange(item);
-                      setModalVisible(false);
-                    }}
-                  >
-                    <Text style={styles.periodText}>{item.label}</Text>
-                    {isSelected && (
-                      <Ionicons
-                        name="checkmark"
-                        size={24}
-                        color={theme.colors.primary}
-                      />
-                    )}
-                  </TouchableOpacity>
-                );
-              }}
-              ListFooterComponent={
-                allowCustomRange ? (
-                  <TouchableOpacity
-                    style={[styles.periodItem, styles.customRangeItem]}
-                    onPress={handleCustomRangeClick}
-                  >
-                    <View style={styles.customRangeContent}>
-                      <Ionicons
-                        name="calendar-outline"
-                        size={20}
-                        color={theme.colors.primary}
-                      />
-                      <Text style={styles.customRangeText}>Custom Range</Text>
-                    </View>
+        {dateRangePickerVisible ? (
+          <DateRangePicker
+            visible
+            onClose={close}
+            onConfirm={handleCustomRangeConfirm}
+            initialStartDate={selectedPeriod.startDate}
+            initialEndDate={selectedPeriod.endDate}
+            embedded
+          />
+        ) : (
+          <ScrollView
+            style={{
+              maxHeight: Math.max(
+                120,
+                height - insets.top - insets.bottom - 96,
+              ),
+            }}
+          >
+            <Text accessibilityRole="header" style={styles.title}>
+              Select period
+            </Text>
+            <View>
+              {periods.map((period) => (
+                <TouchableOpacity
+                  key={period.label}
+                  accessibilityRole="button"
+                  accessibilityLabel={period.label}
+                  accessibilityState={{
+                    selected: period.label === selectedPeriod.label,
+                  }}
+                  style={styles.option}
+                  onPress={() => {
+                    onPeriodChange(period);
+                    close();
+                  }}
+                >
+                  <Text style={styles.selectedText}>{period.label}</Text>
+                  {period.label === selectedPeriod.label && (
                     <Ionicons
-                      name="chevron-forward"
-                      size={20}
-                      color={theme.colors.textSecondary}
+                      name="checkmark"
+                      size={22}
+                      color={theme.colors.primary}
                     />
-                  </TouchableOpacity>
-                ) : null
-              }
+                  )}
+                </TouchableOpacity>
+              ))}
+              {allowCustomRange && (
+                <Button
+                  title="Custom Range"
+                  variant="outline"
+                  onPress={handleCustomRangeClick}
+                  style={{ minHeight: 48, marginTop: 12 }}
+                />
+              )}
+            </View>
+            <Button
+              title="Cancel"
+              variant="outline"
+              onPress={close}
+              style={{ minHeight: 48, marginTop: 16 }}
             />
-          </View>
-        </View>
+          </ScrollView>
+        )}
       </Modal>
-
-      <DateRangePicker
-        visible={dateRangePickerVisible}
-        onClose={() => setDateRangePickerVisible(false)}
-        onConfirm={handleCustomRangeConfirm}
-        initialStartDate={selectedPeriod.startDate}
-        initialEndDate={selectedPeriod.endDate}
-      />
     </>
   );
 }
 
 const stylesheet = createStyleSheet((theme) => ({
   container: {
+    minHeight: 48,
     flexDirection: "row",
     alignItems: "center",
-    gap: theme.spacing.sm,
+    gap: 12,
     backgroundColor: theme.colors.surface,
-    padding: theme.spacing.md,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
     borderRadius: theme.borderRadius.lg,
-    marginBottom: theme.spacing.md,
-    shadowColor: theme.colors.black,
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
-  },
-  containerMobile: {
-    padding: theme.spacing.sm,
-    gap: theme.spacing.xs,
+    marginBottom: 12,
   },
   selectedText: {
     flex: 1,
+    minWidth: 0,
     fontSize: theme.fontSize.sm,
-    fontWeight: theme.fontWeight.medium,
     color: theme.colors.text,
   },
-  selectedTextMobile: {
-    fontSize: theme.fontSize.xs,
+  title: {
+    color: theme.colors.text,
+    fontSize: theme.fontSize.lg,
+    fontWeight: "600",
+    marginBottom: 16,
   },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: withOpacity(baseColors.black, 0.5),
-    justifyContent: "flex-end",
-  },
-  modalContent: {
-    backgroundColor: theme.colors.background,
-    borderTopLeftRadius: theme.borderRadius.xl,
-    borderTopRightRadius: theme.borderRadius.xl,
-    maxHeight: "60%",
-    paddingTop: theme.spacing.lg,
-  },
-  modalHeader: {
+  option: {
+    minHeight: 48,
+    paddingVertical: 12,
     flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "center",
-    paddingHorizontal: theme.spacing.lg,
-    paddingBottom: theme.spacing.lg,
+    gap: 12,
     borderBottomWidth: 1,
-    borderBottomColor: theme.colors.border,
-  },
-  modalTitle: {
-    fontSize: theme.fontSize.xl,
-    fontWeight: theme.fontWeight.bold,
-    color: theme.colors.text,
-  },
-  periodItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: theme.spacing.lg,
-    paddingVertical: theme.spacing.lg,
-    borderBottomWidth: 1,
-    borderBottomColor: theme.colors.border,
-  },
-  periodText: {
-    fontSize: theme.fontSize.base,
-    color: theme.colors.text,
-    fontWeight: theme.fontWeight.medium,
-  },
-  customRangeItem: {
-    backgroundColor: theme.colors.surface,
-  },
-  customRangeContent: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: theme.spacing.md,
-  },
-  customRangeText: {
-    fontSize: theme.fontSize.base,
-    color: theme.colors.primary,
-    fontWeight: theme.fontWeight.semibold,
+    borderColor: theme.colors.border,
   },
 }));

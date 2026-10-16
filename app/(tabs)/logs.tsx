@@ -1,3 +1,7 @@
+import { MobilePageHeader } from "@/components/layout/MobilePageHeader";
+import { LogVehicleFilter } from "@/components/logs/LogVehicleFilter";
+import { VehicleService } from "@/lib/services/vehicleService";
+import { VehicleWithDetails } from "@/types/database-v2";
 import { storageImageUrl } from "@/lib/utils/storagePath";
 import { withOpacity, spacing } from "@/src/design-system";
 import { LogDetailsBottomSheet } from "@/components/logs";
@@ -59,6 +63,23 @@ export default function LogsScreen() {
   const isWebPage = layout.isWeb && !layout.isMobile;
   const { user } = useAuth();
 
+  const [vehicleSelection, setVehicleSelection] = useState<{
+    userId?: string;
+    id: string;
+  } | null>(null);
+  const selectedVehicleId =
+    !isWebPage && vehicleSelection?.userId === user?.id
+      ? vehicleSelection?.id
+      : undefined;
+  const [vehicleOptions, setVehicleOptions] = useState<VehicleWithDetails[]>(
+    [],
+  );
+  const [vehiclesLoading, setVehiclesLoading] = useState(true);
+  const [vehiclesError, setVehiclesError] = useState<string | null>(null);
+  const [pickerVisible, setPickerVisible] = useState(false);
+  const vehiclesRequest = useRef(0);
+  const vehiclesFocused = useRef(false);
+  const loadedScope = useRef<string | undefined>(undefined);
   const [ascending, setAscending] = useState(false);
   const [activeTab, setActiveTab] = useState<LogType>("mileage");
   const [mileageLogs, setMileageLogs] = useState<MileageLog[]>([]);
@@ -83,6 +104,13 @@ export default function LogsScreen() {
   const [loadingMore, setLoadingMore] = useState(false);
   const PAGE_SIZE = 20;
   const fetchRequest = useRef(0);
+  const pageRequest = useRef(0);
+  const pagePending = useRef(false);
+  const fetching = useRef(false);
+  const focused = useRef(false);
+  const loadedUser = useRef(user?.id);
+  const autoExpanded = useRef(new Set<string>());
+  const [errors, setErrors] = useState<Partial<Record<LogType, string>>>({});
 
   // Modal states
   const { confirm } = useDialog();
@@ -96,7 +124,14 @@ export default function LogsScreen() {
   >(null);
   const [selectedBottomSheetLogType, setSelectedBottomSheetLogType] =
     useState<LogType | null>(null);
-  const [bottomSheetCanModify, setBottomSheetCanModify] = useState(true);
+  const [bottomSheetCanModify, setBottomSheetCanModify] = useState(false);
+  const [bottomSheetCanDelete, setBottomSheetCanDelete] = useState(false);
+  const bottomSheetRequest = useRef(0);
+  useEffect(() => {
+    bottomSheetRequest.current += 1;
+    setBottomSheetCanModify(false);
+    setBottomSheetCanDelete(false);
+  }, [user?.id]);
 
   const canUserModifyLog = async (log: any): Promise<boolean> => {
     try {
@@ -110,21 +145,27 @@ export default function LogsScreen() {
 
   // OPTIMIZATION: Fetch initial logs with pagination
   const fetchAllLogs = useCallback(async () => {
+    if (!focused.current) return;
+    fetching.current = true;
+    setRefreshing(true);
     const request = ++fetchRequest.current;
+    pageRequest.current++;
+    pagePending.current = false;
+    setLoadingMore(false);
     try {
       const results = await safePromiseAll(
         [
-          MileageLogService.getMileageLogs(undefined, {
+          MileageLogService.getMileageLogs(selectedVehicleId, {
             limit: PAGE_SIZE,
             offset: 0,
             ascending,
           }),
-          FuelLogService.getFuelLogs(undefined, {
+          FuelLogService.getFuelLogs(selectedVehicleId, {
             limit: PAGE_SIZE,
             offset: 0,
             ascending,
           }) as any,
-          ServiceLogService.getServiceLogs(undefined, {
+          ServiceLogService.getServiceLogs(selectedVehicleId, {
             limit: PAGE_SIZE,
             offset: 0,
             ascending,
@@ -134,74 +175,59 @@ export default function LogsScreen() {
       );
 
       if (request !== fetchRequest.current) return;
-      const [mileageResult, fuelResult, serviceResult] = results;
-
-      if (
-        isFulfilled(mileageResult) &&
-        (mileageResult.value as { data: MileageLog[] }).data
-      ) {
-        const data = (mileageResult.value as { data: MileageLog[] }).data;
-        setMileageLogs(data);
-        setHasMoreMileage(data.length >= PAGE_SIZE);
-        setMileagePage(1);
-      } else {
-        setMileageLogs([]);
-        setHasMoreMileage(false);
-      }
-
-      if (
-        isFulfilled(fuelResult) &&
-        (fuelResult.value as { data: FuelLog[] }).data
-      ) {
-        const data = (fuelResult.value as { data: FuelLog[] }).data;
-        setFuelLogs(data);
-        setHasMoreFuel(data.length >= PAGE_SIZE);
-        setFuelPage(1);
-      } else {
-        setFuelLogs([]);
-        setHasMoreFuel(false);
-      }
-
-      if (
-        isFulfilled(serviceResult) &&
-        (serviceResult.value as { data: ServiceLog[] }).data
-      ) {
-        const data = (serviceResult.value as { data: ServiceLog[] }).data;
-        setServiceLogs(data);
-        setHasMoreService(data.length >= PAGE_SIZE);
-        setServicePage(1);
-      } else {
-        setServiceLogs([]);
-        setHasMoreService(false);
-      }
-    } catch (error) {
+      const nextErrors: Partial<Record<LogType, string>> = {};
+      const types = ["mileage", "fuel", "service"] as const;
+      results.forEach((result, index) => {
+        const type = types[index];
+        const value = isFulfilled(result)
+          ? (result.value as { data?: any[]; error?: string })
+          : null;
+        if (!value || value.error || !Array.isArray(value.data)) {
+          nextErrors[type] = `Couldn't load ${type} logs`;
+          return;
+        }
+        const data = value.data;
+        if (type === "mileage") {
+          setMileageLogs(data);
+          setHasMoreMileage(data.length >= PAGE_SIZE);
+          setMileagePage(1);
+        } else if (type === "fuel") {
+          setFuelLogs(data);
+          setHasMoreFuel(data.length >= PAGE_SIZE);
+          setFuelPage(1);
+        } else {
+          setServiceLogs(data);
+          setHasMoreService(data.length >= PAGE_SIZE);
+          setServicePage(1);
+        }
+      });
+      setErrors(nextErrors);
+    } catch {
       if (request !== fetchRequest.current) return;
-      console.error("Error fetching logs:", error);
-      setMileageLogs([]);
-      setFuelLogs([]);
-      setServiceLogs([]);
-      setHasMoreMileage(false);
-      setHasMoreFuel(false);
-      setHasMoreService(false);
+      setErrors({
+        mileage: "Couldn't load mileage logs",
+        fuel: "Couldn't load fuel logs",
+        service: "Couldn't load service logs",
+      });
     } finally {
-      if (request === fetchRequest.current) setLoading(false);
+      if (request === fetchRequest.current) {
+        fetching.current = false;
+        setLoading(false);
+        setRefreshing(false);
+      }
     }
-  }, [PAGE_SIZE, ascending]);
+  }, [PAGE_SIZE, ascending, selectedVehicleId]);
 
   const onRefresh = useCallback(async () => {
+    if (!focused.current) return;
     setRefreshing(true);
-    // Reset pagination on refresh
-    setMileagePage(0);
-    setFuelPage(0);
-    setServicePage(0);
     await fetchAllLogs();
-    setRefreshing(false);
   }, [fetchAllLogs]);
 
   // OPTIMIZATION: Load more logs for pagination
   const loadMoreLogs = useCallback(
     async (type: LogType) => {
-      if (loadingMore) return;
+      if (fetching.current || pagePending.current || !focused.current) return;
 
       const currentPage =
         type === "mileage"
@@ -216,8 +242,11 @@ export default function LogsScreen() {
             ? hasMoreFuel
             : hasMoreService;
 
-      if (!hasMore) return;
+      if (!hasMore || errors[type]) return;
 
+      pagePending.current = true;
+      const request = fetchRequest.current;
+      const page = ++pageRequest.current;
       setLoadingMore(true);
       try {
         const offset = currentPage * PAGE_SIZE;
@@ -225,21 +254,21 @@ export default function LogsScreen() {
 
         switch (type) {
           case "mileage":
-            result = await MileageLogService.getMileageLogs(undefined, {
+            result = await MileageLogService.getMileageLogs(selectedVehicleId, {
               limit: PAGE_SIZE,
               offset,
               ascending,
             });
             break;
           case "fuel":
-            result = await FuelLogService.getFuelLogs(undefined, {
+            result = await FuelLogService.getFuelLogs(selectedVehicleId, {
               limit: PAGE_SIZE,
               offset,
               ascending,
             });
             break;
           case "service":
-            result = await ServiceLogService.getServiceLogs(undefined, {
+            result = await ServiceLogService.getServiceLogs(selectedVehicleId, {
               limit: PAGE_SIZE,
               offset,
               ascending,
@@ -247,6 +276,14 @@ export default function LogsScreen() {
             break;
         }
 
+        if (
+          !focused.current ||
+          request !== fetchRequest.current ||
+          page !== pageRequest.current
+        )
+          return;
+        if (result?.error || !Array.isArray(result?.data))
+          throw new Error("Failed to load more logs");
         if (
           result?.data &&
           Array.isArray(result.data) &&
@@ -289,14 +326,25 @@ export default function LogsScreen() {
               break;
           }
         }
-      } catch (error) {
-        console.error(`Error loading more ${type} logs:`, error);
+      } catch {
+        if (
+          focused.current &&
+          request === fetchRequest.current &&
+          page === pageRequest.current
+        ) {
+          showError(`Couldn't load more ${type} logs. Try Load More again.`);
+        }
       } finally {
-        setLoadingMore(false);
+        if (page === pageRequest.current) {
+          pagePending.current = false;
+          setLoadingMore(false);
+        }
       }
     },
     [
-      loadingMore,
+      showError,
+      errors,
+      selectedVehicleId,
       ascending,
       mileagePage,
       fuelPage,
@@ -312,8 +360,20 @@ export default function LogsScreen() {
     type: LogType,
     id: string,
     description: string,
+    canDelete: boolean,
   ) => {
-    if (deleteLoading) return;
+    if (!canDelete || deleteLoading) return;
+    const log = (
+      type === "mileage"
+        ? mileageLogs
+        : type === "fuel"
+          ? fuelLogs
+          : serviceLogs
+    ).find((item) => item.id === id);
+    if (!log || isAutoMileageLog(type, log)) return;
+    const vehicleOwnerId = (log as { vehicles?: { user_id?: string } }).vehicles
+      ?.user_id;
+    if (type === "service" && (!user?.id || vehicleOwnerId !== user.id)) return;
     const ok = await confirm({
       title: "Delete Log",
       message: `Are you sure you want to delete this ${type} log?\n\n${description}`,
@@ -397,8 +457,23 @@ export default function LogsScreen() {
     log: FuelLog | MileageLog | ServiceLog,
     logType: LogType,
   ) => {
+    if (layout.isWeb) {
+      if (logType === "service") handleViewServiceDetail(log.id);
+      return;
+    }
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    const canModify = await canUserModifyLog(log);
+    const request = ++bottomSheetRequest.current;
+    setBottomSheetCanModify(false);
+    setBottomSheetCanDelete(false);
+    const canModify =
+      (await canUserModifyLog(log)) && !isAutoMileageLog(logType, log);
+    if (request !== bottomSheetRequest.current) return;
+    const vehicleOwnerId = (log as { vehicles?: { user_id?: string } }).vehicles
+      ?.user_id;
+    setBottomSheetCanDelete(
+      canModify &&
+        (logType !== "service" || (!!user?.id && vehicleOwnerId === user.id)),
+    );
     setSelectedBottomSheetLog(log);
     setSelectedBottomSheetLogType(logType);
     setBottomSheetCanModify(canModify);
@@ -406,10 +481,15 @@ export default function LogsScreen() {
   };
 
   const handleCloseBottomSheet = () => {
+    bottomSheetRequest.current += 1;
+    setBottomSheetCanModify(false);
+    setBottomSheetCanDelete(false);
     bottomSheetRef.current?.close();
   };
 
   const handleBottomSheetEdit = (type: LogType, id: string) => {
+    if (!bottomSheetCanModify || isAutoMileageLog(type, selectedBottomSheetLog))
+      return;
     handleCloseBottomSheet();
     handleEditLog(type, id);
   };
@@ -420,7 +500,7 @@ export default function LogsScreen() {
     description: string,
   ) => {
     handleCloseBottomSheet();
-    handleDeleteLog(type, id, description);
+    handleDeleteLog(type, id, description, bottomSheetCanDelete);
   };
 
   const toggleVehicle = (vehicleId: string) => {
@@ -449,10 +529,83 @@ export default function LogsScreen() {
     });
   };
 
+  const fetchVehicles = useCallback(async () => {
+    if (isWebPage || !vehiclesFocused.current) return;
+    const request = ++vehiclesRequest.current;
+    setVehiclesLoading(true);
+    try {
+      const result = await VehicleService.getVehiclesSeparated();
+      if (request !== vehiclesRequest.current || !vehiclesFocused.current)
+        return;
+      if (result.error || !result.data)
+        throw new Error("Vehicle list unavailable");
+      const vehicles = [
+        ...result.data.ownVehicles,
+        ...result.data.sharedVehicles,
+      ];
+      setVehicleOptions(vehicles);
+      setVehiclesError(null);
+      setVehicleSelection((prev) =>
+        prev &&
+        prev.userId === user?.id &&
+        vehicles.some((v) => v.id === prev.id)
+          ? prev
+          : null,
+      );
+    } catch {
+      if (request === vehiclesRequest.current && vehiclesFocused.current)
+        setVehiclesError("Couldn't load vehicles");
+    } finally {
+      if (request === vehiclesRequest.current && vehiclesFocused.current)
+        setVehiclesLoading(false);
+    }
+  }, [isWebPage, user?.id]);
+
   useFocusEffect(
     useCallback(() => {
-      fetchAllLogs();
-    }, [fetchAllLogs]),
+      focused.current = true;
+      const accountChanged = loadedUser.current !== user?.id;
+      const scope = `${user?.id || ""}:${selectedVehicleId || "all"}:${isWebPage}`;
+      if (accountChanged || loadedScope.current !== scope) {
+        loadedScope.current = scope;
+        loadedUser.current = user?.id;
+        setMileageLogs([]);
+        setFuelLogs([]);
+        setServiceLogs([]);
+        setExpandedVehicles(new Set());
+        autoExpanded.current.clear();
+        setShowAllLogsForVehicle(new Set());
+        setErrors({});
+        setLoading(true);
+      }
+      if (accountChanged) {
+        setVehicleOptions([]);
+        setVehicleSelection(null);
+        setVehiclesError(null);
+      }
+      void fetchAllLogs();
+      return () => {
+        focused.current = false;
+        fetching.current = false;
+        fetchRequest.current++;
+        pageRequest.current++;
+        pagePending.current = false;
+        bottomSheetRequest.current++;
+        bottomSheetRef.current?.close();
+      };
+    }, [fetchAllLogs, user?.id, selectedVehicleId, isWebPage]),
+  );
+
+  useFocusEffect(
+    useCallback(() => {
+      vehiclesFocused.current = true;
+      void fetchVehicles();
+      return () => {
+        vehiclesFocused.current = false;
+        vehiclesRequest.current++;
+        setPickerVisible(false);
+      };
+    }, [fetchVehicles]),
   );
 
   // Tab component
@@ -474,8 +627,14 @@ export default function LogsScreen() {
       />
     ) : (
       <TouchableOpacity
+        accessibilityRole="button"
+        accessibilityLabel={label}
+        accessibilityState={{ selected: activeTab === type }}
         style={{
-          flex: 1,
+          minHeight: 48,
+          maxWidth: "100%",
+          flexGrow: 1,
+          flexBasis: 88,
           paddingVertical: theme.spacing.md,
           paddingHorizontal: theme.spacing.lg,
           borderRadius: theme.borderRadius.lg,
@@ -504,6 +663,7 @@ export default function LogsScreen() {
               activeTab === type
                 ? theme.colors.white
                 : theme.colors.textSecondary,
+            flexShrink: 1,
             fontSize: theme.fontSize.sm,
             fontWeight:
               activeTab === type
@@ -538,7 +698,8 @@ export default function LogsScreen() {
         style={{
           flexDirection: "row",
           alignItems: "center",
-          paddingHorizontal: theme.spacing.xl,
+          minHeight: 48,
+          paddingHorizontal: 0,
           paddingVertical: theme.spacing.lg,
           backgroundColor: theme.colors.background,
           borderBottomWidth: 1,
@@ -554,6 +715,7 @@ export default function LogsScreen() {
           }),
         }}
         accessibilityRole="button"
+        accessibilityLabel={`${isWebPage ? "" : isExpanded ? "Collapse " : "Expand "}${vehicle?.year} ${vehicle?.make} ${vehicle?.model} logs`}
         accessibilityState={{ expanded: isExpanded }}
         onPress={() => toggleVehicle(vehicleId)}
         activeOpacity={0.7}
@@ -594,11 +756,12 @@ export default function LogsScreen() {
           </View>
         )}
 
-        <View style={{ flex: 1 }}>
+        <View style={{ flex: 1, minWidth: 0 }}>
           <View
             style={{
-              flexDirection: "row",
-              alignItems: "center",
+              flexDirection: isWebPage ? "row" : "column",
+              alignItems: isWebPage ? "center" : "flex-start",
+              gap: 8,
               justifyContent: "space-between",
               marginBottom: spacing.xs,
             }}
@@ -646,6 +809,7 @@ export default function LogsScreen() {
             style={{
               flexDirection: "row",
               alignItems: "center",
+              flexWrap: "wrap",
               marginTop: theme.spacing.sm,
               gap: theme.spacing.sm,
             }}
@@ -697,11 +861,30 @@ export default function LogsScreen() {
           </View>
         </View>
 
-        <IconSymbol
-          name={isExpanded ? "chevron.up" : "chevron.down"}
-          size={20}
-          color={theme.colors.textSecondary}
-        />
+        <View
+          pointerEvents="none"
+          style={
+            !isWebPage
+              ? {
+                  width: 48,
+                  height: 48,
+                  marginLeft: 8,
+                  alignItems: "center",
+                  justifyContent: "center",
+                  borderWidth: 1,
+                  borderColor: theme.colors.border,
+                  borderRadius: 12,
+                  backgroundColor: theme.colors.surface,
+                }
+              : undefined
+          }
+        >
+          <IconSymbol
+            name={isExpanded ? "chevron.up" : "chevron.down"}
+            size={20}
+            color={theme.colors.textSecondary}
+          />
+        </View>
       </TouchableOpacity>
     );
   };
@@ -730,11 +913,32 @@ export default function LogsScreen() {
     last: boolean;
     first: boolean;
   }) => {
-    const [canModify, setCanModify] = useState(true);
+    const [permission, setPermission] = useState<{
+      log: object;
+      userId?: string;
+      allowed: boolean;
+    } | null>(null);
+    const canModify =
+      !!permission &&
+      permission.log === log &&
+      permission.userId === user?.id &&
+      permission.allowed;
+    const canDelete =
+      canModify &&
+      (type !== "service" || (!!user?.id && log.vehicles?.user_id === user.id));
 
     React.useEffect(() => {
-      canUserModifyLog(log).then(setCanModify);
-    }, [log]);
+      let active = true;
+      setPermission(null);
+      canUserModifyLog(log).then((allowed) => {
+        if (active) setPermission({ log, userId: user?.id, allowed });
+      });
+      return () => {
+        active = false;
+      };
+      // Permission checks only depend on the log and signed-in identity.
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [log, user?.id]);
 
     const getLogDetails = () => {
       switch (type) {
@@ -802,15 +1006,18 @@ export default function LogsScreen() {
           {
             label: "Edit",
             icon: "pencil",
-            onPress: () => handleEditLog(type, log.id),
-            disabled: !canModify,
+            onPress: () => {
+              if (canModify) handleEditLog(type, log.id);
+            },
+            disabled: !canModify || deleteLoading,
           },
           {
             label: "Delete",
             icon: "trash",
-            onPress: () => handleDeleteLog(type, log.id, details.title),
+            onPress: () =>
+              handleDeleteLog(type, log.id, details.title, canDelete),
             variant: "danger",
-            disabled: !canModify,
+            disabled: !canDelete || deleteLoading,
           },
         ];
 
@@ -953,225 +1160,100 @@ export default function LogsScreen() {
       );
     }
 
-    if (type === "service") {
-      // Special layout for Service Logs
-      const serviceDetails = details;
-      return (
-        <TouchableOpacity
-          style={{
-            backgroundColor: theme.colors.background,
-            borderRadius: theme.borderRadius.lg,
-            padding: theme.spacing.lg,
-            marginBottom: theme.spacing.md,
-            borderWidth: 1,
-            borderColor: theme.colors.border,
-            ...(log.is_shared_vehicle && {
-              borderColor: withOpacity(theme.colors.primary, 0.25),
-              backgroundColor: theme.colors.surface,
-            }),
-          }}
-          onPress={() => handleOpenLogDetails(log, type)}
-          activeOpacity={0.7}
-        >
-          <View style={{ flexDirection: "row", alignItems: "flex-start" }}>
-            <View
-              style={{
-                width: 48,
-                height: 48,
-                borderRadius: 24,
-                backgroundColor: withOpacity(serviceDetails.color, 0.08),
-                alignItems: "center",
-                justifyContent: "center",
-                marginRight: theme.spacing.lg,
-              }}
-            >
-              <IconSymbol
-                name={serviceDetails.icon as any}
-                size={24}
-                color={serviceDetails.color}
-              />
-            </View>
-            <View style={{ flex: 1 }}>
-              <View
-                style={{
-                  flexDirection: "row",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  marginBottom: theme.spacing.xs,
-                }}
-              >
-                <Text
-                  style={{
-                    fontSize: theme.fontSize.lg,
-                    fontWeight: theme.fontWeight.bold,
-                    color: theme.colors.text,
-                    letterSpacing: -0.3,
-                  }}
-                >
-                  {serviceDetails.title}
-                </Text>
-                {serviceDetails.hasReceipt && (
-                  <ServiceReceiptIndicator
-                    hasReceipt={serviceDetails.hasReceipt}
-                    receiptUrl={serviceDetails.receiptUrl}
-                    onPress={() => handleViewServiceDetail(log.id)}
-                    size={18}
-                  />
-                )}
-              </View>
-
-              {/* Odometer | Date Line */}
-              <Text
-                style={{
-                  fontSize: theme.fontSize.sm,
-                  color: theme.colors.textSecondary,
-                  fontWeight: theme.fontWeight.medium,
-                  marginBottom: theme.spacing.md,
-                }}
-              >
-                {serviceDetails.odometer} | {formatDate(serviceDetails.date!)}
-              </Text>
-
-              {/* Service Items List */}
-              <View style={{ marginBottom: theme.spacing.md }}>
-                {serviceDetails.parsedItems &&
-                serviceDetails.parsedItems.length > 0 ? (
-                  serviceDetails.parsedItems.map((item: any, index: number) => (
-                    <Text
-                      key={index}
-                      style={{
-                        fontSize: theme.fontSize.base,
-                        color: theme.colors.text,
-                        lineHeight: 22,
-                      }}
-                    >
-                      {index + 1}. {item.description} RM{item.price}
-                    </Text>
-                  ))
-                ) : (
-                  <Text
-                    style={{
-                      fontSize: theme.fontSize.base,
-                      color: theme.colors.text,
-                      lineHeight: 22,
-                    }}
-                  >
-                    {serviceDetails.subtitle}
-                  </Text>
-                )}
-              </View>
-
-              {/* Total Cost */}
-              <Text
-                style={{
-                  fontSize: theme.fontSize.base,
-                  fontWeight: theme.fontWeight.bold,
-                  color: theme.colors.text,
-                }}
-              >
-                Total : RM {serviceDetails.cost}
-              </Text>
-            </View>
-            <View style={{ marginLeft: theme.spacing.sm }}>
-              <ActionMenu items={actionMenuItems} />
-            </View>
-          </View>
-        </TouchableOpacity>
-      );
-    }
-
-    // Default layout for Mileage and Fuel
     return (
-      <TouchableOpacity
+      <View
         style={{
-          backgroundColor: theme.colors.background,
+          backgroundColor: theme.colors.surface,
           borderRadius: theme.borderRadius.lg,
-          padding: theme.spacing.lg,
-          marginBottom: theme.spacing.md,
+          padding: 16,
+          marginBottom: 12,
           borderWidth: 1,
           borderColor: theme.colors.border,
-          ...(log.is_shared_vehicle && {
-            borderColor: withOpacity(theme.colors.primary, 0.25),
-            backgroundColor: theme.colors.surface,
-          }),
+          gap: 12,
         }}
-        onPress={() => handleOpenLogDetails(log, type)}
-        activeOpacity={0.7}
       >
-        <View style={{ flexDirection: "row", alignItems: "flex-start" }}>
-          <View
-            style={{
-              width: 48,
-              height: 48,
-              borderRadius: 24,
-              backgroundColor: withOpacity(details.color, 0.08),
-              alignItems: "center",
-              justifyContent: "center",
-              marginRight: theme.spacing.lg,
-            }}
+        <View
+          style={{ flexDirection: "row", alignItems: "flex-start", gap: 8 }}
+        >
+          <TouchableOpacity
+            accessibilityRole={
+              !layout.isWeb || type === "service" ? "button" : undefined
+            }
+            accessible={!layout.isWeb || type === "service"}
+            accessibilityLabel={
+              !layout.isWeb || type === "service"
+                ? `View ${type} log details`
+                : undefined
+            }
+            onPress={
+              !layout.isWeb || type === "service"
+                ? () => handleOpenLogDetails(log, type)
+                : undefined
+            }
+            activeOpacity={layout.isWeb && type !== "service" ? 1 : 0.7}
+            style={{ flex: 1, minWidth: 0, minHeight: 48, gap: 6 }}
           >
-            <IconSymbol
-              name={details.icon as any}
-              size={24}
-              color={details.color}
-            />
-          </View>
-          <View style={{ flex: 1 }}>
-            <View
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                justifyContent: "space-between",
-                marginBottom: theme.spacing.xs,
-              }}
-            >
-              <Text
-                style={{
-                  fontSize: theme.fontSize.lg,
-                  fontWeight: theme.fontWeight.bold,
-                  color: theme.colors.text,
-                  letterSpacing: -0.3,
-                  flex: 1,
-                }}
-              >
-                {details.title}
-              </Text>
-              <ActionMenu items={actionMenuItems} />
-            </View>
             <Text
               style={{
-                fontSize: theme.fontSize.base,
-                color: theme.colors.textSecondary,
-                fontWeight: theme.fontWeight.medium,
-                marginTop: theme.spacing.xs,
+                color: theme.colors.text,
+                fontSize: theme.fontSize.lg,
+                fontWeight: theme.fontWeight.semibold,
               }}
             >
-              {details.subtitle}
+              {details.title}
             </Text>
-            {details.odometer && (
-              <Text
-                style={{
-                  fontSize: theme.fontSize.sm,
-                  color: theme.colors.textSecondary,
-                  marginBottom: theme.spacing.xs,
-                }}
-              >
-                {details.odometer}
-              </Text>
-            )}
             <Text
               style={{
-                fontSize: theme.fontSize.sm,
                 color: theme.colors.textSecondary,
-                fontWeight: theme.fontWeight.normal,
-                marginTop: theme.spacing.sm,
+                fontSize: theme.fontSize.sm,
               }}
             >
               {formatDate(log.date)}
             </Text>
-          </View>
+          </TouchableOpacity>
+          <ActionMenu
+            items={actionMenuItems}
+            vertical
+            minTouchSize={48}
+            accessibilityLabel={`${type} log actions`}
+            disabled={deleteLoading}
+          />
         </View>
-      </TouchableOpacity>
+        {details.parsedItems?.length ? (
+          details.parsedItems.map((item: any, index: number) => (
+            <Text key={index} style={{ color: theme.colors.text }}>
+              {item.description} RM{item.price}
+            </Text>
+          ))
+        ) : (
+          <Text style={{ color: theme.colors.textSecondary }}>
+            {details.subtitle}
+          </Text>
+        )}
+        {details.odometer && (
+          <Text style={{ color: theme.colors.textSecondary }}>
+            {details.odometer}
+          </Text>
+        )}
+        {type === "service" && (
+          <Text
+            style={{
+              color: theme.colors.text,
+              fontWeight: theme.fontWeight.semibold,
+            }}
+          >
+            Total: RM{details.cost?.toFixed(2)}
+          </Text>
+        )}
+        {details.hasReceipt && (
+          <Button
+            title="View receipt"
+            variant="outline"
+            style={{ minHeight: 48 }}
+            onPress={() => handleViewServiceDetail(log.id)}
+          />
+        )}
+      </View>
     );
   };
 
@@ -1217,16 +1299,17 @@ export default function LogsScreen() {
     return grouped;
   }, [getCurrentLogs, ascending]);
 
-  // Auto-expand all vehicles when logs are first loaded
+  // Desktop expands new groups; compact history always starts closed.
   useEffect(() => {
-    if (!loading && expandedVehicles.size === 0) {
-      const grouped = getGroupedLogsByVehicle();
-      const allVehicleIds = Object.keys(grouped);
-      if (allVehicleIds.length > 0) {
-        setExpandedVehicles(new Set(allVehicleIds));
-      }
+    if (loading || !isWebPage) return;
+    const newIds = Object.keys(getGroupedLogsByVehicle()).filter(
+      (id) => !autoExpanded.current.has(id),
+    );
+    if (newIds.length) {
+      newIds.forEach((id) => autoExpanded.current.add(id));
+      setExpandedVehicles((prev) => new Set([...prev, ...newIds]));
     }
-  }, [loading, expandedVehicles.size, getGroupedLogsByVehicle]);
+  }, [loading, isWebPage, getGroupedLogsByVehicle]);
 
   const getAddRoute = () => {
     switch (activeTab) {
@@ -1241,415 +1324,396 @@ export default function LogsScreen() {
     }
   };
 
-  if (loading) {
-    return (
-      <SafeAreaView
-        style={{ flex: 1, backgroundColor: theme.colors.background }}
-      >
-        <MaxWidthContainer
-          fullWidth={isWebPage}
-          style={isWebPage ? web.frame : undefined}
-        >
-          <View
-            style={
-              isWebPage
-                ? web.toolbar
-                : {
-                    flexDirection: "row",
-                    padding: theme.spacing.lg,
-                    gap: theme.spacing.sm,
-                    backgroundColor: theme.colors.surface,
-                    borderBottomWidth: 1,
-                    borderBottomColor: theme.colors.border,
-                  }
-            }
-          >
-            <TabButton type="mileage" label="Mileage" icon="speedometer" />
-            <TabButton type="fuel" label="Fuel" icon="fuelpump" />
-            <TabButton type="service" label="Service" icon="wrench" />
-          </View>
-          <ScrollView style={{ flex: 1 }}>
-            <SkeletonLogList itemCount={5} />
-          </ScrollView>
-        </MaxWidthContainer>
-      </SafeAreaView>
-    );
-  }
-
   const currentLogs = getCurrentLogs();
   const groupedLogs = getGroupedLogsByVehicle();
+  const sortItems: ActionMenuItem[] = [
+    {
+      label: "Newest first",
+      icon: "calendar",
+      onPress: () => setAscending(false),
+    },
+    {
+      label: "Oldest first",
+      icon: "calendar",
+      onPress: () => setAscending(true),
+    },
+  ];
+
+  const toolbar = (
+    <View style={isWebPage ? web.toolbar : { gap: 12, marginBottom: 16 }}>
+      <View
+        style={
+          isWebPage
+            ? web.filters
+            : { flexDirection: "row", flexWrap: "wrap", gap: 8 }
+        }
+      >
+        <TabButton type="mileage" label="Mileage" icon="speedometer" />
+        <TabButton type="fuel" label="Fuel" icon="fuelpump" />
+        <TabButton type="service" label="Service" icon="wrench" />
+      </View>
+      {!isWebPage && (
+        <LogVehicleFilter
+          vehicles={vehicleOptions}
+          selectedId={selectedVehicleId}
+          onSelect={(id) =>
+            setVehicleSelection(id ? { userId: user?.id, id } : null)
+          }
+          loading={vehiclesLoading}
+          error={vehiclesError}
+          onRetry={fetchVehicles}
+          visible={pickerVisible}
+          onOpen={() => setPickerVisible(true)}
+          onClose={() => setPickerVisible(false)}
+        />
+      )}
+      <View
+        style={
+          isWebPage
+            ? web.filters
+            : { flexDirection: "row", alignItems: "stretch", gap: 8 }
+        }
+      >
+        <ActionMenu
+          items={sortItems}
+          disabled={loading || loadingMore || refreshing}
+          label={`Sort by date (${ascending ? "oldest" : "newest"})`}
+          minTouchSize={isWebPage ? undefined : 48}
+          style={
+            !isWebPage
+              ? { flex: 1, minWidth: 0, justifyContent: "center" }
+              : undefined
+          }
+        />
+        <Button
+          title={`Add ${activeTab} log`}
+          icon="plus"
+          style={
+            !isWebPage ? { flex: 1, minWidth: 0, minHeight: 48 } : undefined
+          }
+          onPress={() => {
+            const vehicleId =
+              selectedVehicleId ||
+              (!isWebPage && vehicleOptions.length === 1
+                ? vehicleOptions[0].id
+                : undefined);
+            router.push(
+              vehicleId
+                ? {
+                    pathname: getAddRoute() as any,
+                    params: { vehicleId, returnTo: "logs" },
+                  }
+                : (getAddRoute() as any),
+            );
+          }}
+        />
+      </View>
+    </View>
+  );
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.background }}>
+    <SafeAreaView
+      edges={["top", "left", "right"]}
+      style={{ flex: 1, backgroundColor: theme.colors.background }}
+    >
       <MaxWidthContainer
         fullWidth={isWebPage}
         style={isWebPage ? web.frame : undefined}
       >
-        <View
-          style={
-            isWebPage
-              ? web.toolbar
-              : {
-                  flexDirection: "row",
-                  padding: theme.spacing.lg,
-                  gap: theme.spacing.sm,
-                  backgroundColor: theme.colors.surface,
-                  borderBottomWidth: 1,
-                  borderBottomColor: theme.colors.border,
-                }
+        {isWebPage && toolbar}
+        <ScrollView
+          style={{ flex: 1 }}
+          contentContainerStyle={
+            !isWebPage
+              ? { paddingHorizontal: 16, paddingBottom: 24 }
+              : undefined
           }
+          keyboardShouldPersistTaps="handled"
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              tintColor={theme.colors.primary}
+            />
+          }
+          showsVerticalScrollIndicator={false}
         >
-          {isWebPage ? (
-            <>
-              <View style={web.filters}>
-                <TabButton type="mileage" label="Mileage" icon="speedometer" />
-                <TabButton type="fuel" label="Fuel" icon="fuelpump" />
-                <TabButton type="service" label="Service" icon="wrench" />
-              </View>
-              <View style={web.filters}>
-                <ActionMenu
-                  items={[
-                    {
-                      label: "Newest first",
-                      icon: "calendar",
-                      onPress: () => {
-                        if (ascending) {
-                          setLoading(true);
-                          setAscending(false);
-                        }
-                      },
-                    },
-                    {
-                      label: "Oldest first",
-                      icon: "calendar",
-                      onPress: () => {
-                        if (!ascending) {
-                          setLoading(true);
-                          setAscending(true);
-                        }
-                      },
-                    },
-                  ]}
-                  disabled={loadingMore}
-                  label={`Sort by date (${ascending ? "oldest" : "newest"})`}
-                />
-                <Button
-                  title={`Add ${activeTab} log`}
-                  icon="plus"
-                  onPress={() => router.push(getAddRoute() as any)}
-                />
-              </View>
-            </>
-          ) : (
-            <>
-              <TabButton type="mileage" label="Mileage" icon="speedometer" />
-              <TabButton type="fuel" label="Fuel" icon="fuelpump" />
-              <TabButton type="service" label="Service" icon="wrench" />
-            </>
+          {!isWebPage && (
+            <MobilePageHeader
+              title="Logs"
+              subtitle="Track mileage, fuel, and service history"
+            />
           )}
-        </View>
-
-        {currentLogs.length === 0 ? (
-          <View
-            style={{
-              flex: 1,
-              justifyContent: "center",
-              alignItems: "center",
-              paddingVertical: theme.spacing.xxxl,
-            }}
-          >
+          {!isWebPage && toolbar}
+          {errors[activeTab] && (
             <View
               style={{
-                width: 80,
-                height: 80,
-                borderRadius: 40,
-                backgroundColor: theme.colors.disabled,
-                alignItems: "center",
-                justifyContent: "center",
-                marginBottom: theme.spacing.lg,
+                padding: 16,
+                gap: 12,
+                marginBottom: 16,
+                backgroundColor: theme.colors.surface,
+                borderRadius: theme.borderRadius.lg,
               }}
             >
-              <IconSymbol
-                name={
-                  activeTab === "mileage"
-                    ? "speedometer"
-                    : activeTab === "fuel"
-                      ? "fuelpump"
-                      : "wrench"
-                }
-                size={32}
-                color={theme.colors.textSecondary}
+              <Text style={{ color: theme.colors.text }}>
+                {errors[activeTab]}
+              </Text>
+              <Button
+                title="Retry"
+                variant="outline"
+                loading={refreshing}
+                style={{ minHeight: 48 }}
+                onPress={onRefresh}
               />
             </View>
-            <Text
+          )}
+          {loading ? (
+            <SkeletonLogList itemCount={5} />
+          ) : errors[activeTab] &&
+            currentLogs.length === 0 ? null : currentLogs.length === 0 ? (
+            <View
               style={{
-                fontSize: theme.fontSize.xl,
-                fontWeight: theme.fontWeight.semibold,
-                color: theme.colors.text,
-                marginBottom: theme.spacing.sm,
-              }}
-            >
-              No {activeTab} logs yet
-            </Text>
-            <Text
-              style={{
-                fontSize: theme.fontSize.sm,
-                color: theme.colors.textSecondary,
-                textAlign: "center",
-                lineHeight: 20,
-                marginBottom: theme.spacing.xl,
-              }}
-            >
-              Start tracking your vehicle&apos;s {activeTab} to monitor
-              performance and maintenance.
-            </Text>
-            <TouchableOpacity
-              style={{
-                backgroundColor: theme.colors.primary,
-                paddingHorizontal: theme.spacing.xl,
-                paddingVertical: theme.spacing.md,
-                borderRadius: theme.borderRadius.md,
-                flexDirection: "row",
+                flex: 1,
+                justifyContent: "center",
                 alignItems: "center",
-                gap: theme.spacing.sm,
-              }}
-              onPress={() => {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                router.push(getAddRoute() as any);
+                paddingVertical: theme.spacing.xxxl,
               }}
             >
-              <IconSymbol name="plus" size={16} color={theme.colors.white} />
-              <Text
-                style={{
-                  color: theme.colors.white,
-                  fontSize: theme.fontSize.sm,
-                  fontWeight: theme.fontWeight.semibold,
-                }}
-              >
-                Add {activeTab} log
-              </Text>
-            </TouchableOpacity>
-          </View>
-        ) : (
-          <ScrollView
-            style={{ flex: 1 }}
-            refreshControl={
-              <RefreshControl
-                refreshing={refreshing}
-                onRefresh={onRefresh}
-                tintColor={theme.colors.primary}
-              />
-            }
-            showsVerticalScrollIndicator={false}
-          >
-            {Object.entries(groupedLogs).map(
-              ([vehicleId, { vehicle, logs }]) => {
-                const isSharedVehicle =
-                  logs.length > 0 && (logs[0].is_shared_vehicle || false);
-                const isExpanded = expandedVehicles.has(vehicleId);
-                const showAll = showAllLogsForVehicle.has(vehicleId);
-                const displayedLogs = showAll ? logs : logs.slice(0, 3);
-                const hasMoreLogs = logs.length > 3;
-
-                return (
-                  <View
-                    key={vehicleId}
-                    style={
-                      isWebPage
-                        ? [
-                            web.panel,
-                            {
-                              padding: theme.spacing.xl,
-                              marginHorizontal: theme.spacing.xl,
-                              marginBottom: theme.spacing.xl,
-                            },
-                          ]
-                        : undefined
-                    }
-                  >
-                    <VehicleHeader
-                      vehicle={vehicle}
-                      isSharedVehicle={isSharedVehicle}
-                      vehicleId={vehicleId}
-                      logsCount={logs.length}
-                      latestLogDate={logs.reduce(
-                        (latest, log) =>
-                          log.date > latest ? log.date : latest,
-                        logs[0].date,
-                      )}
-                    />
-                    {isExpanded && (
-                      <View
-                        style={{
-                          paddingHorizontal: isWebPage ? 0 : theme.spacing.xl,
-                          paddingBottom: theme.spacing.sm,
-                        }}
-                      >
-                        {displayedLogs.map((log, index) => (
-                          <LogCard
-                            key={log.id}
-                            log={log}
-                            type={activeTab}
-                            first={index === 0}
-                            last={index === displayedLogs.length - 1}
-                          />
-                        ))}
-                        {hasMoreLogs && !showAll && (
-                          <TouchableOpacity
-                            style={{
-                              backgroundColor: theme.colors.surface,
-                              borderRadius: theme.borderRadius.lg,
-                              padding: theme.spacing.md,
-                              marginBottom: theme.spacing.md,
-                              borderWidth: 1,
-                              borderColor: theme.colors.border,
-                              alignItems: "center",
-                              flexDirection: "row",
-                              justifyContent: "center",
-                              gap: theme.spacing.sm,
-                              ...(isWebPage && {
-                                flexDirection: "row-reverse",
-                                marginTop: theme.spacing.md,
-                              }),
-                            }}
-                            onPress={() => toggleShowAllLogs(vehicleId)}
-                          >
-                            <Text
-                              style={{
-                                fontSize: theme.fontSize.base,
-                                fontWeight: theme.fontWeight.semibold,
-                                color: theme.colors.primary,
-                              }}
-                            >
-                              See {logs.length - 3} more{" "}
-                              {logs.length - 3 === 1 ? "log" : "logs"}
-                            </Text>
-                            <IconSymbol
-                              name="chevron.down"
-                              size={16}
-                              color={theme.colors.primary}
-                            />
-                          </TouchableOpacity>
-                        )}
-                        {hasMoreLogs && showAll && (
-                          <TouchableOpacity
-                            style={{
-                              backgroundColor: theme.colors.surface,
-                              borderRadius: theme.borderRadius.lg,
-                              padding: theme.spacing.md,
-                              marginBottom: theme.spacing.md,
-                              borderWidth: 1,
-                              borderColor: theme.colors.border,
-                              alignItems: "center",
-                              flexDirection: "row",
-                              justifyContent: "center",
-                              gap: theme.spacing.sm,
-                              ...(isWebPage && {
-                                flexDirection: "row-reverse",
-                                marginTop: theme.spacing.md,
-                              }),
-                            }}
-                            onPress={() => toggleShowAllLogs(vehicleId)}
-                          >
-                            <Text
-                              style={{
-                                fontSize: theme.fontSize.base,
-                                fontWeight: theme.fontWeight.semibold,
-                                color: theme.colors.primary,
-                              }}
-                            >
-                              Show less
-                            </Text>
-                            <IconSymbol
-                              name="chevron.up"
-                              size={16}
-                              color={theme.colors.primary}
-                            />
-                          </TouchableOpacity>
-                        )}
-                      </View>
-                    )}
-                  </View>
-                );
-              },
-            )}
-
-            {/* OPTIMIZATION: Load More Button */}
-            {((activeTab === "mileage" && hasMoreMileage) ||
-              (activeTab === "fuel" && hasMoreFuel) ||
-              (activeTab === "service" && hasMoreService)) && (
               <View
                 style={{
-                  paddingHorizontal: theme.spacing.xl,
-                  paddingBottom: theme.spacing.xl,
+                  width: 80,
+                  height: 80,
+                  borderRadius: 40,
+                  backgroundColor: theme.colors.disabled,
+                  alignItems: "center",
+                  justifyContent: "center",
+                  marginBottom: theme.spacing.lg,
                 }}
               >
-                <TouchableOpacity
-                  style={{
-                    backgroundColor: theme.colors.primary,
-                    borderRadius: theme.borderRadius.lg,
-                    padding: theme.spacing.lg,
-                    alignItems: "center",
-                    flexDirection: "row",
-                    justifyContent: "center",
-                    gap: theme.spacing.sm,
-                  }}
-                  onPress={() => loadMoreLogs(activeTab)}
-                  disabled={loadingMore}
-                >
-                  {loadingMore ? (
-                    <ActivityIndicator color={theme.colors.white} />
-                  ) : (
-                    <>
-                      <Text
-                        style={{
-                          fontSize: theme.fontSize.base,
-                          fontWeight: theme.fontWeight.semibold,
-                          color: theme.colors.white,
-                        }}
-                      >
-                        Load More Logs
-                      </Text>
-                      <IconSymbol
-                        name="arrow.down.circle"
-                        size={20}
-                        color={theme.colors.white}
-                      />
-                    </>
-                  )}
-                </TouchableOpacity>
+                <IconSymbol
+                  name={
+                    activeTab === "mileage"
+                      ? "speedometer"
+                      : activeTab === "fuel"
+                        ? "fuelpump"
+                        : "wrench"
+                  }
+                  size={32}
+                  color={theme.colors.textSecondary}
+                />
               </View>
-            )}
-          </ScrollView>
-        )}
+              <Text
+                style={{
+                  fontSize: theme.fontSize.xl,
+                  fontWeight: theme.fontWeight.semibold,
+                  color: theme.colors.text,
+                  marginBottom: theme.spacing.sm,
+                }}
+              >
+                No {activeTab} logs yet
+              </Text>
+              <Text
+                style={{
+                  fontSize: theme.fontSize.sm,
+                  color: theme.colors.textSecondary,
+                  textAlign: "center",
+                  lineHeight: 20,
+                  marginBottom: theme.spacing.xl,
+                }}
+              >
+                Start tracking your vehicle&apos;s {activeTab} to monitor
+                performance and maintenance.
+              </Text>
+            </View>
+          ) : (
+            <>
+              {Object.entries(groupedLogs).map(
+                ([vehicleId, { vehicle, logs }]) => {
+                  const isSharedVehicle =
+                    logs.length > 0 && (logs[0].is_shared_vehicle || false);
+                  const isExpanded = expandedVehicles.has(vehicleId);
+                  const showAll = showAllLogsForVehicle.has(vehicleId);
+                  const displayedLogs = showAll ? logs : logs.slice(0, 3);
+                  const hasMoreLogs = logs.length > 3;
 
-        {!isWebPage && (
-          <TouchableOpacity
-            accessibilityLabel={`Add ${activeTab} log`}
-            style={{
-              position: "absolute",
-              right: theme.spacing.xl,
-              bottom: theme.spacing.xl,
-              width: 56,
-              height: 56,
-              borderRadius: 28,
-              backgroundColor: theme.colors.primary,
-              alignItems: "center",
-              justifyContent: "center",
-              shadowColor: theme.colors.black,
-              shadowOffset: { width: 0, height: 4 },
-              shadowOpacity: 0.3,
-              shadowRadius: 8,
-              elevation: 6,
-            }}
-            onPress={() => {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-              router.push(getAddRoute() as any);
-            }}
-          >
-            <IconSymbol name="plus" size={24} color={theme.colors.white} />
-          </TouchableOpacity>
-        )}
+                  return (
+                    <View
+                      key={vehicleId}
+                      style={
+                        isWebPage
+                          ? [
+                              web.panel,
+                              {
+                                padding: theme.spacing.xl,
+                                marginHorizontal: theme.spacing.xl,
+                                marginBottom: theme.spacing.xl,
+                              },
+                            ]
+                          : { marginBottom: 16 }
+                      }
+                    >
+                      <VehicleHeader
+                        vehicle={vehicle}
+                        isSharedVehicle={isSharedVehicle}
+                        vehicleId={vehicleId}
+                        logsCount={logs.length}
+                        latestLogDate={logs.reduce(
+                          (latest, log) =>
+                            log.date > latest ? log.date : latest,
+                          logs[0].date,
+                        )}
+                      />
+                      {isExpanded && (
+                        <View
+                          style={{
+                            paddingHorizontal: 0,
+                            paddingBottom: theme.spacing.sm,
+                          }}
+                        >
+                          {displayedLogs.map((log, index) => (
+                            <LogCard
+                              key={log.id}
+                              log={log}
+                              type={activeTab}
+                              first={index === 0}
+                              last={index === displayedLogs.length - 1}
+                            />
+                          ))}
+                          {hasMoreLogs && !showAll && (
+                            <TouchableOpacity
+                              style={{
+                                backgroundColor: theme.colors.surface,
+                                borderRadius: theme.borderRadius.lg,
+                                padding: theme.spacing.md,
+                                minHeight: 48,
+                                marginBottom: theme.spacing.md,
+                                borderWidth: 1,
+                                borderColor: theme.colors.border,
+                                alignItems: "center",
+                                flexDirection: "row",
+                                justifyContent: "center",
+                                gap: theme.spacing.sm,
+                                ...(isWebPage && {
+                                  flexDirection: "row-reverse",
+                                  marginTop: theme.spacing.md,
+                                }),
+                              }}
+                              accessibilityRole="button"
+                              onPress={() => toggleShowAllLogs(vehicleId)}
+                            >
+                              <Text
+                                style={{
+                                  fontSize: theme.fontSize.base,
+                                  fontWeight: theme.fontWeight.semibold,
+                                  color: theme.colors.primary,
+                                }}
+                              >
+                                See {logs.length - 3} more{" "}
+                                {logs.length - 3 === 1 ? "log" : "logs"}
+                              </Text>
+                              <IconSymbol
+                                name="chevron.down"
+                                size={16}
+                                color={theme.colors.primary}
+                              />
+                            </TouchableOpacity>
+                          )}
+                          {hasMoreLogs && showAll && (
+                            <TouchableOpacity
+                              style={{
+                                backgroundColor: theme.colors.surface,
+                                borderRadius: theme.borderRadius.lg,
+                                padding: theme.spacing.md,
+                                minHeight: 48,
+                                marginBottom: theme.spacing.md,
+                                borderWidth: 1,
+                                borderColor: theme.colors.border,
+                                alignItems: "center",
+                                flexDirection: "row",
+                                justifyContent: "center",
+                                gap: theme.spacing.sm,
+                                ...(isWebPage && {
+                                  flexDirection: "row-reverse",
+                                  marginTop: theme.spacing.md,
+                                }),
+                              }}
+                              accessibilityRole="button"
+                              onPress={() => toggleShowAllLogs(vehicleId)}
+                            >
+                              <Text
+                                style={{
+                                  fontSize: theme.fontSize.base,
+                                  fontWeight: theme.fontWeight.semibold,
+                                  color: theme.colors.primary,
+                                }}
+                              >
+                                Show less
+                              </Text>
+                              <IconSymbol
+                                name="chevron.up"
+                                size={16}
+                                color={theme.colors.primary}
+                              />
+                            </TouchableOpacity>
+                          )}
+                        </View>
+                      )}
+                    </View>
+                  );
+                },
+              )}
+
+              {/* OPTIMIZATION: Load More Button */}
+              {((activeTab === "mileage" && hasMoreMileage) ||
+                (activeTab === "fuel" && hasMoreFuel) ||
+                (activeTab === "service" && hasMoreService)) && (
+                <View
+                  style={{
+                    paddingHorizontal: theme.spacing.xl,
+                    paddingBottom: theme.spacing.xl,
+                  }}
+                >
+                  <TouchableOpacity
+                    style={{
+                      backgroundColor: theme.colors.primary,
+                      borderRadius: theme.borderRadius.lg,
+                      padding: theme.spacing.lg,
+                      alignItems: "center",
+                      flexDirection: "row",
+                      justifyContent: "center",
+                      gap: theme.spacing.sm,
+                    }}
+                    accessibilityRole="button"
+                    accessibilityLabel="Load More Logs"
+                    onPress={() => loadMoreLogs(activeTab)}
+                    disabled={loadingMore || refreshing || !!errors[activeTab]}
+                  >
+                    {loadingMore ? (
+                      <ActivityIndicator color={theme.colors.white} />
+                    ) : (
+                      <>
+                        <Text
+                          style={{
+                            fontSize: theme.fontSize.base,
+                            fontWeight: theme.fontWeight.semibold,
+                            color: theme.colors.white,
+                          }}
+                        >
+                          Load More Logs
+                        </Text>
+                        <IconSymbol
+                          name="arrow.down.circle"
+                          size={20}
+                          color={theme.colors.white}
+                        />
+                      </>
+                    )}
+                  </TouchableOpacity>
+                </View>
+              )}
+            </>
+          )}
+        </ScrollView>
 
         {Platform.OS !== "web" && LogDetailsBottomSheet && (
           <LogDetailsBottomSheet
@@ -1657,6 +1721,7 @@ export default function LogsScreen() {
             log={selectedBottomSheetLog}
             logType={selectedBottomSheetLogType}
             canModify={bottomSheetCanModify}
+            canDelete={bottomSheetCanDelete}
             onClose={handleCloseBottomSheet}
             onEdit={handleBottomSheetEdit}
             onDelete={handleBottomSheetDelete}

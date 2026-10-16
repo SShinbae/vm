@@ -2,7 +2,6 @@ import { storageImageUrl } from "@/lib/utils/storagePath";
 import { withOpacity, spacing } from "@/src/design-system";
 import { Button } from "@/components/ui/Button";
 import { IconSymbol } from "@/components/ui/icon-symbol";
-import { ServiceReceiptIndicator } from "@/components/ui/ReceiptViewer";
 import {
   AUTO_MILEAGE_LOG_READ_ONLY,
   isAutoMileageLog,
@@ -16,8 +15,15 @@ import BottomSheet, {
 } from "@gorhom/bottom-sheet";
 import { Image } from "expo-image";
 import { router } from "expo-router";
-import React, { forwardRef, useCallback, useMemo } from "react";
+import React, {
+  forwardRef,
+  useCallback,
+  useMemo,
+  useEffect,
+  useState,
+} from "react";
 import { Text, TouchableOpacity, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { createStyleSheet, useStyles } from "react-native-unistyles";
 
 type LogType = "mileage" | "fuel" | "service";
@@ -26,6 +32,7 @@ interface LogDetailsBottomSheetProps {
   log: (FuelLog | MileageLog | ServiceLog) | null;
   logType: LogType | null;
   canModify: boolean;
+  canDelete: boolean;
   onClose: () => void;
   onEdit: (type: LogType, id: string) => void;
   onDelete: (type: LogType, id: string, description: string) => void;
@@ -39,8 +46,11 @@ interface LogDetailsBottomSheetProps {
 export const LogDetailsBottomSheet = forwardRef<
   BottomSheet,
   LogDetailsBottomSheetProps
->(({ log, logType, canModify, onClose, onEdit, onDelete }, ref) => {
+>(({ log, logType, canModify, canDelete, onClose, onEdit, onDelete }, ref) => {
   const { styles, theme } = useStyles(stylesheet);
+  const insets = useSafeAreaInsets();
+  const [imageError, setImageError] = useState(false);
+  useEffect(() => setImageError(false), [log?.id]);
   const snapPoints = useMemo(() => ["50%", "90%"], []);
 
   const renderBackdrop = useCallback(
@@ -214,13 +224,21 @@ export const LogDetailsBottomSheet = forwardRef<
   const logDetails = getLogDetails();
 
   const handleEdit = () => {
-    if (!log || !logType) return;
+    if (!log || !logType || !canModify || isAutoMileageLog(logType, log))
+      return;
     onClose();
     onEdit(logType, log.id);
   };
 
   const handleDelete = () => {
-    if (!log || !logType) return;
+    if (
+      !log ||
+      !logType ||
+      !canModify ||
+      !canDelete ||
+      isAutoMileageLog(logType, log)
+    )
+      return;
     onClose();
     onDelete(logType, log.id, logDetails.title);
   };
@@ -229,6 +247,8 @@ export const LogDetailsBottomSheet = forwardRef<
     <BottomSheet
       ref={ref}
       index={-1}
+      topInset={insets.top}
+      bottomInset={insets.bottom}
       snapPoints={snapPoints}
       enablePanDownToClose
       backdropComponent={renderBackdrop}
@@ -265,6 +285,8 @@ export const LogDetailsBottomSheet = forwardRef<
             </View>
           </View>
           <TouchableOpacity
+            accessibilityRole="button"
+            accessibilityLabel="Close log details"
             onPress={onClose}
             style={styles.bottomSheetCloseButton}
           >
@@ -274,15 +296,16 @@ export const LogDetailsBottomSheet = forwardRef<
 
         {/* Service Receipt Indicator */}
         {logType === "service" && logDetails.hasReceipt && (
-          <View style={styles.receiptBadgeContainer}>
-            <ServiceReceiptIndicator
-              hasReceipt={logDetails.hasReceipt}
-              receiptUrl={logDetails.receiptUrl}
-              onPress={() => {}}
-              size={20}
-            />
-            <Text style={styles.receiptBadgeText}>Receipt Available</Text>
-          </View>
+          <Button
+            title="View receipt"
+            variant="outline"
+            style={styles.actionButton}
+            onPress={() => {
+              if (!log) return;
+              onClose();
+              router.push(`/logs/service/${log.id}` as any);
+            }}
+          />
         )}
 
         {/* Details Section */}
@@ -312,6 +335,8 @@ export const LogDetailsBottomSheet = forwardRef<
           <View style={styles.bottomSheetSection}>
             <Text style={styles.bottomSheetSectionTitle}>Vehicle</Text>
             <TouchableOpacity
+              accessibilityRole="button"
+              accessibilityLabel="View vehicle"
               style={styles.vehicleCard}
               onPress={() => {
                 onClose();
@@ -319,7 +344,7 @@ export const LogDetailsBottomSheet = forwardRef<
               }}
             >
               <View style={styles.vehicleCardContent}>
-                {vehicle.main_image_url ? (
+                {vehicle.main_image_url && !imageError ? (
                   <Image
                     source={{
                       uri: storageImageUrl(
@@ -328,11 +353,15 @@ export const LogDetailsBottomSheet = forwardRef<
                       ),
                     }}
                     style={styles.vehicleImage}
+                    onError={() => setImageError(true)}
                     contentFit="cover"
                     cachePolicy="memory-disk"
                   />
                 ) : (
-                  <View style={styles.vehicleImagePlaceholder}>
+                  <View
+                    accessibilityLabel="Vehicle image unavailable"
+                    style={styles.vehicleImagePlaceholder}
+                  >
                     <IconSymbol
                       name="car.fill"
                       size={24}
@@ -416,10 +445,15 @@ export const LogDetailsBottomSheet = forwardRef<
                 icon="trash"
                 iconPosition="left"
                 style={styles.actionButton}
-                disabled={!canModify}
+                disabled={!canModify || !canDelete}
                 fullWidth
               />
 
+              {canModify && !canDelete && logType === "service" && (
+                <Text style={styles.permissionWarning}>
+                  Only the vehicle owner can delete service logs
+                </Text>
+              )}
               {!canModify && (
                 <Text style={styles.permissionWarning}>
                   You don&apos;t have permission to modify this log
@@ -459,6 +493,7 @@ const stylesheet = createStyleSheet((theme) => ({
     paddingTop: spacing.sm,
   },
   bottomSheetTitleContainer: {
+    minWidth: 0,
     flex: 1,
     flexDirection: "row",
     alignItems: "center",
@@ -472,6 +507,7 @@ const stylesheet = createStyleSheet((theme) => ({
     justifyContent: "center",
   },
   titleTextContainer: {
+    minWidth: 0,
     flex: 1,
   },
   bottomSheetTitle: {
@@ -487,31 +523,14 @@ const stylesheet = createStyleSheet((theme) => ({
     fontWeight: "500",
   },
   bottomSheetCloseButton: {
-    width: 36,
-    height: 36,
+    minWidth: 48,
+    minHeight: 48,
     borderRadius: 18,
     backgroundColor: theme.colors.surface,
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 1,
     borderColor: theme.colors.border,
-  },
-  receiptBadgeContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-    backgroundColor: withOpacity(theme.colors.success, 0.06),
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    borderRadius: 8,
-    marginBottom: spacing.xl,
-    borderWidth: 1,
-    borderColor: withOpacity(theme.colors.success, 0.19),
-  },
-  receiptBadgeText: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: theme.colors.success,
   },
   bottomSheetSection: {
     marginBottom: spacing.xl,
@@ -545,6 +564,7 @@ const stylesheet = createStyleSheet((theme) => ({
     justifyContent: "center",
   },
   detailTextContainer: {
+    minWidth: 0,
     flex: 1,
   },
   detailLabel: {
@@ -585,6 +605,7 @@ const stylesheet = createStyleSheet((theme) => ({
     justifyContent: "center",
   },
   vehicleInfo: {
+    minWidth: 0,
     flex: 1,
   },
   vehicleName: {
@@ -607,6 +628,7 @@ const stylesheet = createStyleSheet((theme) => ({
     marginTop: spacing.sm,
   },
   sharedBadgeText: {
+    flexShrink: 1,
     fontSize: 11,
     color: theme.colors.primary,
     fontWeight: "600",
@@ -623,6 +645,7 @@ const stylesheet = createStyleSheet((theme) => ({
     alignItems: "center",
   },
   metadataItem: {
+    minWidth: 0,
     flex: 1,
   },
   metadataLabel: {
@@ -651,6 +674,7 @@ const stylesheet = createStyleSheet((theme) => ({
     marginTop: spacing.sm,
   },
   actionButton: {
+    minHeight: 48,
     width: "100%",
   },
   readOnlyNote: {

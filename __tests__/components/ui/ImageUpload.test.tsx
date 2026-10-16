@@ -1,5 +1,5 @@
 import React from "react";
-import { fireEvent, render, waitFor } from "@testing-library/react-native";
+import { act, fireEvent, render, waitFor } from "@testing-library/react-native";
 import { ImageGallery, ImageUpload } from "@/components/ui/ImageUpload";
 
 const mockShowError = jest.fn();
@@ -109,6 +109,32 @@ describe("ImageUpload select-only mode (onImageSelected)", () => {
 });
 
 describe("ImageUpload image source", () => {
+  it("shows initials when the profile photo is missing", () => {
+    const view = render(<ImageUpload type="avatar" fallbackName="Wan Ahnaf" />);
+    expect(view.getByText("WA")).toBeTruthy();
+    expect(view.getByLabelText("Change profile photo")).toBeTruthy();
+  });
+
+  it("shows initials for a failed profile photo and retries a changed source", () => {
+    const view = render(
+      <ImageUpload
+        type="avatar"
+        fallbackName="Wan Ahnaf"
+        currentImageUrl="uid/broken.jpg"
+      />,
+    );
+    const props = mockImage.mock.calls.at(-1)?.[0] as { onError: () => void };
+    act(() => props.onError());
+    expect(view.getByText("WA")).toBeTruthy();
+    view.rerender(
+      <ImageUpload
+        type="avatar"
+        fallbackName="Wan Ahnaf"
+        currentImageUrl="uid/new.jpg"
+      />,
+    );
+    expect(view.queryByText("WA")).toBeNull();
+  });
   it("renders a stored avatar path as its public URL", () => {
     render(<ImageUpload type="avatar" currentImageUrl="uid/avatar_1.jpg" />);
 

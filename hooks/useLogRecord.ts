@@ -1,9 +1,6 @@
-import { goBack } from "@/lib/utils/goBack";
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useState } from "react";
 import { useFocusEffect } from "expo-router";
 import { useAuth } from "@/lib/contexts/AuthContext";
-import { useResponsiveLayout } from "@/hooks/use-responsive-layout";
-import { toast } from "@/hooks/useToast";
 import { ApiResponse, LogWithVehicle } from "@/types";
 
 type LogRecord = {
@@ -18,9 +15,6 @@ export function useLogRecord<T extends LogRecord>(
   load: (id: string) => Promise<ApiResponse<LogWithVehicle<T>>>,
 ) {
   const userId = useAuth().user?.id;
-  const layout = useResponsiveLayout();
-  const desktop = useRef(layout.isWeb && !layout.isMobile);
-  desktop.current = layout.isWeb && !layout.isMobile;
   const [record, setRecord] = useState<LogWithVehicle<T> | null>(null);
   const [loadedUserId, setLoadedUserId] = useState<string | undefined>();
   const [loading, setLoading] = useState(true);
@@ -47,10 +41,6 @@ export function useLogRecord<T extends LogRecord>(
           const message =
             reason instanceof Error ? reason.message : "Failed to load log";
           setError(message);
-          if (!desktop.current) {
-            toast.error(message);
-            goBack("/logs");
-          }
         } finally {
           if (active) setLoading(false);
         }

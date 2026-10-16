@@ -1,7 +1,7 @@
 import { useResponsiveLayout } from "@/hooks/use-responsive-layout";
-import { baseColors, withOpacity, spacing } from "@/src/design-system";
+import { withOpacity, spacing } from "@/src/design-system";
 import React, { useEffect, useMemo, useState } from "react";
-import { Modal as RNModal, Text, TouchableOpacity, View } from "react-native";
+import { Text, TouchableOpacity, View } from "react-native";
 import { router } from "expo-router";
 import { createStyleSheet, useStyles } from "react-native-unistyles";
 import { useNotifications } from "../../lib/contexts/NotificationContext";
@@ -22,12 +22,13 @@ interface NotificationItemProps {
 
 function NotificationItem({ notification, onPress }: NotificationItemProps) {
   const { styles, theme } = useStyles(itemStylesheet);
-  const { markAsRead } = useNotifications();
+  const { markAsRead, isMarkingRead } = useNotifications();
   const { isWeb, isMobile } = useResponsiveLayout();
   const isWebPage = isWeb && !isMobile;
   const [showSnooze, setShowSnooze] = useState(false);
 
   const handlePress = () => {
+    if (isMarkingRead) return;
     if (!notification.read) {
       markAsRead(notification.id);
     }
@@ -63,108 +64,100 @@ function NotificationItem({ notification, onPress }: NotificationItemProps) {
   };
 
   return (
-    <TouchableOpacity
-      onPress={handlePress}
-      accessibilityRole="button"
-      accessibilityLabel={`${notification.read ? "Read" : "Unread"}: ${formatNotificationTitle(notification.title)}`}
+    <View
       style={[
         styles.container,
         !notification.read && styles.unreadContainer,
-        isWebPage && styles.webContainer,
+        isWebPage ? styles.webContainer : { marginHorizontal: 0, padding: 16 },
       ]}
-      activeOpacity={0.7}
     >
-      <View style={styles.content}>
-        <View style={styles.titleRow}>
-          <View style={styles.titleContainer}>
-            <Text
-              style={[styles.title, notification.read && styles.readTitle]}
-              numberOfLines={isWebPage ? undefined : 1}
-            >
-              {formatNotificationTitle(notification.title)}
-            </Text>
-            {!notification.read &&
-              (isWebPage ? (
-                <Text style={styles.unreadLabel}>Unread</Text>
-              ) : (
-                <View style={styles.unreadDot} />
-              ))}
-          </View>
-          {action && (
-            <View
-              style={[
-                styles.actionBadge,
-                { backgroundColor: withOpacity(getActionColor(), 0.08) },
-              ]}
-            >
-              <Text style={[styles.actionText, { color: getActionColor() }]}>
-                {getActionLabel()}
+      <TouchableOpacity
+        onPress={handlePress}
+        disabled={isMarkingRead}
+        accessibilityState={{ disabled: isMarkingRead }}
+        accessibilityRole="button"
+        accessibilityLabel={`${notification.read ? "Read" : "Unread"}: ${formatNotificationTitle(notification.title)}${isWebPage ? "" : `. ${formatNotificationText(notification.body)}. ${formatDistanceToNow(new Date(notification.created_at))} ago`}`}
+        style={{ minHeight: 48 }}
+        activeOpacity={0.7}
+      >
+        <View style={styles.content}>
+          <View style={styles.titleRow}>
+            <View style={styles.titleContainer}>
+              <Text
+                style={[styles.title, notification.read && styles.readTitle]}
+              >
+                {formatNotificationTitle(notification.title)}
               </Text>
+              {!notification.read &&
+                (isWebPage ? (
+                  <Text style={styles.unreadLabel}>Unread</Text>
+                ) : (
+                  <View style={styles.unreadDot} />
+                ))}
             </View>
-          )}
-        </View>
+            {action && (
+              <View
+                style={[
+                  styles.actionBadge,
+                  { backgroundColor: withOpacity(getActionColor(), 0.08) },
+                ]}
+              >
+                <Text style={[styles.actionText, { color: getActionColor() }]}>
+                  {getActionLabel()}
+                </Text>
+              </View>
+            )}
+          </View>
 
-        <Text
-          style={[styles.message, notification.read && styles.readMessage]}
-          numberOfLines={isWebPage ? undefined : 2}
-        >
-          {formatNotificationText(notification.body)}
+          <Text
+            style={[styles.message, notification.read && styles.readMessage]}
+          >
+            {formatNotificationText(notification.body)}
+          </Text>
+        </View>
+      </TouchableOpacity>
+      <View
+        style={[styles.footer, !isWebPage && { flexWrap: "wrap", gap: 12 }]}
+      >
+        <Text style={styles.timestamp}>
+          {formatDistanceToNow(new Date(notification.created_at))} ago
         </Text>
 
-        <View style={styles.footer}>
-          <Text style={styles.timestamp}>
-            {formatDistanceToNow(new Date(notification.created_at))} ago
-          </Text>
-
-          <TouchableOpacity
-            onPress={(event) => {
-              event.stopPropagation();
-              setShowSnooze(true);
-            }}
-            style={styles.snoozeButton}
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            accessibilityRole="button"
-            accessibilityLabel="Snooze this notification type"
-          >
-            <Text style={styles.snoozeButtonText}>Snooze</Text>
-          </TouchableOpacity>
-        </View>
+        <TouchableOpacity
+          onPress={(event) => {
+            event?.stopPropagation();
+            setShowSnooze(true);
+          }}
+          style={[
+            styles.snoozeButton,
+            !isWebPage && { height: undefined, minHeight: 48, minWidth: 48 },
+          ]}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          accessibilityRole="button"
+          accessibilityLabel="Snooze this notification type"
+          disabled={isMarkingRead}
+          accessibilityState={{ disabled: isMarkingRead }}
+        >
+          <Text style={styles.snoozeButtonText}>Snooze</Text>
+        </TouchableOpacity>
       </View>
 
-      <RNModal
-        visible={showSnooze}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setShowSnooze(false)}
-      >
-        <TouchableOpacity
-          style={{
-            flex: 1,
-            backgroundColor: withOpacity(baseColors.black, 0.4),
-            justifyContent: "center",
-            padding: spacing.xl,
-          }}
-          activeOpacity={1}
-          onPress={() => setShowSnooze(false)}
-        >
-          <TouchableOpacity activeOpacity={1}>
-            <SnoozeMenu
-              notificationId={notification.id}
-              notificationType={notification.notification_type}
-              title={notification.title}
-              body={notification.body}
-              onClose={() => setShowSnooze(false)}
-            />
-          </TouchableOpacity>
-        </TouchableOpacity>
-      </RNModal>
-    </TouchableOpacity>
+      {showSnooze && (
+        <SnoozeMenu
+          notificationId={notification.id}
+          notificationType={notification.notification_type}
+          title={notification.title}
+          body={notification.body}
+          onClose={() => setShowSnooze(false)}
+        />
+      )}
+    </View>
   );
 }
 
 const itemStylesheet = createStyleSheet((theme) => ({
   container: {
-    flexDirection: "row",
+    flexDirection: "column",
     padding: theme.spacing.lg,
     marginHorizontal: theme.spacing.lg,
     marginVertical: theme.spacing.xs,
@@ -205,6 +198,7 @@ const itemStylesheet = createStyleSheet((theme) => ({
     flexDirection: "row",
     alignItems: "center",
     flex: 1,
+    minWidth: 0,
     marginRight: theme.spacing.sm,
   },
   title: {
@@ -277,7 +271,13 @@ export function NotificationList({
   onNotificationPress,
 }: NotificationListProps) {
   const { styles, theme } = useStyles(listStylesheet);
-  const { notifications, isInitialized } = useNotifications();
+  const {
+    notifications,
+    isLoading,
+    error,
+    isRefreshing,
+    refreshNotifications,
+  } = useNotifications();
   const { isWeb, isMobile } = useResponsiveLayout();
   const filteredNotifications = useMemo(
     () =>
@@ -287,14 +287,20 @@ export function NotificationList({
     [notifications, unreadOnly],
   );
 
+  const isWebPage = isWeb && !isMobile;
   const [currentPage, setCurrentPage] = useState(1);
+  const [visibleCount, setVisibleCount] = useState(10);
+  useEffect(() => {
+    setVisibleCount(10);
+  }, [unreadOnly]);
 
   const totalPages = Math.ceil(filteredNotifications.length / ITEMS_PER_PAGE);
 
   const paginatedNotifications = useMemo(() => {
+    if (!isWebPage) return filteredNotifications.slice(0, visibleCount);
     const start = (currentPage - 1) * ITEMS_PER_PAGE;
     return filteredNotifications.slice(start, start + ITEMS_PER_PAGE);
-  }, [filteredNotifications, currentPage]);
+  }, [filteredNotifications, currentPage, isWebPage, visibleCount]);
 
   // Clamp currentPage when notifications shrink (e.g. mark-all-read shifts state, realtime deletions)
   useEffect(() => {
@@ -305,7 +311,7 @@ export function NotificationList({
     }
   }, [currentPage, totalPages]);
 
-  if (!isInitialized) {
+  if (isLoading && notifications.length === 0) {
     return (
       <View style={styles.loadingContainer}>
         <View style={styles.loadingSpinner} />
@@ -314,7 +320,39 @@ export function NotificationList({
     );
   }
 
+  const errorNotice = error && (
+    <View
+      style={[
+        styles.emptyContainer,
+        { flex: 0, paddingVertical: theme.spacing.lg },
+      ]}
+    >
+      <Text style={styles.emptyTitle}>Couldn&apos;t load notifications</Text>
+      <Text style={styles.emptyDescription}>
+        Please try again. Any saved notifications are shown below.
+      </Text>
+      <TouchableOpacity
+        onPress={() => {
+          void refreshNotifications().catch(() => {});
+        }}
+        disabled={isRefreshing}
+        accessibilityRole="button"
+        accessibilityLabel="Retry notifications"
+        accessibilityState={{ disabled: isRefreshing }}
+        style={[
+          styles.emptyCta,
+          !isWebPage && { minHeight: 48, justifyContent: "center" },
+        ]}
+      >
+        <Text style={styles.emptyCtaText}>
+          {isRefreshing ? "Retrying..." : "Retry"}
+        </Text>
+      </TouchableOpacity>
+    </View>
+  );
+
   if (filteredNotifications.length === 0) {
+    if (errorNotice) return errorNotice;
     return (
       <View style={styles.emptyContainer}>
         <View style={styles.emptyIconContainer}>
@@ -334,7 +372,10 @@ export function NotificationList({
         </Text>
         <TouchableOpacity
           onPress={() => router.push("/profile?tab=Settings" as any)}
-          style={styles.emptyCta}
+          style={[
+            styles.emptyCta,
+            !isWebPage && { minHeight: 48, justifyContent: "center" },
+          ]}
           activeOpacity={0.8}
           accessibilityRole="button"
           accessibilityLabel="Manage notification preferences"
@@ -348,6 +389,7 @@ export function NotificationList({
 
   return (
     <View style={styles.container}>
+      {errorNotice}
       <View
         style={[
           styles.listContainer,
@@ -363,13 +405,44 @@ export function NotificationList({
         ))}
       </View>
 
-      <Pagination
-        currentPage={currentPage}
-        totalPages={totalPages}
-        totalItems={filteredNotifications.length}
-        pageSize={ITEMS_PER_PAGE}
-        onPageChange={setCurrentPage}
-      />
+      {isWebPage ? (
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalItems={filteredNotifications.length}
+          pageSize={ITEMS_PER_PAGE}
+          onPageChange={setCurrentPage}
+        />
+      ) : (
+        <View style={{ gap: 12, alignItems: "stretch", marginTop: 12 }}>
+          <Text
+            style={{ color: theme.colors.textSecondary, textAlign: "center" }}
+          >
+            Showing {Math.min(visibleCount, filteredNotifications.length)} of{" "}
+            {filteredNotifications.length}
+          </Text>
+          {visibleCount < filteredNotifications.length && (
+            <TouchableOpacity
+              accessibilityRole="button"
+              accessibilityLabel="Load 10 more notifications"
+              onPress={() => setVisibleCount((count) => count + 10)}
+              style={{
+                minHeight: 48,
+                padding: 12,
+                borderWidth: 1,
+                borderColor: theme.colors.border,
+                borderRadius: theme.borderRadius.md,
+                justifyContent: "center",
+                alignItems: "center",
+              }}
+            >
+              <Text style={{ color: theme.colors.primary, fontWeight: "600" }}>
+                Load 10 more
+              </Text>
+            </TouchableOpacity>
+          )}
+        </View>
+      )}
     </View>
   );
 }

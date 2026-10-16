@@ -1,6 +1,9 @@
 import { goBack } from "@/lib/utils/goBack";
 import { LogPageNavigation } from "@/components/logs/LogPageNavigation";
-import { logPageStyles } from "@/components/logs/logPageStyles";
+import {
+  logPageStyles,
+  compactLogFormStyles,
+} from "@/components/logs/logPageStyles";
 import { useResponsiveLayout } from "@/hooks/use-responsive-layout";
 import { spacing } from "@/src/design-system";
 import { Button } from "@/components/ui/Button";
@@ -30,6 +33,7 @@ export default function AddFuelLogScreen() {
   const layout = useResponsiveLayout();
   const isDesktopWeb = layout.isWeb && !layout.isMobile;
   const { styles: logWeb } = useStyles(logPageStyles);
+  const { styles: compact } = useStyles(compactLogFormStyles);
   const { styles, theme } = useStyles(stylesheet);
   const {
     formData,
@@ -64,8 +68,13 @@ export default function AddFuelLogScreen() {
 
   // --- New Custom Header ---
   const CustomHeader = () => (
-    <View style={styles.customHeader}>
-      <TouchableOpacity style={styles.customBackButton} onPress={handleGoBack}>
+    <View style={[styles.customHeader, compact.header]}>
+      <TouchableOpacity
+        accessibilityRole="button"
+        accessibilityLabel="Back"
+        style={[styles.customBackButton, compact.back]}
+        onPress={handleGoBack}
+      >
         <IconSymbol name="chevron.left" size={24} color={theme.colors.text} />
       </TouchableOpacity>
       <View style={styles.titleContainer}>
@@ -93,27 +102,28 @@ export default function AddFuelLogScreen() {
   );
   if (vehiclesError)
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView
+        edges={["top", "left", "right", "bottom"]}
+        style={styles.container}
+      >
         {!isDesktopWeb && <CustomHeader />}
         {pageNavigation}
-        {!isDesktopWeb && (
-          <View style={{ padding: 24, gap: 16 }}>
-            <Text>Unable to load vehicles. Please try again.</Text>
-            <Button title="Retry" onPress={retryVehicles} />
-          </View>
-        )}
       </SafeAreaView>
     );
 
   if (vehiclesLoading) {
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView
+        edges={["top", "left", "right", "bottom"]}
+        style={styles.container}
+      >
         {!isDesktopWeb && <CustomHeader />}
         {pageNavigation}
         <ScrollView
           contentContainerStyle={[
             styles.scrollContent(isWeb),
             isDesktopWeb && logWeb.content,
+            !isDesktopWeb && compact.content,
           ]}
         >
           <SkeletonFuelLogForm />
@@ -125,7 +135,10 @@ export default function AddFuelLogScreen() {
   // Empty State
   if (vehicles.length === 0) {
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView
+        edges={["top", "left", "right", "bottom"]}
+        style={styles.container}
+      >
         {!isDesktopWeb && <CustomHeader />}
         {pageNavigation}
         <View style={styles.loadingContainer}>
@@ -145,12 +158,16 @@ export default function AddFuelLogScreen() {
 
   // Main Content
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView
+      edges={["top", "left", "right", "bottom"]}
+      style={styles.container}
+    >
       {/* Render the new custom header here */}
       {!isDesktopWeb && <CustomHeader />}
       {pageNavigation}
 
       <KeyboardAvoidingView
+        enabled={Platform.OS !== "web"}
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={styles.content}
       >
@@ -158,13 +175,20 @@ export default function AddFuelLogScreen() {
           contentContainerStyle={[
             styles.scrollContent(isWeb),
             isDesktopWeb && logWeb.content,
+            !isDesktopWeb && compact.content,
           ]}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
           {/* Web-only title was here, it's now in CustomHeader */}
 
-          <View style={[styles.card(isWeb), isDesktopWeb && logWeb.panel]}>
+          <View
+            style={[
+              styles.card(isWeb),
+              isDesktopWeb && logWeb.panel,
+              !isDesktopWeb && compact.panel,
+            ]}
+          >
             <VehicleSelector
               vehicles={vehicles}
               selectedVehicleId={formData.vehicle_id}
@@ -219,7 +243,7 @@ export default function AddFuelLogScreen() {
               )}
             </View>
 
-            <View style={styles.row}>
+            <View style={[styles.row, !isDesktopWeb && compact.row]}>
               <Input
                 label="Cost (RM)"
                 value={costInput}
@@ -286,13 +310,19 @@ export default function AddFuelLogScreen() {
               leftIcon="location"
             />
 
-            <View style={styles.buttonContainer}>
+            <View
+              style={[styles.buttonContainer, !isDesktopWeb && compact.footer]}
+            >
               <Button
                 title="Cancel"
                 onPress={handleGoBack}
                 variant="outline"
                 icon="xmark"
-                style={styles.cancelButton}
+                style={
+                  isDesktopWeb
+                    ? styles.cancelButton
+                    : { ...styles.cancelButton, ...compact.button }
+                }
               />
               <Button
                 title="Save Log"
@@ -300,7 +330,11 @@ export default function AddFuelLogScreen() {
                 disabled={!isFormValid}
                 loading={loading}
                 icon="checkmark"
-                style={styles.saveButton}
+                style={
+                  isDesktopWeb
+                    ? styles.saveButton
+                    : { ...styles.saveButton, ...compact.button }
+                }
               />
             </View>
           </View>

@@ -1,7 +1,10 @@
 import { returnAfterLogSave } from "@/lib/utils/returnAfterLogSave";
 import { goBack } from "@/lib/utils/goBack";
 import { LogPageNavigation } from "@/components/logs/LogPageNavigation";
-import { logPageStyles } from "@/components/logs/logPageStyles";
+import {
+  logPageStyles,
+  compactLogFormStyles,
+} from "@/components/logs/logPageStyles";
 import { useResponsiveLayout } from "@/hooks/use-responsive-layout";
 import { storageImageUrl } from "@/lib/utils/storagePath";
 import { withOpacity, spacing } from "@/src/design-system";
@@ -43,6 +46,9 @@ const VehicleOption: React.FC<{
 
   return (
     <TouchableOpacity
+      accessibilityRole="button"
+      accessibilityState={{ selected: isSelected }}
+      accessibilityLabel={`${vehicle.year} ${vehicle.make} ${vehicle.model}, ${vehicle.license_plate}`}
       style={[styles.vehicleOption, isSelected && styles.vehicleOptionSelected]}
       onPress={onPress}
     >
@@ -86,6 +92,7 @@ export default function AddMileageLogScreen() {
   const layout = useResponsiveLayout();
   const isDesktopWeb = layout.isWeb && !layout.isMobile;
   const { styles: logWeb } = useStyles(logPageStyles);
+  const { styles: compact } = useStyles(compactLogFormStyles);
   const { vehicleId, returnTo } = useLocalSearchParams<{
     vehicleId?: string;
     returnTo?: string;
@@ -118,9 +125,11 @@ export default function AddMileageLogScreen() {
         : "Add Mileage Log";
 
     return (
-      <View style={styles.customHeader}>
+      <View style={[styles.customHeader, compact.header]}>
         <TouchableOpacity
-          style={styles.customBackButton}
+          accessibilityRole="button"
+          accessibilityLabel="Back"
+          style={[styles.customBackButton, compact.back]}
           onPress={() => goBack("/logs")}
         >
           <IconSymbol name="chevron.left" size={24} color={colors.text} />
@@ -418,13 +427,12 @@ export default function AddMileageLogScreen() {
     requiredLabel: {
       color: theme.colors.error,
     },
-    vehicleSelector: {
-      maxHeight: 120,
-    },
+    vehicleSelector: {},
     vehicleSelectorContent: {
       gap: spacing.md,
     },
     vehicleOption: {
+      minHeight: 48,
       backgroundColor: colors.background,
       borderWidth: 1,
       borderColor: withOpacity(colors.textSecondary, 0.19),
@@ -478,6 +486,7 @@ export default function AddMileageLogScreen() {
     },
     lockedVehicleInfo: {
       flex: 1,
+      minWidth: 0,
     },
     lockedVehicleText: {
       fontSize: 16,
@@ -514,27 +523,28 @@ export default function AddMileageLogScreen() {
   );
   if (vehiclesError)
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView
+        edges={["top", "left", "right", "bottom"]}
+        style={styles.container}
+      >
         {!isDesktopWeb && <CustomHeader />}
         {pageNavigation}
-        {!isDesktopWeb && (
-          <View style={{ padding: 24, gap: 16 }}>
-            <Text>Unable to load vehicles. Please try again.</Text>
-            <Button title="Retry" onPress={retryVehicles} />
-          </View>
-        )}
       </SafeAreaView>
     );
 
   if (vehiclesLoading) {
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView
+        edges={["top", "left", "right", "bottom"]}
+        style={styles.container}
+      >
         {!isDesktopWeb && <CustomHeader />}
         {pageNavigation}
         <ScrollView
           contentContainerStyle={[
             styles.scrollContent,
             isDesktopWeb && logWeb.content,
+            !isDesktopWeb && compact.content,
           ]}
         >
           <SkeletonMileageLogForm />
@@ -545,7 +555,10 @@ export default function AddMileageLogScreen() {
 
   if (vehicles.length === 0) {
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView
+        edges={["top", "left", "right", "bottom"]}
+        style={styles.container}
+      >
         {!isDesktopWeb && <CustomHeader />}
         {pageNavigation}
         <View style={styles.loadingContainer}>
@@ -564,11 +577,15 @@ export default function AddMileageLogScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView
+      edges={["top", "left", "right", "bottom"]}
+      style={styles.container}
+    >
       {!isDesktopWeb && <CustomHeader />}
       {pageNavigation}
 
       <KeyboardAvoidingView
+        enabled={Platform.OS !== "web"}
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={styles.content}
       >
@@ -576,11 +593,18 @@ export default function AddMileageLogScreen() {
           contentContainerStyle={[
             styles.scrollContent,
             isDesktopWeb && logWeb.content,
+            !isDesktopWeb && compact.content,
           ]}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
-          <View style={[styles.card, isDesktopWeb && logWeb.panel]}>
+          <View
+            style={[
+              styles.card,
+              isDesktopWeb && logWeb.panel,
+              !isDesktopWeb && compact.panel,
+            ]}
+          >
             <VehicleSelector />
 
             <Input
@@ -627,13 +651,19 @@ export default function AddMileageLogScreen() {
               numberOfLines={3}
             />
 
-            <View style={styles.buttonContainer}>
+            <View
+              style={[styles.buttonContainer, !isDesktopWeb && compact.footer]}
+            >
               <Button
                 title="Cancel"
                 onPress={() => goBack("/logs")}
                 variant="outline"
                 icon="xmark"
-                style={styles.cancelButton}
+                style={
+                  isDesktopWeb
+                    ? styles.cancelButton
+                    : { ...styles.cancelButton, ...compact.button }
+                }
               />
               <Button
                 title="Save Log"
@@ -641,7 +671,11 @@ export default function AddMileageLogScreen() {
                 disabled={!isFormValid()}
                 loading={loading}
                 icon="checkmark"
-                style={styles.saveButton}
+                style={
+                  isDesktopWeb
+                    ? styles.saveButton
+                    : { ...styles.saveButton, ...compact.button }
+                }
               />
             </View>
           </View>

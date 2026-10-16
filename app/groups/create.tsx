@@ -1,18 +1,21 @@
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
-import { PageHeader } from "@/components/ui/PageHeader";
+import { MobilePageHeader } from "@/components/layout/MobilePageHeader";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { useAuth } from "@/lib/contexts/AuthContext";
 import { spacing } from "@/src/design-system";
 import { GroupService } from "@/lib/services/groupService";
 import { useToast } from "@/hooks/useToast";
 import { GroupFormData } from "@/types";
 import { router, useRouter } from "expo-router";
 import { usePostHog } from "posthog-react-native";
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
   StyleSheet,
+  useWindowDimensions,
   Text,
   View,
 } from "react-native";
@@ -32,6 +35,19 @@ export default function CreateGroupScreen() {
   const { theme } = useStyles();
   const { styles: web } = useStyles(webPageStyles);
   const layout = useResponsiveLayout();
+  const { width, fontScale } = useWindowDimensions();
+  const stacked = width < 360 || fontScale >= 1.3;
+  const { user } = useAuth();
+  const currentUser = useRef(user?.id);
+  currentUser.current = user?.id;
+  const pending = useRef(false);
+  const mounted = useRef(true);
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+    };
+  }, []);
 
   const handleGoBack = () => {
     if (navigation.canGoBack()) {
@@ -42,27 +58,37 @@ export default function CreateGroupScreen() {
   };
 
   const handleSave = async () => {
+    if (pending.current) return;
     if (!formData.name.trim()) {
       showError("Please enter a group name");
       return;
     }
-
+    const validationError = validateName(formData.name);
+    if (validationError) {
+      showError(validationError);
+      return;
+    }
+    const userId = user?.id;
+    pending.current = true;
     setLoading(true);
-
-    const groupData = {
-      name: formData.name.trim(),
-      description: formData.description?.trim() || undefined,
-    };
-
-    const { error } = await GroupService.createGroup(groupData);
-    setLoading(false);
-
-    if (error) {
-      showError(error);
-    } else {
-      posthog?.capture("group_created");
-      showSuccess("Group created successfully!");
-      handleGoBack();
+    try {
+      const { error } = await GroupService.createGroup({
+        name: formData.name.trim(),
+        description: formData.description?.trim() || undefined,
+      });
+      if (!mounted.current || currentUser.current !== userId) return;
+      if (error) showError(error);
+      else {
+        posthog?.capture("group_created");
+        showSuccess("Group created successfully!");
+        handleGoBack();
+      }
+    } catch {
+      if (mounted.current && currentUser.current === userId)
+        showError("Couldn't create group. Please try again.");
+    } finally {
+      pending.current = false;
+      if (mounted.current) setLoading(false);
     }
   };
 
@@ -77,6 +103,9 @@ export default function CreateGroupScreen() {
     <>
       <Input
         label="Group Name"
+        accessibilityLabel="Group Name"
+        editable={!loading}
+        inputStyle={{ minHeight: 48 }}
         value={formData.name}
         onChangeText={(text) =>
           setFormData((prev) => ({ ...prev, name: text }))
@@ -90,6 +119,9 @@ export default function CreateGroupScreen() {
 
       <Input
         label="Description (Optional)"
+        accessibilityLabel="Group description"
+        editable={!loading}
+        inputStyle={{ minHeight: 96, textAlignVertical: "top" }}
         value={formData.description || ""}
         onChangeText={(text) =>
           setFormData((prev) => ({ ...prev, description: text }))
@@ -108,13 +140,19 @@ export default function CreateGroupScreen() {
         variant="outline"
         onPress={handleGoBack}
         disabled={loading}
-        style={styles.button}
+        style={{
+          flex: stacked && !(layout.isWeb && !layout.isMobile) ? undefined : 1,
+          minHeight: 48,
+        }}
       />
       <Button
         title="Create Group"
         onPress={handleSave}
         loading={loading}
-        style={styles.button}
+        style={{
+          flex: stacked && !(layout.isWeb && !layout.isMobile) ? undefined : 1,
+          minHeight: 48,
+        }}
       />
     </>
   );
@@ -165,38 +203,40 @@ export default function CreateGroupScreen() {
   }
 
   return (
-    <KeyboardAvoidingView
+    <SafeAreaView
       style={[styles.container, { backgroundColor: theme.colors.background }]}
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      edges={["top", "left", "right", "bottom"]}
     >
-      <PageHeader title="Create Group" showBack />
-      <ScrollView
-        contentContainerStyle={styles.content}
-        keyboardShouldPersistTaps="handled"
+      <KeyboardAvoidingView
+        style={styles.container}
+        enabled={Platform.OS !== "web"}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
       >
-        <Text style={[styles.title, { color: theme.colors.text }]}>
-          Create Group
-        </Text>
-        <Text
-          style={[styles.description, { color: theme.colors.textSecondary }]}
+        <ScrollView
+          contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 32 }}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
         >
-          Create a new group to share vehicles and collaborate with family or
-          team members
-        </Text>
-        {fields}
-      </ScrollView>
-      <View
-        style={[
-          styles.actions,
-          {
-            borderTopColor: theme.colors.border,
-            backgroundColor: theme.colors.surface,
-          },
-        ]}
-      >
-        {actions}
-      </View>
-    </KeyboardAvoidingView>
+          <MobilePageHeader
+            title="Create Group"
+            subtitle="Share vehicles with family, friends, or your team"
+            onBack={() => {
+              if (!pending.current) handleGoBack();
+            }}
+          />
+          {fields}
+          <View
+            style={{
+              flexDirection: stacked ? "column" : "row",
+              gap: 12,
+              marginTop: 16,
+            }}
+          >
+            {actions}
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
 

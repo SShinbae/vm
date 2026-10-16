@@ -1,6 +1,9 @@
 import { goBack } from "@/lib/utils/goBack";
 import { LogPageNavigation } from "@/components/logs/LogPageNavigation";
-import { logPageStyles } from "@/components/logs/logPageStyles";
+import {
+  logPageStyles,
+  compactLogFormStyles,
+} from "@/components/logs/logPageStyles";
 import { useResponsiveLayout } from "@/hooks/use-responsive-layout";
 import { useLogRecord } from "@/hooks/useLogRecord";
 import { withOpacity, spacing } from "@/src/design-system";
@@ -83,6 +86,7 @@ export default function EditServiceLogScreen() {
   const layout = useResponsiveLayout();
   const isDesktopWeb = layout.isWeb && !layout.isMobile;
   const { styles: logWeb } = useStyles(logPageStyles);
+  const { styles: compact } = useStyles(compactLogFormStyles);
   const {
     record: serviceLog,
     loading: dataLoading,
@@ -215,8 +219,14 @@ export default function EditServiceLogScreen() {
         {SERVICE_TYPES.map((type) => (
           <TouchableOpacity
             key={type.value}
+            accessibilityRole="button"
+            accessibilityLabel={type.label}
+            accessibilityState={{
+              selected: formData.service_type === type.value,
+            }}
             style={[
               styles.serviceTypeOption,
+              !isDesktopWeb && compact.choice,
               formData.service_type === type.value &&
                 styles.serviceTypeOptionSelected,
             ]}
@@ -236,6 +246,7 @@ export default function EditServiceLogScreen() {
             <Text
               style={[
                 styles.serviceTypeText,
+                !isDesktopWeb && compact.choiceText,
                 formData.service_type === type.value &&
                   styles.serviceTypeTextSelected,
               ]}
@@ -428,17 +439,27 @@ export default function EditServiceLogScreen() {
 
   if (loadError)
     return (
-      <SafeAreaView style={styles.container}>{pageNavigation}</SafeAreaView>
+      <SafeAreaView
+        edges={["top", "left", "right", "bottom"]}
+        style={styles.container}
+      >
+        {pageNavigation}
+      </SafeAreaView>
     );
 
   if (dataLoading) {
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView
+        edges={["top", "left", "right", "bottom"]}
+        style={styles.container}
+      >
         {pageNavigation}
-        {!isWeb && (
-          <View style={styles.header}>
+        {!isDesktopWeb && (
+          <View style={[styles.header, compact.header]}>
             <TouchableOpacity
-              style={styles.backButton}
+              accessibilityRole="button"
+              accessibilityLabel="Back"
+              style={[styles.backButton, compact.back]}
               onPress={() =>
                 goBack({ pathname: "/logs/service/[id]", params: { id } })
               }
@@ -452,6 +473,7 @@ export default function EditServiceLogScreen() {
           contentContainerStyle={[
             styles.scrollContent,
             isDesktopWeb && logWeb.content,
+            !isDesktopWeb && compact.content,
           ]}
         >
           <SkeletonServiceLogEdit />
@@ -461,12 +483,17 @@ export default function EditServiceLogScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView
+      edges={["top", "left", "right", "bottom"]}
+      style={styles.container}
+    >
       {pageNavigation}
-      {!isWeb && (
-        <View style={styles.header}>
+      {!isDesktopWeb && (
+        <View style={[styles.header, compact.header]}>
           <TouchableOpacity
-            style={styles.backButton}
+            accessibilityRole="button"
+            accessibilityLabel="Back"
+            style={[styles.backButton, compact.back]}
             onPress={() =>
               goBack({ pathname: "/logs/service/[id]", params: { id } })
             }
@@ -478,6 +505,7 @@ export default function EditServiceLogScreen() {
       )}
 
       <KeyboardAvoidingView
+        enabled={Platform.OS !== "web"}
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={styles.content}
       >
@@ -485,20 +513,18 @@ export default function EditServiceLogScreen() {
           contentContainerStyle={[
             styles.scrollContent,
             isDesktopWeb && logWeb.content,
+            !isDesktopWeb && compact.content,
           ]}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
-          {isWeb && !isDesktopWeb && (
-            <>
-              <Text style={styles.title}>Edit Service Log</Text>
-              <Text style={styles.subtitle}>
-                Update your service log details
-              </Text>
-            </>
-          )}
-
-          <View style={[styles.card, isDesktopWeb && logWeb.panel]}>
+          <View
+            style={[
+              styles.card,
+              isDesktopWeb && logWeb.panel,
+              !isDesktopWeb && compact.panel,
+            ]}
+          >
             <View style={styles.inputContainer}>
               <Text style={styles.label}>Vehicle</Text>
               {(serviceLog as any)?.vehicles && (
@@ -506,7 +532,7 @@ export default function EditServiceLogScreen() {
                   <View style={styles.vehicleIcon}>
                     <IconSymbol name="car.fill" size={16} color="white" />
                   </View>
-                  <View>
+                  <View style={{ flex: 1, minWidth: 0 }}>
                     <Text style={styles.vehicleText}>
                       {(serviceLog as any).vehicles.year}{" "}
                       {(serviceLog as any).vehicles.make}{" "}
@@ -567,7 +593,7 @@ export default function EditServiceLogScreen() {
                 leftIcon="speedometer"
               />
 
-              <View style={styles.row}>
+              <View style={[styles.row, !isDesktopWeb && compact.row]}>
                 <View style={styles.flex1}>
                   <DatePicker
                     label="Date"
@@ -616,7 +642,9 @@ export default function EditServiceLogScreen() {
             </View>
 
             {/* Action Buttons */}
-            <View style={styles.buttonContainer}>
+            <View
+              style={[styles.buttonContainer, !isDesktopWeb && compact.footer]}
+            >
               <Button
                 title="Cancel"
                 onPress={() =>
@@ -624,7 +652,11 @@ export default function EditServiceLogScreen() {
                 }
                 variant="outline"
                 icon="xmark"
-                style={styles.cancelButton}
+                style={
+                  isDesktopWeb
+                    ? styles.cancelButton
+                    : { ...styles.cancelButton, ...compact.button }
+                }
               />
               <Button
                 title="Save Changes"
@@ -632,7 +664,11 @@ export default function EditServiceLogScreen() {
                 disabled={!canModify || !isFormValid()}
                 loading={loading}
                 icon="checkmark"
-                style={styles.saveButton}
+                style={
+                  isDesktopWeb
+                    ? styles.saveButton
+                    : { ...styles.saveButton, ...compact.button }
+                }
               />
             </View>
           </View>

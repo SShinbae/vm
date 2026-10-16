@@ -2,6 +2,10 @@ import { router } from "expo-router";
 import { returnAfterLogSave } from "@/lib/utils/returnAfterLogSave";
 jest.mock("expo-router", () => ({ router: { dismissTo: jest.fn() } }));
 beforeEach(() => jest.clearAllMocks());
+test("returns to Logs when its filter preselected the vehicle", () => {
+  returnAfterLogSave("car", "logs");
+  expect(router.dismissTo).toHaveBeenCalledWith("/(tabs)/logs");
+});
 test("returns to the Vehicles list when that origin was supplied", () => {
   returnAfterLogSave("car", "vehicles");
   expect(router.dismissTo).toHaveBeenCalledWith("/(tabs)/vehicles");

@@ -9,6 +9,7 @@ import {
   TouchableOpacity,
   useWindowDimensions,
   View,
+  ViewStyle,
 } from "react-native";
 import { useStyles } from "react-native-unistyles";
 
@@ -25,6 +26,9 @@ interface ActionMenuProps {
   disabled?: boolean;
   vertical?: boolean;
   label?: string;
+  minTouchSize?: number;
+  accessibilityLabel?: string;
+  style?: ViewStyle;
 }
 
 export function ActionMenu({
@@ -32,6 +36,9 @@ export function ActionMenu({
   disabled = false,
   vertical = false,
   label,
+  minTouchSize,
+  accessibilityLabel,
+  style,
 }: ActionMenuProps) {
   const { theme } = useStyles();
   const { width: windowWidth } = useWindowDimensions();
@@ -73,14 +80,19 @@ export function ActionMenu({
       <TouchableOpacity
         ref={triggerRef}
         accessibilityRole="button"
-        accessibilityLabel={label || "More actions"}
+        accessibilityLabel={accessibilityLabel || label || "More actions"}
         onPress={handleOpen}
         disabled={disabled}
         style={{
+          maxWidth: "100%",
           padding: theme.spacing.sm,
+          ...(minTouchSize && {
+            minHeight: minTouchSize,
+            minWidth: minTouchSize,
+          }),
           opacity: disabled ? 0.5 : 1,
           ...(label && {
-            minHeight: 44,
+            minHeight: minTouchSize ?? 44,
             paddingHorizontal: theme.spacing.lg,
             flexDirection: "row",
             alignItems: "center",
@@ -90,11 +102,13 @@ export function ActionMenu({
             borderRadius: theme.borderRadius.md,
             backgroundColor: theme.colors.surface,
           }),
+          ...style,
         }}
       >
         {label && (
           <Text
             style={{
+              flexShrink: 1,
               color: theme.colors.textSecondary,
               fontSize: theme.fontSize.sm,
             }}

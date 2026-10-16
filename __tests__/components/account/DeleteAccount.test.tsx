@@ -76,7 +76,10 @@ jest.mock("@/lib/contexts/AuthContext", () => ({
 }));
 jest.mock("react-native-unistyles", () => {
   const { lightTheme } = jest.requireActual("@/src/design-system");
-  return { useStyles: () => ({ theme: lightTheme }) };
+  return {
+    createStyleSheet: (factory: any) => factory,
+    useStyles: () => ({ theme: lightTheme }),
+  };
 });
 
 import { lightTheme, withOpacity } from "@/src/design-system";

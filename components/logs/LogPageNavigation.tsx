@@ -1,3 +1,4 @@
+import { goBack } from "@/lib/utils/goBack";
 import React from "react";
 import { Text, View } from "react-native";
 import { router } from "expo-router";
@@ -28,7 +29,7 @@ export function LogPageNavigation({
   const { theme } = useStyles();
   const layout = useResponsiveLayout();
   const desktop = layout.isWeb && !layout.isMobile;
-  if (!desktop && !readOnly) return null;
+  if (!desktop && !readOnly && !error) return null;
   const items: BreadcrumbItem[] =
     vehicleId && vehicle
       ? [
@@ -67,7 +68,7 @@ export function LogPageNavigation({
           {AUTO_MILEAGE_LOG_READ_ONLY}
         </Text>
       )}
-      {desktop && error && (
+      {error && (
         <View
           style={{
             gap: theme.spacing.md,
@@ -84,11 +85,16 @@ export function LogPageNavigation({
               gap: theme.spacing.md,
             }}
           >
-            {retry && <Button title="Retry" onPress={retry} />}
+            {retry && (
+              <Button title="Retry" onPress={retry} style={{ minHeight: 48 }} />
+            )}
             <Button
               title="Return to Logs"
               variant="outline"
-              onPress={() => router.replace("/logs")}
+              style={{ minHeight: 48 }}
+              onPress={() =>
+                desktop ? router.replace("/logs") : goBack("/logs")
+              }
             />
           </View>
         </View>

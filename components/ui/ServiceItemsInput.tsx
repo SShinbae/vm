@@ -25,7 +25,8 @@ export function ServiceItemsInput({
 }: ServiceItemsInputProps) {
   const { theme } = useStyles();
   const colors = theme.colors;
-  const { width: screenWidth } = useWindowDimensions();
+  const { width: screenWidth, fontScale } = useWindowDimensions();
+  const stacked = screenWidth < 600 || fontScale >= 1.3;
 
   // Responsive breakpoints
   const isSmallScreen = screenWidth < 380;
@@ -69,12 +70,15 @@ export function ServiceItemsInput({
     },
     itemRow: {
       flexDirection: "row",
+      flexWrap: stacked ? "wrap" : "nowrap",
       alignItems: "center",
       marginBottom: isSmallScreen ? 8 : 12,
       gap: isSmallScreen ? 4 : 8,
     },
     descriptionInput: {
       flex: 2,
+      minHeight: 48,
+      ...(stacked && { flexBasis: "100%" }),
       minWidth: 0, // Allow shrinking below content size
       backgroundColor: colors.background,
       borderWidth: 1,
@@ -87,8 +91,9 @@ export function ServiceItemsInput({
     },
     priceInput: {
       flex: 1,
+      minHeight: 48,
       minWidth: isSmallScreen ? 60 : 80,
-      maxWidth: isSmallScreen ? 80 : 120,
+      maxWidth: stacked ? undefined : 120,
       backgroundColor: colors.background,
       borderWidth: 1,
       borderColor: colors.textSecondary,
@@ -100,8 +105,8 @@ export function ServiceItemsInput({
       textAlign: "right",
     },
     removeButton: {
-      width: isSmallScreen ? 28 : 32,
-      height: isSmallScreen ? 28 : 32,
+      minWidth: 48,
+      minHeight: 48,
       alignItems: "center",
       justifyContent: "center",
       flexShrink: 0,
@@ -110,6 +115,7 @@ export function ServiceItemsInput({
       opacity: 0.4,
     },
     addButton: {
+      minHeight: 48,
       flexDirection: "row",
       alignItems: "center",
       justifyContent: "center",
@@ -123,6 +129,7 @@ export function ServiceItemsInput({
       marginTop: spacing.sm,
     },
     addButtonText: {
+      flexShrink: 1,
       color: colors.primary,
       fontSize: isSmallScreen ? 13 : 14,
       fontWeight: "500",
@@ -135,6 +142,8 @@ export function ServiceItemsInput({
     },
     totalRow: {
       flexDirection: "row",
+      flexWrap: "wrap",
+      gap: 8,
       justifyContent: "space-between",
       alignItems: "center",
     },
@@ -224,16 +233,19 @@ export function ServiceItemsInput({
         Service Items <Text style={styles.requiredLabel}>*</Text>
       </Text>
 
-      <View style={styles.headerRow}>
-        <Text style={[styles.columnHeader, styles.descriptionHeader]}>
-          Description
-        </Text>
-        <Text style={[styles.columnHeader, styles.priceHeader]}>Price</Text>
-      </View>
+      {!stacked && (
+        <View style={styles.headerRow}>
+          <Text style={[styles.columnHeader, styles.descriptionHeader]}>
+            Description
+          </Text>
+          <Text style={[styles.columnHeader, styles.priceHeader]}>Price</Text>
+        </View>
+      )}
 
       {items.map((item, index) => (
         <View key={index} style={styles.itemRow}>
           <TextInput
+            accessibilityLabel={`Service description ${index + 1}`}
             style={styles.descriptionInput}
             value={item.description}
             onChangeText={(text) => updateItem(index, "description", text)}
@@ -241,6 +253,7 @@ export function ServiceItemsInput({
             placeholderTextColor={colors.textSecondary}
           />
           <TextInput
+            accessibilityLabel={`Service price ${index + 1}`}
             style={styles.priceInput}
             value={item.price.toString()}
             onChangeText={(text) => {
@@ -252,6 +265,8 @@ export function ServiceItemsInput({
             keyboardType="numeric"
           />
           <TouchableOpacity
+            accessibilityRole="button"
+            accessibilityLabel={`Remove service item ${index + 1}`}
             style={[
               styles.removeButton,
               items.length <= 1 && styles.removeButtonDisabled,
@@ -270,7 +285,12 @@ export function ServiceItemsInput({
         </View>
       ))}
 
-      <TouchableOpacity style={styles.addButton} onPress={addItem}>
+      <TouchableOpacity
+        accessibilityRole="button"
+        accessibilityLabel="Add Item"
+        style={styles.addButton}
+        onPress={addItem}
+      >
         <IconSymbol name="plus.circle" size={16} color={colors.primary} />
         <Text style={styles.addButtonText}>Add Item</Text>
       </TouchableOpacity>

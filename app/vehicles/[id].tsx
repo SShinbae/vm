@@ -1,7 +1,6 @@
 import { goBack } from "@/lib/utils/goBack";
 import { storageImageUrl } from "@/lib/utils/storagePath";
 import { baseColors, withOpacity, spacing } from "@/src/design-system";
-import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useStyles } from "react-native-unistyles";
 import { ActionMenu, ActionMenuItem } from "@/components/ui/ActionMenu";
 import { IconSymbol } from "@/components/ui/icon-symbol";
@@ -39,8 +38,12 @@ import {
   Text,
   TouchableOpacity,
   View,
+  useWindowDimensions,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import {
+  SafeAreaView,
+  useSafeAreaInsets,
+} from "react-native-safe-area-context";
 
 import { DashboardWebLayout } from "@/components/layout/DashboardWebLayout";
 import { Breadcrumbs } from "@/components/layout/Breadcrumbs";
@@ -81,6 +84,10 @@ function VehicleDetailContent() {
   const isWeb = layout.isWeb;
   const isDesktopWeb = isWeb && !layout.isMobile;
   const isMobile = !isDesktopWeb;
+  const { width, fontScale } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
+  const singleColumn =
+    width - insets.left - insets.right - 32 < 328 || fontScale >= 1.3;
   const userId = user?.id;
   const focused = useRef(false);
   const requestId = useRef(0);
@@ -100,7 +107,6 @@ function VehicleDetailContent() {
   const [deleteLogLoading, setDeleteLogLoading] = useState(false);
   const [canModify, setCanModify] = useState(false);
   const { theme } = useStyles();
-  const colorScheme = useColorScheme();
   const colors = theme.colors;
   const { styles: web } = useStyles(webPageStyles);
 
@@ -122,14 +128,13 @@ function VehicleDetailContent() {
       if (!focused.current || currentRequest !== requestId.current) return;
       setLoadError("Failed to load vehicle details");
       toast.error("Failed to load vehicle details");
-      if (!isDesktopWeb) goBack("/vehicles");
     } finally {
       if (focused.current && currentRequest === requestId.current) {
         setLoading(false);
         setRefreshing(false);
       }
     }
-  }, [id, userId, isDesktopWeb]);
+  }, [id, userId]);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -166,6 +171,16 @@ function VehicleDetailContent() {
     description: string,
   ) => {
     if (!canModify || deleteLogLoading) return;
+    if (type === "service" && (!user?.id || vehicle?.user_id !== user.id))
+      return;
+    const log = (
+      type === "mileage"
+        ? vehicle?.mileage_logs
+        : type === "fuel"
+          ? vehicle?.fuel_logs
+          : vehicle?.service_logs
+    )?.find((item) => item.id === logId);
+    if (!log || isAutoMileageLog(type, log)) return;
     const ok = await confirm({
       title: `Delete ${type} Log`,
       message: `Are you sure you want to delete this ${type} log?\n\n${description}\n\nThis action cannot be undone.`,
@@ -350,6 +365,9 @@ function VehicleDetailContent() {
       <TouchableOpacity
         style={[styles.tabButton, isActive && styles.tabButtonActive]}
         onPress={onPress}
+        accessibilityRole="button"
+        accessibilityLabel={label}
+        accessibilityState={{ selected: isActive }}
       >
         <IconSymbol
           name={icon}
@@ -431,7 +449,11 @@ function VehicleDetailContent() {
             icon: "trash",
             onPress: () => handleDeleteLog(logType, log.id, getLogText()),
             variant: "danger",
-            disabled: !canModify || deleteLogLoading,
+            disabled:
+              !canModify ||
+              deleteLogLoading ||
+              (logType === "service" &&
+                (!user?.id || vehicle?.user_id !== user.id)),
           },
         ];
 
@@ -534,8 +556,12 @@ function VehicleDetailContent() {
             </Text>
           )}
         </View>
-        <View style={{ marginLeft: spacing.sm }}>
-          <ActionMenu items={actionMenuItems} />
+        <View style={{ marginLeft: spacing.sm, flexShrink: 0 }}>
+          <ActionMenu
+            items={actionMenuItems}
+            minTouchSize={48}
+            disabled={deleteLogLoading}
+          />
         </View>
       </TouchableOpacity>
     );
@@ -563,167 +589,31 @@ function VehicleDetailContent() {
     scrollContent: {
       paddingBottom: isDesktopWeb ? 60 : 16,
     },
-    // Hero Section
-    heroSection: {
-      position: "relative",
-      height: isDesktopWeb ? 320 : 200,
+    compactSummary: {
+      marginHorizontal: 16,
+      marginTop: 16,
+      padding: 16,
+      borderRadius: 12,
       backgroundColor: colors.surface,
-      overflow: "hidden",
-    },
-    heroBackground: {
-      position: "absolute",
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      width: "100%",
-      height: "100%",
-    },
-    heroOverlay: {
-      position: "absolute",
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      backgroundColor: withOpacity(baseColors.black, 0.5),
-    },
-    heroContent: {
-      flex: 1,
-      justifyContent: "flex-end",
-      padding: isDesktopWeb ? theme.spacing.xl : 16,
-      maxWidth: isDesktopWeb ? WEB_PAGE_MAX_WIDTH : undefined,
-      width: "100%",
-      alignSelf: "center",
-    },
-    heroCard: {
-      backgroundColor: colors.surface,
-      borderRadius: isDesktopWeb ? 20 : 14,
-      padding: isDesktopWeb ? 32 : 18,
-      ...(isDesktopWeb && {
-        backdropFilter: "blur(20px)",
-        shadowColor: theme.colors.black,
-        shadowOffset: { width: 0, height: 8 },
-        shadowOpacity: colorScheme === "dark" ? 0.4 : 0.2,
-        shadowRadius: 24,
-      }),
       borderWidth: 1,
       borderColor: colors.border,
+      gap: 12,
     },
-    vehicleActions: {
-      flexDirection: "row",
-      gap: isDesktopWeb ? 8 : 6,
-      alignItems: "center",
-    },
-    actionButton: {
-      width: isDesktopWeb ? 40 : 36,
-      height: isDesktopWeb ? 40 : 36,
-      borderRadius: isDesktopWeb ? 20 : 18,
-      backgroundColor: colors.surface,
-      alignItems: "center",
-      justifyContent: "center",
-      borderWidth: 1,
-      borderColor: colors.border,
-      shadowColor: theme.colors.black,
-      shadowOffset: { width: 0, height: 1 },
-      shadowOpacity: 0.05,
-      shadowRadius: 2,
-      ...(isMobile && {
-        elevation: 1,
-      }),
-    },
-    // Vehicle Info in Hero
-    vehicleHeader: {
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "space-between",
-      marginBottom: isDesktopWeb ? 16 : 10,
-    },
-    vehicleIcon: {
-      width: isDesktopWeb ? 80 : 56,
-      height: isDesktopWeb ? 80 : 56,
-      borderRadius: isDesktopWeb ? 40 : 28,
-      backgroundColor: colors.primary,
-      alignItems: "center",
-      justifyContent: "center",
-      marginRight: isDesktopWeb ? 20 : 12,
-      ...(isDesktopWeb && {
-        shadowColor: colors.primary,
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.3,
-        shadowRadius: 12,
-      }),
-      ...(isMobile && {
-        shadowColor: colors.primary,
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.2,
-        shadowRadius: 6,
-        elevation: 4,
-      }),
-    },
-    vehicleInfo: {
-      flex: 1,
-    },
-    vehicleName: {
-      fontSize: isDesktopWeb ? 32 : 20,
-      fontWeight: "bold",
-      color: colors.text,
-      marginBottom: isDesktopWeb ? 6 : 4,
-      lineHeight: isDesktopWeb ? 40 : 24,
-    },
-    vehiclePlate: {
-      fontSize: isDesktopWeb ? 18 : 15,
-      color: colors.textSecondary,
-      fontWeight: "600",
-      letterSpacing: isDesktopWeb ? 1 : 0.3,
-    },
-    ownershipBadge: {
-      position: "absolute",
-      top: isDesktopWeb ? -10 : -6,
-      left: isDesktopWeb ? -10 : -6,
-      backgroundColor: colors.primary,
-      paddingHorizontal: isDesktopWeb ? 12 : 10,
-      paddingVertical: isDesktopWeb ? 6 : 5,
-      borderRadius: isDesktopWeb ? 12 : 10,
-      flexDirection: "row",
-      alignItems: "center",
-      gap: spacing.xs,
-      ...(isDesktopWeb && {
-        shadowColor: theme.colors.black,
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.15,
-        shadowRadius: 8,
-      }),
-      ...(isMobile && {
-        elevation: 2,
-      }),
-    },
-    ownershipBadgeText: {
-      color: theme.colors.white,
-      fontSize: isDesktopWeb ? 11 : 10,
-      fontWeight: "700",
-      textTransform: "uppercase",
-      letterSpacing: 0.5,
-    },
-    vehicleDetails: {
+    compactHeader: {
       flexDirection: "row",
       flexWrap: "wrap",
-      gap: isDesktopWeb ? 20 : 12,
-      marginTop: isDesktopWeb ? 8 : 6,
-    },
-    detailItem: {
-      flexDirection: "row",
       alignItems: "center",
-      gap: spacing.sm,
+      gap: 12,
     },
-    detailLabel: {
-      fontSize: isDesktopWeb ? 14 : 12,
-      color: colors.textSecondary,
-      fontWeight: "500",
-    },
-    detailValue: {
-      fontSize: isDesktopWeb ? 14 : 12,
-      color: colors.text,
-      fontWeight: "600",
+    compactImage: { width: 80, height: 64, borderRadius: 8 },
+    compactInfo: { flex: 1, minWidth: 140, gap: 6 },
+    compactName: { color: colors.text, fontSize: 20, fontWeight: "600" },
+    compactMeta: { color: colors.textSecondary, fontSize: 14, flexShrink: 1 },
+    compactActions: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      alignItems: "center",
+      gap: 8,
     },
     // Content Container
     webFrame: {
@@ -839,7 +729,7 @@ function VehicleDetailContent() {
       // flexBasis, not flex: 1 — on native, flex: 1 starts the card at 0 width,
       // so its text is measured near-zero wide and the card renders very tall.
       flexGrow: 1,
-      flexBasis: isDesktopWeb ? "22%" : "47%",
+      flexBasis: isDesktopWeb ? "22%" : singleColumn ? "100%" : "47%",
       backgroundColor: colors.surface,
       borderRadius: isDesktopWeb ? 16 : 12,
       padding: isDesktopWeb ? 24 : 12,
@@ -1063,6 +953,7 @@ function VehicleDetailContent() {
     },
     logContent: {
       flex: 1,
+      minWidth: 0,
     },
     logTextRow: {
       flexDirection: "row",
@@ -1123,13 +1014,144 @@ function VehicleDetailContent() {
       fontWeight: "600",
       marginRight: spacing.sm,
     },
-    // Pagination wrapper — preserves the divider above the shared Pagination component
     paginationWrapper: {
-      borderTopWidth: 1,
+      borderTopWidth: isDesktopWeb ? 0 : 1,
       borderTopColor: colors.border,
       marginTop: isDesktopWeb ? 16 : 10,
     },
   });
+
+  const sharingSection =
+    vehicle?.is_own_vehicle &&
+    (isDesktopWeb ? (
+      <View
+        style={[
+          styles.sharingCard,
+          isDesktopWeb && [web.panel, { shadowOpacity: 0 }],
+        ]}
+      >
+        <TouchableOpacity
+          style={styles.sharingHeader}
+          onPress={() => setSharingExpanded(!sharingExpanded)}
+          activeOpacity={0.7}
+        >
+          <View style={styles.sharingLeft}>
+            <View style={styles.sharingIcon}>
+              <IconSymbol
+                name="person.3.fill"
+                size={isDesktopWeb ? 22 : 20}
+                color={colors.primary}
+              />
+            </View>
+            <View style={styles.sharingInfo}>
+              <Text style={styles.sharingTitle}>Share with Groups</Text>
+              <Text style={styles.sharingDescription}>
+                {vehicle.sharing_info?.is_shared
+                  ? `Shared with ${vehicle.sharing_info.total_shares} group${vehicle.sharing_info.total_shares > 1 ? "s" : ""}`
+                  : "Allow groups to view this vehicle"}
+              </Text>
+            </View>
+          </View>
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              gap: spacing.md,
+            }}
+          >
+            <TouchableOpacity
+              onPress={openSharingModal}
+              style={{
+                paddingVertical: spacing.sm,
+                paddingHorizontal: spacing.lg,
+                borderRadius: 8,
+                backgroundColor: withOpacity(colors.primary, 0.1),
+              }}
+              accessibilityRole="button"
+              accessibilityLabel="Manage vehicle sharing"
+            >
+              <Text style={{ color: colors.primary, fontWeight: "600" }}>
+                Manage
+              </Text>
+            </TouchableOpacity>
+            {isDesktopWeb && (
+              <TouchableOpacity style={styles.sharingExpandButton}>
+                <IconSymbol
+                  name={sharingExpanded ? "chevron.up" : "chevron.down"}
+                  size={20}
+                  color={colors.textSecondary}
+                />
+              </TouchableOpacity>
+            )}
+          </View>
+        </TouchableOpacity>
+
+        {sharingExpanded &&
+        vehicle.sharing_info?.shared_with_groups &&
+        vehicle.sharing_info.shared_with_groups.length > 0 ? (
+          <View style={styles.sharingGroupsList}>
+            {vehicle.sharing_info.shared_with_groups.map((groupName, index) => (
+              <View key={index} style={styles.sharingGroupItem}>
+                <View style={styles.sharingGroupAvatar}>
+                  <IconSymbol
+                    name="person.3.fill"
+                    size={16}
+                    color={colors.primary}
+                  />
+                </View>
+                <Text style={styles.sharingGroupName}>{groupName}</Text>
+              </View>
+            ))}
+          </View>
+        ) : null}
+      </View>
+    ) : (
+      <View style={styles.sharingCard}>
+        <TouchableOpacity
+          accessibilityRole="button"
+          accessibilityLabel="Vehicle sharing"
+          accessibilityState={{ expanded: sharingExpanded }}
+          onPress={() => setSharingExpanded((value) => !value)}
+          style={{
+            minHeight: 48,
+            flexDirection: "row",
+            alignItems: "center",
+            gap: 12,
+          }}
+        >
+          <View style={{ flex: 1, minWidth: 0, gap: 4 }}>
+            <Text style={styles.sharingTitle}>Share with Groups</Text>
+            <Text style={styles.sharingDescription}>
+              {vehicle.sharing_info?.is_shared
+                ? `Shared with ${vehicle.sharing_info.total_shares} groups`
+                : "Allow groups to view this vehicle"}
+            </Text>
+          </View>
+          <IconSymbol
+            name={sharingExpanded ? "chevron.up" : "chevron.down"}
+            size={20}
+            color={colors.primary}
+          />
+        </TouchableOpacity>
+        {sharingExpanded && (
+          <View style={{ marginTop: 12, gap: 12 }}>
+            <Button
+              title="Manage sharing"
+              variant="outline"
+              onPress={openSharingModal}
+              style={{ minHeight: 48 }}
+            />
+            {(vehicle.sharing_info?.shared_with_groups || []).map(
+              (name, index) => (
+                <Text key={index} style={styles.compactMeta}>
+                  {name}
+                </Text>
+              ),
+            )}
+          </View>
+        )}
+      </View>
+    ));
 
   if (loading) {
     return (
@@ -1137,7 +1159,10 @@ function VehicleDetailContent() {
         <Head>
           <title>Loading Vehicle - Vehicle Management</title>
         </Head>
-        <SafeAreaView style={styles.container}>
+        <SafeAreaView
+          style={styles.container}
+          edges={["top", "left", "right", "bottom"]}
+        >
           {isMobile && <PageHeader title="Vehicle Details" showBack />}
           {isDesktopWeb && <View style={styles.webFrame}>{breadcrumbs}</View>}
           <SkeletonVehicleDetail />
@@ -1152,7 +1177,10 @@ function VehicleDetailContent() {
         <Head>
           <title>Vehicle Not Found - Vehicle Management</title>
         </Head>
-        <SafeAreaView style={styles.container}>
+        <SafeAreaView
+          style={styles.container}
+          edges={["top", "left", "right", "bottom"]}
+        >
           {isMobile && <PageHeader title="Vehicle Details" showBack />}
           <View style={styles.content}>
             {isDesktopWeb ? (
@@ -1183,7 +1211,23 @@ function VehicleDetailContent() {
                 </View>
               </View>
             ) : (
-              <Text style={styles.errorText}>Vehicle not found</Text>
+              <View style={{ padding: 16, gap: 16 }}>
+                <Text style={styles.errorText}>
+                  {loadError || "Vehicle not found"}
+                </Text>
+                <Button
+                  title="Retry"
+                  loading={refreshing}
+                  onPress={onRefresh}
+                  style={{ minHeight: 48 }}
+                />
+                <Button
+                  title="Back"
+                  variant="outline"
+                  onPress={() => goBack("/vehicles")}
+                  style={{ minHeight: 48 }}
+                />
+              </View>
             )}
           </View>
         </SafeAreaView>
@@ -1200,16 +1244,31 @@ function VehicleDetailContent() {
             : "Vehicle Management"}
         </title>
       </Head>
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView
+        style={styles.container}
+        edges={["top", "left", "right", "bottom"]}
+      >
         {isMobile && <PageHeader title="Vehicle Details" showBack />}
         <ScrollView
           style={styles.content}
           contentContainerStyle={styles.scrollContent}
+          keyboardShouldPersistTaps="handled"
           refreshControl={
             <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
           }
           showsVerticalScrollIndicator={false}
         >
+          {isMobile && loadError && (
+            <View style={{ padding: 16, gap: 12 }}>
+              <Text style={styles.errorText}>{loadError}</Text>
+              <Button
+                title="Retry"
+                loading={refreshing}
+                onPress={onRefresh}
+                style={{ minHeight: 48 }}
+              />
+            </View>
+          )}
           {isDesktopWeb ? (
             <View style={styles.webFrame}>
               {breadcrumbs}
@@ -1291,234 +1350,94 @@ function VehicleDetailContent() {
               </View>
             </View>
           ) : (
-            <>
-              {/* Hero Section */}
-              <View style={styles.heroSection}>
+            <View style={styles.compactSummary}>
+              <View style={styles.compactHeader}>
                 {vehicle.main_image_url && !imageError ? (
-                  <>
-                    <Image
-                      source={{
-                        uri: storageImageUrl(
-                          "vehicle-images",
-                          vehicle.main_image_url,
-                        ),
-                      }}
-                      style={styles.heroBackground}
-                      contentFit="cover"
-                      cachePolicy="memory-disk"
-                      transition={200}
-                      onError={() => setImageError(true)}
-                      blurRadius={isDesktopWeb ? 20 : 8}
-                    />
-                    <View style={styles.heroOverlay} />
-                  </>
+                  <Image
+                    source={{
+                      uri: storageImageUrl(
+                        "vehicle-images",
+                        vehicle.main_image_url,
+                      ),
+                    }}
+                    style={styles.compactImage}
+                    contentFit="cover"
+                    onError={() => setImageError(true)}
+                    accessibilityLabel={vehicleName}
+                  />
                 ) : (
-                  <View style={styles.heroOverlay} />
-                )}
-
-                {/* Hero Content */}
-                <View style={styles.heroContent}>
-                  <View style={styles.heroCard}>
-                    <View style={styles.vehicleHeader}>
-                      {vehicle.main_image_url && !imageError ? (
-                        <View style={{ position: "relative" }}>
-                          <Image
-                            source={{
-                              uri: storageImageUrl(
-                                "vehicle-images",
-                                vehicle.main_image_url,
-                              ),
-                            }}
-                            style={styles.vehicleIcon}
-                            contentFit="cover"
-                            cachePolicy="memory-disk"
-                            transition={200}
-                          />
-                          <View style={styles.ownershipBadge}>
-                            <IconSymbol
-                              name={
-                                vehicle.is_own_vehicle
-                                  ? "star.fill"
-                                  : "person.3.fill"
-                              }
-                              size={10}
-                              color={theme.colors.white}
-                            />
-                            <Text style={styles.ownershipBadgeText}>
-                              {vehicle.is_own_vehicle ? "Owned" : "Shared"}
-                            </Text>
-                          </View>
-                        </View>
-                      ) : (
-                        <View style={styles.vehicleIcon}>
-                          <IconSymbol
-                            name="car.fill"
-                            size={isDesktopWeb ? 36 : 26}
-                            color="white"
-                          />
-                        </View>
-                      )}
-                      <View style={styles.vehicleInfo}>
-                        <Text style={styles.vehicleName}>
-                          {vehicle.year} {vehicle.make} {vehicle.model}
-                        </Text>
-                        <Text style={styles.vehiclePlate}>
-                          {vehicle.license_plate}
-                        </Text>
-                      </View>
-
-                      {/* Action Buttons */}
-                      <View style={styles.vehicleActions}>
-                        <TouchableOpacity
-                          style={styles.actionButton}
-                          disabled={!canModify}
-                          onPress={() =>
-                            router.push(`/vehicles/${vehicle.id}/edit` as any)
-                          }
-                        >
-                          <IconSymbol
-                            name="pencil"
-                            size={isDesktopWeb ? 18 : 16}
-                            color={colors.primary}
-                          />
-                        </TouchableOpacity>
-                        {vehicle.is_own_vehicle && (
-                          <TouchableOpacity
-                            style={styles.actionButton}
-                            onPress={handleDelete}
-                          >
-                            <IconSymbol
-                              name="trash"
-                              size={isDesktopWeb ? 18 : 16}
-                              color={colors.error}
-                            />
-                          </TouchableOpacity>
-                        )}
-                      </View>
-                    </View>
-
-                    <View style={styles.vehicleDetails}>
-                      {vehicle.vin && (
-                        <View style={styles.detailItem}>
-                          <IconSymbol
-                            name="number"
-                            size={14}
-                            color={colors.textSecondary}
-                          />
-                          <Text style={styles.detailLabel}>VIN:</Text>
-                          <Text style={styles.detailValue}>{vehicle.vin}</Text>
-                        </View>
-                      )}
-                      <View style={styles.detailItem}>
-                        <IconSymbol
-                          name="calendar"
-                          size={14}
-                          color={colors.textSecondary}
-                        />
-                        <Text style={styles.detailLabel}>Added:</Text>
-                        <Text style={styles.detailValue}>
-                          {formatDateWithPrefix(vehicle.created_at, "Added")}
-                        </Text>
-                      </View>
-                    </View>
+                  <View
+                    accessibilityLabel="Vehicle image unavailable"
+                    style={[
+                      styles.compactImage,
+                      {
+                        backgroundColor: colors.background,
+                        alignItems: "center",
+                        justifyContent: "center",
+                      },
+                    ]}
+                  >
+                    <IconSymbol
+                      name="car.fill"
+                      size={32}
+                      color={colors.textSecondary}
+                    />
                   </View>
+                )}
+                <View style={styles.compactInfo}>
+                  <Text style={styles.compactName}>{vehicleName}</Text>
+                  <Text style={styles.compactMeta}>
+                    {vehicle.license_plate}
+                  </Text>
+                  <Text style={styles.compactMeta}>
+                    {!vehicle.is_own_vehicle
+                      ? "Shared with me"
+                      : vehicle.sharing_info?.is_shared
+                        ? "Shared"
+                        : "Owned"}
+                  </Text>
                 </View>
               </View>
-            </>
+              {!!vehicle.vin && (
+                <Text style={styles.compactMeta}>VIN: {vehicle.vin}</Text>
+              )}
+              <Text style={styles.compactMeta}>
+                {formatDateWithPrefix(vehicle.created_at, "Added")}
+              </Text>
+              <View style={styles.compactActions}>
+                <Button
+                  title="Edit Vehicle"
+                  variant="outline"
+                  disabled={!canModify}
+                  style={{ minHeight: 48 }}
+                  onPress={() => {
+                    if (canModify)
+                      router.push(`/vehicles/${vehicle.id}/edit` as any);
+                  }}
+                />
+                {vehicle.is_own_vehicle && (
+                  <ActionMenu
+                    label="Vehicle actions"
+                    minTouchSize={48}
+                    disabled={deleteLoading}
+                    items={[
+                      {
+                        label: "Delete Vehicle",
+                        icon: "trash",
+                        variant: "danger",
+                        disabled: deleteLoading,
+                        onPress: handleDelete,
+                      },
+                    ]}
+                  />
+                )}
+              </View>
+            </View>
           )}
 
           {/* Main Content */}
           <View style={styles.contentContainer}>
-            {/* Sharing Section */}
-            {vehicle.is_own_vehicle && (
-              <View
-                style={[
-                  styles.sharingCard,
-                  isDesktopWeb && [web.panel, { shadowOpacity: 0 }],
-                ]}
-              >
-                <TouchableOpacity
-                  style={styles.sharingHeader}
-                  onPress={() => setSharingExpanded(!sharingExpanded)}
-                  activeOpacity={0.7}
-                >
-                  <View style={styles.sharingLeft}>
-                    <View style={styles.sharingIcon}>
-                      <IconSymbol
-                        name="person.3.fill"
-                        size={isDesktopWeb ? 22 : 20}
-                        color={colors.primary}
-                      />
-                    </View>
-                    <View style={styles.sharingInfo}>
-                      <Text style={styles.sharingTitle}>Share with Groups</Text>
-                      <Text style={styles.sharingDescription}>
-                        {vehicle.sharing_info?.is_shared
-                          ? `Shared with ${vehicle.sharing_info.total_shares} group${vehicle.sharing_info.total_shares > 1 ? "s" : ""}`
-                          : "Allow groups to view this vehicle"}
-                      </Text>
-                    </View>
-                  </View>
-                  <View
-                    style={{
-                      flexDirection: "row",
-                      alignItems: "center",
-                      gap: spacing.md,
-                    }}
-                  >
-                    <TouchableOpacity
-                      onPress={openSharingModal}
-                      style={{
-                        paddingVertical: spacing.sm,
-                        paddingHorizontal: spacing.lg,
-                        borderRadius: 8,
-                        backgroundColor: withOpacity(colors.primary, 0.1),
-                      }}
-                      accessibilityRole="button"
-                      accessibilityLabel="Manage vehicle sharing"
-                    >
-                      <Text
-                        style={{ color: colors.primary, fontWeight: "600" }}
-                      >
-                        Manage
-                      </Text>
-                    </TouchableOpacity>
-                    {isDesktopWeb && (
-                      <TouchableOpacity style={styles.sharingExpandButton}>
-                        <IconSymbol
-                          name={sharingExpanded ? "chevron.up" : "chevron.down"}
-                          size={20}
-                          color={colors.textSecondary}
-                        />
-                      </TouchableOpacity>
-                    )}
-                  </View>
-                </TouchableOpacity>
-
-                {sharingExpanded &&
-                vehicle.sharing_info?.shared_with_groups &&
-                vehicle.sharing_info.shared_with_groups.length > 0 ? (
-                  <View style={styles.sharingGroupsList}>
-                    {vehicle.sharing_info.shared_with_groups.map(
-                      (groupName, index) => (
-                        <View key={index} style={styles.sharingGroupItem}>
-                          <View style={styles.sharingGroupAvatar}>
-                            <IconSymbol
-                              name="person.3.fill"
-                              size={16}
-                              color={colors.primary}
-                            />
-                          </View>
-                          <Text style={styles.sharingGroupName}>
-                            {groupName}
-                          </Text>
-                        </View>
-                      ),
-                    )}
-                  </View>
-                ) : null}
-              </View>
-            )}
+            {isDesktopWeb && sharingSection}
 
             {/* Stats Grid */}
             <View style={styles.statsGrid}>
@@ -1614,6 +1533,8 @@ function VehicleDetailContent() {
               />
             </View>
 
+            {isMobile && sharingSection}
+
             {/* Tab Navigation */}
             <View
               style={
@@ -1649,7 +1570,12 @@ function VehicleDetailContent() {
                 isDesktopWeb && [web.panel, { shadowOpacity: 0 }],
               ]}
             >
-              <View style={styles.logsHeader}>
+              <View
+                style={[
+                  styles.logsHeader,
+                  isMobile && { flexWrap: "wrap", gap: 12 },
+                ]}
+              >
                 <Text style={styles.logsTitle}>
                   Recent{" "}
                   {activeTab === "mileage"
@@ -1667,7 +1593,12 @@ function VehicleDetailContent() {
                   />
                 ) : (
                   <TouchableOpacity
-                    style={styles.addLogButton}
+                    style={[
+                      styles.addLogButton,
+                      { minHeight: 48, maxWidth: "100%" },
+                    ]}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Add ${activeTab} log`}
                     disabled={!canModify}
                     onPress={handleAddLog}
                   >
@@ -1676,7 +1607,9 @@ function VehicleDetailContent() {
                       size={16}
                       color={theme.colors.white}
                     />
-                    <Text style={styles.addLogButtonText}>Add</Text>
+                    <Text style={[styles.addLogButtonText, { flexShrink: 1 }]}>
+                      Add {activeTab} log
+                    </Text>
                   </TouchableOpacity>
                 )}
               </View>

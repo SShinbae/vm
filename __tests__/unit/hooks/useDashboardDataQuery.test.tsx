@@ -137,6 +137,33 @@ describe("useDashboardDataQuery reminders", () => {
     expect(result.current.remindersError).toBeNull();
   });
 
+  it("counts shared vehicles once across groups while keeping different IDs with the same name", async () => {
+    const shared = {
+      vehicle_id: "shared-1",
+      year: 2022,
+      make: "Honda",
+      model: "Civic",
+      current_mileage: 32000,
+      is_own_vehicle: false,
+      shared_groups: ["Family Fleet", "Work Fleet"],
+    };
+    mockRpc.mockResolvedValue({
+      data: [shared, { ...shared }, { ...shared, vehicle_id: "shared-2" }],
+      error: null,
+    });
+    const { result } = renderHook(() => useDashboardDataQuery(), {
+      wrapper: createWrapper(),
+    });
+
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    expect(result.current.vehicles.map((vehicle) => vehicle.id)).toEqual([
+      "shared-1",
+      "shared-2",
+    ]);
+    expect(result.current.stats.totalVehicles).toBe(2);
+    expect(result.current.stats.totalMileage).toBe(64000);
+  });
+
   it("reports reminder fetch failure separately from an empty result", async () => {
     mockReminderFailure = true;
     const { result } = renderHook(() => useDashboardDataQuery(), {

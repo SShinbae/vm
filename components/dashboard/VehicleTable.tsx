@@ -39,11 +39,18 @@ function VehicleTableRow({
     .filter((val) => val != null && val !== "")
     .map(String);
   const vehicleName = parts.length > 0 ? parts.join(" ") : "Unknown Vehicle";
+  const handleView = () =>
+    onView ? onView(vehicle.id) : router.push(`/vehicles/${vehicle.id}` as any);
 
   return (
     <View style={styles.row}>
       {/* Vehicle Column */}
-      <View style={styles.vehicleColumn}>
+      <TouchableOpacity
+        style={styles.vehicleColumn}
+        onPress={handleView}
+        accessibilityRole="link"
+        accessibilityLabel={`Open ${vehicleName}`}
+      >
         {vehicle.main_image_url && !imageError ? (
           <Image
             source={{
@@ -73,7 +80,7 @@ function VehicleTableRow({
               "Vehicle"}
           </Text>
         </View>
-      </View>
+      </TouchableOpacity>
 
       {/* Plate Number Column */}
       <View style={styles.plateColumn}>
@@ -129,11 +136,7 @@ function VehicleTableRow({
       <View style={styles.actionsColumn}>
         <TouchableOpacity
           style={styles.viewButton}
-          onPress={() =>
-            onView
-              ? onView(vehicle.id)
-              : router.push(`/vehicles/${vehicle.id}` as any)
-          }
+          onPress={handleView}
           accessibilityLabel={`View details for ${vehicleName}`}
         >
           <Text style={styles.viewButtonText}>View</Text>

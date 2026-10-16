@@ -28,7 +28,9 @@ import { useDialog } from "@/lib/contexts/DialogContext";
 import { toast } from "@/hooks/useToast";
 import { usePostHog } from "posthog-react-native";
 import { formatDateWithPrefix } from "@/lib/utils/dateUtils";
-import { PageHeader } from "@/components/ui/PageHeader";
+import { MobilePageHeader } from "@/components/layout/MobilePageHeader";
+import { Button } from "@/components/ui/Button";
+import { GroupAvatar } from "@/components/groups/GroupAvatar";
 import { ThemedText as Text } from "@/components/ui/ThemedText";
 import { useStyles } from "react-native-unistyles";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -41,7 +43,9 @@ export default function GroupDetailScreen() {
   const { theme } = useStyles();
   const layout = useResponsiveLayout();
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { width } = useWindowDimensions();
+  const { width, fontScale } = useWindowDimensions();
+  const stackActions = width < 360 || fontScale >= 1.3;
+  const isWebPage = layout.isWeb && !layout.isMobile;
   const navigation = useRouter();
 
   const handleGoBack = useCallback(() => {
@@ -52,8 +56,6 @@ export default function GroupDetailScreen() {
     }
   }, [navigation]);
 
-  // Clamp font size: min 10, preferred based on width, max 14
-  const tabFontSize = Math.min(Math.max(width * 0.03, 10), 14);
   const { user } = useAuth();
   const dialog = useDialog();
   const posthog = usePostHog();
@@ -65,6 +67,7 @@ export default function GroupDetailScreen() {
   const [sharedVehicles, setSharedVehicles] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [loadError, setLoadError] = useState(false);
   const focused = useRef(false);
   const requestId = useRef(0);
 
@@ -80,9 +83,16 @@ export default function GroupDetailScreen() {
         ]);
       if (!focused.current || currentRequest !== requestId.current) return;
 
+      setLoadError(
+        !!(
+          groupResult.error ||
+          invitationsResult.error ||
+          vehiclesResult.error
+        ),
+      );
       if (groupResult.error) {
         toast.error("Failed to load group details");
-        handleGoBack();
+        if (isWebPage) handleGoBack();
       } else if (groupResult.data) {
         setGroup(groupResult.data);
       }
@@ -91,6 +101,7 @@ export default function GroupDetailScreen() {
       if (vehiclesResult.data) setSharedVehicles(vehiclesResult.data);
     } catch {
       if (focused.current && currentRequest === requestId.current) {
+        setLoadError(true);
         toast.error("Failed to load group details");
       }
     } finally {
@@ -99,7 +110,7 @@ export default function GroupDetailScreen() {
         setRefreshing(false);
       }
     }
-  }, [id, handleGoBack]);
+  }, [id, handleGoBack, isWebPage]);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -115,6 +126,8 @@ export default function GroupDetailScreen() {
     setBusy(true);
     try {
       await fn();
+    } catch {
+      toast.error("Couldn't update group. Please try again.");
     } finally {
       busyRef.current = false;
       setBusy(false);
@@ -269,7 +282,7 @@ export default function GroupDetailScreen() {
     }, [fetchGroupData]),
   );
 
-  if (layout.isWeb && !layout.isMobile) {
+  if (isWebPage) {
     return (
       <GroupWebDetail
         group={group}
@@ -297,8 +310,15 @@ export default function GroupDetailScreen() {
     return (
       <SafeAreaView
         style={{ flex: 1, backgroundColor: theme.colors.background }}
+        edges={["top", "left", "right", "bottom"]}
       >
-        <PageHeader title="Loading..." showBack />
+        <View style={{ paddingHorizontal: 16 }}>
+          <MobilePageHeader
+            title="Group details"
+            subtitle="Loading group…"
+            onBack={handleGoBack}
+          />
+        </View>
         <SkeletonGroupDetail />
       </SafeAreaView>
     );
@@ -308,8 +328,14 @@ export default function GroupDetailScreen() {
     return (
       <SafeAreaView
         style={{ flex: 1, backgroundColor: theme.colors.background }}
+        edges={["top", "left", "right", "bottom"]}
       >
-        <PageHeader title="Group Not Found" showBack />
+        <View style={{ paddingHorizontal: 16 }}>
+          <MobilePageHeader
+            title={loadError ? "Group details" : "Group Not Found"}
+            onBack={handleGoBack}
+          />
+        </View>
         <View
           style={{
             flex: 1,
@@ -318,13 +344,30 @@ export default function GroupDetailScreen() {
             padding: theme.spacing.lg,
           }}
         >
-          <Text>This group does not exist or you don&apos;t have access.</Text>
+          <Text>
+            {loadError
+              ? "Couldn't load group details. Please try again."
+              : "This group does not exist or you don't have access."}
+          </Text>
+          {loadError && (
+            <Button
+              title="Retry group details"
+              variant="outline"
+              disabled={refreshing}
+              onPress={() => {
+                void onRefresh();
+              }}
+              style={{ minHeight: 48, marginTop: 16 }}
+            />
+          )}
         </View>
       </SafeAreaView>
     );
   }
 
   const isOwner = group.owner_id === user?.id;
+  const visibleTab =
+    !isOwner && activeTab === "invitations" ? "members" : activeTab;
 
   const MemberCard = ({ member }: { member: any }) => {
     const isMemberOwner = member.user_id === group.owner_id;
@@ -341,43 +384,24 @@ export default function GroupDetailScreen() {
           borderColor: theme.colors.border,
         }}
       >
-        <View style={{ flexDirection: "row", alignItems: "flex-start" }}>
-          {member.profiles?.avatar_url ? (
-            <Image
-              source={{
-                uri: storageImageUrl(
-                  "profile-avatars",
-                  member.profiles.avatar_url,
-                ),
-              }}
-              style={{
-                width: 40,
-                height: 40,
-                borderRadius: 20,
-                marginRight: theme.spacing.sm,
-              }}
-              contentFit="cover"
+        <View
+          style={{
+            flexDirection: "row",
+            flexWrap: "wrap",
+            alignItems: "flex-start",
+            rowGap: 12,
+          }}
+        >
+          <View style={{ marginRight: 12 }}>
+            <GroupAvatar
+              name={
+                member.profiles?.full_name || member.profiles?.email || "Member"
+              }
+              avatarUrl={member.profiles?.avatar_url}
+              size={40}
             />
-          ) : (
-            <View
-              style={{
-                width: 40,
-                height: 40,
-                borderRadius: 20,
-                backgroundColor: withOpacity(theme.colors.primary, 0.12),
-                alignItems: "center",
-                justifyContent: "center",
-                marginRight: theme.spacing.sm,
-              }}
-            >
-              <IconSymbol
-                name="person.fill"
-                size={20}
-                color={theme.colors.primary}
-              />
-            </View>
-          )}
-          <View style={{ flex: 1 }}>
+          </View>
+          <View style={{ flex: 1, minWidth: 0 }}>
             <View
               style={{
                 flexDirection: "row",
@@ -386,7 +410,7 @@ export default function GroupDetailScreen() {
                 gap: spacing.sm,
               }}
             >
-              <Text weight="semibold">
+              <Text weight="semibold" style={{ flexShrink: 1 }}>
                 {member.profiles?.full_name || member.profiles?.email}
                 {isCurrentUser && " (You)"}
               </Text>
@@ -413,9 +437,23 @@ export default function GroupDetailScreen() {
             </Text>
           </View>
           {!isMemberOwner && !isCurrentUser && isOwner && (
-            <View style={{ flexDirection: "row" }}>
+            <View
+              style={{
+                flexDirection: "row",
+                flexBasis: stackActions ? "100%" : undefined,
+                justifyContent: "flex-end",
+              }}
+            >
               <TouchableOpacity
-                style={{ padding: spacing.sm }}
+                disabled={busy}
+                accessibilityState={{ disabled: busy }}
+                style={{
+                  padding: spacing.sm,
+                  minWidth: 48,
+                  minHeight: 48,
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
                 accessibilityRole="button"
                 accessibilityLabel={`Make ${member.profiles?.full_name || member.profiles?.email} the owner`}
                 onPress={() =>
@@ -432,7 +470,15 @@ export default function GroupDetailScreen() {
                 />
               </TouchableOpacity>
               <TouchableOpacity
-                style={{ padding: spacing.sm }}
+                disabled={busy}
+                accessibilityState={{ disabled: busy }}
+                style={{
+                  padding: spacing.sm,
+                  minWidth: 48,
+                  minHeight: 48,
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
                 accessibilityRole="button"
                 accessibilityLabel={`Remove ${member.profiles?.full_name || member.profiles?.email}`}
                 onPress={() =>
@@ -466,7 +512,14 @@ export default function GroupDetailScreen() {
         borderColor: theme.colors.border,
       }}
     >
-      <View style={{ flexDirection: "row", alignItems: "flex-start" }}>
+      <View
+        style={{
+          flexDirection: "row",
+          flexWrap: "wrap",
+          alignItems: "flex-start",
+          rowGap: 12,
+        }}
+      >
         <View
           style={{
             width: 36,
@@ -484,7 +537,7 @@ export default function GroupDetailScreen() {
             color={theme.colors.primary}
           />
         </View>
-        <View style={{ flex: 1 }}>
+        <View style={{ flex: 1, minWidth: 0 }}>
           <Text weight="semibold">{invitation.email}</Text>
           <Text size="sm" color="secondary">
             Status:{" "}
@@ -496,9 +549,24 @@ export default function GroupDetailScreen() {
           </Text>
         </View>
         {isOwner && (
-          <View style={{ flexDirection: "row", alignItems: "center" }}>
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              flexBasis: stackActions ? "100%" : undefined,
+              justifyContent: "flex-end",
+            }}
+          >
             <TouchableOpacity
-              style={{ padding: spacing.sm }}
+              disabled={busy}
+              accessibilityState={{ disabled: busy }}
+              style={{
+                padding: spacing.sm,
+                minWidth: 48,
+                minHeight: 48,
+                alignItems: "center",
+                justifyContent: "center",
+              }}
               onPress={() =>
                 handleResendInvitation(invitation.id, invitation.email)
               }
@@ -512,7 +580,15 @@ export default function GroupDetailScreen() {
               />
             </TouchableOpacity>
             <TouchableOpacity
-              style={{ padding: spacing.sm }}
+              disabled={busy}
+              accessibilityState={{ disabled: busy }}
+              style={{
+                padding: spacing.sm,
+                minWidth: 48,
+                minHeight: 48,
+                alignItems: "center",
+                justifyContent: "center",
+              }}
               onPress={() =>
                 handleCancelInvitation(invitation.id, invitation.email)
               }
@@ -537,6 +613,8 @@ export default function GroupDetailScreen() {
         borderWidth: 1,
         borderColor: theme.colors.border,
       }}
+      accessibilityRole="button"
+      accessibilityLabel={`Open ${vehicle.year} ${vehicle.make} ${vehicle.model}`}
       onPress={() => router.push(`/vehicles/${vehicle.id}` as any)}
     >
       <View style={{ flexDirection: "row", alignItems: "center" }}>
@@ -572,7 +650,7 @@ export default function GroupDetailScreen() {
             />
           </View>
         )}
-        <View style={{ flex: 1 }}>
+        <View style={{ flex: 1, minWidth: 0 }}>
           <Text weight="semibold">
             {vehicle.year} {vehicle.make} {vehicle.model}
           </Text>
@@ -596,24 +674,17 @@ export default function GroupDetailScreen() {
   );
 
   const renderTabContent = () => {
-    if (activeTab === "members") {
+    if (visibleTab === "members") {
       return (
-        <ScrollView
-          style={{ flex: 1 }}
-          contentContainerStyle={{ padding: theme.spacing.md }}
-          refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-          }
-          showsVerticalScrollIndicator={false}
-        >
+        <>
           {group.group_members?.map((member) => (
             <MemberCard key={member.id} member={member} />
           ))}
-        </ScrollView>
+        </>
       );
     }
 
-    if (activeTab === "vehicles") {
+    if (visibleTab === "vehicles") {
       if (sharedVehicles.length === 0) {
         return (
           <View
@@ -657,18 +728,11 @@ export default function GroupDetailScreen() {
       }
 
       return (
-        <ScrollView
-          style={{ flex: 1 }}
-          contentContainerStyle={{ padding: theme.spacing.md }}
-          refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-          }
-          showsVerticalScrollIndicator={false}
-        >
+        <>
           {sharedVehicles.map((vehicle) => (
             <VehicleCard key={vehicle.id} vehicle={vehicle} />
           ))}
-        </ScrollView>
+        </>
       );
     }
 
@@ -711,205 +775,184 @@ export default function GroupDetailScreen() {
     }
 
     return (
+      <>
+        {invitations.map((invitation) => (
+          <InvitationCard key={invitation.id} invitation={invitation} />
+        ))}
+      </>
+    );
+  };
+
+  return (
+    <SafeAreaView
+      style={{ flex: 1, backgroundColor: theme.colors.background }}
+      edges={["top", "left", "right", "bottom"]}
+    >
       <ScrollView
-        style={{ flex: 1 }}
-        contentContainerStyle={{ padding: theme.spacing.md }}
+        contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 32 }}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
         showsVerticalScrollIndicator={false}
       >
-        {invitations.map((invitation) => (
-          <InvitationCard key={invitation.id} invitation={invitation} />
-        ))}
-      </ScrollView>
-    );
-  };
-
-  return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.background }}>
-      <PageHeader
-        title={group.name}
-        subtitle={group.description ?? undefined}
-        showBack
-        rightContent={
-          isOwner ? (
-            <TouchableOpacity
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                backgroundColor: theme.colors.primary,
-                paddingHorizontal: theme.spacing.md,
-                paddingVertical: theme.spacing.xs,
-                borderRadius: theme.spacing.sm,
-                gap: theme.spacing.xs,
+        <MobilePageHeader
+          title={group.name}
+          subtitle={group.description || undefined}
+          onBack={handleGoBack}
+          action={
+            isOwner ? (
+              <Button
+                title="Invite Members"
+                icon="person.badge.plus"
+                disabled={busy}
+                onPress={() => router.push(`/groups/${group.id}/invite`)}
+                style={{ minHeight: 48 }}
+              />
+            ) : undefined
+          }
+        />
+        {loadError && (
+          <View style={{ gap: 12, marginBottom: 16 }}>
+            <Text>Some group details couldn&apos;t load. Please retry.</Text>
+            <Button
+              title="Retry group details"
+              variant="outline"
+              disabled={refreshing}
+              onPress={() => {
+                void onRefresh();
               }}
-              onPress={() => router.push(`/groups/${group.id}/invite` as any)}
+              style={{ minHeight: 48 }}
+            />
+          </View>
+        )}
+        <View
+          style={{
+            flexDirection: "row",
+            flexWrap: "wrap",
+            gap: 8,
+            marginBottom: 16,
+          }}
+        >
+          {[
+            { key: "members", label: `Members (${group.member_count})` },
+            { key: "vehicles", label: `Vehicles (${sharedVehicles.length})` },
+            ...(isOwner
+              ? [
+                  {
+                    key: "invitations",
+                    label: `Invites (${invitations.length})`,
+                  },
+                ]
+              : []),
+          ].map((tab) => (
+            <TouchableOpacity
+              key={tab.key}
+              accessibilityRole="tab"
+              accessibilityLabel={tab.label}
+              accessibilityState={{ selected: visibleTab === tab.key }}
+              onPress={() => setActiveTab(tab.key as TabType)}
+              style={{
+                flexGrow: 1,
+                flexBasis: stackActions ? "100%" : "28%",
+                minWidth: 0,
+                minHeight: 48,
+                padding: 12,
+                borderRadius: theme.borderRadius.md,
+                backgroundColor:
+                  visibleTab === tab.key
+                    ? theme.colors.primary
+                    : theme.colors.surface,
+                alignItems: "center",
+                justifyContent: "center",
+              }}
             >
-              <IconSymbol name="person.badge.plus" size={16} color="white" />
-              <Text size="sm" weight="semibold" style={{ color: "white" }}>
-                Invite Members
+              <Text
+                weight="semibold"
+                style={{
+                  color:
+                    visibleTab === tab.key
+                      ? theme.colors.white
+                      : theme.colors.text,
+                  fontSize: theme.fontSize.sm,
+                }}
+              >
+                {tab.label}
               </Text>
             </TouchableOpacity>
-          ) : undefined
-        }
-      />
+          ))}
+        </View>
+        {/* Tab Content */}
+        {renderTabContent()}
 
-      {/* Tabs */}
-      <View
-        style={{
-          flexDirection: "row",
-          padding: theme.spacing.sm,
-          gap: theme.spacing.xs,
-          borderBottomWidth: 1,
-          borderBottomColor: theme.colors.border,
-        }}
-      >
-        <TouchableOpacity
-          style={{
-            flex: 1,
-            paddingVertical: theme.spacing.sm,
-            paddingHorizontal: theme.spacing.sm,
-            borderRadius: theme.spacing.sm,
-            backgroundColor:
-              activeTab === "members" ? theme.colors.primary : "transparent",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-          onPress={() => setActiveTab("members")}
-        >
-          <Text
-            weight="semibold"
-            numberOfLines={1}
+        {/* Leave Group Button (for non-owners) */}
+        {!isOwner && (
+          <View
             style={{
-              color: activeTab === "members" ? "white" : theme.colors.text,
-              fontSize: tabFontSize,
+              padding: theme.spacing.md,
+              borderTopWidth: 1,
+              borderTopColor: theme.colors.border,
             }}
           >
-            Members({group.member_count})
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={{
-            flex: 1,
-            paddingVertical: theme.spacing.sm,
-            paddingHorizontal: theme.spacing.sm,
-            borderRadius: theme.spacing.sm,
-            backgroundColor:
-              activeTab === "vehicles" ? theme.colors.primary : "transparent",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-          onPress={() => setActiveTab("vehicles")}
-        >
-          <Text
-            weight="semibold"
-            numberOfLines={1}
-            style={{
-              color: activeTab === "vehicles" ? "white" : theme.colors.text,
-              fontSize: tabFontSize,
-            }}
-          >
-            Vehicles({sharedVehicles.length})
-          </Text>
-        </TouchableOpacity>
-
-        {isOwner && (
-          <TouchableOpacity
-            style={{
-              flex: 1,
-              paddingVertical: theme.spacing.sm,
-              paddingHorizontal: theme.spacing.sm,
-              borderRadius: theme.spacing.sm,
-              backgroundColor:
-                activeTab === "invitations"
-                  ? theme.colors.primary
-                  : "transparent",
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-            onPress={() => setActiveTab("invitations")}
-          >
-            <Text
-              weight="semibold"
-              numberOfLines={1}
+            <TouchableOpacity
               style={{
-                color:
-                  activeTab === "invitations" ? "white" : theme.colors.text,
-                fontSize: tabFontSize,
+                minHeight: 48,
+                justifyContent: "center",
+                backgroundColor: withOpacity(theme.colors.error, 0.06),
+                paddingVertical: theme.spacing.sm,
+                paddingHorizontal: theme.spacing.md,
+                borderRadius: theme.spacing.sm,
+                borderWidth: 1,
+                borderColor: theme.colors.error,
+                alignItems: "center",
               }}
+              onPress={handleLeaveGroup}
+              accessibilityRole="button"
+              accessibilityLabel="Leave Group"
+              disabled={busy}
             >
-              Invites({invitations.length})
-            </Text>
-          </TouchableOpacity>
+              <Text color="error" weight="semibold">
+                Leave Group
+              </Text>
+            </TouchableOpacity>
+          </View>
         )}
-      </View>
 
-      {/* Tab Content */}
-      {renderTabContent()}
-
-      {/* Leave Group Button (for non-owners) */}
-      {!isOwner && (
-        <View
-          style={{
-            padding: theme.spacing.md,
-            borderTopWidth: 1,
-            borderTopColor: theme.colors.border,
-          }}
-        >
-          <TouchableOpacity
+        {/* Delete Group Button (for owners) */}
+        {isOwner && (
+          <View
             style={{
-              backgroundColor: withOpacity(theme.colors.error, 0.06),
-              paddingVertical: theme.spacing.sm,
-              paddingHorizontal: theme.spacing.md,
-              borderRadius: theme.spacing.sm,
-              borderWidth: 1,
-              borderColor: theme.colors.error,
-              alignItems: "center",
+              padding: theme.spacing.md,
+              borderTopWidth: 1,
+              borderTopColor: theme.colors.border,
             }}
-            onPress={handleLeaveGroup}
-            disabled={busy}
           >
-            <Text color="error" weight="semibold">
-              Leave Group
-            </Text>
-          </TouchableOpacity>
-        </View>
-      )}
-
-      {/* Delete Group Button (for owners) */}
-      {isOwner && (
-        <View
-          style={{
-            padding: theme.spacing.md,
-            borderTopWidth: 1,
-            borderTopColor: theme.colors.border,
-          }}
-        >
-          <TouchableOpacity
-            style={{
-              backgroundColor: withOpacity(theme.colors.error, 0.06),
-              paddingVertical: theme.spacing.sm,
-              paddingHorizontal: theme.spacing.md,
-              borderRadius: theme.spacing.sm,
-              borderWidth: 1,
-              borderColor: theme.colors.error,
-              alignItems: "center",
-              flexDirection: "row",
-              justifyContent: "center",
-              gap: theme.spacing.sm,
-            }}
-            onPress={handleDeleteGroup}
-            disabled={busy}
-          >
-            <IconSymbol name="trash" size={16} color={theme.colors.error} />
-            <Text color="error" weight="semibold">
-              Delete Group
-            </Text>
-          </TouchableOpacity>
-        </View>
-      )}
+            <TouchableOpacity
+              style={{
+                minHeight: 48,
+                justifyContent: "center",
+                backgroundColor: withOpacity(theme.colors.error, 0.06),
+                paddingVertical: theme.spacing.sm,
+                paddingHorizontal: theme.spacing.md,
+                borderRadius: theme.spacing.sm,
+                borderWidth: 1,
+                borderColor: theme.colors.error,
+                alignItems: "center",
+                flexDirection: "row",
+                gap: theme.spacing.sm,
+              }}
+              onPress={handleDeleteGroup}
+              accessibilityRole="button"
+              accessibilityLabel="Delete Group"
+              disabled={busy}
+            >
+              <IconSymbol name="trash" size={16} color={theme.colors.error} />
+              <Text color="error" weight="semibold">
+                Delete Group
+              </Text>
+            </TouchableOpacity>
+          </View>
+        )}
+      </ScrollView>
     </SafeAreaView>
   );
 }

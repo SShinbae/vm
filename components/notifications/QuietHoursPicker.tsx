@@ -1,6 +1,12 @@
 import { withOpacity, spacing } from "@/src/design-system";
 import React from "react";
-import { Platform, Text, TouchableOpacity, View } from "react-native";
+import {
+  Platform,
+  Text,
+  TouchableOpacity,
+  useWindowDimensions,
+  View,
+} from "react-native";
 import { useStyles } from "react-native-unistyles";
 
 const DAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -23,16 +29,18 @@ function TimeInput({
   value,
   onChange,
   label,
+  stacked,
 }: {
   value: string;
   onChange: (time: string) => void;
   label: string;
+  stacked: boolean;
 }) {
   const { theme } = useStyles();
 
   if (Platform.OS === "web") {
     return (
-      <View style={{ flex: 1 }}>
+      <View style={{ flex: stacked ? undefined : 1, minWidth: 0 }}>
         <Text
           style={{
             fontSize: theme.fontSize.sm,
@@ -44,6 +52,7 @@ function TimeInput({
         </Text>
         <input
           type="time"
+          aria-label={`${label} quiet hours`}
           value={value}
           onChange={(e) => onChange(e.target.value)}
           style={{
@@ -52,8 +61,11 @@ function TimeInput({
             border: `1px solid ${theme.colors.border}`,
             backgroundColor: theme.colors.surface,
             color: theme.colors.text,
-            fontSize: 14,
+            fontSize: stacked ? 16 : 14,
             width: "100%",
+            minWidth: 0,
+            minHeight: 48,
+            boxSizing: "border-box",
           }}
         />
       </View>
@@ -73,7 +85,13 @@ function TimeInput({
   };
 
   return (
-    <View style={{ flex: 1, alignItems: "center" }}>
+    <View
+      style={{
+        flex: stacked ? undefined : 1,
+        alignItems: stacked ? "flex-start" : "center",
+        minWidth: 0,
+      }}
+    >
       <Text
         style={{
           fontSize: theme.fontSize.sm,
@@ -91,11 +109,13 @@ function TimeInput({
         }}
       >
         <TouchableOpacity
+          accessibilityRole="button"
+          accessibilityLabel={`${label}: 30 minutes earlier`}
           onPress={() => adjustTime(-30)}
           style={{
-            width: 32,
-            height: 32,
-            borderRadius: 16,
+            width: 48,
+            height: 48,
+            borderRadius: 24,
             backgroundColor: withOpacity(theme.colors.primary, 0.08),
             alignItems: "center",
             justifyContent: "center",
@@ -117,11 +137,13 @@ function TimeInput({
           {value}
         </Text>
         <TouchableOpacity
+          accessibilityRole="button"
+          accessibilityLabel={`${label}: 30 minutes later`}
           onPress={() => adjustTime(30)}
           style={{
-            width: 32,
-            height: 32,
-            borderRadius: 16,
+            width: 48,
+            height: 48,
+            borderRadius: 24,
             backgroundColor: withOpacity(theme.colors.primary, 0.08),
             alignItems: "center",
             justifyContent: "center",
@@ -145,6 +167,8 @@ export function QuietHoursPicker({
   onDaysChange,
 }: QuietHoursPickerProps) {
   const { theme } = useStyles();
+  const { width, fontScale } = useWindowDimensions();
+  const stacked = width < 600 || fontScale >= 1.3;
 
   const toggleDay = (day: number) => {
     if (selectedDays.includes(day)) {
@@ -159,25 +183,33 @@ export function QuietHoursPicker({
       {/* Time Range */}
       <View
         style={{
-          flexDirection: "row",
+          flexDirection: stacked ? "column" : "row",
           gap: theme.spacing.lg,
-          alignItems: "flex-end",
+          alignItems: stacked ? "stretch" : "flex-end",
         }}
       >
         <TimeInput
           value={startTime}
           onChange={onStartTimeChange}
           label="From"
+          stacked={stacked}
         />
-        <Text
-          style={{
-            color: theme.colors.textSecondary,
-            paddingBottom: theme.spacing.sm,
-          }}
-        >
-          to
-        </Text>
-        <TimeInput value={endTime} onChange={onEndTimeChange} label="Until" />
+        {!stacked && (
+          <Text
+            style={{
+              color: theme.colors.textSecondary,
+              paddingBottom: theme.spacing.sm,
+            }}
+          >
+            to
+          </Text>
+        )}
+        <TimeInput
+          value={endTime}
+          onChange={onEndTimeChange}
+          label="Until"
+          stacked={stacked}
+        />
       </View>
 
       {/* Day Chips */}
@@ -203,8 +235,15 @@ export function QuietHoursPicker({
             return (
               <TouchableOpacity
                 key={index}
+                accessibilityRole="button"
+                accessibilityLabel={`${label} quiet day`}
+                accessibilityState={{ selected: isSelected }}
                 onPress={() => toggleDay(index)}
                 style={{
+                  minHeight: 48,
+                  minWidth: 48,
+                  alignItems: "center",
+                  justifyContent: "center",
                   paddingVertical: theme.spacing.sm,
                   paddingHorizontal: theme.spacing.md,
                   borderRadius: theme.borderRadius.md,

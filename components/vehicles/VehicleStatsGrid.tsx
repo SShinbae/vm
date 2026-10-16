@@ -1,4 +1,6 @@
 import React from "react";
+import { useWindowDimensions } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { StatCard as HomeStatCard } from "@/components/dashboard/StatCard";
 import { useResponsiveLayout } from "@/hooks/use-responsive-layout";
 import { ResponsiveGrid } from "@/components/layout/ResponsiveGrid";
@@ -16,14 +18,19 @@ interface VehicleStatsGridProps {
  */
 export function VehicleStatsGrid({ stats }: VehicleStatsGridProps) {
   const layout = useResponsiveLayout();
+  const { width, fontScale } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
+  const isCompact = !layout.isWeb || layout.isMobile;
+  const columns =
+    width - insets.left - insets.right - 32 < 328 || fontScale >= 1.3 ? 1 : 2;
   const MetricCard = layout.isWeb && !layout.isMobile ? HomeStatCard : StatCard;
   return (
     <ResponsiveGrid
       columns={{
-        mobile: 2,
-        tablet: 2,
-        desktop: layout.isWeb && !layout.isMobile ? 4 : 2,
-        largeDesktop: 4,
+        mobile: isCompact ? columns : 2,
+        tablet: isCompact ? columns : 2,
+        desktop: isCompact ? columns : 4,
+        largeDesktop: isCompact ? columns : 4,
       }}
       spacing={16}
     >

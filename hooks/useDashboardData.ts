@@ -1,6 +1,7 @@
 import { useAuth } from "@/lib/contexts/AuthContext";
 import { supabase } from "@/services/supabaseClient";
 import { Database } from "@/types/database";
+import { fetchAccessibleVehicles } from "@/lib/services/vehicleAccess";
 import { useCallback, useEffect, useState } from "react";
 
 // --- Types (Could be in a separate types.ts file) ---
@@ -104,9 +105,8 @@ export const useDashboardData = () => {
     if (!user) return;
     try {
       // Get ALL vehicles (owned + shared) using the database function
-      const { data: allVehiclesData, error: vehiclesError } = await (
-        supabase as any
-      ).rpc("get_user_vehicles_with_sharing", { user_uuid: user.id });
+      const { data: allVehiclesData, error: vehiclesError } =
+        await fetchAccessibleVehicles(user.id);
 
       if (vehiclesError) {
         // If the RPC function doesn't exist, fall back to basic query

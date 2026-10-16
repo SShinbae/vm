@@ -3,7 +3,7 @@ import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { storageImageUrl } from "@/lib/utils/storagePath";
 import { useResponsiveLayout } from "@/hooks/use-responsive-layout";
 import { webPageStyles } from "@/components/layout/webPageStyles";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Animated, Pressable, Text, View } from "react-native";
 import { Image } from "expo-image";
 import { createStyleSheet, useStyles } from "react-native-unistyles";
@@ -26,6 +26,15 @@ export const VehicleCard = React.memo(
     const { styles, theme } = useStyles(stylesheet);
     const { styles: web } = useStyles(webPageStyles);
     const layout = useResponsiveLayout();
+    const isCompact = !layout.isWeb || layout.isMobile;
+    const vehicleName = [vehicle.year, vehicle.make, vehicle.model]
+      .filter(Boolean)
+      .join(" ");
+    const status = !vehicle.is_own_vehicle
+      ? "Shared with me"
+      : vehicle.sharing_info?.is_shared || vehicle.shared_groups?.length
+        ? "Shared"
+        : "Owned";
     const [imageError, setImageError] = useState(false);
     const scaleAnim = useState(new Animated.Value(1))[0];
     const reduceMotion = useReducedMotion();
@@ -34,7 +43,7 @@ export const VehicleCard = React.memo(
       if (reduceMotion) return;
       Animated.spring(scaleAnim, {
         toValue: 0.98,
-        useNativeDriver: true,
+        useNativeDriver: !layout.isWeb,
       }).start();
     };
 
@@ -43,7 +52,7 @@ export const VehicleCard = React.memo(
       Animated.spring(scaleAnim, {
         toValue: 1,
         friction: 3,
-        useNativeDriver: true,
+        useNativeDriver: !layout.isWeb,
       }).start();
     };
 
@@ -59,19 +68,29 @@ export const VehicleCard = React.memo(
         ? storageImageUrl("vehicle-images", vehicle.main_image_url)
         : null;
 
+    useEffect(() => setImageError(false), [imageUrl]);
+
     return (
       <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
         <Pressable
           style={[
             styles.vehicleCard,
+            isCompact && { padding: 16, gap: 12 },
             layout.isWeb && !layout.isMobile && web.panel,
           ]}
+          accessibilityRole="button"
+          accessibilityLabel={`View details for ${vehicleName}`}
           onPress={() => onPress(vehicle)}
           onPressIn={handlePressIn}
           onPressOut={handlePressOut}
         >
           {/* Left: Image/Icon */}
-          <View style={styles.vehicleImageContainer}>
+          <View
+            style={[
+              styles.vehicleImageContainer,
+              isCompact && { width: 60, height: 60 },
+            ]}
+          >
             {imageUrl && !imageError ? (
               <Image
                 source={{ uri: imageUrl }}
@@ -93,20 +112,49 @@ export const VehicleCard = React.memo(
           </View>
 
           {/* Right: Vehicle Info */}
-          <View style={styles.vehicleCardContent}>
-            <Text style={styles.vehicleName} numberOfLines={1}>
-              {[vehicle.year, vehicle.make, vehicle.model]
-                .filter(Boolean)
-                .join(" ")}
+          <View style={[styles.vehicleCardContent, { minWidth: 0 }]}>
+            <Text
+              style={styles.vehicleName}
+              numberOfLines={isCompact ? undefined : 1}
+            >
+              {vehicleName}
             </Text>
-            <Text style={styles.vehiclePlate} numberOfLines={1}>
+            <Text
+              style={styles.vehiclePlate}
+              numberOfLines={isCompact ? undefined : 1}
+            >
               {vehicle.license_plate || "N/A"}
             </Text>
-            <Text style={styles.vehicleMileage} numberOfLines={1}>
+            <Text
+              style={styles.vehicleMileage}
+              numberOfLines={isCompact ? undefined : 1}
+            >
               {vehicle.current_mileage
                 ? `${vehicle.current_mileage.toLocaleString()} km`
                 : "0 km"}
             </Text>
+            {isCompact && (
+              <View
+                style={{
+                  alignSelf: "flex-start",
+                  maxWidth: "100%",
+                  borderRadius: theme.borderRadius.sm,
+                  paddingHorizontal: 8,
+                  paddingVertical: 4,
+                  backgroundColor: withOpacity(theme.colors.primary, 0.08),
+                }}
+              >
+                <Text
+                  style={{
+                    color: theme.colors.primary,
+                    fontSize: theme.fontSize.xs,
+                    flexShrink: 1,
+                  }}
+                >
+                  {status}
+                </Text>
+              </View>
+            )}
           </View>
         </Pressable>
       </Animated.View>

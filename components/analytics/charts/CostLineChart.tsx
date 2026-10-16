@@ -3,8 +3,8 @@
  * Displays cost trends over time with multiple data series
  */
 
-import React from "react";
-import { Dimensions, Text, View } from "react-native";
+import React, { useState } from "react";
+import { Text, View } from "react-native";
 import { LineChart } from "react-native-chart-kit";
 import { createStyleSheet, useStyles } from "react-native-unistyles";
 import { useResponsiveLayout } from "@/hooks/use-responsive-layout";
@@ -29,11 +29,20 @@ export function CostLineChart({
 }: CostLineChartProps) {
   const { styles, theme } = useStyles(stylesheet);
   const { isMobile, isTablet } = useResponsiveLayout();
-  const screenWidth = Dimensions.get("window").width;
+  const [chartWidth, setChartWidth] = useState(0);
+  const labelStep = Math.max(
+    1,
+    Math.ceil(data.length / Math.max(2, Math.floor(chartWidth / 64))),
+  );
 
   if (data.length === 0) {
     return (
-      <View style={styles.container}>
+      <View
+        style={styles.container}
+        accessibilityRole="image"
+        accessibilityLabel={title}
+        onLayout={(event) => setChartWidth(event.nativeEvent.layout.width)}
+      >
         <Text
           style={[
             styles.title,
@@ -63,7 +72,9 @@ export function CostLineChart({
   }
 
   const chartData = {
-    labels: data.map((d) => d.label),
+    labels: data.map((d, index) =>
+      index % labelStep === 0 || index === data.length - 1 ? d.label : "",
+    ),
     datasets: [
       {
         data: data.map((d) => d.totalCost),
@@ -83,7 +94,6 @@ export function CostLineChart({
         withDots: false,
       },
     ],
-    legend: showLegend ? ["Total", "Fuel", "Service"] : undefined,
   };
 
   const chartConfig = {
@@ -110,7 +120,12 @@ export function CostLineChart({
   ];
 
   return (
-    <View style={styles.container}>
+    <View
+      style={styles.container}
+      accessibilityRole="image"
+      accessibilityLabel={title}
+      onLayout={(event) => setChartWidth(event.nativeEvent.layout.width)}
+    >
       <Text
         style={[
           styles.title,
@@ -130,19 +145,21 @@ export function CostLineChart({
           {subtitle}
         </Text>
       )}
-      <LineChart
-        data={chartData}
-        width={screenWidth - 32}
-        height={height}
-        chartConfig={chartConfig}
-        bezier
-        style={styles.chart}
-        withInnerLines={false}
-        withOuterLines={true}
-        withVerticalLines={false}
-        withHorizontalLines={true}
-        fromZero
-      />
+      {chartWidth > 0 && (
+        <LineChart
+          data={chartData}
+          width={chartWidth}
+          height={height}
+          chartConfig={chartConfig}
+          bezier
+          style={styles.chart}
+          withInnerLines={false}
+          withOuterLines={true}
+          withVerticalLines={false}
+          withHorizontalLines={true}
+          fromZero
+        />
+      )}
       {showLegend && <ChartLegend items={legendItems} />}
     </View>
   );

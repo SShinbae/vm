@@ -1,6 +1,9 @@
 import { goBack } from "@/lib/utils/goBack";
 import { LogPageNavigation } from "@/components/logs/LogPageNavigation";
-import { logPageStyles } from "@/components/logs/logPageStyles";
+import {
+  logPageStyles,
+  compactLogFormStyles,
+} from "@/components/logs/logPageStyles";
 import { useResponsiveLayout } from "@/hooks/use-responsive-layout";
 import { useLogRecord } from "@/hooks/useLogRecord";
 import { withOpacity, spacing } from "@/src/design-system";
@@ -33,6 +36,7 @@ export default function EditFuelLogScreen() {
   const layout = useResponsiveLayout();
   const isDesktopWeb = layout.isWeb && !layout.isMobile;
   const { styles: logWeb } = useStyles(logPageStyles);
+  const { styles: compact } = useStyles(compactLogFormStyles);
   const {
     record: fuelLog,
     loading: dataLoading,
@@ -239,8 +243,13 @@ export default function EditFuelLogScreen() {
 
   // Custom Header Component
   const CustomHeader = () => (
-    <View style={styles.customHeader}>
-      <TouchableOpacity style={styles.customBackButton} onPress={handleGoBack}>
+    <View style={[styles.customHeader, compact.header]}>
+      <TouchableOpacity
+        accessibilityRole="button"
+        accessibilityLabel="Back"
+        style={[styles.customBackButton, compact.back]}
+        onPress={handleGoBack}
+      >
         <IconSymbol name="chevron.left" size={24} color={theme.colors.text} />
       </TouchableOpacity>
       <View style={styles.titleContainer}>
@@ -263,18 +272,27 @@ export default function EditFuelLogScreen() {
 
   if (loadError)
     return (
-      <SafeAreaView style={styles.container}>{pageNavigation}</SafeAreaView>
+      <SafeAreaView
+        edges={["top", "left", "right", "bottom"]}
+        style={styles.container}
+      >
+        {pageNavigation}
+      </SafeAreaView>
     );
 
   if (dataLoading) {
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView
+        edges={["top", "left", "right", "bottom"]}
+        style={styles.container}
+      >
         {pageNavigation}
         {!isDesktopWeb && <CustomHeader />}
         <ScrollView
           contentContainerStyle={[
             styles.scrollContent(isWeb),
             isDesktopWeb && logWeb.content,
+            !isDesktopWeb && compact.content,
           ]}
         >
           <SkeletonFuelLogEdit />
@@ -284,7 +302,10 @@ export default function EditFuelLogScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView
+      edges={["top", "left", "right", "bottom"]}
+      style={styles.container}
+    >
       {pageNavigation}
       {!isDesktopWeb && <CustomHeader />}
 
@@ -294,6 +315,7 @@ export default function EditFuelLogScreen() {
         </View>
       )}
       <KeyboardAvoidingView
+        enabled={Platform.OS !== "web"}
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={styles.content}
       >
@@ -301,18 +323,18 @@ export default function EditFuelLogScreen() {
           contentContainerStyle={[
             styles.scrollContent(isWeb),
             isDesktopWeb && logWeb.content,
+            !isDesktopWeb && compact.content,
           ]}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
-          {isWeb && !isDesktopWeb && (
-            <>
-              <Text style={styles.title}>Edit Fuel Log</Text>
-              <Text style={styles.subtitle}>Update your fuel log details</Text>
-            </>
-          )}
-
-          <View style={[styles.card(isWeb), isDesktopWeb && logWeb.panel]}>
+          <View
+            style={[
+              styles.card(isWeb),
+              isDesktopWeb && logWeb.panel,
+              !isDesktopWeb && compact.panel,
+            ]}
+          >
             <View style={styles.inputContainer}>
               <Text style={styles.label}>Vehicle</Text>
               {fuelLog?.vehicles && (
@@ -320,7 +342,7 @@ export default function EditFuelLogScreen() {
                   <View style={styles.vehicleIcon}>
                     <IconSymbol name="car.fill" size={16} color="white" />
                   </View>
-                  <View>
+                  <View style={{ flex: 1, minWidth: 0 }}>
                     <Text style={styles.vehicleText}>
                       {fuelLog.vehicles.year} {fuelLog.vehicles.make}{" "}
                       {fuelLog.vehicles.model}
@@ -461,7 +483,7 @@ export default function EditFuelLogScreen() {
                 )}
               </View>
 
-              <View style={styles.row}>
+              <View style={[styles.row, !isDesktopWeb && compact.row]}>
                 <View style={styles.flex1}>
                   <Input
                     label="Cost (RM)"
@@ -541,7 +563,7 @@ export default function EditFuelLogScreen() {
                 </View>
               </View>
 
-              <View style={styles.row}>
+              <View style={[styles.row, !isDesktopWeb && compact.row]}>
                 <View style={styles.flex1}>
                   <Input
                     label="Odometer (km)"
@@ -591,13 +613,19 @@ export default function EditFuelLogScreen() {
             </View>
 
             {/* Action Buttons */}
-            <View style={styles.buttonContainer}>
+            <View
+              style={[styles.buttonContainer, !isDesktopWeb && compact.footer]}
+            >
               <Button
                 title="Cancel"
                 onPress={handleGoBack}
                 variant="outline"
                 icon="xmark"
-                style={styles.cancelButton}
+                style={
+                  isDesktopWeb
+                    ? styles.cancelButton
+                    : { ...styles.cancelButton, ...compact.button }
+                }
               />
               <Button
                 title="Save Changes"
@@ -605,7 +633,11 @@ export default function EditFuelLogScreen() {
                 disabled={!canModify || !isFormValid()}
                 loading={loading}
                 icon="checkmark"
-                style={styles.saveButton}
+                style={
+                  isDesktopWeb
+                    ? styles.saveButton
+                    : { ...styles.saveButton, ...compact.button }
+                }
               />
             </View>
           </View>

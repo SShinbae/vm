@@ -1,6 +1,9 @@
 import { goBack } from "@/lib/utils/goBack";
 import { LogPageNavigation } from "@/components/logs/LogPageNavigation";
-import { logPageStyles } from "@/components/logs/logPageStyles";
+import {
+  logPageStyles,
+  compactLogFormStyles,
+} from "@/components/logs/logPageStyles";
 import { useResponsiveLayout } from "@/hooks/use-responsive-layout";
 import { useLogRecord } from "@/hooks/useLogRecord";
 import { withOpacity, spacing } from "@/src/design-system";
@@ -36,6 +39,7 @@ export default function EditMileageLogScreen() {
   const layout = useResponsiveLayout();
   const isDesktopWeb = layout.isWeb && !layout.isMobile;
   const { styles: logWeb } = useStyles(logPageStyles);
+  const { styles: compact } = useStyles(compactLogFormStyles);
   const {
     record: mileageLog,
     loading: dataLoading,
@@ -312,17 +316,27 @@ export default function EditMileageLogScreen() {
 
   if (loadError)
     return (
-      <SafeAreaView style={styles.container}>{pageNavigation}</SafeAreaView>
+      <SafeAreaView
+        edges={["top", "left", "right", "bottom"]}
+        style={styles.container}
+      >
+        {pageNavigation}
+      </SafeAreaView>
     );
 
   if (dataLoading) {
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView
+        edges={["top", "left", "right", "bottom"]}
+        style={styles.container}
+      >
         {pageNavigation}
-        {!isWeb && (
-          <View style={styles.header}>
+        {!isDesktopWeb && (
+          <View style={[styles.header, compact.header]}>
             <TouchableOpacity
-              style={styles.backButton}
+              accessibilityRole="button"
+              accessibilityLabel="Back"
+              style={[styles.backButton, compact.back]}
               onPress={() => goBack("/logs")}
             >
               <IconSymbol name="chevron.left" size={24} color={colors.text} />
@@ -335,6 +349,7 @@ export default function EditMileageLogScreen() {
           contentContainerStyle={[
             styles.scrollContent,
             isDesktopWeb && logWeb.content,
+            !isDesktopWeb && compact.content,
           ]}
         >
           <SkeletonMileageLogEdit />
@@ -344,12 +359,17 @@ export default function EditMileageLogScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView
+      edges={["top", "left", "right", "bottom"]}
+      style={styles.container}
+    >
       {pageNavigation}
-      {!isWeb && (
-        <View style={styles.header}>
+      {!isDesktopWeb && (
+        <View style={[styles.header, compact.header]}>
           <TouchableOpacity
-            style={styles.backButton}
+            accessibilityRole="button"
+            accessibilityLabel="Back"
+            style={[styles.backButton, compact.back]}
             onPress={() => goBack("/logs")}
           >
             <IconSymbol name="chevron.left" size={24} color={colors.text} />
@@ -365,6 +385,7 @@ export default function EditMileageLogScreen() {
         </View>
       )}
       <KeyboardAvoidingView
+        enabled={Platform.OS !== "web"}
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={styles.content}
       >
@@ -372,18 +393,18 @@ export default function EditMileageLogScreen() {
           contentContainerStyle={[
             styles.scrollContent,
             isDesktopWeb && logWeb.content,
+            !isDesktopWeb && compact.content,
           ]}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
-          {isWeb && !isDesktopWeb && (
-            <>
-              <Text style={styles.title}>Edit Mileage Log</Text>
-              <Text style={styles.subtitle}>Update mileage information</Text>
-            </>
-          )}
-
-          <View style={[styles.card, isDesktopWeb && logWeb.panel]}>
+          <View
+            style={[
+              styles.card,
+              isDesktopWeb && logWeb.panel,
+              !isDesktopWeb && compact.panel,
+            ]}
+          >
             <View style={styles.inputContainer}>
               <Text style={styles.label}>Vehicle</Text>
               {(mileageLog as any)?.vehicles && (
@@ -391,7 +412,7 @@ export default function EditMileageLogScreen() {
                   <View style={styles.vehicleIcon}>
                     <IconSymbol name="car.fill" size={16} color="white" />
                   </View>
-                  <View>
+                  <View style={{ flex: 1, minWidth: 0 }}>
                     <Text style={styles.vehicleText}>
                       {(mileageLog as any).vehicles.year}{" "}
                       {(mileageLog as any).vehicles.make}{" "}
@@ -449,13 +470,19 @@ export default function EditMileageLogScreen() {
               numberOfLines={3}
             />
 
-            <View style={styles.buttonContainer}>
+            <View
+              style={[styles.buttonContainer, !isDesktopWeb && compact.footer]}
+            >
               <Button
                 title="Cancel"
                 onPress={() => goBack("/logs")}
                 variant="outline"
                 icon="xmark"
-                style={styles.cancelButton}
+                style={
+                  isDesktopWeb
+                    ? styles.cancelButton
+                    : { ...styles.cancelButton, ...compact.button }
+                }
               />
               <Button
                 title="Update Log"
@@ -463,7 +490,11 @@ export default function EditMileageLogScreen() {
                 disabled={!canModify || !isFormValid()}
                 loading={loading}
                 icon="checkmark"
-                style={styles.saveButton}
+                style={
+                  isDesktopWeb
+                    ? styles.saveButton
+                    : { ...styles.saveButton, ...compact.button }
+                }
               />
             </View>
           </View>

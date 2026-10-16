@@ -3,15 +3,19 @@ import { SkeletonDashboard } from "@/components/ui/Skeleton";
 import { useFocusEffect } from "@react-navigation/native";
 import { useQueryClient } from "@tanstack/react-query";
 import { router } from "expo-router";
-import React, { useCallback, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   RefreshControl,
   ScrollView,
   Text,
   TouchableOpacity,
   View,
+  useWindowDimensions,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import {
+  SafeAreaView,
+  useSafeAreaInsets,
+} from "react-native-safe-area-context";
 import { createStyleSheet, useStyles } from "react-native-unistyles";
 
 import { ActivityTimelineItem } from "@/components/dashboard/ActivityTimelineItem";
@@ -23,7 +27,8 @@ import { ServiceAttentionPanel } from "@/components/dashboard/ServiceAttentionPa
 import { useDashboardDataQuery } from "@/hooks/useDashboardDataQuery";
 import { useResponsiveLayout } from "@/hooks/use-responsive-layout";
 import { webPageStyles } from "@/components/layout/webPageStyles";
-import { WebPageHeader } from "@/components/layout/WebPageHeader";
+import { NotificationBell } from "@/components/ui/NotificationBell";
+import { NotificationPopup } from "@/components/ui/NotificationPopup";
 import { MaxWidthContainer } from "@/components/layout/MaxWidthContainer";
 import { ResponsiveGrid } from "@/components/layout/ResponsiveGrid";
 import { HomeVehicleSearch } from "@/components/dashboard/HomeVehicleSearch";
@@ -34,6 +39,16 @@ export default function DashboardScreen() {
   const { styles: web } = useStyles(webPageStyles);
   const layout = useResponsiveLayout();
   const isWebPage = layout.isWeb && !layout.isMobile;
+  const isMobileLayout = !layout.isWeb || layout.isMobile;
+  const isDesktopWeb = layout.isWeb && layout.isDesktop;
+  const { width, fontScale } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
+  const mobileColumns =
+    width - insets.left - insets.right - 32 < 328 || fontScale >= 1.3 ? 1 : 2;
+  const [notificationsVisible, setNotificationsVisible] = useState(false);
+  useEffect(() => {
+    if (!isMobileLayout) setNotificationsVisible(false);
+  }, [isMobileLayout]);
   const queryClient = useQueryClient();
   const [fuelTrendMonths, setFuelTrendMonths] = useState<6 | 12>(6);
   const hasFocused = useRef(false);
@@ -61,6 +76,7 @@ export default function DashboardScreen() {
       } else {
         hasFocused.current = true;
       }
+      return () => setNotificationsVisible(false);
     }, [queryClient]),
   );
 
@@ -68,330 +84,370 @@ export default function DashboardScreen() {
   // This prevents full-page re-renders and improves perceived performance
   const isInitialLoading = loading && !vehicles.length;
 
-  // Error state - only show if we have no cached data
-  if (error && vehicles.length === 0 && !isInitialLoading) {
-    return (
-      <SafeAreaView style={styles.container} edges={["top"]}>
-        <MaxWidthContainer
-          fullWidth
-          style={isWebPage ? web.frame : styles.pageWidth}
-        >
-          {/* Header - rendered immediately for fast LCP */}
-          {!layout.isWeb && layout.isDesktop && <WebPageHeader />}
-          {!isWebPage && !layout.isDesktop && (
-            <View style={styles.header}>
-              <Text style={styles.greeting}>
-                Welcome back{firstName ? `, ${firstName}` : ""}
-              </Text>
-              <Text style={styles.subtitle}>Your vehicles at a glance</Text>
-            </View>
+  const homeHeader = (
+    <View style={[styles.header, isMobileLayout && styles.mobileHeader]}>
+      <View style={styles.headerRow}>
+        <View style={isMobileLayout && styles.mobileGreeting}>
+          <Text style={styles.greeting}>
+            Welcome back{firstName ? `, ${firstName}` : ""}
+          </Text>
+          <Text style={styles.subtitle}>Your vehicles at a glance</Text>
+        </View>
+        {isMobileLayout && (
+          <NotificationBell onPress={() => setNotificationsVisible(true)} />
+        )}
+      </View>
+      {!!vehicles.length && (
+        <View style={styles.mobileSearch}>
+          <HomeVehicleSearch vehicles={vehicles} />
+        </View>
+      )}
+    </View>
+  );
+  const quickActions = (
+    <View
+      style={[
+        styles.actionsCard,
+        isWebPage && web.panel,
+        isMobileLayout && styles.mobileActionsCard,
+        isDesktopWeb && styles.actionsCardFill,
+      ]}
+    >
+      <View style={styles.cardHeading}>
+        <View>
+          <Text style={styles.cardTitle}>Quick Actions</Text>
+          {isDesktopWeb && (
+            <Text style={styles.cardSubtitle}>
+              Common tasks for your vehicles
+            </Text>
           )}
-          <View style={styles.errorContainer}>
-            <IconSymbol
-              name="exclamationmark.triangle"
-              size={48}
-              color={theme.colors.error}
-            />
-            <Text style={styles.errorText}>{error}</Text>
-            <TouchableOpacity style={styles.retryButton} onPress={onRefresh}>
-              <Text style={styles.retryButtonText}>Retry</Text>
-            </TouchableOpacity>
+        </View>
+      </View>
+      <ResponsiveGrid
+        columns={{
+          mobile: isMobileLayout ? mobileColumns : 2,
+          tablet: isMobileLayout ? mobileColumns : 2,
+          desktop: isMobileLayout ? mobileColumns : 2,
+          largeDesktop: isMobileLayout ? mobileColumns : 2,
+        }}
+        spacing={12}
+      >
+        <QuickActionButton
+          title="Add Fuel"
+          icon="fuelpump.fill"
+          color={theme.colors.warning}
+          description={isDesktopWeb ? "Record fuel purchase" : undefined}
+          onPress={() => router.push("/logs/fuel/add" as any)}
+        />
+        <QuickActionButton
+          title="Log Service"
+          icon="wrench.fill"
+          color={theme.colors.error}
+          description={isDesktopWeb ? "Record maintenance" : undefined}
+          onPress={() => router.push("/logs/service/add" as any)}
+        />
+        <QuickActionButton
+          title="Update Mileage"
+          icon="speedometer"
+          color={theme.colors.primary}
+          description={isDesktopWeb ? "Add current mileage" : undefined}
+          onPress={() => router.push("/logs/mileage/add" as any)}
+        />
+        <QuickActionButton
+          title="Add Vehicle"
+          icon="plus.circle.fill"
+          color={theme.colors.success}
+          description={isDesktopWeb ? "Register a vehicle" : undefined}
+          onPress={() => router.push("/vehicles/add" as any)}
+        />
+      </ResponsiveGrid>
+    </View>
+  );
+  const vehiclesSection = (
+    <View
+      style={[
+        styles.section,
+        styles.vehiclesColumn,
+        isDesktopWeb && styles.vehiclesPanel,
+        isWebPage && web.panel,
+        isMobileLayout && styles.mobileSection,
+      ]}
+    >
+      <View
+        style={[
+          styles.sectionHeader,
+          isMobileLayout && { flexWrap: "wrap", gap: 8 },
+        ]}
+      >
+        <View style={[styles.cardHeading, styles.vehiclesHeading]}>
+          <View>
+            <Text
+              style={[
+                styles.sectionTitle,
+                isDesktopWeb && styles.cardTitle,
+                isMobileLayout && { marginBottom: 0 },
+              ]}
+            >
+              My Vehicles
+            </Text>
+            {isDesktopWeb && (
+              <Text style={styles.cardSubtitle}>
+                Manage and view all your vehicles
+              </Text>
+            )}
           </View>
-        </MaxWidthContainer>
-      </SafeAreaView>
-    );
-  }
+        </View>
+        <TouchableOpacity
+          accessibilityRole="button"
+          style={[
+            isDesktopWeb && styles.viewAllButton,
+            isMobileLayout && {
+              minHeight: 48,
+              minWidth: 48,
+              justifyContent: "center",
+            },
+          ]}
+          onPress={() => router.push("/vehicles" as any)}
+        >
+          <Text style={styles.viewAllText}>View All</Text>
+          {isDesktopWeb && (
+            <IconSymbol
+              name="chevron.right"
+              size={14}
+              color={theme.colors.primary}
+            />
+          )}
+        </TouchableOpacity>
+      </View>
+
+      {isDesktopWeb ? (
+        <VehicleTable vehicles={vehicles.slice(0, 5)} />
+      ) : (
+        <View style={styles.vehiclesList}>
+          {vehicles.slice(0, 3).map((vehicle) => (
+            <VehicleCard key={vehicle.id} vehicle={vehicle} />
+          ))}
+        </View>
+      )}
+    </View>
+  );
+  const fuelTrend = (
+    <HomeFuelTrend
+      points={fuelCostTrend}
+      months={fuelTrendMonths}
+      onMonthsChange={setFuelTrendMonths}
+      loading={fuelTrendLoading}
+      error={fuelTrendError}
+    />
+  );
+  const activitySection = recentActivity.length > 0 && (
+    <View
+      style={[
+        styles.section,
+        styles.activityColumn,
+        isMobileLayout && styles.mobileSection,
+      ]}
+    >
+      <View style={[styles.activityCard, isWebPage && web.panel]}>
+        <Text style={styles.sectionTitle}>Recent Activity</Text>
+        <View style={styles.activityTimeline}>
+          {recentActivity.slice(0, 5).map((item) => (
+            <ActivityTimelineItem key={item.id} item={item} />
+          ))}
+        </View>
+      </View>
+    </View>
+  );
 
   return (
-    <SafeAreaView style={styles.container} edges={["top"]}>
+    <SafeAreaView
+      style={styles.container}
+      edges={isMobileLayout ? ["top", "left", "right"] : ["top"]}
+    >
       <MaxWidthContainer
         fullWidth
         style={isWebPage ? web.frame : styles.pageWidth}
       >
-        {/* Header - rendered immediately for fast LCP */}
-        {!layout.isWeb && layout.isDesktop && <WebPageHeader />}
-        {!isWebPage && !layout.isDesktop && (
-          <View style={styles.header}>
-            <View style={styles.headerRow}>
-              <View>
-                <Text style={styles.greeting}>
-                  Welcome back{firstName ? `, ${firstName}` : ""}
+        <ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={[
+            styles.scrollContent,
+            isMobileLayout && styles.mobileScrollContent,
+          ]}
+          keyboardShouldPersistTaps={isMobileLayout ? "handled" : undefined}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              tintColor={theme.colors.primary}
+            />
+          }
+          showsVerticalScrollIndicator={false}
+        >
+          {isMobileLayout && homeHeader}
+          {isInitialLoading ? (
+            <SkeletonDashboard />
+          ) : error && vehicles.length === 0 ? (
+            <View style={styles.errorContainer}>
+              <IconSymbol
+                name="exclamationmark.triangle"
+                size={48}
+                color={theme.colors.error}
+              />
+              <Text style={styles.errorText}>{error}</Text>
+              <TouchableOpacity
+                accessibilityRole="button"
+                style={styles.retryButton}
+                onPress={onRefresh}
+              >
+                <Text style={styles.retryButtonText}>Retry</Text>
+              </TouchableOpacity>
+            </View>
+          ) : vehicles.length === 0 ? (
+            <View
+              style={[
+                styles.section,
+                isWebPage && web.section,
+                isMobileLayout && styles.mobileSection,
+              ]}
+            >
+              <View style={styles.emptyState}>
+                <IconSymbol
+                  name="car.fill"
+                  size={48}
+                  color={theme.colors.primary}
+                />
+                <Text style={styles.emptyTitle}>
+                  Start with your first vehicle
                 </Text>
-                <Text style={styles.subtitle}>Your vehicles at a glance</Text>
+                <Text style={styles.emptyDescription}>
+                  Add a vehicle to see its costs, activity, and service
+                  reminders here.
+                </Text>
+                <TouchableOpacity
+                  style={styles.emptyButton}
+                  onPress={() => router.push("/vehicles/add" as any)}
+                  accessibilityRole="button"
+                >
+                  <IconSymbol
+                    name="plus"
+                    size={18}
+                    color={theme.colors.white}
+                  />
+                  <Text style={styles.emptyButtonText}>Add Vehicle</Text>
+                </TouchableOpacity>
               </View>
             </View>
-            {!layout.isDesktop && !!vehicles.length && (
-              <View style={styles.mobileSearch}>
-                <HomeVehicleSearch vehicles={vehicles} />
-              </View>
-            )}
-          </View>
-        )}
-
-        {isInitialLoading ? (
-          <SkeletonDashboard />
-        ) : (
-          <ScrollView
-            style={styles.scrollView}
-            contentContainerStyle={styles.scrollContent}
-            refreshControl={
-              <RefreshControl
-                refreshing={refreshing}
-                onRefresh={onRefresh}
-                tintColor={theme.colors.primary}
-              />
-            }
-            showsVerticalScrollIndicator={false}
-          >
-            {vehicles.length === 0 ? (
-              <View style={[styles.section, isWebPage && web.section]}>
-                <View style={styles.emptyState}>
-                  <IconSymbol
-                    name="car.fill"
-                    size={48}
-                    color={theme.colors.primary}
-                  />
-                  <Text style={styles.emptyTitle}>
-                    Start with your first vehicle
-                  </Text>
-                  <Text style={styles.emptyDescription}>
-                    Add a vehicle to see its costs, activity, and service
-                    reminders here.
-                  </Text>
-                  <TouchableOpacity
-                    style={styles.emptyButton}
-                    onPress={() => router.push("/vehicles/add" as any)}
-                    accessibilityRole="button"
-                  >
-                    <IconSymbol
-                      name="plus"
-                      size={18}
-                      color={theme.colors.white}
-                    />
-                    <Text style={styles.emptyButtonText}>Add Vehicle</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-            ) : (
-              <>
-                {!remindersLoading &&
-                  !remindersError &&
-                  serviceReminders.length > 0 && (
-                    <View style={[styles.section, isWebPage && web.section]}>
-                      <ServiceAttentionPanel reminders={serviceReminders} />
-                    </View>
-                  )}
-
-                <View style={[styles.section, isWebPage && web.section]}>
-                  <ResponsiveGrid
-                    columns={{
-                      mobile: 2,
-                      tablet: 2,
-                      desktop: 4,
-                      largeDesktop: 4,
-                    }}
-                    spacing={12}
-                  >
-                    <StatCard
-                      title="Active Vehicles"
-                      value={vehicles.length}
-                      icon="car.fill"
-                      iconColor={theme.colors.primary}
-                    />
-                    <StatCard
-                      title="Monthly Fuel Cost"
-                      value={`RM${stats.monthlyFuelCost.toFixed(2)}`}
-                      icon="fuelpump.fill"
-                      iconColor={theme.colors.warning}
-                    />
-                    <StatCard
-                      title="Services Due"
-                      value={
-                        remindersLoading || remindersError
-                          ? "—"
-                          : serviceReminders.length
-                      }
-                      icon="wrench.fill"
-                      iconColor={theme.colors.error}
-                    />
-                    <StatCard
-                      title="Total Recorded Mileage"
-                      value={`${stats.totalMileage.toLocaleString()} km`}
-                      icon="speedometer"
-                      iconColor={theme.colors.primary}
-                    />
-                  </ResponsiveGrid>
-                </View>
-
-                <View style={[styles.section, styles.featureRow]}>
-                  <View style={styles.chartColumn}>
-                    <HomeFuelTrend
-                      points={fuelCostTrend}
-                      months={fuelTrendMonths}
-                      onMonthsChange={setFuelTrendMonths}
-                      loading={fuelTrendLoading}
-                      error={fuelTrendError}
-                    />
-                  </View>
-                  <View style={styles.actionsColumn}>
-                    <View
-                      style={[
-                        styles.actionsCard,
-                        isWebPage && web.panel,
-                        layout.isDesktop && styles.actionsCardFill,
-                      ]}
-                    >
-                      <View style={styles.cardHeading}>
-                        <View>
-                          <Text style={styles.cardTitle}>Quick Actions</Text>
-                          {layout.isDesktop && (
-                            <Text style={styles.cardSubtitle}>
-                              Common tasks for your vehicles
-                            </Text>
-                          )}
-                        </View>
-                      </View>
-                      <ResponsiveGrid
-                        columns={{
-                          mobile: 2,
-                          tablet: 2,
-                          desktop: 2,
-                          largeDesktop: 2,
-                        }}
-                        spacing={12}
-                      >
-                        <QuickActionButton
-                          title="Add Fuel"
-                          icon="fuelpump.fill"
-                          color={theme.colors.warning}
-                          description={
-                            layout.isDesktop
-                              ? "Record fuel purchase"
-                              : undefined
-                          }
-                          onPress={() => router.push("/logs/fuel/add" as any)}
-                        />
-                        <QuickActionButton
-                          title="Log Service"
-                          icon="wrench.fill"
-                          color={theme.colors.error}
-                          description={
-                            layout.isDesktop ? "Record maintenance" : undefined
-                          }
-                          onPress={() =>
-                            router.push("/logs/service/add" as any)
-                          }
-                        />
-                        <QuickActionButton
-                          title="Update Mileage"
-                          icon="speedometer"
-                          color={theme.colors.primary}
-                          description={
-                            layout.isDesktop ? "Add current mileage" : undefined
-                          }
-                          onPress={() =>
-                            router.push("/logs/mileage/add" as any)
-                          }
-                        />
-                        <QuickActionButton
-                          title="Add Vehicle"
-                          icon="plus.circle.fill"
-                          color={theme.colors.success}
-                          description={
-                            layout.isDesktop ? "Register a vehicle" : undefined
-                          }
-                          onPress={() => router.push("/vehicles/add" as any)}
-                        />
-                      </ResponsiveGrid>
-                    </View>
-                  </View>
-                </View>
-
-                <View style={styles.twoColumnContainer}>
-                  {/* Vehicles Section */}
+          ) : (
+            <>
+              {!remindersLoading &&
+                !remindersError &&
+                serviceReminders.length > 0 && (
                   <View
                     style={[
                       styles.section,
-                      styles.vehiclesColumn,
-                      layout.isDesktop && styles.vehiclesPanel,
-                      isWebPage && web.panel,
+                      isWebPage && web.section,
+                      isMobileLayout && styles.mobileSection,
                     ]}
                   >
-                    <View style={styles.sectionHeader}>
-                      <View
-                        style={[styles.cardHeading, styles.vehiclesHeading]}
-                      >
-                        <View>
-                          <Text
-                            style={[
-                              styles.sectionTitle,
-                              layout.isDesktop && styles.cardTitle,
-                            ]}
-                          >
-                            My Vehicles
-                          </Text>
-                          {layout.isDesktop && (
-                            <Text style={styles.cardSubtitle}>
-                              Manage and view all your vehicles
-                            </Text>
-                          )}
-                        </View>
-                      </View>
-                      <TouchableOpacity
-                        accessibilityRole="button"
-                        style={layout.isDesktop && styles.viewAllButton}
-                        onPress={() => router.push("/vehicles" as any)}
-                      >
-                        <Text style={styles.viewAllText}>View All</Text>
-                        {layout.isDesktop && (
-                          <IconSymbol
-                            name="chevron.right"
-                            size={14}
-                            color={theme.colors.primary}
-                          />
-                        )}
-                      </TouchableOpacity>
-                    </View>
-
-                    {layout.isDesktop ? (
-                      <VehicleTable vehicles={vehicles.slice(0, 3)} />
-                    ) : (
-                      <View style={styles.vehiclesList}>
-                        {vehicles.slice(0, 3).map((vehicle) => (
-                          <VehicleCard key={vehicle.id} vehicle={vehicle} />
-                        ))}
-                      </View>
-                    )}
+                    <ServiceAttentionPanel reminders={serviceReminders} />
                   </View>
+                )}
 
-                  {/* Recent Activity */}
-                  {recentActivity.length > 0 && (
-                    <View style={[styles.section, styles.activityColumn]}>
-                      <View
-                        style={[styles.activityCard, isWebPage && web.panel]}
-                      >
-                        <Text style={styles.sectionTitle}>Recent Activity</Text>
-                        <View style={styles.activityTimeline}>
-                          {recentActivity.slice(0, 5).map((item) => (
-                            <ActivityTimelineItem key={item.id} item={item} />
-                          ))}
-                        </View>
-                      </View>
-                    </View>
-                  )}
-                </View>
-              </>
-            )}
-          </ScrollView>
-        )}
+              <View
+                style={[
+                  styles.section,
+                  isWebPage && web.section,
+                  isMobileLayout && styles.mobileSection,
+                ]}
+              >
+                <ResponsiveGrid
+                  columns={{
+                    mobile: isMobileLayout ? mobileColumns : 2,
+                    tablet: isMobileLayout ? mobileColumns : 2,
+                    desktop: isMobileLayout ? mobileColumns : 4,
+                    largeDesktop: isMobileLayout ? mobileColumns : 4,
+                  }}
+                  spacing={12}
+                >
+                  <StatCard
+                    title="Active Vehicles"
+                    value={vehicles.length}
+                    icon="car.fill"
+                    iconColor={theme.colors.primary}
+                  />
+                  <StatCard
+                    title="Monthly Fuel Cost"
+                    value={`RM${stats.monthlyFuelCost.toFixed(2)}`}
+                    icon="fuelpump.fill"
+                    iconColor={theme.colors.warning}
+                  />
+                  <StatCard
+                    title="Services Due"
+                    value={
+                      remindersLoading || remindersError
+                        ? "—"
+                        : serviceReminders.length
+                    }
+                    icon="wrench.fill"
+                    iconColor={theme.colors.error}
+                  />
+                  <StatCard
+                    title="Total Recorded Mileage"
+                    value={`${stats.totalMileage.toLocaleString()} km`}
+                    icon="speedometer"
+                    iconColor={theme.colors.primary}
+                  />
+                </ResponsiveGrid>
+              </View>
+
+              {isMobileLayout ? (
+                <>
+                  <View style={[styles.section, styles.mobileSection]}>
+                    {quickActions}
+                  </View>
+                  {vehiclesSection}
+                  <View style={[styles.section, styles.mobileSection]}>
+                    {fuelTrend}
+                  </View>
+                  {activitySection}
+                </>
+              ) : (
+                <>
+                  <View style={[styles.section, styles.featureRow]}>
+                    <View style={styles.chartColumn}>{fuelTrend}</View>
+                    <View style={styles.actionsColumn}>{quickActions}</View>
+                  </View>
+                  <View style={styles.twoColumnContainer}>
+                    {vehiclesSection}
+                    {activitySection}
+                  </View>
+                </>
+              )}
+            </>
+          )}
+        </ScrollView>
       </MaxWidthContainer>
+      {isMobileLayout && (
+        <NotificationPopup
+          visible={notificationsVisible}
+          onClose={() => setNotificationsVisible(false)}
+        />
+      )}
     </SafeAreaView>
   );
 }
 
-// Stylesheet is now much smaller!
-// It only contains styles for the screen layout itself.
 const stylesheet = createStyleSheet((theme) => ({
+  mobileHeader: { paddingHorizontal: 16, paddingTop: 16, paddingBottom: 24 },
+  mobileGreeting: { flex: 1, minWidth: 0 },
+  mobileSection: { paddingHorizontal: 16, marginBottom: 24, flex: undefined },
+  mobileScrollContent: { flexGrow: 1, paddingBottom: 24 },
+  mobileActionsCard: {
+    backgroundColor: "transparent",
+    borderWidth: 0,
+    padding: 0,
+  },
   pageWidth: { width: "100%", maxWidth: 1480, alignSelf: "center" },
   container: {
     flex: 1,

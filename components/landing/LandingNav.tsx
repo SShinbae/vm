@@ -31,6 +31,7 @@ export function LandingNav({
 
   return (
     <Section
+      nativeID="landing-nav"
       style={{
         backgroundColor: theme.colors.background,
         borderBottomWidth: 1,
@@ -58,6 +59,7 @@ export function LandingNav({
             <Pressable
               accessibilityRole="link"
               accessibilityLabel="Vehicle Management home"
+              style={{ minWidth: 44, minHeight: 44, justifyContent: "center" }}
             >
               <Image
                 source={require("@/assets/images/vm_logo.webp")}
@@ -75,12 +77,13 @@ export function LandingNav({
               key={link.key}
               onPress={() => onNavigate(link.key)}
               accessibilityRole="link"
+              style={{ minHeight: 44, justifyContent: "center" }}
             >
               <Text
                 style={{
                   fontSize: 15,
                   fontWeight: "500",
-                  color: theme.colors.textSecondary,
+                  color: theme.colors.text,
                 }}
               >
                 {link.label}
@@ -92,6 +95,7 @@ export function LandingNav({
           onPress={() => router.push("/(auth)/login")}
           accessibilityRole="link"
           accessibilityLabel="Sign in"
+          style={{ minHeight: 44, justifyContent: "center" }}
         >
           <Text
             style={{
@@ -109,7 +113,9 @@ export function LandingNav({
           accessibilityRole="button"
           accessibilityLabel="Get started"
           style={{
-            backgroundColor: theme.colors.primary,
+            backgroundColor: theme.colors.text,
+            minHeight: 44,
+            justifyContent: "center",
             paddingVertical: 10,
             paddingHorizontal: 16,
             borderRadius: 10,
@@ -117,7 +123,7 @@ export function LandingNav({
         >
           <Text
             style={{
-              color: theme.colors.white,
+              color: theme.colors.background,
               fontSize: 15,
               fontWeight: "600",
             }}

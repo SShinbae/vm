@@ -1,7 +1,8 @@
+import { AnalyticsVehiclePicker } from "./AnalyticsVehiclePicker";
 import { ActionMenu } from "@/components/ui/ActionMenu";
 import { webPageStyles } from "@/components/layout/webPageStyles";
 import React, { type ReactNode } from "react";
-import { View, Text, TouchableOpacity, ScrollView } from "react-native";
+import { View, Text } from "react-native";
 import { createStyleSheet, useStyles } from "react-native-unistyles";
 import { Ionicons } from "@expo/vector-icons";
 import { Vehicle } from "../../types";
@@ -21,7 +22,6 @@ export function VehicleFilter({
   selectedVehicleIds,
   onToggleVehicle,
   onSelectAll,
-  onClearAll,
   periodControl,
 }: VehicleFilterProps) {
   const { styles, theme } = useStyles(stylesheet);
@@ -45,6 +45,16 @@ export function VehicleFilter({
     : selectedVehicles.length === 1
       ? `${selectedVehicles[0].year} ${selectedVehicles[0].make} ${selectedVehicles[0].model}`
       : `${selectedVehicles.length} vehicles selected`;
+
+  if (!isWebPage)
+    return (
+      <AnalyticsVehiclePicker
+        vehicles={vehicles}
+        selectedVehicleIds={selectedVehicleIds}
+        onToggleVehicle={onToggleVehicle}
+        onSelectAll={onSelectAll}
+      />
+    );
 
   return (
     <View
@@ -88,63 +98,7 @@ export function VehicleFilter({
               )}
             </View>
           </View>
-          {!isWebPage && (
-            <View style={styles.actions}>
-              <TouchableOpacity onPress={onSelectAll}>
-                <Text
-                  style={[
-                    styles.actionText,
-                    isMobile && styles.actionTextMobile,
-                  ]}
-                >
-                  All
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity onPress={onClearAll}>
-                <Text
-                  style={[
-                    styles.actionTextSecondary,
-                    isMobile && styles.actionTextSecondaryMobile,
-                  ]}
-                >
-                  None
-                </Text>
-              </TouchableOpacity>
-            </View>
-          )}
         </View>
-        {!isWebPage && (
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.chipsContainer}
-          >
-            {vehicles.map((vehicle) => {
-              const isSelected = isVehicleSelected(vehicle.id);
-              return (
-                <TouchableOpacity
-                  key={vehicle.id}
-                  style={[
-                    styles.chip,
-                    isSelected && styles.chipSelected,
-                    isMobile && styles.chipMobile,
-                  ]}
-                  onPress={() => onToggleVehicle(vehicle.id)}
-                >
-                  <Text
-                    style={[
-                      styles.chipText,
-                      isSelected && styles.chipTextSelected,
-                      isMobile && styles.chipTextMobile,
-                    ]}
-                  >
-                    {vehicle.year} {vehicle.make} {vehicle.model}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
-          </ScrollView>
-        )}
       </View>
       {isWebPage && (
         <ActionMenu
@@ -206,53 +160,5 @@ const stylesheet = createStyleSheet((theme) => ({
   },
   titleMobile: {
     fontSize: theme.fontSize.sm,
-  },
-  actions: {
-    flexDirection: "row",
-    gap: theme.spacing.sm,
-  },
-  actionText: {
-    fontSize: theme.fontSize.xs,
-    fontWeight: theme.fontWeight.medium,
-    color: theme.colors.primary,
-  },
-  actionTextMobile: {
-    fontSize: 10,
-  },
-  actionTextSecondary: {
-    fontSize: theme.fontSize.xs,
-    fontWeight: theme.fontWeight.medium,
-    color: theme.colors.textSecondary,
-  },
-  actionTextSecondaryMobile: {
-    fontSize: 10,
-  },
-  chipsContainer: {
-    gap: theme.spacing.sm,
-    paddingRight: theme.spacing.lg,
-  },
-  chip: {
-    paddingHorizontal: theme.spacing.md,
-    paddingVertical: theme.spacing.sm,
-    borderRadius: theme.borderRadius.full,
-    backgroundColor: theme.colors.background,
-  },
-  chipMobile: {
-    paddingHorizontal: theme.spacing.sm,
-    paddingVertical: theme.spacing.xs,
-  },
-  chipSelected: {
-    backgroundColor: theme.colors.primary,
-  },
-  chipText: {
-    fontSize: theme.fontSize.sm,
-    fontWeight: theme.fontWeight.medium,
-    color: theme.colors.text,
-  },
-  chipTextMobile: {
-    fontSize: theme.fontSize.xs,
-  },
-  chipTextSelected: {
-    color: theme.colors.white,
   },
 }));

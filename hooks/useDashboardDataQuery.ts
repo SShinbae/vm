@@ -6,6 +6,7 @@ import {
   selectServiceReminders,
 } from "@/lib/dashboard/serviceReminders";
 import { buildFuelCostTrend } from "@/lib/dashboard/homeOverview";
+import { fetchAccessibleVehicles } from "@/lib/services/vehicleAccess";
 
 import {
   accessibleVehicleQueryOptions,
@@ -110,10 +111,7 @@ const processActivityLogs = (
  */
 async function fetchStats(userId: string): Promise<DashboardStats> {
   // Get vehicles
-  const { data: allVehiclesData } = await (supabase as any).rpc(
-    "get_user_vehicles_with_sharing",
-    { user_uuid: userId },
-  );
+  const { data: allVehiclesData } = await fetchAccessibleVehicles(userId);
 
   const vehicleIds = allVehiclesData?.map((v: any) => v.vehicle_id) || [];
   const totalVehicles = vehicleIds.length;

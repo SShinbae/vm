@@ -45,7 +45,17 @@ export function VehicleSearchBar({
         onChangeText={onSearchChange}
       />
       {searchQuery.length > 0 && (
-        <TouchableOpacity onPress={() => onSearchChange("")}>
+        <TouchableOpacity
+          accessibilityRole="button"
+          accessibilityLabel="Clear vehicle search"
+          style={{
+            minWidth: 48,
+            minHeight: 48,
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+          onPress={() => onSearchChange("")}
+        >
           <IconSymbol
             name="xmark.circle.fill"
             size={iconSize}
@@ -59,6 +69,7 @@ export function VehicleSearchBar({
 
 const stylesheet = createStyleSheet((theme) => ({
   searchContainer: {
+    minHeight: 48,
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: theme.colors.surface,
@@ -79,6 +90,7 @@ const stylesheet = createStyleSheet((theme) => ({
     gap: theme.spacing.xs,
   },
   searchInput: {
+    minWidth: 0,
     flex: 1,
     fontSize: theme.fontSize.base,
     color: theme.colors.text,

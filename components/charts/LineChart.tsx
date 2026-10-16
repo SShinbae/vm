@@ -1,7 +1,7 @@
 import { spacing, withOpacity } from "@/src/design-system";
 import { useStyles } from "react-native-unistyles";
-import React from "react";
-import { View, Text, StyleSheet, Dimensions } from "react-native";
+import React, { useState } from "react";
+import { View, Text, StyleSheet } from "react-native";
 import { LineChart as RNLineChart } from "react-native-chart-kit";
 import { ChartDataPoint } from "@/lib/services/analyticsService";
 
@@ -28,7 +28,12 @@ export function LineChart({
 }: LineChartProps) {
   const { theme } = useStyles();
   const colors = theme.colors;
-  const screenWidth = Dimensions.get("window").width;
+  const [measuredWidth, setMeasuredWidth] = useState(0);
+  const chartWidth = width ?? measuredWidth;
+  const labelStep = Math.max(
+    1,
+    Math.ceil(data.length / Math.max(2, Math.floor(chartWidth / 64))),
+  );
 
   const chartColor = color || colors.analytics.fuel;
 
@@ -74,7 +79,11 @@ export function LineChart({
 
   // Prepare data for react-native-chart-kit
   const chartData = {
-    labels: data.map((point) => point.label?.split(" ")[0] || ""),
+    labels: data.map((point, index) =>
+      index % labelStep === 0 || index === data.length - 1
+        ? point.label || ""
+        : "",
+    ),
     datasets: [
       {
         data: data.map((point) => point.y),
@@ -105,19 +114,26 @@ export function LineChart({
   return (
     <View style={styles.container}>
       {!embedded && <Text style={styles.title}>{title}</Text>}
-      <View style={styles.chartContainer}>
-        <RNLineChart
-          data={chartData}
-          width={width || screenWidth - 64}
-          height={height}
-          chartConfig={chartConfig}
-          bezier={!showArea}
-          withShadow={showArea}
-          style={{
-            marginVertical: spacing.sm,
-            borderRadius: 16,
-          }}
-        />
+      <View
+        style={styles.chartContainer}
+        accessibilityRole="image"
+        accessibilityLabel={title}
+        onLayout={(event) => setMeasuredWidth(event.nativeEvent.layout.width)}
+      >
+        {chartWidth > 0 && (
+          <RNLineChart
+            data={chartData}
+            width={chartWidth}
+            height={height}
+            chartConfig={chartConfig}
+            bezier={!showArea}
+            withShadow={showArea}
+            style={{
+              marginVertical: spacing.sm,
+              borderRadius: 16,
+            }}
+          />
+        )}
       </View>
     </View>
   );

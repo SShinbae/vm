@@ -56,7 +56,7 @@ export function VehicleSelector({
               </View>
             )}
             <View style={styles.lockedVehicleInfo}>
-              <Text style={styles.lockedVehicleText} numberOfLines={1}>
+              <Text style={styles.lockedVehicleText}>
                 {selectedVehicle.year} {selectedVehicle.make}{" "}
                 {selectedVehicle.model}
               </Text>
@@ -147,6 +147,7 @@ const stylesheet = createStyleSheet((theme) => ({
   },
   lockedVehicleInfo: {
     flex: 1,
+    minWidth: 0,
   },
   lockedVehicleText: {
     fontSize: theme.fontSize.base,

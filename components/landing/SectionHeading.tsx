@@ -15,14 +15,16 @@ export function SectionHeading({
   const { isMobile } = useBreakpoint();
 
   return (
-    <View style={{ alignItems: "center", marginBottom: isMobile ? 32 : 48 }}>
+    <View
+      style={{ alignItems: "flex-start", marginBottom: isMobile ? 32 : 48 }}
+    >
       <Text
         style={{
           color: theme.colors.primary,
           fontSize: 13,
           fontWeight: "700",
           letterSpacing: 1,
-          textTransform: "uppercase",
+
           marginBottom: spacing.md,
         }}
       >
@@ -34,10 +36,10 @@ export function SectionHeading({
         style={{
           fontSize: isMobile ? 30 : 40,
           lineHeight: isMobile ? 36 : 46,
-          fontWeight: "800",
+          fontWeight: "700",
           letterSpacing: -1,
           color: theme.colors.text,
-          textAlign: "center",
+          textAlign: "left",
           maxWidth: 640,
         }}
       >

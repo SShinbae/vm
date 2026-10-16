@@ -34,6 +34,7 @@ export default function TabLayout() {
   return (
     <DashboardWebLayout showHeader={showHeader}>
       <Tabs
+        backBehavior="fullHistory"
         tabBar={(props) =>
           showTabBar ? <ResponsiveTabBar {...props} /> : null
         }
@@ -89,6 +90,7 @@ export default function TabLayout() {
         <Tabs.Screen
           name="notifications"
           options={{
+            href: layout.isWeb && !layout.isMobile ? undefined : null,
             title: "Notifications",
             tabBarLabel: "Notifications",
             tabBarIcon: ({ color, size }) => (

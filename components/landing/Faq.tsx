@@ -6,7 +6,7 @@ import { useStyles } from "react-native-unistyles";
 import { FAQS } from "./content";
 import { SectionHeading } from "./SectionHeading";
 
-// ponytail: own accordion rather than ui/Collapsible — that one has no a11y state and indents content for settings lists.
+// shortcut: own accordion rather than ui/Collapsible — that one has no a11y state and indents content for settings lists.
 function FaqItem({ question, answer }: { question: string; answer: string }) {
   const { theme } = useStyles();
   const [open, setOpen] = useState(false);
@@ -48,7 +48,8 @@ function FaqItem({ question, answer }: { question: string; answer: string }) {
           style={{
             fontSize: 16,
             lineHeight: 25,
-            color: theme.colors.textSecondary,
+            color: theme.colors.text,
+            opacity: 0.8,
             paddingBottom: spacing.xl,
             paddingRight: spacing.xxl,
           }}

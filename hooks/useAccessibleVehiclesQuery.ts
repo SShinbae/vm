@@ -2,6 +2,7 @@ import { useAuth } from "@/lib/contexts/AuthContext";
 import { useQuery, queryOptions } from "@tanstack/react-query";
 import { supabase } from "@/services/supabaseClient";
 import { Database } from "@/types/database";
+import { fetchAccessibleVehicles } from "@/lib/services/vehicleAccess";
 
 // Import types from original hook
 type Vehicle = Database["public"]["Tables"]["vehicles"]["Row"];
@@ -13,9 +14,8 @@ export interface VehicleWithShares extends Vehicle {
 
 async function fetchVehicles(userId: string): Promise<VehicleWithShares[]> {
   // Use the same RPC as stats to get both owned and shared vehicles
-  const { data: allVehiclesData, error: rpcError } = await (
-    supabase as any
-  ).rpc("get_user_vehicles_with_sharing", { user_uuid: userId });
+  const { data: allVehiclesData, error: rpcError } =
+    await fetchAccessibleVehicles(userId);
 
   if (rpcError) throw rpcError;
   if (!allVehiclesData || allVehiclesData.length === 0) return [];

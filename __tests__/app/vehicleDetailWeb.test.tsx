@@ -13,6 +13,7 @@ import { canUserAccessVehicle } from "@/lib/utils/serviceUtils";
 import { router } from "expo-router";
 import { toast } from "@/hooks/useToast";
 import { Breadcrumbs } from "@/components/layout/Breadcrumbs";
+import { Image } from "expo-image";
 
 let mockId = "civic";
 let mockReturnTo: string | undefined;
@@ -88,6 +89,7 @@ jest.mock("@/components/ui/Skeleton", () => ({
 jest.mock("@/components/ui/PageHeader", () => ({ PageHeader: () => null }));
 jest.mock("react-native-safe-area-context", () => ({
   SafeAreaView: require("react-native").View,
+  useSafeAreaInsets: () => ({ top: 0, left: 0, right: 0, bottom: 0 }),
 }));
 jest.mock("react-native-unistyles", () => ({
   createStyleSheet: (factory: any) => factory,
@@ -353,6 +355,95 @@ it.each(["Mileage", "Fuel", "Service"])(
     mockReturnTo = "vehicles";
     render(<VehicleDetailScreen />);
     await waitFor(() => expect(screen.getByText("6,000 km")).toBeTruthy());
+    fireEvent.press(screen.getByRole("button", { name: tab }));
+    fireEvent.press(
+      screen.getByRole("button", { name: `Add ${tab.toLowerCase()} log` }),
+    );
+    expect(router.push).toHaveBeenCalledWith({
+      pathname: `/logs/${tab.toLowerCase()}/add`,
+      params: { vehicleId: "civic", returnTo: "vehicles" },
+    });
+  },
+);
+
+it.each([true, false])(
+  "vehicle Service Delete follows vehicle ownership: %s",
+  async (owned) => {
+    (VehicleService.getVehicleById as jest.Mock).mockResolvedValue({
+      data: {
+        ...vehicle(),
+        is_own_vehicle: owned,
+        user_id: owned ? "owner" : "other",
+      },
+      error: null,
+    });
+    render(<VehicleDetailScreen />);
+    await screen.findByText("6,000 km");
+    fireEvent.press(screen.getByRole("button", { name: "Service" }));
+    await waitFor(() => expect(screen.getByText("Edit")).toBeEnabled());
+    if (owned) expect(screen.getByText("Delete")).toBeEnabled();
+    else {
+      expect(screen.getByText("Delete")).toBeDisabled();
+      fireEvent.press(screen.getByText("Delete"));
+      expect(mockConfirm).not.toHaveBeenCalled();
+    }
+  },
+);
+
+it.each([false, true])(
+  "uses the compact detail header with labelled edit and owner overflow on mobile web=%s",
+  async (isWeb) => {
+    mockLayout.isWeb = isWeb;
+    mockLayout.isMobile = true;
+    jest.mocked(VehicleService.getVehicleById).mockResolvedValue({
+      data: { ...vehicle(), main_image_url: "https://example.test/car.jpg" },
+      error: null,
+    } as any);
+    render(<VehicleDetailScreen />);
+    await screen.findByText("6,000 km");
+    expect(screen.getByRole("button", { name: "Edit Vehicle" })).toBeEnabled();
+    expect(screen.getByText("Owned")).toBeTruthy();
+    expect(screen.getByText("Delete Vehicle")).toBeTruthy();
+    expect(screen.UNSAFE_getAllByType(Image)).toHaveLength(1);
+    expect(screen.UNSAFE_getByType(Image).props.blurRadius).toBeUndefined();
+  },
+);
+
+it("keeps mobile detail failures on screen with Retry instead of navigating away", async () => {
+  mockLayout.isWeb = false;
+  mockLayout.isMobile = true;
+  jest
+    .mocked(VehicleService.getVehicleById)
+    .mockResolvedValueOnce({ data: null, error: "Offline" } as any);
+  render(<VehicleDetailScreen />);
+  await screen.findByText("Retry");
+  expect(router.back).not.toHaveBeenCalled();
+  fireEvent.press(screen.getByText("Retry"));
+  await screen.findByText("6,000 km");
+});
+
+it("keeps cached mobile details visible after a refresh failure", async () => {
+  mockLayout.isWeb = false;
+  mockLayout.isMobile = true;
+  render(<VehicleDetailScreen />);
+  await screen.findByText("6,000 km");
+  jest
+    .mocked(VehicleService.getVehicleById)
+    .mockResolvedValueOnce({ data: null, error: "Offline" } as any);
+  await refocus();
+  expect(screen.getByText("Failed to load vehicle details")).toBeTruthy();
+  expect(screen.getByText("6,000 km")).toBeTruthy();
+  expect(router.back).not.toHaveBeenCalled();
+});
+
+it.each(["Mileage", "Fuel", "Service"])(
+  "preserves source-aware mobile Add %s",
+  async (tab) => {
+    mockLayout.isWeb = false;
+    mockLayout.isMobile = true;
+    mockReturnTo = "vehicles";
+    render(<VehicleDetailScreen />);
+    await screen.findByText("6,000 km");
     fireEvent.press(screen.getByRole("button", { name: tab }));
     fireEvent.press(
       screen.getByRole("button", { name: `Add ${tab.toLowerCase()} log` }),

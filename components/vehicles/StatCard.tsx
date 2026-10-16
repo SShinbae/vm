@@ -32,12 +32,8 @@ export function StatCard({ title, value, icon }: StatCardProps) {
           />
         </View>
       </View>
-      <Text style={styles.statValue} numberOfLines={1} adjustsFontSizeToFit>
-        {value}
-      </Text>
-      <Text style={styles.statTitle} numberOfLines={2}>
-        {title}
-      </Text>
+      <Text style={styles.statValue}>{value}</Text>
+      <Text style={styles.statTitle}>{title}</Text>
     </View>
   );
 }

@@ -2,10 +2,11 @@ import { baseColors, withOpacity, spacing } from "@/src/design-system";
 import { useStyles } from "react-native-unistyles";
 import { ImageUploadService } from "@/lib/services/imageUploadService";
 import { storageImageUrl } from "@/lib/utils/storagePath";
+import { profileInitials } from "@/lib/utils/profileInitials";
 import { Image } from "expo-image";
 import * as ImagePicker from "expo-image-picker";
 import { MediaTypeOptions } from "expo-image-picker";
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Platform,
@@ -31,6 +32,7 @@ interface ImageUploadProps {
   maxSize?: number; // in MB
   disabled?: boolean;
   placeholder?: string;
+  fallbackName?: string;
   style?: any;
   showDeleteButton?: boolean; // Whether to show the delete (x) button
   circular?: boolean; // Force circular shape regardless of type
@@ -46,11 +48,13 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
   maxSize = 5,
   disabled = false,
   placeholder,
+  fallbackName,
   style,
   showDeleteButton = true,
   circular = false,
 }) => {
   const [uploading, setUploading] = useState(false);
+  const [imageError, setImageError] = useState(false);
   const [localImageUri, setLocalImageUri] = useState<string | null>(null);
   const [showCropModal, setShowCropModal] = useState(false);
   const [selectedImageUri, setSelectedImageUri] = useState<string | null>(null);
@@ -452,6 +456,7 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
       type === "avatar" ? "profile-avatars" : "vehicle-images",
       currentImageUrl,
     );
+  useEffect(() => setImageError(false), [imageSource]);
   const imageSize = getImageSize();
 
   const styles = StyleSheet.create({
@@ -526,6 +531,10 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
   return (
     <View style={styles.container}>
       <TouchableOpacity
+        accessibilityRole="button"
+        accessibilityLabel={
+          type === "avatar" ? "Change profile photo" : getPlaceholderText()
+        }
         style={[
           styles.imageContainer,
           disabled && { opacity: 0.5 },
@@ -536,13 +545,26 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
       >
         {imageSource ? (
           <>
-            <Image
-              source={{ uri: imageSource }}
-              style={styles.image}
-              contentFit="cover"
-              cachePolicy="memory-disk"
-              transition={200}
-            />
+            {imageError && type === "avatar" && fallbackName ? (
+              <Text
+                style={{
+                  fontSize: theme.fontSize["2xl"],
+                  fontWeight: theme.fontWeight.bold,
+                  color: colors.primary,
+                }}
+              >
+                {profileInitials(fallbackName)}
+              </Text>
+            ) : (
+              <Image
+                source={{ uri: imageSource }}
+                style={styles.image}
+                contentFit="cover"
+                cachePolicy="memory-disk"
+                transition={200}
+                onError={() => setImageError(true)}
+              />
+            )}
             {!uploading && showDeleteButton && (
               <TouchableOpacity
                 style={styles.deleteButton}
@@ -554,14 +576,28 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
           </>
         ) : (
           <View style={styles.placeholder}>
-            <View style={styles.placeholderIcon}>
-              <IconSymbol
-                name={type === "avatar" ? "person.circle" : "camera"}
-                size={type === "avatar" ? 40 : 32}
-                color={colors.textSecondary}
-              />
-            </View>
-            <Text style={styles.placeholderText}>{getPlaceholderText()}</Text>
+            {type === "avatar" && fallbackName ? (
+              <Text
+                style={{
+                  fontSize: theme.fontSize["2xl"],
+                  fontWeight: theme.fontWeight.bold,
+                  color: colors.primary,
+                }}
+              >
+                {profileInitials(fallbackName)}
+              </Text>
+            ) : (
+              <View style={styles.placeholderIcon}>
+                <IconSymbol
+                  name={type === "avatar" ? "person.circle" : "camera"}
+                  size={type === "avatar" ? 40 : 32}
+                  color={colors.textSecondary}
+                />
+              </View>
+            )}
+            {!(type === "avatar" && fallbackName) && (
+              <Text style={styles.placeholderText}>{getPlaceholderText()}</Text>
+            )}
           </View>
         )}
 

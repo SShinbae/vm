@@ -1,7 +1,19 @@
 import { router } from "expo-router";
 import React from "react";
-import { render, screen, fireEvent } from "@testing-library/react-native";
+import { act, render, screen, fireEvent } from "@testing-library/react-native";
+import { Keyboard, Platform, ScrollView, Text } from "react-native";
 import VehiclesScreen from "@/app/(tabs)/vehicles";
+import { VehicleList } from "@/components/vehicles/VehicleList";
+
+jest.mock("react-native-unistyles", () => ({
+  createStyleSheet: (factory: any) => factory,
+  useStyles: (factory?: any) => {
+    const { lightTheme } = require("@/src/design-system");
+    return { theme: lightTheme, styles: factory ? factory(lightTheme) : {} };
+  },
+}));
+
+jest.mock("@react-navigation/native", () => ({ useFocusEffect: () => {} }));
 
 jest.mock("expo-router", () => ({ router: { push: jest.fn() } }));
 
@@ -9,9 +21,27 @@ const mockLayout = { isWeb: true, isMobile: false, isDesktop: true };
 const mockClearSearch = jest.fn();
 const mockSetFilter = jest.fn();
 let mockMatches = true;
-jest.mock("@/components/vehicles/VehicleDetailsBottomSheet", () => ({
-  VehicleDetailsBottomSheet: () => null,
-}));
+let mockLoadError: string | null = null;
+const mockRefresh = jest.fn();
+const mockExpand = jest.fn();
+let mockClosePreview: () => void;
+jest.mock("@/components/vehicles/VehicleDetailsBottomSheet", () => {
+  const React = require("react");
+  const { Text } = require("react-native");
+  return {
+    VehicleDetailsBottomSheet: React.forwardRef(function Preview(
+      { vehicle, onClose }: any,
+      ref: any,
+    ) {
+      React.useImperativeHandle(ref, () => ({
+        expand: mockExpand,
+        close: jest.fn(),
+      }));
+      mockClosePreview = onClose;
+      return vehicle ? <Text>Preview {vehicle.id}</Text> : null;
+    }),
+  };
+});
 jest.mock("react-native-gesture-handler", () => ({
   GestureHandlerRootView: ({ children }: any) => {
     const { View } = require("react-native");
@@ -33,7 +63,8 @@ jest.mock("@/hooks/useVehicles", () => ({
     allVehicles: mockVehicles,
     loading: false,
     refreshing: false,
-    onRefresh: jest.fn(),
+    error: mockLoadError,
+    onRefresh: mockRefresh,
   }),
 }));
 jest.mock("@/hooks/useVehicleStats", () => ({ useVehicleStats: () => ({}) }));
@@ -48,13 +79,22 @@ jest.mock("@/hooks/useVehicleFilters", () => ({
   }),
 }));
 jest.mock("@/components/vehicles/VehicleStatsGrid", () => ({
-  VehicleStatsGrid: () => null,
+  VehicleStatsGrid: () => {
+    const { Text } = require("react-native");
+    return <Text>Overview metrics</Text>;
+  },
 }));
 jest.mock("@/components/vehicles/VehicleSearchBar", () => ({
-  VehicleSearchBar: () => null,
+  VehicleSearchBar: () => {
+    const { Text } = require("react-native");
+    return <Text>Vehicle search</Text>;
+  },
 }));
 jest.mock("@/components/vehicles/VehicleFilters", () => ({
-  VehicleFilters: () => null,
+  VehicleFilters: () => {
+    const { Text } = require("react-native");
+    return <Text>Vehicle filters</Text>;
+  },
 }));
 jest.mock("@/components/dashboard/VehicleTable", () => ({
   VehicleTable: ({ vehicles, onView }: any) => {
@@ -75,9 +115,15 @@ jest.mock("@/components/dashboard/VehicleTable", () => ({
   },
 }));
 jest.mock("@/components/vehicles/VehicleList", () => ({
-  VehicleList: () => {
+  VehicleList: ({ vehicles, onClearFilters }: any) => {
     const { Text } = require("react-native");
-    return <Text>Vehicle cards</Text>;
+    return vehicles.length ? (
+      <Text>Vehicle cards</Text>
+    ) : onClearFilters ? (
+      <Text onPress={onClearFilters}>Clear filters</Text>
+    ) : (
+      <Text>Empty garage</Text>
+    );
   },
 }));
 jest.mock("@/components/ui/icon-symbol", () => ({ IconSymbol: () => null }));
@@ -86,7 +132,88 @@ beforeEach(() => {
   mockLayout.isWeb = true;
   mockLayout.isMobile = false;
   mockMatches = true;
+  mockLoadError = null;
   jest.clearAllMocks();
+});
+
+afterEach(() => {
+  jest.restoreAllMocks();
+  jest.useRealTimers();
+});
+
+it("keeps a newly selected native preview when an earlier close timer expires", () => {
+  jest.useFakeTimers();
+  mockLayout.isWeb = false;
+  mockLayout.isMobile = true;
+  const dismiss = jest.spyOn(Keyboard, "dismiss");
+  render(<VehiclesScreen />);
+  act(() =>
+    screen.UNSAFE_getByType(VehicleList).props.onVehiclePress(mockVehicles[0]),
+  );
+  expect(screen.getByText("Preview owned")).toBeTruthy();
+  act(() => {
+    mockClosePreview();
+    jest.advanceTimersByTime(150);
+  });
+  act(() =>
+    screen.UNSAFE_getByType(VehicleList).props.onVehiclePress(mockVehicles[1]),
+  );
+  act(() => jest.advanceTimersByTime(300));
+  expect(screen.getByText("Preview shared")).toBeTruthy();
+  expect(mockExpand).toHaveBeenCalledTimes(2);
+  expect(dismiss).toHaveBeenCalledTimes(2);
+  expect(router.push).not.toHaveBeenCalled();
+});
+
+it("opens mobile web cards directly and dismisses the keyboard", () => {
+  jest.replaceProperty(Platform, "OS", "web");
+  mockLayout.isMobile = true;
+  const dismiss = jest.spyOn(Keyboard, "dismiss");
+  render(<VehiclesScreen />);
+  act(() =>
+    screen.UNSAFE_getByType(VehicleList).props.onVehiclePress(mockVehicles[0]),
+  );
+  expect(router.push).toHaveBeenCalledWith({
+    pathname: "/vehicles/[id]",
+    params: { id: "owned", returnTo: "vehicles" },
+  });
+  expect(dismiss).toHaveBeenCalled();
+});
+
+it("puts search and wrapped filters before mobile overview and removes the floating add control", () => {
+  mockLayout.isMobile = true;
+  render(<VehiclesScreen />);
+  const scroll = screen.UNSAFE_getByType(ScrollView);
+  const texts = scroll
+    .findAllByType(Text)
+    .map((node: { props: { children: unknown } }) => node.props.children)
+    .flat();
+  expect(texts.indexOf("Vehicle search")).toBeLessThan(
+    texts.indexOf("Overview metrics"),
+  );
+  expect(texts.indexOf("Vehicle filters")).toBeLessThan(
+    texts.indexOf("Overview metrics"),
+  );
+  expect(screen.getAllByText("Add Vehicle")).toHaveLength(1);
+});
+
+it("offers Clear filters instead of an empty garage on mobile no-match results", () => {
+  mockLayout.isMobile = true;
+  mockMatches = false;
+  render(<VehiclesScreen />);
+  expect(screen.queryByText("Empty garage")).toBeNull();
+  fireEvent.press(screen.getByText("Clear filters"));
+  expect(mockSetFilter).toHaveBeenCalledWith("all");
+});
+
+it("shows a retryable error while keeping cached cards visible", () => {
+  mockLayout.isMobile = true;
+  mockLoadError = "Failed to load vehicles";
+  render(<VehiclesScreen />);
+  expect(screen.getByText("Failed to load vehicles")).toBeTruthy();
+  expect(screen.getByText("Vehicle cards")).toBeTruthy();
+  fireEvent.press(screen.getByText("Retry"));
+  expect(mockRefresh).toHaveBeenCalled();
 });
 
 it("shows the full desktop table with sharing metadata adapted from the vehicle loader", () => {

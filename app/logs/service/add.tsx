@@ -1,7 +1,10 @@
 import { returnAfterLogSave } from "@/lib/utils/returnAfterLogSave";
 import { goBack } from "@/lib/utils/goBack";
 import { LogPageNavigation } from "@/components/logs/LogPageNavigation";
-import { logPageStyles } from "@/components/logs/logPageStyles";
+import {
+  logPageStyles,
+  compactLogFormStyles,
+} from "@/components/logs/logPageStyles";
 import { useResponsiveLayout } from "@/hooks/use-responsive-layout";
 import { storageImageUrl } from "@/lib/utils/storagePath";
 import { withOpacity, spacing } from "@/src/design-system";
@@ -56,6 +59,9 @@ const VehicleOption: React.FC<{
 
   return (
     <TouchableOpacity
+      accessibilityRole="button"
+      accessibilityState={{ selected: isSelected }}
+      accessibilityLabel={`${vehicle.year} ${vehicle.make} ${vehicle.model}, ${vehicle.license_plate}`}
       style={[styles.vehicleOption, isSelected && styles.vehicleOptionSelected]}
       onPress={onPress}
     >
@@ -113,6 +119,7 @@ export default function AddServiceLogScreen() {
   const layout = useResponsiveLayout();
   const isDesktopWeb = layout.isWeb && !layout.isMobile;
   const { styles: logWeb } = useStyles(logPageStyles);
+  const { styles: compact } = useStyles(compactLogFormStyles);
   const { vehicleId, returnTo } = useLocalSearchParams<{
     vehicleId?: string;
     returnTo?: string;
@@ -164,9 +171,11 @@ export default function AddServiceLogScreen() {
         : "Add Service Log";
 
     return (
-      <View style={styles.customHeader}>
+      <View style={[styles.customHeader, compact.header]}>
         <TouchableOpacity
-          style={styles.customBackButton}
+          accessibilityRole="button"
+          accessibilityLabel="Back"
+          style={[styles.customBackButton, compact.back]}
           onPress={() => goBack("/logs")}
         >
           <IconSymbol name="chevron.left" size={24} color={colors.text} />
@@ -535,8 +544,14 @@ export default function AddServiceLogScreen() {
         {SERVICE_TYPES.map((type) => (
           <TouchableOpacity
             key={type.value}
+            accessibilityRole="button"
+            accessibilityLabel={type.label}
+            accessibilityState={{
+              selected: formData.service_type === type.value,
+            }}
             style={[
               styles.serviceTypeOption,
+              !isDesktopWeb && compact.choice,
               formData.service_type === type.value &&
                 styles.serviceTypeOptionSelected,
             ]}
@@ -556,6 +571,7 @@ export default function AddServiceLogScreen() {
             <Text
               style={[
                 styles.serviceTypeText,
+                !isDesktopWeb && compact.choiceText,
                 formData.service_type === type.value &&
                   styles.serviceTypeTextSelected,
               ]}
@@ -674,13 +690,12 @@ export default function AddServiceLogScreen() {
     requiredLabel: {
       color: theme.colors.error,
     },
-    vehicleSelector: {
-      maxHeight: 120,
-    },
+    vehicleSelector: {},
     vehicleSelectorContent: {
       gap: isSmallScreen ? 8 : 12,
     },
     vehicleOption: {
+      minHeight: 48,
       backgroundColor: colors.background,
       borderWidth: 1,
       borderColor: withOpacity(colors.textSecondary, 0.19),
@@ -734,6 +749,7 @@ export default function AddServiceLogScreen() {
     },
     lockedVehicleInfo: {
       flex: 1,
+      minWidth: 0,
     },
     lockedVehicleText: {
       fontSize: isSmallScreen ? 14 : 16,
@@ -839,27 +855,28 @@ export default function AddServiceLogScreen() {
   );
   if (vehiclesError)
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView
+        edges={["top", "left", "right", "bottom"]}
+        style={styles.container}
+      >
         {!isDesktopWeb && <CustomHeader />}
         {pageNavigation}
-        {!isDesktopWeb && (
-          <View style={{ padding: 24, gap: 16 }}>
-            <Text>Unable to load vehicles. Please try again.</Text>
-            <Button title="Retry" onPress={retryVehicles} />
-          </View>
-        )}
       </SafeAreaView>
     );
 
   if (vehiclesLoading) {
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView
+        edges={["top", "left", "right", "bottom"]}
+        style={styles.container}
+      >
         {!isDesktopWeb && <CustomHeader />}
         {pageNavigation}
         <ScrollView
           contentContainerStyle={[
             styles.scrollContent,
             isDesktopWeb && logWeb.content,
+            !isDesktopWeb && compact.content,
           ]}
         >
           <SkeletonServiceLogForm />
@@ -870,7 +887,10 @@ export default function AddServiceLogScreen() {
 
   if (vehicles.length === 0) {
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView
+        edges={["top", "left", "right", "bottom"]}
+        style={styles.container}
+      >
         {!isDesktopWeb && <CustomHeader />}
         {pageNavigation}
         <View style={styles.loadingContainer}>
@@ -889,11 +909,15 @@ export default function AddServiceLogScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView
+      edges={["top", "left", "right", "bottom"]}
+      style={styles.container}
+    >
       {!isDesktopWeb && <CustomHeader />}
       {pageNavigation}
 
       <KeyboardAvoidingView
+        enabled={Platform.OS !== "web"}
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={styles.content}
       >
@@ -901,11 +925,18 @@ export default function AddServiceLogScreen() {
           contentContainerStyle={[
             styles.scrollContent,
             isDesktopWeb && logWeb.content,
+            !isDesktopWeb && compact.content,
           ]}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
-          <View style={[styles.card, isDesktopWeb && logWeb.panel]}>
+          <View
+            style={[
+              styles.card,
+              isDesktopWeb && logWeb.panel,
+              !isDesktopWeb && compact.panel,
+            ]}
+          >
             <VehicleSelector />
 
             <View style={styles.inputContainer}>
@@ -993,7 +1024,7 @@ export default function AddServiceLogScreen() {
               leftIcon="speedometer"
             />
 
-            <View style={styles.row}>
+            <View style={[styles.row, !isDesktopWeb && compact.row]}>
               <View style={styles.flex1}>
                 <DatePicker
                   label="Date"
@@ -1037,13 +1068,19 @@ export default function AddServiceLogScreen() {
               leftIcon="speedometer"
             />
 
-            <View style={styles.buttonContainer}>
+            <View
+              style={[styles.buttonContainer, !isDesktopWeb && compact.footer]}
+            >
               <Button
                 title="Cancel"
                 onPress={() => goBack("/logs")}
                 variant="outline"
                 icon="xmark"
-                style={styles.cancelButton}
+                style={
+                  isDesktopWeb
+                    ? styles.cancelButton
+                    : { ...styles.cancelButton, ...compact.button }
+                }
               />
               <Button
                 title="Save Log"
@@ -1051,7 +1088,11 @@ export default function AddServiceLogScreen() {
                 disabled={!isFormValid()}
                 loading={loading}
                 icon="checkmark"
-                style={styles.saveButton}
+                style={
+                  isDesktopWeb
+                    ? styles.saveButton
+                    : { ...styles.saveButton, ...compact.button }
+                }
               />
             </View>
           </View>

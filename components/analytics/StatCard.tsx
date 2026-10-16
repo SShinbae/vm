@@ -57,7 +57,7 @@ const stylesheet = createStyleSheet((theme) => ({
   },
   containerMobile: {
     padding: theme.spacing.md,
-    minWidth: 80,
+    minWidth: 0,
   },
   value: {
     fontSize: theme.fontSize["3xl"],
@@ -79,7 +79,7 @@ const stylesheet = createStyleSheet((theme) => ({
     letterSpacing: 0.5,
   },
   labelMobile: {
-    fontSize: 10,
+    fontSize: theme.fontSize.sm,
     letterSpacing: 0.3,
   },
 }));

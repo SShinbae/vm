@@ -68,7 +68,7 @@ describe("Logging Services", () => {
           range: jest.fn().mockResolvedValue({ data: logs, error: null }),
         }));
 
-        const result = await MileageLogService.getMileageLogs();
+        const result = await MileageLogService.getMileageLogs("vehicle-1");
 
         expect(result.error).toBeNull();
         expect(result.data).toHaveLength(1);
@@ -97,9 +97,10 @@ describe("Logging Services", () => {
           eq: jest.fn().mockReturnThis(),
           order: jest.fn().mockReturnThis(),
           range: rangeMock,
+          in: jest.fn().mockReturnThis(),
         }));
 
-        await MileageLogService.getMileageLogs(undefined, {
+        await MileageLogService.getMileageLogs("vehicle-1", {
           limit: 10,
           offset: 20,
         });
@@ -358,7 +359,7 @@ describe("Logging Services", () => {
           range: jest.fn().mockResolvedValue({ data: logs, error: null }),
         }));
 
-        const result = await FuelLogService.getFuelLogs();
+        const result = await FuelLogService.getFuelLogs("vehicle-1");
 
         expect(result.error).toBeNull();
         expect(result.data).toHaveLength(1);
@@ -366,10 +367,19 @@ describe("Logging Services", () => {
       });
 
       it("should combine owned and shared vehicle logs", async () => {
-        const ownedLogs = [MockDataBuilders.fuelLog({ id: "owned-log" })];
-        const sharedLogs = [MockDataBuilders.fuelLog({ id: "shared-log" })];
+        const ownedLogs = [
+          {
+            ...MockDataBuilders.fuelLog({ id: "owned-log" }),
+            vehicles: { user_id: "test-user-id" },
+          },
+        ];
+        const sharedLogs = [
+          {
+            ...MockDataBuilders.fuelLog({ id: "shared-log" }),
+            vehicles: { user_id: "other" },
+          },
+        ];
 
-        let callCount = 0;
         mockSupabase.from.mockImplementation((table: string) => {
           if (table === "group_members") {
             return {
@@ -390,14 +400,13 @@ describe("Logging Services", () => {
             };
           }
           if (table === "fuel_logs") {
-            callCount++;
             return {
               select: jest.fn().mockReturnThis(),
               eq: jest.fn().mockReturnThis(),
               in: jest.fn().mockReturnThis(),
               order: jest.fn().mockReturnThis(),
               range: jest.fn().mockResolvedValue({
-                data: callCount === 1 ? ownedLogs : sharedLogs,
+                data: [...ownedLogs, ...sharedLogs],
                 error: null,
               }),
             };
@@ -407,26 +416,7 @@ describe("Logging Services", () => {
 
         const result = await FuelLogService.getFuelLogs();
 
-        expect(result.data?.length).toBeGreaterThanOrEqual(1);
-      });
-
-      it("should remove duplicate logs", async () => {
-        const duplicateLog = MockDataBuilders.fuelLog({ id: "same-id" });
-
-        mockSupabase.from.mockImplementation(() => ({
-          select: jest.fn().mockReturnThis(),
-          eq: jest.fn().mockReturnThis(),
-          in: jest.fn().mockReturnThis(),
-          order: jest.fn().mockReturnThis(),
-          range: jest.fn().mockResolvedValue({
-            data: [duplicateLog, duplicateLog],
-            error: null,
-          }),
-        }));
-
-        const result = await FuelLogService.getFuelLogs();
-
-        expect(result.data?.length).toBe(1);
+        expect(result.data?.length).toBe(2);
       });
     });
 
@@ -647,7 +637,7 @@ describe("Logging Services", () => {
           range: jest.fn().mockResolvedValue({ data: logs, error: null }),
         }));
 
-        const result = await ServiceLogService.getServiceLogs();
+        const result = await ServiceLogService.getServiceLogs("vehicle-1");
 
         expect(result.error).toBeNull();
         expect(result.data).toHaveLength(1);

@@ -29,7 +29,7 @@ export function HowItWorks() {
                 width: 40,
                 height: 40,
                 borderRadius: 20,
-                backgroundColor: theme.colors.primary,
+                backgroundColor: theme.colors.surface,
                 justifyContent: "center",
                 alignItems: "center",
                 marginBottom: spacing.md,
@@ -37,7 +37,7 @@ export function HowItWorks() {
             >
               <Text
                 style={{
-                  color: theme.colors.white,
+                  color: theme.colors.text,
                   fontSize: 17,
                   fontWeight: "700",
                 }}
@@ -61,7 +61,8 @@ export function HowItWorks() {
               style={{
                 fontSize: 16,
                 lineHeight: 24,
-                color: theme.colors.textSecondary,
+                color: theme.colors.text,
+                opacity: 0.8,
               }}
             >
               {step.description}

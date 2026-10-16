@@ -30,6 +30,9 @@ export function VehicleOption({
 
   return (
     <TouchableOpacity
+      accessibilityRole="button"
+      accessibilityState={{ selected: isSelected }}
+      accessibilityLabel={`${vehicle.year} ${vehicle.make} ${vehicle.model}, ${vehicle.license_plate}`}
       style={[styles.vehicleOption, selectedStyles]}
       onPress={onPress}
     >
@@ -49,7 +52,6 @@ export function VehicleOption({
       )}
       <Text
         style={[styles.vehicleOptionText, isSelected && styles.selectedText]}
-        numberOfLines={1}
       >
         {vehicle.year} {vehicle.make}
       </Text>
@@ -64,6 +66,7 @@ export function VehicleOption({
 
 const stylesheet = createStyleSheet((theme) => ({
   vehicleOption: {
+    minHeight: 48,
     borderWidth: 1,
     borderColor: theme.colors.border,
     borderRadius: theme.borderRadius.md,
