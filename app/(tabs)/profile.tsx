@@ -117,7 +117,7 @@ export default function ProfileScreen() {
   const { user, updateProfile, refreshProfile } = useAuth();
   const { signOut, signingOut } = useSignOut();
   const { themeMode, setThemeMode } = useTheme();
-  const { showSuccess, showError } = useToast();
+  const { showSuccess } = useToast();
   const { theme } = useStyles();
   const { isMobile, isWeb } = useResponsiveLayout();
   const isWebPage = isWeb && !isMobile;
