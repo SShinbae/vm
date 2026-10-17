@@ -16,9 +16,15 @@ jobs:
       - name: Skip CI check
         run: echo "Proceeding with iOS staging workflow"
 
-  build-ios-staging:
+  test:
     needs: check-skip
-    runs-on: macos-14
+    uses: ./.github/workflows/test.yml
+    secrets:
+      CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
+  build-ios-staging:
+    needs: test
+    runs-on: macos-26
     timeout-minutes: 90
     steps:
       - name: 🏗 Checkout repository
@@ -33,7 +39,14 @@ jobs:
       - name: 🛠 Setup Xcode
         uses: maxim-lobanov/setup-xcode@v1
         with:
-          xcode-version: latest-stable
+          xcode-version: "26.6"
+
+      - name: Verify App Store SDK requirement
+        run: |
+          xcodebuild -version
+          sdk_version=$(xcrun --sdk iphoneos --show-sdk-version)
+          echo "iPhoneOS SDK: $sdk_version"
+          test "${sdk_version%%.*}" -ge 26
 
       - name: 💎 Setup Ruby
         uses: ruby/setup-ruby@v1
@@ -87,7 +100,6 @@ jobs:
           echo "Creating .env.staging.build..."
           echo "SUPABASE_URL=${{ secrets.STAGING_SUPABASE_URL || secrets.SUPABASE_URL }}" > .env.staging.build
           echo "SUPABASE_KEY=${{ secrets.STAGING_SUPABASE_KEY || secrets.SUPABASE_KEY }}" >> .env.staging.build
-          echo "GOOGLE_VISION_API_KEY=${{ secrets.STAGING_GOOGLE_VISION_API_KEY || secrets.GOOGLE_VISION_API_KEY }}" >> .env.staging.build
           echo "SITE_URL=${{ secrets.STAGING_SITE_URL || secrets.SITE_URL }}" >> .env.staging.build
           echo "SENTRY_DSN=${{ secrets.STAGING_SENTRY_DSN || secrets.SENTRY_DSN }}" >> .env.staging.build
           echo "SENTRY_ORG=${{ secrets.SENTRY_ORG }}" >> .env.staging.build

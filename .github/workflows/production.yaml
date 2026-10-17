@@ -28,28 +28,9 @@ jobs:
 
   test:
     needs: check-skip
-    runs-on: ubuntu-latest
-    steps:
-      - name: 🏗 Checkout repository
-        uses: actions/checkout@v4
-
-      - name: 🏗 Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-          cache: "npm"
-
-      - name: 📦 Install dependencies
-        run: npm ci --omit=optional --ignore-scripts || npm install --omit=optional
-
-      - name: 🧪 Run TypeScript check
-        run: npm run tsc --if-present || npx tsc --noEmit
-
-      - name: 🧹 Run ESLint
-        run: npm run lint
-
-      - name: 🎨 Run Prettier check
-        run: npm run format:check --if-present || npx prettier --check .
+    uses: ./.github/workflows/test.yml
+    secrets:
+      CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
   build-production:
     needs: test
@@ -163,7 +144,6 @@ jobs:
           # Create env file with proper formatting (no heredoc to avoid whitespace issues)
           echo "SUPABASE_URL=${{ secrets.PROD_SUPABASE_URL || secrets.SUPABASE_URL }}" > .env.production.build
           echo "SUPABASE_KEY=${{ secrets.PROD_SUPABASE_KEY || secrets.SUPABASE_KEY }}" >> .env.production.build
-          echo "GOOGLE_VISION_API_KEY=${{ secrets.PROD_GOOGLE_VISION_API_KEY || secrets.GOOGLE_VISION_API_KEY }}" >> .env.production.build
           echo "SITE_URL=${{ secrets.PROD_SITE_URL || secrets.SITE_URL }}" >> .env.production.build
           echo "SENTRY_DSN=${{ secrets.PROD_SENTRY_DSN || secrets.SENTRY_DSN }}" >> .env.production.build
           echo "SENTRY_ORG=${{ secrets.SENTRY_ORG }}" >> .env.production.build
@@ -274,7 +254,6 @@ jobs:
           # Create env file with proper formatting (no heredoc to avoid whitespace issues)
           echo "SUPABASE_URL=${{ secrets.PROD_SUPABASE_URL || secrets.SUPABASE_URL }}" > .env.production.build
           echo "SUPABASE_KEY=${{ secrets.PROD_SUPABASE_KEY || secrets.SUPABASE_KEY }}" >> .env.production.build
-          echo "GOOGLE_VISION_API_KEY=${{ secrets.PROD_GOOGLE_VISION_API_KEY || secrets.GOOGLE_VISION_API_KEY }}" >> .env.production.build
           echo "SITE_URL=${{ secrets.PROD_SITE_URL || secrets.SITE_URL }}" >> .env.production.build
           echo "SENTRY_DSN=${{ secrets.PROD_SENTRY_DSN || secrets.SENTRY_DSN }}" >> .env.production.build
           echo "SENTRY_ORG=${{ secrets.SENTRY_ORG }}" >> .env.production.build

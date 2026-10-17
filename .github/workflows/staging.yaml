@@ -28,28 +28,9 @@ jobs:
 
   test:
     needs: check-skip
-    runs-on: ubuntu-latest
-    steps:
-      - name: 🏗 Checkout repository
-        uses: actions/checkout@v4
-
-      - name: 🏗 Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-          cache: "npm"
-
-      - name: 📦 Install dependencies
-        run: npm ci --omit=optional --ignore-scripts || npm install --omit=optional
-
-      - name: 🧪 Run TypeScript check
-        run: npm run tsc --if-present || npx tsc --noEmit
-
-      - name: 🧹 Run ESLint
-        run: npm run lint
-
-      - name: 🎨 Run Prettier check
-        run: npm run format:check --if-present || npx prettier --check .
+    uses: ./.github/workflows/test.yml
+    secrets:
+      CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
   build-staging:
     needs: test
@@ -162,7 +143,6 @@ jobs:
           cat > .env.staging.build << 'ENV_EOF'
           SUPABASE_URL=${{ secrets.STAGING_SUPABASE_URL || secrets.SUPABASE_URL }}
           SUPABASE_KEY=${{ secrets.STAGING_SUPABASE_KEY || secrets.SUPABASE_KEY }}
-          GOOGLE_VISION_API_KEY=${{ secrets.STAGING_GOOGLE_VISION_API_KEY || secrets.GOOGLE_VISION_API_KEY }}
           SITE_URL=${{ secrets.STAGING_SITE_URL || secrets.SITE_URL }}
           SENTRY_DSN=${{ secrets.STAGING_SENTRY_DSN || secrets.SENTRY_DSN }}
           SENTRY_ORG=${{ secrets.SENTRY_ORG }}
@@ -224,7 +204,6 @@ jobs:
           cat > .env.staging.build << 'ENV_EOF'
           SUPABASE_URL=${{ secrets.STAGING_SUPABASE_URL || secrets.SUPABASE_URL }}
           SUPABASE_KEY=${{ secrets.STAGING_SUPABASE_KEY || secrets.SUPABASE_KEY }}
-          GOOGLE_VISION_API_KEY=${{ secrets.STAGING_GOOGLE_VISION_API_KEY || secrets.GOOGLE_VISION_API_KEY }}
           SITE_URL=${{ secrets.STAGING_SITE_URL || secrets.SITE_URL }}
           SENTRY_DSN=${{ secrets.STAGING_SENTRY_DSN || secrets.SENTRY_DSN }}
           SENTRY_ORG=${{ secrets.SENTRY_ORG }}
@@ -246,6 +225,7 @@ jobs:
           export NODE_OPTIONS="--max-old-space-size=6144"
           export EXPO_NO_METRO_LAZY=1
           export EAS_SKIP_AUTO_FINGERPRINT=1
+          export SENTRY_DISABLE_AUTO_UPLOAD=true
           # Override .npmrc optional=false so EAS's internal `npx eas-cli-local-build-plugin`
           # installs platform-specific binaries (e.g. @ngrok/ngrok-linux-x64-gnu, required by EAS CLI v20+).
           export npm_config_optional=true
