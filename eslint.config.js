@@ -5,7 +5,20 @@ const expoConfig = require("eslint-config-expo/flat");
 module.exports = defineConfig([
   expoConfig,
   {
-    ignores: ["dist/*", ".expo/*"],
+    // Native projects, reports, and local tools are outside the app source checks.
+    ignores: [
+      "dist/**",
+      "web-build/**",
+      ".expo/**",
+      "ios/**",
+      "android/**",
+      "coverage/**",
+      ".netlify/**",
+      ".agents/**",
+      ".codex/**",
+      ".claude/**",
+      "marketing/**",
+    ],
   },
   {
     files: [

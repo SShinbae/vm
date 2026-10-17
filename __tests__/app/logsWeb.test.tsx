@@ -3,6 +3,7 @@ import {
   render,
   screen,
   fireEvent,
+  fireEventAsync,
   waitFor,
   act,
 } from "@testing-library/react-native";
@@ -350,8 +351,9 @@ it("retries vehicle loading and shows no search matches without hiding All vehic
     new Error("offline"),
   );
   render(<LogsScreen />);
-  fireEvent.press(await screen.findByText("Retry vehicles"));
-  await waitFor(() => expect(screen.queryByText("Retry vehicles")).toBeNull());
+  await fireEventAsync.press(await screen.findByText("Retry vehicles"));
+  expect(VehicleService.getVehiclesSeparated).toHaveBeenCalledTimes(2);
+  expect(screen.queryByText("Retry vehicles")).toBeNull();
   fireEvent.press(screen.getByRole("button", { name: "Filter by vehicle" }));
   fireEvent.changeText(
     screen.getByLabelText("Search vehicles by name or plate"),

@@ -6,6 +6,41 @@
 .expo-shared/
 node_modules/
 .cache/
+.netlify/
+.aws/
+.agents/
+.codex/
+.claude/
+
+# Secrets (EAS reads signing credentials separately from the source archive)
+.env*
+env.supabase-local
+credentials.json
+ios/certs/
+*.jks
+*.keystore
+*.p8
+*.p12
+*.key
+*.pem
+*.mobileprovision
+*Firebase Admin SDK*.json
+fastlane/google-play-key.json
+sentry.properties
+
+# Android's public template key is required by existing native debug projects.
+!/android/app/debug.keystore
+
+# CI generates these client-only settings for the isolated build directory.
+!/.env.production.build
+!/.env.staging.build
+
+# Local output
+dist/
+web-build/
+marketing/
+supabase/.temp/
+supabase/.branches/
 
 # Testing
 __tests__/

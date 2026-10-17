@@ -21,6 +21,7 @@
     "test:components": "jest --testPathPattern='__tests__/components'",
     "test:integration": "jest --testPathPattern='__tests__/integration'",
     "lint": "prettier --check .",
+    "lint:code": "eslint .",
     "lint:fix": "prettier --write . && eslint --fix .",
     "prepare": "husky",
     "format": "prettier --write .",

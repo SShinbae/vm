@@ -1,18 +1,17 @@
 /* global __dirname */
 const path = require("path");
 const fs = require("fs");
+const { isIP } = require("net");
+const { Buffer } = require("buffer");
 
-// Determine which .env file to load
-let envFile = ".env.local"; // Default for local dev
+const isProduction = ["production", "production-apk"].includes(
+  process.env.EAS_BUILD_PROFILE,
+);
+let envFile = isProduction ? ".env.production" : ".env.local";
 
-if (
-  process.env.EAS_BUILD_PROFILE === "production" ||
-  process.env.EAS_BUILD_PROFILE === "production-apk"
-) {
+if (isProduction) {
   if (fs.existsSync(path.resolve(__dirname, ".env.production.build"))) {
     envFile = ".env.production.build";
-  } else if (fs.existsSync(path.resolve(__dirname, ".env.production"))) {
-    envFile = ".env.production";
   }
 } else if (process.env.EAS_BUILD_PROFILE === "preview") {
   if (fs.existsSync(path.resolve(__dirname, ".env.staging.build"))) {
@@ -21,6 +20,57 @@ if (
 }
 
 require("dotenv").config({ path: path.resolve(__dirname, envFile) });
+
+if (isProduction) {
+  for (const name of ["SUPABASE_URL", "SUPABASE_KEY", "SITE_URL"]) {
+    if (!process.env[name]?.trim()) {
+      throw new Error(`[app.config.js] Production requires ${name}.`);
+    }
+  }
+
+  for (const name of ["SUPABASE_URL", "SITE_URL", "FUNCTIONS_URL"]) {
+    if (name === "FUNCTIONS_URL" && !process.env[name]) continue;
+    let valid = false;
+    try {
+      const url = new URL(process.env[name]);
+      const host = url.hostname.replace(/\.$/, "").replace(/^\[|\]$/g, "");
+      // Production services use public DNS names, never emulator or LAN addresses.
+      valid =
+        url.protocol === "https:" &&
+        !url.username &&
+        !url.password &&
+        host.includes(".") &&
+        !isIP(host) &&
+        !/(^|\.)(localhost|local|internal)$/.test(host);
+    } catch {
+      // Report the setting name without exposing a URL or embedded credentials.
+    }
+    if (!valid) {
+      throw new Error(
+        `[app.config.js] ${name} must use a public HTTPS hostname in production.`,
+      );
+    }
+  }
+
+  const key = process.env.SUPABASE_KEY;
+  let isPublicKey = /^sb_publishable_[A-Za-z0-9_-]+$/.test(key);
+  if (!isPublicKey) {
+    try {
+      const parts = key.split(".");
+      isPublicKey =
+        parts.length === 3 &&
+        JSON.parse(Buffer.from(parts[1], "base64url").toString()).role ===
+          "anon";
+    } catch {
+      // Invalid or private keys must never reach the client config.
+    }
+  }
+  if (!isPublicKey) {
+    throw new Error(
+      "[app.config.js] SUPABASE_KEY must be a public anon or publishable key.",
+    );
+  }
+}
 
 if (process.env.NODE_ENV !== "production" || process.env.DEBUG) {
   console.log(`[app.config.js] Loaded: ${envFile}`);

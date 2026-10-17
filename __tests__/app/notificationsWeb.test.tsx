@@ -2,6 +2,7 @@ import React from "react";
 import {
   act,
   fireEvent,
+  fireEventAsync,
   render,
   screen,
   waitFor,
@@ -329,9 +330,15 @@ it("removes accepted invitations even if the follow-up refresh fails", async () 
   jest
     .mocked(GroupInvitationService.getUserInvitations)
     .mockResolvedValueOnce({ data: null, error: "Offline", loading: false });
-  fireEvent.press(screen.getByLabelText("Accept invitation to Family"));
-  await waitFor(() =>
-    expect(screen.queryByLabelText("Accept invitation to Family")).toBeNull(),
+  await fireEventAsync.press(
+    screen.getByLabelText("Accept invitation to Family"),
+  );
+  expect(screen.queryByLabelText("Accept invitation to Family")).toBeNull();
+  expect(GroupInvitationService.acceptInvitation).toHaveBeenCalledWith(
+    "invite-1",
+  );
+  expect(mockShowError).toHaveBeenCalledWith(
+    "Invitation updated, but refresh failed. Please retry.",
   );
   expect(mockShowError).not.toHaveBeenCalledWith("Failed to accept invitation");
 });
