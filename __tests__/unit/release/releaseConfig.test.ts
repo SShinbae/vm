@@ -7,6 +7,29 @@ import ignore from "ignore";
 
 const yaml = require("js-yaml");
 
+it("keeps platform-specific lockfile packages optional across build runners", () => {
+  const lock = JSON.parse(
+    fs.readFileSync(path.join(root, "package-lock.json"), "utf8"),
+  ) as {
+    packages: Record<
+      string,
+      {
+        os?: string[];
+        cpu?: string[];
+        optional?: boolean;
+        devOptional?: boolean;
+      }
+    >;
+  };
+  const requiredNativePackages = Object.entries(lock.packages)
+    .filter(
+      ([, entry]) =>
+        (entry.os || entry.cpu) && !entry.optional && !entry.devOptional,
+    )
+    .map(([name]) => name);
+  expect(requiredNativePackages).toEqual([]);
+});
+
 it.each([
   ["production", "build-production"],
   ["staging", "build-staging"],
