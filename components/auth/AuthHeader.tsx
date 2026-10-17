@@ -2,7 +2,13 @@ import { withOpacity, spacing } from "@/src/design-system";
 import { useStyles } from "react-native-unistyles";
 import { Ionicons } from "@expo/vector-icons";
 import React from "react";
-import { StyleSheet, Text, View } from "react-native";
+import {
+  Platform,
+  StyleSheet,
+  Text,
+  View,
+  useWindowDimensions,
+} from "react-native";
 
 type IoniconsName = keyof typeof Ionicons.glyphMap;
 
@@ -26,17 +32,20 @@ export function AuthHeader({
   icon,
   title,
   subtitle,
-  iconSize = 40,
-  iconContainerSize = 80,
+  iconSize,
+  iconContainerSize,
 }: AuthHeaderProps) {
   const { theme } = useStyles();
   const colors = theme.colors;
+  const { width } = useWindowDimensions();
+  const compact = Platform.OS !== "web" || width < 768;
+  const containerSize = iconContainerSize ?? (compact ? 56 : 80);
 
   const styles = StyleSheet.create({
     iconContainer: {
-      width: iconContainerSize,
-      height: iconContainerSize,
-      borderRadius: iconContainerSize / 2,
+      width: containerSize,
+      height: containerSize,
+      borderRadius: containerSize / 2,
       backgroundColor: withOpacity(colors.primary, 0.08),
       alignItems: "center",
       justifyContent: "center",
@@ -44,7 +53,7 @@ export function AuthHeader({
       marginBottom: spacing.xl,
     },
     title: {
-      fontSize: 28,
+      fontSize: compact ? 24 : 28,
       fontWeight: "700",
       color: colors.text,
       textAlign: "center",
@@ -55,7 +64,7 @@ export function AuthHeader({
       fontSize: 16,
       color: colors.textSecondary,
       textAlign: "center",
-      marginBottom: spacing.xxxl,
+      marginBottom: compact ? spacing.xl : spacing.xxxl,
       lineHeight: 24,
       paddingHorizontal: spacing.sm,
     },
@@ -64,9 +73,15 @@ export function AuthHeader({
   return (
     <>
       <View style={styles.iconContainer}>
-        <Ionicons name={icon} size={iconSize} color={colors.primary} />
+        <Ionicons
+          name={icon}
+          size={iconSize ?? (compact ? 28 : 40)}
+          color={colors.primary}
+        />
       </View>
-      <Text style={styles.title}>{title}</Text>
+      <Text accessibilityRole="header" style={styles.title}>
+        {title}
+      </Text>
       <Text style={styles.subtitle}>{subtitle}</Text>
     </>
   );

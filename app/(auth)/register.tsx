@@ -1,5 +1,3 @@
-import { spacing } from "@/src/design-system";
-import { useStyles } from "react-native-unistyles";
 import {
   AuthButton,
   AuthCheckbox,
@@ -10,152 +8,114 @@ import {
   GoogleSignInButton,
 } from "@/components/auth";
 import { PasswordStrengthIndicator } from "@/components/ui";
-import { useAuth } from "@/lib/contexts/AuthContext";
 import { useToast } from "@/hooks/useToast";
+import { useAuth } from "@/lib/contexts/AuthContext";
+import { postLoginRoute } from "@/lib/utils/postLoginRoute";
+import { safeNext, takeRememberedNext } from "@/lib/utils/safeNext";
 import { isValidEmail, validatePassword } from "@/utils/validation";
-import { router } from "expo-router";
-import React, { useState } from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { router, useLocalSearchParams } from "expo-router";
+import React, { useEffect, useRef, useState } from "react";
+import { Text, TextInput } from "react-native";
+import { useStyles } from "react-native-unistyles";
 
-function RegisterScreen() {
+export default function RegisterScreen() {
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [loading, setLoading] = useState(false);
   const [agreeToTerms, setAgreeToTerms] = useState(false);
-  const { signUp } = useAuth();
-  const { showError, showSuccess, showWarning } = useToast();
+  const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const pending = useRef(false),
+    mounted = useRef(true),
+    completed = useRef(false);
+  const googleAttempted = useRef(false);
+  const emailInput = useRef<TextInput>(null),
+    passwordInput = useRef<TextInput>(null),
+    confirmInput = useRef<TextInput>(null);
+  const { signUp, user, initialized } = useAuth();
+  const { next } = useLocalSearchParams<{ next?: string }>();
+  const { showError, showSuccess } = useToast();
   const { theme } = useStyles();
-  const colors = theme.colors;
-
-  const validateForm = () => {
-    if (!fullName.trim()) {
-      showError("Please enter your full name");
-      return false;
-    }
-    if (!email.trim()) {
-      showError("Please enter your email");
-      return false;
-    }
-    if (!isValidEmail(email)) {
-      showError("Please enter a valid email address");
-      return false;
-    }
-    const passwordValidation = validatePassword(password);
-    if (!passwordValidation.isValid) {
-      showWarning("Password Requirements", {
-        message: passwordValidation.errors.join(", "),
-      });
-      return false;
-    }
-    if (password !== confirmPassword) {
-      showError("Passwords do not match");
-      return false;
-    }
-    if (!agreeToTerms) {
-      showError("Please agree to the Terms of Service");
-      return false;
-    }
-    return true;
-  };
+  const busy = loading || googleLoading;
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+    };
+  }, []);
+  useEffect(() => {
+    if (!initialized || !user || !googleAttempted.current || completed.current)
+      return;
+    completed.current = true;
+    void postLoginRoute(
+      user.id,
+      safeNext(next) ?? takeRememberedNext() ?? "/(tabs)",
+    ).then((route) => {
+      if (mounted.current) router.replace(route as never);
+    });
+  }, [user, initialized, next]);
 
   const handleSignUp = async () => {
-    if (!validateForm()) {
-      return;
-    }
-
-    if (__DEV__) {
-      console.log("=== REGISTRATION FLOW DEBUG ===");
-      console.log("Starting registration for:", email.trim().toLowerCase());
-    }
-
+    if (pending.current || completed.current) return;
+    const submittedEmail = email.trim().toLowerCase(),
+      submittedName = fullName.trim(),
+      submittedPassword = password;
+    const validation: Record<string, string> = {};
+    if (!submittedName) validation.fullName = "Please enter your full name";
+    if (!isValidEmail(submittedEmail))
+      validation.email = "Please enter a valid email address";
+    const requirements = validatePassword(submittedPassword);
+    if (!requirements.isValid)
+      validation.password = requirements.errors.join(", ");
+    if (submittedPassword !== confirmPassword)
+      validation.confirmPassword = "Passwords do not match";
+    if (!agreeToTerms)
+      validation.terms = "Please agree to the Terms of Service";
+    setErrors(validation);
+    if (Object.keys(validation).length) return;
+    pending.current = true;
     setLoading(true);
-    const { error } = await signUp(
-      email.trim().toLowerCase(),
-      password,
-      fullName.trim(),
-    );
-    setLoading(false);
-
-    if (error) {
-      if (__DEV__) {
-        console.error("Registration failed with error:", error);
+    try {
+      const { error } = await signUp(
+        submittedEmail,
+        submittedPassword,
+        submittedName,
+      );
+      if (!mounted.current) return;
+      if (error) {
+        showError("Registration Failed", { message: error });
+        return;
       }
-      showError("Registration Failed", { message: error });
-    } else {
-      if (__DEV__) {
-        console.log(
-          "Registration successful, redirecting to email confirmation page...",
-        );
-      }
+      completed.current = true;
       showSuccess("Account created!");
       router.replace({
         pathname: "/(auth)/email-confirmation",
-        params: { email: email.trim().toLowerCase() },
+        params: { email: submittedEmail },
       });
+    } catch {
+      if (mounted.current)
+        showError("Registration Failed", { message: "Please try again." });
+    } finally {
+      pending.current = false;
+      if (mounted.current) setLoading(false);
     }
   };
-
-  const isFormValid = () => {
-    return (
-      fullName.trim() &&
-      email.trim() &&
-      isValidEmail(email) &&
-      validatePassword(password).isValid &&
-      password === confirmPassword &&
-      agreeToTerms
-    );
-  };
-
-  const styles = StyleSheet.create({
-    termsLabel: {
-      fontSize: 14,
-      color: colors.text,
-      lineHeight: 20,
-    },
-    termsLink: {
-      color: colors.primary,
-      fontWeight: "500",
-    },
-    passwordMismatch: {
-      fontSize: 12,
-      color: colors.error || theme.colors.error,
-      marginTop: spacing.sm,
-      marginLeft: spacing.xs,
-    },
-  });
-
-  const termsLabel = (
-    <Text style={styles.termsLabel}>
-      I agree to the{" "}
-      <Text
-        style={styles.termsLink}
-        accessibilityRole="link"
-        onPress={() => router.push("/terms")}
-      >
-        Terms of Service
-      </Text>{" "}
-      and{" "}
-      <Text
-        style={styles.termsLink}
-        accessibilityRole="link"
-        onPress={() => router.push("/privacy")}
-      >
-        Privacy Policy
-      </Text>
-    </Text>
+  const valid = !!(
+    fullName.trim() &&
+    isValidEmail(email) &&
+    validatePassword(password).isValid &&
+    password === confirmPassword &&
+    agreeToTerms
   );
-
   return (
     <AuthLayout>
       <AuthHeader
         icon="person-add"
         title="Create Account"
-        subtitle="Join us today! It takes less than a minute."
+        subtitle="Start managing your vehicles."
       />
-
-      {/* Full Name Input */}
       <AuthInput
         label="Full Name"
         placeholder="John Doe"
@@ -163,70 +123,123 @@ function RegisterScreen() {
         onChangeText={setFullName}
         leftIcon="person-outline"
         autoCapitalize="words"
+        autoComplete="name"
+        textContentType="name"
+        editable={!busy}
+        returnKeyType="next"
+        onSubmitEditing={() => emailInput.current?.focus()}
+        error={errors.fullName}
       />
-
-      {/* Email Input */}
       <AuthInput
+        ref={emailInput}
         label="Email Address"
         placeholder="you@example.com"
         value={email}
         onChangeText={setEmail}
         leftIcon="mail-outline"
         type="email"
+        autoComplete="email"
+        textContentType="emailAddress"
+        editable={!busy}
+        returnKeyType="next"
+        onSubmitEditing={() => passwordInput.current?.focus()}
+        error={errors.email}
       />
-
-      {/* Password Input */}
       <AuthInput
+        ref={passwordInput}
         label="Password"
         placeholder="Create a password"
         value={password}
         onChangeText={setPassword}
         leftIcon="lock-closed-outline"
         type="password"
+        autoComplete="new-password"
+        textContentType="newPassword"
+        editable={!busy}
+        returnKeyType="next"
+        onSubmitEditing={() => confirmInput.current?.focus()}
+        error={errors.password}
       >
         <PasswordStrengthIndicator password={password} />
       </AuthInput>
-
-      {/* Confirm Password Input */}
-      <View>
-        <AuthInput
-          label="Confirm Password"
-          placeholder="Re-enter your password"
-          value={confirmPassword}
-          onChangeText={setConfirmPassword}
-          leftIcon="lock-closed-outline"
-          type="password"
-        />
-        {confirmPassword.length > 0 && password !== confirmPassword && (
-          <Text style={styles.passwordMismatch}>Passwords do not match</Text>
-        )}
-      </View>
-
-      {/* Terms Checkbox */}
+      <AuthInput
+        ref={confirmInput}
+        label="Confirm Password"
+        placeholder="Re-enter your password"
+        value={confirmPassword}
+        onChangeText={setConfirmPassword}
+        leftIcon="lock-closed-outline"
+        type="password"
+        autoComplete="new-password"
+        textContentType="newPassword"
+        editable={!busy}
+        returnKeyType="done"
+        onSubmitEditing={handleSignUp}
+        error={
+          confirmPassword && password !== confirmPassword
+            ? "Passwords do not match"
+            : errors.confirmPassword
+        }
+      />
       <AuthCheckbox
         checked={agreeToTerms}
         onToggle={() => setAgreeToTerms(!agreeToTerms)}
-        label={termsLabel}
+        disabled={busy}
+        accessibilityLabel="Agree to Terms of Service and Privacy Policy"
+        label={
+          <Text style={{ color: theme.colors.text, flexShrink: 1 }}>
+            I agree to the{" "}
+            <Text
+              accessibilityRole="link"
+              style={{ color: theme.colors.primary }}
+              onPress={() => {
+                if (!pending.current) router.push("/terms");
+              }}
+            >
+              Terms of Service
+            </Text>{" "}
+            and{" "}
+            <Text
+              accessibilityRole="link"
+              style={{ color: theme.colors.primary }}
+              onPress={() => {
+                if (!pending.current) router.push("/privacy");
+              }}
+            >
+              Privacy Policy
+            </Text>
+          </Text>
+        }
       />
-
-      {/* Create Account Button */}
+      {errors.terms && (
+        <Text accessibilityRole="alert" style={{ color: theme.colors.error }}>
+          {errors.terms}
+        </Text>
+      )}
       <AuthButton
         title="Create Account"
         onPress={handleSignUp}
         loading={loading}
-        disabled={!isFormValid()}
+        disabled={googleLoading || !valid}
       />
-
-      <GoogleSignInButton />
-
-      {/* Login Section */}
+      <GoogleSignInButton
+        disabled={loading}
+        onLoadingChange={(value) => {
+          if (value) googleAttempted.current = true;
+          pending.current = value;
+          setGoogleLoading(value);
+        }}
+      />
       <AuthLink
         text="Already have an account?"
         linkText="Log in"
         href="/(auth)/login"
+        disabled={busy}
+        onPress={() => {
+          if (router.canGoBack()) router.back();
+          else router.replace("/(auth)/login");
+        }}
       />
     </AuthLayout>
   );
 }
-
-export default RegisterScreen;

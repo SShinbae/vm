@@ -1,5 +1,3 @@
-import { spacing } from "@/src/design-system";
-import { useStyles } from "react-native-unistyles";
 import {
   AuthButton,
   AuthHeader,
@@ -9,187 +7,207 @@ import {
 import { PasswordStrengthIndicator } from "@/components/ui";
 import { toast } from "@/hooks/useToast";
 import { useAuth } from "@/lib/contexts/AuthContext";
+import { postLoginRoute } from "@/lib/utils/postLoginRoute";
+import { parseVerifiedRedirect } from "@/lib/utils/authRedirect";
+import { initialUrl, supabase } from "@/services/supabaseClient";
 import { validatePassword } from "@/utils/validation";
-import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
-import React, { useEffect, useState } from "react";
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import React, { useEffect, useRef, useState } from "react";
+import { ActivityIndicator, TextInput } from "react-native";
 
 export default function ResetPasswordScreen() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [passwordUpdated, setPasswordUpdated] = useState(false);
-  const { updatePassword, clearPasswordRecovery } = useAuth();
-  const { theme } = useStyles();
-  const colors = theme.colors;
-  const params = useLocalSearchParams();
-
+  const [sessionUserId, setSessionUserId] = useState<string | null>(null);
+  const [checking, setChecking] = useState(true);
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const pending = useRef(false),
+    mounted = useRef(true);
+  const confirmInput = useRef<TextInput>(null);
+  const {
+    initialized,
+    updatePassword,
+    signOut,
+    clearPasswordRecovery,
+    isPasswordRecovery,
+  } = useAuth();
+  const params = useLocalSearchParams<{
+    error?: string;
+    error_description?: string;
+  }>();
+  const initialRedirect = parseVerifiedRedirect(
+    initialUrl.search,
+    initialUrl.hash,
+  );
+  const linkError =
+    params.error ||
+    params.error_description ||
+    (initialRedirect?.status === "error" ? initialRedirect.message : undefined);
   useEffect(() => {
-    // Check if there's an error in the URL parameters
-    if (params.error) {
-      let errorMessage = "Password reset failed";
-
-      if (params.error_description) {
-        errorMessage =
-          typeof params.error_description === "string"
-            ? params.error_description.replace(/\+/g, " ")
-            : "Password reset link is invalid or has expired";
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+    };
+  }, []);
+  useEffect(() => {
+    if (!initialized) return;
+    let active = true;
+    setChecking(true);
+    void (async () => {
+      try {
+        const { data, error } = await supabase.auth.getSession();
+        if (active)
+          setSessionUserId(
+            !linkError && !error ? (data.session?.user.id ?? null) : null,
+          );
+      } catch {
+        if (active) setSessionUserId(null);
+      } finally {
+        if (active) setChecking(false);
       }
+    })();
+    return () => {
+      active = false;
+    };
+  }, [initialized, linkError]);
 
-      toast.error("Reset Failed", { message: errorMessage });
-    }
-  }, [params.error, params.error_description]);
-
-  const handleResetPassword = async () => {
-    // Prevent double submission
-    if (loading) {
-      if (__DEV__) {
-        console.log("Already loading, skipping...");
-      }
+  const submit = async () => {
+    if (
+      pending.current ||
+      passwordUpdated ||
+      !sessionUserId ||
+      linkError ||
+      checking ||
+      !initialized
+    )
       return;
-    }
-
-    if (!password.trim()) {
-      toast.error("Please enter a new password");
-      return;
-    }
-
-    const passwordValidation = validatePassword(password);
-    if (!passwordValidation.isValid) {
-      toast.error("Password Requirements", {
-        message: `Your password needs:\n• ${passwordValidation.errors.join("\n• ")}`,
-      });
-      return;
-    }
-
-    if (password !== confirmPassword) {
-      toast.error("Passwords do not match");
-      return;
-    }
-
+    const submittedPassword = password;
+    const validation: Record<string, string> = {};
+    const requirements = validatePassword(submittedPassword);
+    if (!requirements.isValid)
+      validation.password = requirements.errors.join(", ");
+    if (submittedPassword !== confirmPassword)
+      validation.confirmPassword = "Passwords do not match";
+    setErrors(validation);
+    if (Object.keys(validation).length) return;
+    pending.current = true;
     setLoading(true);
-    if (__DEV__) {
-      console.log("Calling updatePassword...");
-    }
-
-    const { error } = await updatePassword(password);
-
-    if (__DEV__) {
-      console.log("updatePassword returned:", { error });
-    }
-
-    if (error) {
-      setLoading(false);
-      toast.error("Update Failed", { message: error });
-    } else {
-      // Show success first, then clear recovery state after a delay
-      // This prevents AuthGuard from redirecting before success view shows
-      if (__DEV__) {
-        console.log("Password update successful, showing success view");
+    try {
+      const { error } = await updatePassword(submittedPassword);
+      if (!mounted.current) return;
+      if (error) {
+        toast.error("Update Failed", { message: error });
+        return;
       }
-      setLoading(false);
       setPasswordUpdated(true);
+    } catch {
+      if (mounted.current)
+        toast.error("Update Failed", { message: "Please try again." });
+    } finally {
+      pending.current = false;
+      if (mounted.current) setLoading(false);
     }
   };
 
-  const isFormValid = () => {
-    return (
-      password.trim() &&
-      confirmPassword.trim() &&
-      validatePassword(password).isValid &&
-      password === confirmPassword
-    );
+  const leave = async (
+    destination: "/(auth)/login" | "/(auth)/forgot-password",
+  ) => {
+    if (pending.current) return;
+    pending.current = true;
+    setLoading(true);
+    try {
+      if (sessionUserId || isPasswordRecovery) {
+        const { error } = await signOut();
+        if (!mounted.current) return;
+        if (error) {
+          toast.error("Couldn't leave password recovery", { message: error });
+          return;
+        }
+      }
+      if (!mounted.current) return;
+      clearPasswordRecovery();
+      router.replace(destination);
+    } catch {
+      if (mounted.current)
+        toast.error("Couldn't leave password recovery", {
+          message: "Please try again.",
+        });
+    } finally {
+      pending.current = false;
+      if (mounted.current) setLoading(false);
+    }
+  };
+  const continueToApp = async () => {
+    if (pending.current || !sessionUserId) return;
+    pending.current = true;
+    setLoading(true);
+    try {
+      const destination = await postLoginRoute(sessionUserId, "/(tabs)");
+      if (!mounted.current) return;
+      clearPasswordRecovery();
+      router.replace(destination as never);
+    } catch {
+      if (mounted.current)
+        toast.error("Couldn't open the app. Please try again.");
+    } finally {
+      pending.current = false;
+      if (mounted.current) setLoading(false);
+    }
   };
 
-  const styles = StyleSheet.create({
-    backButton: {
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "center",
-      gap: spacing.sm,
-    },
-    backButtonText: {
-      color: colors.textSecondary,
-      fontSize: 16,
-      fontWeight: "500",
-    },
-    passwordMismatch: {
-      fontSize: 12,
-      color: colors.error || theme.colors.error,
-      marginTop: spacing.sm,
-      marginLeft: spacing.xs,
-    },
-    // Success state styles
-    iconContainer: {
-      alignItems: "center",
-      marginBottom: spacing.xxl,
-    },
-    successIcon: {
-      width: 80,
-      height: 80,
-      borderRadius: 40,
-      backgroundColor: colors.success || theme.colors.success,
-      alignItems: "center",
-      justifyContent: "center",
-      marginBottom: spacing.xl,
-      shadowColor: colors.success || theme.colors.success,
-      shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.3,
-      shadowRadius: 8,
-      elevation: 6,
-    },
-    checkIcon: {
-      fontSize: 40,
-      color: theme.colors.white,
-      fontWeight: "bold",
-    },
-    title: {
-      fontSize: 28,
-      fontWeight: "700",
-      color: colors.text,
-      textAlign: "center",
-      marginBottom: spacing.md,
-      letterSpacing: -0.5,
-    },
-    subtitle: {
-      fontSize: 16,
-      color: colors.textSecondary,
-      textAlign: "center",
-      lineHeight: 24,
-      marginBottom: spacing.xxl,
-    },
-  });
-
-  // Show success view after password is updated
-  if (passwordUpdated) {
-    if (__DEV__) {
-      console.log("Rendering success view");
-    }
+  if (!initialized || checking)
     return (
       <AuthLayout>
-        <View style={styles.iconContainer}>
-          <View style={styles.successIcon}>
-            <Ionicons name="checkmark" size={40} color={theme.colors.white} />
-          </View>
-          <Text style={styles.title}>Password Updated!</Text>
-          <Text style={styles.subtitle}>
-            Your password has been successfully updated. You can now sign in
-            with your new password.
-          </Text>
-        </View>
-
+        <AuthHeader
+          icon="lock-closed"
+          title="Checking reset link"
+          subtitle="Please wait while we check your session."
+        />
+        <ActivityIndicator accessibilityLabel="Checking reset link" />
+      </AuthLayout>
+    );
+  if (linkError || !sessionUserId)
+    return (
+      <AuthLayout>
+        <AuthHeader
+          icon="alert-circle-outline"
+          title="Reset link unavailable"
+          subtitle="This link is invalid or has expired. Request a new email to reset your password."
+        />
         <AuthButton
-          title="Continue to App"
+          title="Request new reset link"
+          loading={loading}
           onPress={() => {
-            clearPasswordRecovery();
-            router.replace("/(tabs)");
+            void leave("/(auth)/forgot-password");
+          }}
+        />
+        <AuthButton
+          title="Back to Login"
+          variant="outline"
+          disabled={loading}
+          onPress={() => {
+            void leave("/(auth)/login");
           }}
         />
       </AuthLayout>
     );
-  }
-
+  if (passwordUpdated)
+    return (
+      <AuthLayout>
+        <AuthHeader
+          icon="checkmark-circle-outline"
+          title="Password Updated!"
+          subtitle="Your new password is saved. Continue to your account."
+        />
+        <AuthButton
+          title="Continue to App"
+          onPress={continueToApp}
+          loading={loading}
+        />
+      </AuthLayout>
+    );
   return (
     <AuthLayout>
       <AuthHeader
@@ -197,8 +215,6 @@ export default function ResetPasswordScreen() {
         title="Set New Password"
         subtitle="Enter your new password below."
       />
-
-      {/* New Password Input */}
       <AuthInput
         label="New Password"
         placeholder="Enter new password"
@@ -206,41 +222,50 @@ export default function ResetPasswordScreen() {
         onChangeText={setPassword}
         leftIcon="lock-closed-outline"
         type="password"
+        editable={!loading}
+        autoComplete="new-password"
+        textContentType="newPassword"
+        returnKeyType="next"
+        onSubmitEditing={() => confirmInput.current?.focus()}
+        error={errors.password}
       >
         <PasswordStrengthIndicator password={password} />
       </AuthInput>
-
-      {/* Confirm Password Input */}
-      <View>
-        <AuthInput
-          label="Confirm Password"
-          placeholder="Confirm new password"
-          value={confirmPassword}
-          onChangeText={setConfirmPassword}
-          leftIcon="lock-closed-outline"
-          type="password"
-        />
-        {confirmPassword.length > 0 && password !== confirmPassword && (
-          <Text style={styles.passwordMismatch}>Passwords do not match</Text>
-        )}
-      </View>
-
-      {/* Update Password Button */}
+      <AuthInput
+        ref={confirmInput}
+        label="Confirm Password"
+        placeholder="Confirm new password"
+        value={confirmPassword}
+        onChangeText={setConfirmPassword}
+        leftIcon="lock-closed-outline"
+        type="password"
+        editable={!loading}
+        autoComplete="new-password"
+        textContentType="newPassword"
+        returnKeyType="done"
+        onSubmitEditing={submit}
+        error={
+          confirmPassword && confirmPassword !== password
+            ? "Passwords do not match"
+            : errors.confirmPassword
+        }
+      />
       <AuthButton
         title="Update Password"
-        onPress={handleResetPassword}
+        onPress={submit}
         loading={loading}
-        disabled={!isFormValid()}
+        disabled={
+          !validatePassword(password).isValid || password !== confirmPassword
+        }
       />
-
-      {/* Back to Login */}
-      <TouchableOpacity
-        style={styles.backButton}
-        onPress={() => router.replace("/(auth)/login")}
-      >
-        <Ionicons name="arrow-back" size={20} color={colors.textSecondary} />
-        <Text style={styles.backButtonText}>Back to Login</Text>
-      </TouchableOpacity>
+      <AuthButton
+        title="Back to Login"
+        variant="outline"
+        disabled={loading}
+        onPress={() => {
+          void leave("/(auth)/login");
+        }}
+      />
     </AuthLayout>
   );
 }

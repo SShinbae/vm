@@ -1,249 +1,124 @@
-import { spacing } from "@/src/design-system";
+import { AuthButton, AuthHeader, AuthLayout } from "@/components/auth";
+import { useToast } from "@/hooks/useToast";
+import { config } from "@/lib/config";
+import { supabase } from "@/services/supabaseClient";
+import { isValidEmail } from "@/utils/validation";
+import { router, useLocalSearchParams } from "expo-router";
+import React, { useEffect, useRef, useState } from "react";
+import { Text } from "react-native";
 import { useStyles } from "react-native-unistyles";
-import { AuthButton, AuthLayout } from "@/components/auth";
-import { IconSymbol } from "@/components/ui/icon-symbol";
-import { useDialog } from "@/lib/contexts/DialogContext";
-import { Link, router, useLocalSearchParams } from "expo-router";
-import React, { useEffect, useState } from "react";
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 export default function EmailConfirmationScreen() {
-  const { email } = useLocalSearchParams<{ email: string }>();
-  const [resendLoading, setResendLoading] = useState(false);
-  const [resendCooldown, setResendCooldown] = useState(0);
-  const { confirm } = useDialog();
+  const { email } = useLocalSearchParams<{ email?: string }>();
+  const normalizedEmail =
+    typeof email === "string" ? email.trim().toLowerCase() : "";
+  const [loading, setLoading] = useState(false);
+  const [resendUntil, setResendUntil] = useState(0);
+  const [cooldown, setCooldown] = useState(0);
+  const pending = useRef(false),
+    mounted = useRef(true);
+  const currentEmail = useRef(normalizedEmail);
+  currentEmail.current = normalizedEmail;
+  const { showError, showSuccess } = useToast();
   const { theme } = useStyles();
-  const colors = theme.colors;
-
-  if (__DEV__) {
-    console.log("=== EMAIL CONFIRMATION SCREEN ===");
-    console.log("Email param received:", email);
-    console.log("=================================");
-  }
-
   useEffect(() => {
-    let interval: ReturnType<typeof setInterval>;
-    if (resendCooldown > 0) {
-      interval = setInterval(() => {
-        setResendCooldown((prev) => prev - 1);
-      }, 1000);
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+    };
+  }, []);
+  useEffect(() => {
+    if (!resendUntil) return;
+    const update = () =>
+      setCooldown(Math.max(0, Math.ceil((resendUntil - Date.now()) / 1000)));
+    update();
+    const timer = setInterval(update, 1000);
+    return () => clearInterval(timer);
+  }, [resendUntil]);
+  const resend = async () => {
+    if (
+      pending.current ||
+      Date.now() < resendUntil ||
+      !isValidEmail(normalizedEmail)
+    )
+      return;
+    const submittedEmail = normalizedEmail;
+    pending.current = true;
+    setLoading(true);
+    try {
+      const { error } = await supabase.auth.resend({
+        type: "signup",
+        email: submittedEmail,
+        options: { emailRedirectTo: `${config.siteUrl}/auth/confirm` },
+      });
+      if (!mounted.current || currentEmail.current !== submittedEmail) return;
+      if (error) {
+        showError("Couldn't resend verification email", {
+          message: error.message,
+        });
+        return;
+      }
+      setCooldown(60);
+      setResendUntil(Date.now() + 60000);
+      showSuccess("Verification email sent. Check your inbox.");
+    } catch {
+      if (mounted.current)
+        showError("Couldn't resend verification email", {
+          message: "Please try again.",
+        });
+    } finally {
+      pending.current = false;
+      if (mounted.current) setLoading(false);
     }
-    return () => clearInterval(interval);
-  }, [resendCooldown]);
-
-  const handleResendEmail = async () => {
-    if (!email || resendCooldown > 0) return;
-
-    setResendLoading(true);
-
-    // Note: Since we don't have access to the original password and full name,
-    // we'll show a message to go back to registration for now
-    const goToRegistration = await confirm({
-      title: "Resend Verification",
-      message:
-        "To resend the verification email, please go back to the registration form and try again.",
-      confirmText: "Go to Registration",
-    });
-
-    setResendLoading(false);
-    setResendCooldown(60); // 60 seconds cooldown
-    if (goToRegistration) router.replace("/(auth)/register");
   };
-
-  const styles = StyleSheet.create({
-    iconContainer: {
-      alignItems: "center",
-      marginBottom: spacing.xxl,
-    },
-    successIcon: {
-      width: 80,
-      height: 80,
-      borderRadius: 40,
-      backgroundColor: colors.success || theme.colors.success,
-      alignItems: "center",
-      justifyContent: "center",
-      marginBottom: spacing.xl,
-      shadowColor: colors.success || theme.colors.success,
-      shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.3,
-      shadowRadius: 8,
-      elevation: 6,
-    },
-    checkIcon: {
-      fontSize: 40,
-      color: theme.colors.white,
-      fontWeight: "bold",
-    },
-    title: {
-      fontSize: 28,
-      fontWeight: "700",
-      color: colors.text,
-      textAlign: "center",
-      marginBottom: spacing.md,
-      letterSpacing: -0.5,
-    },
-    subtitle: {
-      fontSize: 16,
-      color: colors.textSecondary,
-      textAlign: "center",
-      lineHeight: 24,
-      marginBottom: spacing.sm,
-    },
-    emailText: {
-      fontSize: 16,
-      color: colors.primary,
-      textAlign: "center",
-      fontWeight: "600",
-      marginBottom: spacing.xxl,
-    },
-    card: {
-      backgroundColor: colors.surface,
-      borderRadius: 12,
-      padding: spacing.xl,
-      shadowColor: colors.text,
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.1,
-      shadowRadius: 8,
-      elevation: 4,
-      marginBottom: spacing.xl,
-    },
-    instructionTitle: {
-      fontSize: 18,
-      fontWeight: "600",
-      color: colors.text,
-      marginBottom: spacing.lg,
-      textAlign: "center",
-    },
-    instructionList: {
-      marginBottom: spacing.xl,
-    },
-    instructionItem: {
-      flexDirection: "row",
-      alignItems: "flex-start",
-      marginBottom: spacing.md,
-    },
-    instructionNumber: {
-      width: 24,
-      height: 24,
-      borderRadius: 12,
-      backgroundColor: colors.primary,
-      alignItems: "center",
-      justifyContent: "center",
-      marginRight: spacing.md,
-      marginTop: spacing.xs,
-    },
-    instructionNumberText: {
-      fontSize: 12,
-      color: theme.colors.white,
-      fontWeight: "bold",
-    },
-    instructionText: {
-      fontSize: 14,
-      color: colors.textSecondary,
-      flex: 1,
-      lineHeight: 20,
-    },
-    buttonContainer: {
-      gap: spacing.md,
-    },
-    secondaryButton: {
-      backgroundColor: "transparent",
-      borderWidth: 1,
-      borderColor: colors.border,
-      borderRadius: 8,
-      paddingVertical: spacing.lg,
-      alignItems: "center",
-      minHeight: 48,
-    },
-    secondaryButtonText: {
-      color: colors.textSecondary,
-      fontSize: 14,
-      fontWeight: "500",
-    },
-    footerText: {
-      fontSize: 12,
-      color: colors.textSecondary,
-      textAlign: "center",
-      lineHeight: 18,
-      marginTop: spacing.xl,
-    },
-    linkText: {
-      color: colors.primary,
-      textDecorationLine: "underline",
-    },
-  });
-
   return (
     <AuthLayout>
-      {/* Success Icon */}
-      <View style={styles.iconContainer}>
-        <View style={styles.successIcon}>
-          <IconSymbol name="checkmark" size={40} color={theme.colors.white} />
-        </View>
-        <Text style={styles.title}>Check your email</Text>
-        <Text style={styles.subtitle}>
-          We&apos;ve sent a verification link to
+      <AuthHeader
+        icon="mail-open-outline"
+        title="Check your email"
+        subtitle={
+          normalizedEmail
+            ? "We’ve sent a verification link to:"
+            : "Enter your email when you register to receive a verification link."
+        }
+      />
+      {!!normalizedEmail && (
+        <Text
+          style={{
+            textAlign: "center",
+            color: theme.colors.text,
+            marginBottom: 24,
+          }}
+        >
+          {normalizedEmail}
         </Text>
-        <Text style={styles.emailText}>{email}</Text>
-      </View>
-
-      {/* Instructions Card */}
-      <View style={styles.card}>
-        <Text style={styles.instructionTitle}>What&apos;s next?</Text>
-        <View style={styles.instructionList}>
-          <View style={styles.instructionItem}>
-            <View style={styles.instructionNumber}>
-              <Text style={styles.instructionNumberText}>1</Text>
-            </View>
-            <Text style={styles.instructionText}>
-              Check your email inbox (and spam folder)
-            </Text>
-          </View>
-          <View style={styles.instructionItem}>
-            <View style={styles.instructionNumber}>
-              <Text style={styles.instructionNumberText}>2</Text>
-            </View>
-            <Text style={styles.instructionText}>
-              Click the verification link in the email
-            </Text>
-          </View>
-          <View style={styles.instructionItem}>
-            <View style={styles.instructionNumber}>
-              <Text style={styles.instructionNumberText}>3</Text>
-            </View>
-            <Text style={styles.instructionText}>
-              Return to the app and sign in
-            </Text>
-          </View>
-        </View>
-
-        <View style={styles.buttonContainer}>
-          <AuthButton
-            title={
-              resendCooldown > 0
-                ? `Resend email (${resendCooldown}s)`
-                : "Resend verification email"
-            }
-            onPress={handleResendEmail}
-            loading={resendLoading}
-            disabled={resendCooldown > 0}
-            style={{ marginBottom: 0 }}
-          />
-
-          <Link href="/(auth)/login" asChild>
-            <TouchableOpacity style={styles.secondaryButton}>
-              <Text style={styles.secondaryButtonText}>Back to Sign In</Text>
-            </TouchableOpacity>
-          </Link>
-        </View>
-      </View>
-
-      <Text style={styles.footerText}>
-        Didn&apos;t receive the email? Check your spam folder or{" "}
-        <Link href="/(auth)/register" asChild>
-          <Text style={styles.linkText}>try again with a different email</Text>
-        </Link>
+      )}
+      <Text style={{ color: theme.colors.textSecondary, marginBottom: 24 }}>
+        Open the link in your browser to verify your email, then return here to
+        sign in. Check your spam folder if needed.
       </Text>
+      <AuthButton
+        title={
+          cooldown > 0
+            ? `Resend email (${cooldown}s)`
+            : "Resend verification email"
+        }
+        onPress={resend}
+        loading={loading}
+        disabled={cooldown > 0 || !isValidEmail(normalizedEmail)}
+      />
+      <AuthButton
+        title="Back to Sign In"
+        variant="outline"
+        disabled={loading}
+        onPress={() => router.replace("/(auth)/login")}
+      />
+      <AuthButton
+        title="Use a different email"
+        variant="outline"
+        disabled={loading}
+        onPress={() => router.replace("/(auth)/register")}
+      />
     </AuthLayout>
   );
 }

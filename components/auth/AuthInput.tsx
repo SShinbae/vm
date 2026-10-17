@@ -2,13 +2,14 @@ import { spacing } from "@/src/design-system";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { useStyles } from "react-native-unistyles";
 import { Ionicons } from "@expo/vector-icons";
-import React, { ReactNode, useRef, useState } from "react";
+import React, { ReactNode, forwardRef, useRef, useState } from "react";
 import {
   Animated,
   KeyboardTypeOptions,
   StyleSheet,
   Text,
   TextInput,
+  TextInputProps,
   TouchableOpacity,
   View,
 } from "react-native";
@@ -28,6 +29,11 @@ interface AuthInputProps {
   error?: string;
   helperText?: string;
   children?: ReactNode;
+  editable?: boolean;
+  autoComplete?: TextInputProps["autoComplete"];
+  textContentType?: TextInputProps["textContentType"];
+  returnKeyType?: TextInputProps["returnKeyType"];
+  onSubmitEditing?: TextInputProps["onSubmitEditing"];
 }
 
 /**
@@ -40,186 +46,218 @@ interface AuthInputProps {
  * - Error and helper text display
  * - Support for children (e.g., PasswordStrengthIndicator)
  */
-export function AuthInput({
-  label,
-  placeholder,
-  value,
-  onChangeText,
-  leftIcon,
-  type = "text",
-  keyboardType,
-  autoCapitalize = "none",
-  autoCorrect = false,
-  error,
-  helperText,
-  children,
-}: AuthInputProps) {
-  const { theme } = useStyles();
-  const colors = theme.colors;
-  const [isFocused, setIsFocused] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
-  const reduceMotion = useReducedMotion();
-
-  // Animated values for smooth focus transition
-  const focusAnim = useRef(new Animated.Value(0)).current;
-
-  const handleFocus = () => {
-    setIsFocused(true);
-    Animated.timing(focusAnim, {
-      toValue: 1,
-      duration: reduceMotion ? 0 : 200,
-      useNativeDriver: false,
-    }).start();
-  };
-
-  const handleBlur = () => {
-    setIsFocused(false);
-    Animated.timing(focusAnim, {
-      toValue: 0,
-      duration: reduceMotion ? 0 : 200,
-      useNativeDriver: false,
-    }).start();
-  };
-
-  // Interpolate animated values
-  const borderColor = focusAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [colors.border, colors.primary],
-  });
-
-  const backgroundColor = focusAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [colors.background, colors.surface],
-  });
-
-  const borderWidth = focusAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [1, 2],
-  });
-
-  // Determine keyboard type based on input type
-  const getKeyboardType = (): KeyboardTypeOptions => {
-    if (keyboardType) return keyboardType;
-    if (type === "email") return "email-address";
-    return "default";
-  };
-
-  const isPassword = type === "password";
-  const secureTextEntry = isPassword && !showPassword;
-
-  const styles = StyleSheet.create({
-    container: {
-      marginBottom: spacing.xl,
+export const AuthInput = forwardRef<TextInput, AuthInputProps>(
+  function AuthInput(
+    {
+      label,
+      placeholder,
+      value,
+      onChangeText,
+      leftIcon,
+      type = "text",
+      keyboardType,
+      autoCapitalize = "none",
+      autoCorrect = false,
+      error,
+      helperText,
+      children,
+      editable = true,
+      autoComplete,
+      textContentType,
+      returnKeyType,
+      onSubmitEditing,
     },
-    label: {
-      fontSize: 14,
-      fontWeight: "600",
-      color: colors.text,
-      marginBottom: spacing.sm,
-    },
-    inputWrapper: {
-      position: "relative",
-      flexDirection: "row",
-      alignItems: "center",
-    },
-    inputIcon: {
-      position: "absolute",
-      left: 16,
-      zIndex: 1,
-    },
-    input: {
-      flex: 1,
-      borderRadius: 8,
-      paddingHorizontal: leftIcon ? 48 : 16,
-      paddingRight: isPassword ? 48 : 16,
-      paddingVertical: spacing.lg,
-      fontSize: 16,
-      color: colors.text,
-      minHeight: 52,
-    },
-    eyeIcon: {
-      position: "absolute",
-      right: 0,
-      zIndex: 1,
-      width: 48,
-      height: 48,
-      alignItems: "center",
-      justifyContent: "center",
-    },
-    helperText: {
-      fontSize: 12,
-      color: colors.textSecondary,
-      marginTop: spacing.sm,
-      marginLeft: spacing.xs,
-    },
-    errorText: {
-      fontSize: 12,
-      color: colors.error || theme.colors.error,
-      marginTop: spacing.sm,
-      marginLeft: spacing.xs,
-    },
-  });
+    ref,
+  ) {
+    const { theme } = useStyles();
+    const colors = theme.colors;
+    const [isFocused, setIsFocused] = useState(false);
+    const [showPassword, setShowPassword] = useState(false);
+    const reduceMotion = useReducedMotion();
 
-  return (
-    <View style={styles.container}>
-      <Text style={styles.label}>{label}</Text>
-      <View style={styles.inputWrapper}>
-        {leftIcon && (
-          <View style={styles.inputIcon}>
-            <Ionicons
-              name={leftIcon}
-              size={20}
-              color={isFocused ? colors.primary : colors.textSecondary}
-            />
-          </View>
-        )}
-        <Animated.View
-          style={{
-            flex: 1,
-            borderWidth: borderWidth,
-            borderColor: error
-              ? colors.error || theme.colors.error
-              : borderColor,
-            backgroundColor: backgroundColor,
-            borderRadius: 8,
-          }}
-        >
-          <TextInput
-            style={styles.input}
-            value={value}
-            onChangeText={onChangeText}
-            placeholder={placeholder}
-            placeholderTextColor={colors.gray[400]}
-            keyboardType={getKeyboardType()}
-            autoCapitalize={autoCapitalize}
-            autoCorrect={autoCorrect}
-            secureTextEntry={secureTextEntry}
-            onFocus={handleFocus}
-            onBlur={handleBlur}
-          />
-        </Animated.View>
-        {isPassword && (
-          <TouchableOpacity
-            style={styles.eyeIcon}
-            onPress={() => setShowPassword(!showPassword)}
-            accessibilityRole="button"
-            accessibilityLabel={
-              showPassword ? "Hide password" : "Show password"
-            }
+    // Animated values for smooth focus transition
+    const focusAnim = useRef(new Animated.Value(0)).current;
+
+    const handleFocus = () => {
+      setIsFocused(true);
+      Animated.timing(focusAnim, {
+        toValue: 1,
+        duration: reduceMotion ? 0 : 200,
+        useNativeDriver: false,
+      }).start();
+    };
+
+    const handleBlur = () => {
+      setIsFocused(false);
+      Animated.timing(focusAnim, {
+        toValue: 0,
+        duration: reduceMotion ? 0 : 200,
+        useNativeDriver: false,
+      }).start();
+    };
+
+    // Interpolate animated values
+    const borderColor = focusAnim.interpolate({
+      inputRange: [0, 1],
+      outputRange: [colors.border, colors.primary],
+    });
+
+    const backgroundColor = focusAnim.interpolate({
+      inputRange: [0, 1],
+      outputRange: [colors.background, colors.surface],
+    });
+
+    const borderWidth = focusAnim.interpolate({
+      inputRange: [0, 1],
+      outputRange: [1, 2],
+    });
+
+    // Determine keyboard type based on input type
+    const getKeyboardType = (): KeyboardTypeOptions => {
+      if (keyboardType) return keyboardType;
+      if (type === "email") return "email-address";
+      return "default";
+    };
+
+    const isPassword = type === "password";
+    const secureTextEntry = isPassword && !showPassword;
+
+    const styles = StyleSheet.create({
+      container: {
+        marginBottom: spacing.xl,
+      },
+      label: {
+        fontSize: 14,
+        fontWeight: "600",
+        color: colors.text,
+        marginBottom: spacing.sm,
+      },
+      inputWrapper: {
+        position: "relative",
+        flexDirection: "row",
+        alignItems: "center",
+      },
+      inputIcon: {
+        position: "absolute",
+        left: 16,
+        zIndex: 1,
+      },
+      input: {
+        flex: 1,
+        borderRadius: 8,
+        paddingHorizontal: leftIcon ? 48 : 16,
+        paddingRight: isPassword ? 48 : 16,
+        paddingVertical: spacing.lg,
+        fontSize: 16,
+        color: colors.text,
+        minHeight: 52,
+      },
+      eyeIcon: {
+        position: "absolute",
+        right: 0,
+        zIndex: 1,
+        width: 48,
+        height: 48,
+        alignItems: "center",
+        justifyContent: "center",
+      },
+      helperText: {
+        fontSize: 12,
+        color: colors.textSecondary,
+        marginTop: spacing.sm,
+        marginLeft: spacing.xs,
+      },
+      errorText: {
+        fontSize: 12,
+        color: colors.error || theme.colors.error,
+        marginTop: spacing.sm,
+        marginLeft: spacing.xs,
+      },
+    });
+
+    return (
+      <View style={styles.container}>
+        {label ? <Text style={styles.label}>{label}</Text> : null}
+        <View style={styles.inputWrapper}>
+          {leftIcon && (
+            <View style={styles.inputIcon}>
+              <Ionicons
+                name={leftIcon}
+                size={20}
+                color={isFocused ? colors.primary : colors.textSecondary}
+              />
+            </View>
+          )}
+          <Animated.View
+            style={{
+              flex: 1,
+              borderWidth: borderWidth,
+              borderColor: error
+                ? colors.error || theme.colors.error
+                : borderColor,
+              backgroundColor: backgroundColor,
+              borderRadius: 8,
+            }}
           >
-            <Ionicons
-              name={showPassword ? "eye-outline" : "eye-off-outline"}
-              size={20}
-              color={colors.textSecondary}
+            <TextInput
+              ref={ref}
+              accessibilityLabel={label || placeholder}
+              editable={editable}
+              autoComplete={
+                autoComplete ?? (type === "email" ? "email" : undefined)
+              }
+              textContentType={textContentType}
+              returnKeyType={returnKeyType}
+              onSubmitEditing={onSubmitEditing}
+              submitBehavior={
+                returnKeyType === "next" ? "submit" : "blurAndSubmit"
+              }
+              style={styles.input}
+              value={value}
+              onChangeText={onChangeText}
+              placeholder={placeholder}
+              placeholderTextColor={colors.gray[400]}
+              keyboardType={getKeyboardType()}
+              autoCapitalize={autoCapitalize}
+              autoCorrect={autoCorrect}
+              secureTextEntry={secureTextEntry}
+              onFocus={handleFocus}
+              onBlur={handleBlur}
             />
-          </TouchableOpacity>
+          </Animated.View>
+          {isPassword && (
+            <TouchableOpacity
+              style={styles.eyeIcon}
+              disabled={!editable}
+              accessibilityState={{ disabled: !editable }}
+              onPress={() => setShowPassword(!showPassword)}
+              accessibilityRole="button"
+              accessibilityLabel={
+                showPassword ? "Hide password" : "Show password"
+              }
+            >
+              <Ionicons
+                name={showPassword ? "eye-outline" : "eye-off-outline"}
+                size={20}
+                color={colors.textSecondary}
+              />
+            </TouchableOpacity>
+          )}
+        </View>
+        {error && (
+          <Text
+            accessibilityRole="alert"
+            accessibilityLiveRegion="polite"
+            style={styles.errorText}
+          >
+            {error}
+          </Text>
         )}
+        {helperText && !error && (
+          <Text style={styles.helperText}>{helperText}</Text>
+        )}
+        {children}
       </View>
-      {error && <Text style={styles.errorText}>{error}</Text>}
-      {helperText && !error && (
-        <Text style={styles.helperText}>{helperText}</Text>
-      )}
-      {children}
-    </View>
-  );
-}
+    );
+  },
+);

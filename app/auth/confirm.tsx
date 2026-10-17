@@ -1,346 +1,129 @@
-import { spacing } from "@/src/design-system";
-import { IconSymbol } from "@/components/ui/icon-symbol";
-import { useStyles } from "react-native-unistyles";
-import { router, useLocalSearchParams } from "expo-router";
-import React, { useState, useEffect } from "react";
-import {
-  ActivityIndicator,
-  Dimensions,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { initialUrl, supabase } from "../../services/supabaseClient";
+import { AuthButton, AuthHeader, AuthLayout } from "@/components/auth";
 import { parseVerifiedRedirect } from "@/lib/utils/authRedirect";
+import { initialUrl, supabase } from "@/services/supabaseClient";
+import { router, useLocalSearchParams } from "expo-router";
+import React, { useEffect, useRef, useState } from "react";
+import { ActivityIndicator } from "react-native";
 
-const { width: screenWidth } = Dimensions.get("window");
-
+type Result =
+  | { route: "/(auth)/reset-password" | "/(auth)/confirmation-success" }
+  | { error: string };
 export default function ConfirmEmailScreen() {
   const { token_hash, type } = useLocalSearchParams<{
-    token_hash: string;
-    type: string;
+    token_hash?: string;
+    type?: string;
   }>();
-  const [loading, setLoading] = useState(true);
-  const [confirmed, setConfirmed] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [redirecting, setRedirecting] = useState(false);
-  const { theme } = useStyles();
-  const colors = theme.colors;
-
+  const attempt = useRef<{ key: string; promise: Promise<Result> } | null>(
+    null,
+  );
+  const mounted = useRef(true);
   useEffect(() => {
-    const confirmEmail = async () => {
-      console.log("=== EMAIL CONFIRMATION DEBUG ===");
-      console.log("URL params:", { token_hash, type });
-      console.log("================================");
-
-      const showConfirmed = async () => {
-        setConfirmed(true);
-        // Sign out user after verification to ensure manual login
-        await supabase.auth.signOut();
-        // Redirect to confirmation success page after 2 seconds
-        setTimeout(() => {
-          setRedirecting(true);
-          router.replace("/(auth)/confirmation-success");
-        }, 2000);
-      };
-
-      if (!token_hash || !type) {
-        const redirect = parseVerifiedRedirect(
-          initialUrl.search,
-          initialUrl.hash,
-        );
-        if (redirect?.status === "verified") {
-          // Let the client finish any ?code= exchange before signing out.
-          await supabase.auth.getSession();
-          await showConfirmed();
-        } else {
-          console.error("Missing required params:", { token_hash, type });
-          setError(
-            redirect?.status === "error"
-              ? redirect.message
-              : "Invalid confirmation link",
-          );
-        }
-        setLoading(false);
-        return;
-      }
-
-      try {
-        console.log("Attempting to verify OTP...");
-        const { data, error } = await supabase.auth.verifyOtp({
-          token_hash,
-          type: type as "signup" | "recovery" | "email_change",
-        });
-
-        console.log("Verification result:", { data, error });
-
-        if (error) {
-          console.error("Email confirmation error:", error);
-          setError(error.message || "Failed to confirm email");
-        } else if (data.user && type === "recovery") {
-          // Keep the recovery session; AuthContext already received
-          // PASSWORD_RECOVERY from verifyOtp.
-          router.replace("/(auth)/reset-password");
-        } else if (data.user) {
-          console.log("User confirmed successfully:", data.user.email);
-          await showConfirmed();
-        } else {
-          console.error("No user data returned after verification");
-          setError("Confirmation failed");
-        }
-      } catch (err) {
-        console.error("Unexpected error during confirmation:", err);
-        setError("An unexpected error occurred");
-      } finally {
-        setLoading(false);
-      }
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
     };
-
-    confirmEmail();
+  }, []);
+  useEffect(() => {
+    let active = true;
+    const key = JSON.stringify([
+      token_hash,
+      type,
+      initialUrl.search,
+      initialUrl.hash,
+    ]);
+    if (attempt.current?.key !== key) {
+      setError(null);
+      const verify = async (): Promise<Result> => {
+        try {
+          const url = new URLSearchParams(initialUrl.search);
+          new URLSearchParams(initialUrl.hash.replace(/^#/, "")).forEach(
+            (value, name) => url.set(name, value),
+          );
+          const action = type ?? url.get("type");
+          let recovery = action === "recovery";
+          if (token_hash !== undefined) {
+            if (
+              typeof token_hash !== "string" ||
+              !token_hash ||
+              (action !== "signup" &&
+                action !== "recovery" &&
+                action !== "email_change")
+            )
+              return { error: "Invalid confirmation link" };
+            const { data, error } = await supabase.auth.verifyOtp({
+              token_hash,
+              type: action,
+            });
+            if (error)
+              return { error: error.message || "Failed to confirm email" };
+            if (!data.user) return { error: "Confirmation failed" };
+          } else {
+            const redirect = parseVerifiedRedirect(
+              initialUrl.search,
+              initialUrl.hash,
+            );
+            if (redirect?.status === "error")
+              return { error: redirect.message };
+            if (!redirect) return { error: "Invalid confirmation link" };
+            const { data, error } = await supabase.auth.getSession();
+            if (error || !data.session)
+              return {
+                error:
+                  error?.message ||
+                  "This link is invalid or has expired. Please request a new email.",
+              };
+            recovery = action === "recovery";
+          }
+          if (!mounted.current || attempt.current?.key !== key)
+            return { error: "Verification interrupted" };
+          if (recovery) return { route: "/(auth)/reset-password" };
+          const { error } = await supabase.auth.signOut();
+          if (error)
+            return {
+              error: "Couldn't finish verification. Please try signing in.",
+            };
+          return { route: "/(auth)/confirmation-success" };
+        } catch {
+          return {
+            error: "Couldn't verify this link. Please request a new email.",
+          };
+        }
+      };
+      attempt.current = { key, promise: verify() };
+    }
+    void attempt.current.promise.then((result) => {
+      if (!active) return;
+      if ("error" in result) setError(result.error);
+      else router.replace(result.route);
+    });
+    return () => {
+      active = false;
+    };
   }, [token_hash, type]);
-
-  const handleGoToLogin = () => {
-    setRedirecting(true);
-    router.replace("/(auth)/confirmation-success");
-  };
-
-  const styles = StyleSheet.create({
-    container: {
-      flex: 1,
-      backgroundColor: colors.background,
-    },
-    scrollContent: {
-      flexGrow: 1,
-      paddingVertical: spacing.xl,
-    },
-    content: {
-      flex: 1,
-      paddingHorizontal: spacing.xl,
-      justifyContent: "center",
-      maxWidth: screenWidth > 600 ? 400 : "100%",
-      alignSelf: "center",
-      width: "100%",
-    },
-    iconContainer: {
-      alignItems: "center",
-      marginBottom: spacing.xxl,
-    },
-    loadingIcon: {
-      width: 80,
-      height: 80,
-      borderRadius: 40,
-      backgroundColor: colors.primary,
-      alignItems: "center",
-      justifyContent: "center",
-      marginBottom: spacing.xl,
-    },
-    successIcon: {
-      width: 80,
-      height: 80,
-      borderRadius: 40,
-      backgroundColor: theme.colors.success,
-      alignItems: "center",
-      justifyContent: "center",
-      marginBottom: spacing.xl,
-      shadowColor: theme.colors.success,
-      shadowOffset: {
-        width: 0,
-        height: 4,
-      },
-      shadowOpacity: 0.3,
-      shadowRadius: 8,
-      elevation: 6,
-    },
-    errorIcon: {
-      width: 80,
-      height: 80,
-      borderRadius: 40,
-      backgroundColor: theme.colors.error,
-      alignItems: "center",
-      justifyContent: "center",
-      marginBottom: spacing.xl,
-      shadowColor: theme.colors.error,
-      shadowOffset: {
-        width: 0,
-        height: 4,
-      },
-      shadowOpacity: 0.3,
-      shadowRadius: 8,
-      elevation: 6,
-    },
-    iconText: {
-      fontSize: 40,
-      color: theme.colors.white,
-      fontWeight: "bold",
-    },
-    title: {
-      fontSize: 28,
-      fontWeight: "bold",
-      color: colors.text,
-      textAlign: "center",
-      marginBottom: spacing.md,
-    },
-    subtitle: {
-      fontSize: 16,
-      color: colors.textSecondary,
-      textAlign: "center",
-      lineHeight: 24,
-      marginBottom: spacing.xxl,
-    },
-    card: {
-      backgroundColor: colors.surface,
-      borderRadius: 12,
-      padding: spacing.xl,
-      shadowColor: theme.colors.black,
-      shadowOffset: {
-        width: 0,
-        height: 2,
-      },
-      shadowOpacity: 0.1,
-      shadowRadius: 8,
-      elevation: 4,
-      marginBottom: spacing.xl,
-    },
-    primaryButton: {
-      backgroundColor: colors.primary,
-      borderRadius: 8,
-      paddingVertical: spacing.lg,
-      alignItems: "center",
-      minHeight: 52,
-      shadowColor: colors.primary,
-      shadowOffset: {
-        width: 0,
-        height: 2,
-      },
-      shadowOpacity: 0.2,
-      shadowRadius: 4,
-      elevation: 3,
-    },
-    primaryButtonDisabled: {
-      opacity: 0.6,
-      shadowOpacity: 0,
-      elevation: 0,
-    },
-    primaryButtonText: {
-      color: theme.colors.white,
-      fontSize: 16,
-      fontWeight: "600",
-    },
-    redirectText: {
-      fontSize: 14,
-      color: colors.textSecondary,
-      textAlign: "center",
-      marginTop: spacing.lg,
-      fontStyle: "italic",
-    },
-  });
-
-  if (loading) {
-    return (
-      <SafeAreaView style={styles.container}>
-        <ScrollView
-          contentContainerStyle={styles.scrollContent}
-          showsVerticalScrollIndicator={false}
-        >
-          <View style={styles.content}>
-            <View style={styles.iconContainer}>
-              <View style={styles.loadingIcon}>
-                <ActivityIndicator color="white" size="large" />
-              </View>
-              <Text style={styles.title}>Confirming Email</Text>
-              <Text style={styles.subtitle}>
-                Please wait while we verify your email address...
-              </Text>
-            </View>
-          </View>
-        </ScrollView>
-      </SafeAreaView>
-    );
-  }
-
-  if (error) {
-    return (
-      <SafeAreaView style={styles.container}>
-        <ScrollView
-          contentContainerStyle={styles.scrollContent}
-          showsVerticalScrollIndicator={false}
-        >
-          <View style={styles.content}>
-            <View style={styles.iconContainer}>
-              <View style={styles.errorIcon}>
-                <IconSymbol name="xmark" size={48} color={theme.colors.white} />
-              </View>
-              <Text style={styles.title}>Confirmation Failed</Text>
-              <Text style={styles.subtitle}>{error}</Text>
-            </View>
-
-            <View style={styles.card}>
-              <TouchableOpacity
-                style={styles.primaryButton}
-                onPress={handleGoToLogin}
-              >
-                <Text style={styles.primaryButtonText}>Go to Sign In</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </ScrollView>
-      </SafeAreaView>
-    );
-  }
-
-  if (confirmed) {
-    return (
-      <SafeAreaView style={styles.container}>
-        <ScrollView
-          contentContainerStyle={styles.scrollContent}
-          showsVerticalScrollIndicator={false}
-        >
-          <View style={styles.content}>
-            <View style={styles.iconContainer}>
-              <View style={styles.successIcon}>
-                <IconSymbol
-                  name="checkmark"
-                  size={48}
-                  color={theme.colors.white}
-                />
-              </View>
-              <Text style={styles.title}>Email Confirmed!</Text>
-              <Text style={styles.subtitle}>
-                Your email has been successfully verified. Click continue to
-                proceed to sign in.
-              </Text>
-            </View>
-
-            <View style={styles.card}>
-              <TouchableOpacity
-                style={[
-                  styles.primaryButton,
-                  redirecting && styles.primaryButtonDisabled,
-                ]}
-                onPress={handleGoToLogin}
-                disabled={redirecting}
-              >
-                {redirecting ? (
-                  <ActivityIndicator color="white" size="small" />
-                ) : (
-                  <Text style={styles.primaryButtonText}>Continue</Text>
-                )}
-              </TouchableOpacity>
-
-              {!redirecting && (
-                <Text style={styles.redirectText}>
-                  Redirecting to success page in a moment...
-                </Text>
-              )}
-            </View>
-          </View>
-        </ScrollView>
-      </SafeAreaView>
-    );
-  }
-
-  return null;
+  return (
+    <AuthLayout>
+      <AuthHeader
+        icon={error ? "alert-circle-outline" : "mail-outline"}
+        title={error ? "Confirmation Failed" : "Confirming Email"}
+        subtitle={error ?? "Please wait while we verify your email address."}
+      />
+      {error ? (
+        <>
+          {type === "recovery" && (
+            <AuthButton
+              title="Request new reset link"
+              onPress={() => router.replace("/(auth)/forgot-password")}
+            />
+          )}
+          <AuthButton
+            title="Go to Sign In"
+            onPress={() => router.replace("/(auth)/login")}
+          />
+        </>
+      ) : (
+        <ActivityIndicator accessibilityLabel="Verifying email" />
+      )}
+    </AuthLayout>
+  );
 }

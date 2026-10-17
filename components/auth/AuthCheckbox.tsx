@@ -8,6 +8,8 @@ interface AuthCheckboxProps {
   checked: boolean;
   onToggle: () => void;
   label: string | ReactNode;
+  disabled?: boolean;
+  accessibilityLabel?: string;
 }
 
 /**
@@ -18,12 +20,19 @@ interface AuthCheckboxProps {
  * - Checkmark icon when checked
  * - Support for string or ReactNode label (for links)
  */
-export function AuthCheckbox({ checked, onToggle, label }: AuthCheckboxProps) {
+export function AuthCheckbox({
+  checked,
+  onToggle,
+  label,
+  disabled = false,
+  accessibilityLabel,
+}: AuthCheckboxProps) {
   const { theme } = useStyles();
   const colors = theme.colors;
 
   const styles = StyleSheet.create({
     container: {
+      minHeight: 48,
       flexDirection: "row",
       alignItems: "flex-start",
       marginBottom: spacing.xl,
@@ -51,6 +60,12 @@ export function AuthCheckbox({ checked, onToggle, label }: AuthCheckboxProps) {
   return (
     <TouchableOpacity
       style={styles.container}
+      disabled={disabled}
+      accessibilityRole="checkbox"
+      accessibilityLabel={
+        accessibilityLabel ?? (typeof label === "string" ? label : undefined)
+      }
+      accessibilityState={{ checked, disabled }}
       onPress={onToggle}
       activeOpacity={0.7}
     >

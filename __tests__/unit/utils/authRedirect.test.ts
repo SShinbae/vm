@@ -31,4 +31,17 @@ describe("parseVerifiedRedirect", () => {
   it("returns null when the URL carries no Supabase redirect", () => {
     expect(parseVerifiedRedirect("", "")).toBeNull();
   });
+
+  it("rejects provider errors without descriptions before accepting a code", () => {
+    expect(
+      parseVerifiedRedirect(
+        "?code=abc",
+        "#error=access_denied&error_code=otp_expired",
+      ),
+    ).toEqual({
+      status: "error",
+      message:
+        "This link is invalid or has expired. Please request a new email.",
+    });
+  });
 });

@@ -2,7 +2,7 @@ import { spacing } from "@/src/design-system";
 import { useStyles } from "react-native-unistyles";
 import React, { ReactNode } from "react";
 import {
-  Dimensions,
+  useWindowDimensions,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -10,8 +10,6 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-
-const { width: screenWidth } = Dimensions.get("window");
 
 interface AuthLayoutProps {
   children: ReactNode;
@@ -31,6 +29,8 @@ interface AuthLayoutProps {
 export function AuthLayout({ children, scrollable = true }: AuthLayoutProps) {
   const { theme } = useStyles();
   const colors = theme.colors;
+  const { width } = useWindowDimensions();
+  const compact = Platform.OS !== "web" || width < 768;
 
   const styles = StyleSheet.create({
     safeArea: {
@@ -44,26 +44,33 @@ export function AuthLayout({ children, scrollable = true }: AuthLayoutProps) {
       flexGrow: 1,
     },
     content: {
-      flex: 1,
-      paddingHorizontal: spacing.xl,
-      justifyContent: "center",
-      maxWidth: screenWidth > 768 ? 450 : ("100%" as any),
+      flexGrow: 1,
+      paddingHorizontal: compact ? 16 : spacing.xl,
+      justifyContent: compact ? "flex-start" : "center",
+      maxWidth: compact ? "100%" : 450,
       alignSelf: "center",
       width: "100%",
-      paddingVertical: spacing.xxxl,
+      paddingTop: compact ? 24 : spacing.xxxl,
+      paddingBottom: 32,
     },
   });
 
   const content = <View style={styles.content}>{children}</View>;
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView
+      style={styles.safeArea}
+      edges={["top", "left", "right", "bottom"]}
+    >
       <KeyboardAvoidingView
+        enabled={Platform.OS !== "web"}
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={styles.keyboardView}
       >
         {scrollable ? (
           <ScrollView
+            style={{ flex: 1 }}
+            keyboardDismissMode="on-drag"
             contentContainerStyle={styles.scrollView}
             showsVerticalScrollIndicator={false}
             keyboardShouldPersistTaps="handled"
