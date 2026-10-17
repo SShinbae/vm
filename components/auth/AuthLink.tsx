@@ -8,6 +8,8 @@ interface AuthLinkProps {
   text: string;
   linkText: string;
   href: string;
+  disabled?: boolean;
+  onPress?: () => void;
 }
 
 /**
@@ -19,13 +21,20 @@ interface AuthLinkProps {
  * - Centered row layout
  * - Secondary text + primary link styling
  */
-export function AuthLink({ text, linkText, href }: AuthLinkProps) {
+export function AuthLink({
+  text,
+  linkText,
+  href,
+  disabled = false,
+  onPress,
+}: AuthLinkProps) {
   const { theme } = useStyles();
   const colors = theme.colors;
 
   const styles = StyleSheet.create({
     container: {
       flexDirection: "row",
+      flexWrap: "wrap",
       alignItems: "center",
       justifyContent: "center",
       gap: spacing.sm,
@@ -41,14 +50,28 @@ export function AuthLink({ text, linkText, href }: AuthLinkProps) {
     },
   });
 
+  const link = (
+    <TouchableOpacity
+      accessibilityRole="link"
+      disabled={disabled}
+      accessibilityState={{ disabled }}
+      onPress={onPress}
+      style={{ minHeight: 48, justifyContent: "center" }}
+    >
+      <Text style={styles.link}>{linkText}</Text>
+    </TouchableOpacity>
+  );
+
   return (
     <View style={styles.container}>
       <Text style={styles.text}>{text}</Text>
-      <Link href={href as any} asChild>
-        <TouchableOpacity>
-          <Text style={styles.link}>{linkText}</Text>
-        </TouchableOpacity>
-      </Link>
+      {onPress ? (
+        link
+      ) : (
+        <Link href={href as any} asChild>
+          {link}
+        </Link>
+      )}
     </View>
   );
 }

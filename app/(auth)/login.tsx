@@ -1,8 +1,5 @@
-import { spacing } from "@/src/design-system";
-import { useStyles } from "react-native-unistyles";
 import {
   AuthButton,
-  AuthCheckbox,
   AuthHeader,
   AuthInput,
   AuthLayout,
@@ -12,120 +9,86 @@ import {
 import { useToast } from "@/hooks/useToast";
 import { useAuth } from "@/lib/contexts/AuthContext";
 import { postLoginRoute } from "@/lib/utils/postLoginRoute";
-import { supabase } from "@/services/supabaseClient";
 import { safeNext, takeRememberedNext } from "@/lib/utils/safeNext";
+import { supabase } from "@/services/supabaseClient";
 import { isValidEmail } from "@/utils/validation";
-import { Link, router, useLocalSearchParams } from "expo-router";
-import React, { useRef, useState } from "react";
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { router, useLocalSearchParams } from "expo-router";
+import React, { useEffect, useRef, useState } from "react";
+import { TextInput } from "react-native";
 
-function LoginScreen() {
+export default function LoginScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [rememberMe, setRememberMe] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const pending = useRef(false);
+  const mounted = useRef(true);
   const loginAttempted = useRef(false);
   const redirected = useRef(false);
+  const passwordInput = useRef<TextInput>(null);
   const { next } = useLocalSearchParams<{ next?: string }>();
   const { signIn, user, initialized } = useAuth();
   const { showSuccess, showError } = useToast();
-  const { theme } = useStyles();
-  const colors = theme.colors;
-
+  const busy = loading || googleLoading;
   const destination = () => safeNext(next) ?? takeRememberedNext() ?? "/(tabs)";
 
-  // If user is already logged in before any login attempt, redirect to dashboard
-  // This handles the case where user navigates to login while already authenticated
-  React.useEffect(() => {
-    // Don't do anything until auth is initialized
-    if (!initialized) return;
-
-    // Never redirect if a login was attempted - this component handles its own navigation
-    if (loginAttempted.current) {
-      console.log("Login - not redirecting, login was attempted");
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+    };
+  }, []);
+  useEffect(() => {
+    if (!initialized || !user || loginAttempted.current || redirected.current)
       return;
-    }
-
-    // Only redirect if user was already logged in before they came to this page
-    // One-shot: a later profile load must not navigate again (and eat `next`).
-    if (user && !redirected.current) {
-      redirected.current = true;
-      void (async () => {
-        router.replace((await postLoginRoute(user.id, destination())) as never);
-      })();
-    }
-    // destination() only reads `next`/storage; the redirected ref makes this one-shot.
+    redirected.current = true;
+    void postLoginRoute(user.id, destination()).then((route) => {
+      if (mounted.current) router.replace(route as never);
+    });
+    // The redirected ref makes destination consumption one-shot.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, initialized]);
 
-  const handleEmailChange = (text: string) => {
-    setEmail(text);
-  };
-
-  const handlePasswordChange = (text: string) => {
-    setPassword(text);
-  };
-
   const handleSignIn = async () => {
-    if (!email.trim() || !password.trim()) {
-      showError("Please fill in all fields");
-      return;
-    }
-
-    if (!isValidEmail(email)) {
-      showError("Please enter a valid email address");
-      return;
-    }
-
-    // Mark that we're attempting login to prevent auto-redirect from stale sessions
+    if (pending.current || redirected.current) return;
+    const submittedEmail = email.trim().toLowerCase();
+    const submittedPassword = password;
+    const validation: Record<string, string> = {};
+    if (!isValidEmail(submittedEmail))
+      validation.email = "Please enter a valid email address";
+    if (!submittedPassword) validation.password = "Please enter your password";
+    setErrors(validation);
+    if (Object.keys(validation).length) return;
+    pending.current = true;
     loginAttempted.current = true;
     setLoading(true);
-
     try {
-      const { error } = await signIn(email.trim().toLowerCase(), password);
-
+      const { error } = await signIn(submittedEmail, submittedPassword);
+      if (!mounted.current) return;
       if (error) {
-        console.log("Login error received:", error);
-        loginAttempted.current = false;
         showError(error);
-        setLoading(false);
+        loginAttempted.current = false;
         return;
       }
-
-      // Success - navigate to dashboard
-      console.log("Login successful, navigating to dashboard");
-      showSuccess("Welcome back!");
-      const { data } = await supabase.auth.getSession();
-      const uid = data.session?.user.id;
-      const dest = destination();
+      const { data, error: sessionError } = await supabase.auth.getSession();
+      if (!mounted.current) return;
+      if (sessionError || !data.session) throw new Error("Session unavailable");
+      const route = await postLoginRoute(data.session.user.id, destination());
+      if (!mounted.current) return;
       redirected.current = true;
-      router.replace((uid ? await postLoginRoute(uid, dest) : dest) as never);
-    } catch (err) {
-      console.log("Login catch block:", err);
-      loginAttempted.current = false;
-      showError("An unexpected error occurred. Please try again.");
-      setLoading(false);
+      showSuccess("Welcome back!");
+      router.replace(route as never);
+    } catch {
+      if (mounted.current) {
+        loginAttempted.current = false;
+        showError("An unexpected error occurred. Please try again.");
+      }
+    } finally {
+      pending.current = false;
+      if (mounted.current) setLoading(false);
     }
   };
-
-  const styles = StyleSheet.create({
-    passwordLabelRow: {
-      flexDirection: "row",
-      justifyContent: "space-between",
-      alignItems: "center",
-      marginBottom: spacing.sm,
-    },
-    label: {
-      fontSize: 14,
-      fontWeight: "600",
-      color: colors.text,
-    },
-    forgotPasswordText: {
-      color: colors.primary,
-      fontSize: 14,
-      fontWeight: "500",
-    },
-  });
 
   return (
     <AuthLayout>
@@ -134,62 +97,66 @@ function LoginScreen() {
         title="Welcome Back"
         subtitle="Please enter your details to sign in."
       />
-
-      {/* Email Input */}
       <AuthInput
         label="Email Address"
         placeholder="you@example.com"
         value={email}
-        onChangeText={handleEmailChange}
+        onChangeText={(text) => {
+          setEmail(text);
+          setErrors({});
+        }}
         leftIcon="mail-outline"
         type="email"
+        editable={!busy}
+        autoComplete="username"
+        textContentType="username"
+        returnKeyType="next"
+        onSubmitEditing={() => passwordInput.current?.focus()}
+        error={errors.email}
       />
-
-      {/* Password Input with Forgot Password Link */}
-      <View style={{ marginBottom: spacing.xl }}>
-        <View style={styles.passwordLabelRow}>
-          <Text style={styles.label}>Password</Text>
-          <Link href="/(auth)/forgot-password" asChild>
-            <TouchableOpacity>
-              <Text style={styles.forgotPasswordText}>Forgot password?</Text>
-            </TouchableOpacity>
-          </Link>
-        </View>
-        <AuthInput
-          label=""
-          placeholder="••••••••"
-          value={password}
-          onChangeText={handlePasswordChange}
-          leftIcon="lock-closed-outline"
-          type="password"
-        />
-      </View>
-
-      {/* Remember Me Checkbox */}
-      <AuthCheckbox
-        checked={rememberMe}
-        onToggle={() => setRememberMe(!rememberMe)}
-        label="Remember me for 30 days"
+      <AuthInput
+        ref={passwordInput}
+        label="Password"
+        placeholder="Enter your password"
+        value={password}
+        onChangeText={(text) => {
+          setPassword(text);
+          setErrors({});
+        }}
+        leftIcon="lock-closed-outline"
+        type="password"
+        editable={!busy}
+        autoComplete="current-password"
+        textContentType="password"
+        returnKeyType="done"
+        onSubmitEditing={handleSignIn}
+        error={errors.password}
       />
-
-      {/* Sign In Button */}
+      <AuthLink
+        text=""
+        linkText="Forgot password?"
+        href="/(auth)/forgot-password"
+        disabled={busy}
+      />
       <AuthButton
         title="Sign in"
         onPress={handleSignIn}
         loading={loading}
-        disabled={!email.trim() || !password.trim()}
+        disabled={googleLoading || !email.trim() || !password}
       />
-
-      <GoogleSignInButton />
-
-      {/* Sign Up Section */}
+      <GoogleSignInButton
+        disabled={loading}
+        onLoadingChange={(value) => {
+          pending.current = value;
+          setGoogleLoading(value);
+        }}
+      />
       <AuthLink
         text="Don't have an account?"
         linkText="Sign up"
         href="/(auth)/register"
+        disabled={busy}
       />
     </AuthLayout>
   );
 }
-
-export default LoginScreen;

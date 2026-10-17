@@ -338,12 +338,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
         },
       });
 
-      if (__DEV__) {
-        console.log("Signup result:", { data, error });
-        console.log("User email_confirmed_at:", data?.user?.email_confirmed_at);
-        console.log("Session exists:", !!data?.session);
-      }
-
       if (error) {
         if (__DEV__) {
           console.error("Signup error:", error);
@@ -498,10 +492,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
 
     const result = await supabase.auth.updateUser({ password });
-
-    if (__DEV__) {
-      console.log("updatePassword result:", result);
-    }
 
     if (result.error) {
       return { error: result.error.message };

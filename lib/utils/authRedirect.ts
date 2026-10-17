@@ -18,7 +18,18 @@ export function parseVerifiedRedirect(
   );
 
   const message = params.get("error_description");
-  if (message) return { status: "error", message };
+  if (
+    params.has("error") ||
+    params.has("error_code") ||
+    params.has("error_description")
+  ) {
+    return {
+      status: "error",
+      message:
+        message ||
+        "This link is invalid or has expired. Please request a new email.",
+    };
+  }
   if (params.has("code") || params.has("access_token")) {
     return { status: "verified" };
   }

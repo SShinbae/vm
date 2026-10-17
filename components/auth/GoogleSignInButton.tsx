@@ -1,6 +1,6 @@
 import { spacing } from "@/src/design-system";
 import { useStyles } from "react-native-unistyles";
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Platform, StyleSheet, Text, View } from "react-native";
 import { useToast } from "@/hooks/useToast";
 import { signInWithGoogle } from "@/lib/services/googleAuthService";
@@ -13,8 +13,22 @@ import { AuthButton } from "./AuthButton";
  * Supabase creates the account on first use. Navigation happens via the
  * existing auth-state redirects once the session lands.
  */
-export function GoogleSignInButton() {
+export function GoogleSignInButton({
+  disabled = false,
+  onLoadingChange,
+}: {
+  disabled?: boolean;
+  onLoadingChange?: (loading: boolean) => void;
+}) {
   const [loading, setLoading] = useState(false);
+  const pending = useRef(false),
+    mounted = useRef(true);
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+    };
+  }, []);
   const { showError } = useToast();
   const { next } = useLocalSearchParams<{ next?: string }>();
   const { theme } = useStyles();
@@ -24,15 +38,23 @@ export function GoogleSignInButton() {
   if (Platform.OS === "ios") return null;
 
   const handlePress = async () => {
+    if (pending.current || disabled) return;
+    pending.current = true;
+    onLoadingChange?.(true);
     setLoading(true);
     try {
       rememberNext(safeNext(next));
       const { error } = await signInWithGoogle();
-      if (error) showError(error);
+      if (error && mounted.current) showError(error);
     } catch {
-      showError("Google sign-in failed. Please try again.");
+      if (mounted.current)
+        showError("Google sign-in failed. Please try again.");
     } finally {
-      setLoading(false);
+      pending.current = false;
+      if (mounted.current) {
+        setLoading(false);
+        onLoadingChange?.(false);
+      }
     }
   };
 
@@ -61,6 +83,7 @@ export function GoogleSignInButton() {
         title="Continue with Google"
         onPress={handlePress}
         loading={loading}
+        disabled={disabled}
         variant="outline"
       />
     </>
