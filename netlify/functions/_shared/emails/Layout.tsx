@@ -5,6 +5,7 @@ import {
   Head,
   Hr,
   Html,
+  Img,
   Link,
   Preview,
   Section,
@@ -53,7 +54,12 @@ export function Layout({ preview, reason, children }: LayoutProps) {
       <Body style={body}>
         <Container style={container}>
           <Section style={header}>
-            <Text style={wordmark}>Vehicles Management</Text>
+            <Img
+              src={`${SITE_URL}/email-logo.png`}
+              width="120"
+              alt="Vehicles Management"
+              style={logo}
+            />
           </Section>
           <Section style={content}>{children}</Section>
           <Section style={hrRow}>
@@ -68,9 +74,7 @@ export function Layout({ preview, reason, children }: LayoutProps) {
               </Link>
             </Text>
             <Text style={footerText}>
-              <Link href={SITE_URL} style={footerLink}>
-                Vehicles Management
-              </Link>
+              © {new Date().getFullYear()} Vehicles Management
             </Text>
           </Section>
         </Container>
@@ -118,16 +122,11 @@ const container: CSSProperties = {
   overflow: "hidden",
 };
 const header: CSSProperties = {
-  backgroundColor: BRAND,
-  padding: "28px 40px",
+  padding: "28px 40px 20px",
   textAlign: "center",
+  borderBottom: "1px solid #e5e7eb",
 };
-const wordmark: CSSProperties = {
-  margin: 0,
-  color: "#ffffff",
-  fontSize: "24px",
-  fontWeight: 700,
-};
+const logo: CSSProperties = { margin: "0 auto" };
 const content: CSSProperties = { padding: "32px 40px 8px" };
 const buttonRow: CSSProperties = { padding: "8px 0 24px", textAlign: "center" };
 const button: CSSProperties = {

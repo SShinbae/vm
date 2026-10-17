@@ -19,6 +19,8 @@ describe("renderEmail + Layout", () => {
     expect(html.startsWith("<!DOCTYPE html")).toBe(true);
     expect(html).toContain("Preview line");
     expect(html).toContain("Vehicles Management");
+    expect(html).toContain("/email-logo.png");
+    expect(html).toContain(`© ${new Date().getFullYear()}`);
     expect(html).toContain("background-color:#4F46E5");
     expect(html).not.toMatch(/gradient/i);
     expect(html).toContain('href="https://vm.wanahnaf.dev/go?a=1&amp;b=2"');
